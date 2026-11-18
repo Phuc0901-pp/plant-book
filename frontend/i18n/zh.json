@@ -88,5 +88,52 @@
     "unit_kg": "公斤",
     "unit_ton_ha": "吨/公顷",
     "redacted_notice": "RBAC 权限安全保护：企业财务 BI 数据仅对庄园主、合作社理事长及系统管理员开放。"
+  },
+  "profile_modal": {
+    "title": "果树数字档案",
+    "tab_overview": "1. 农艺参数与 GPS",
+    "tab_logs": "2. 农事操作记录",
+    "tab_cost": "3. 成本与农资消耗",
+    "btn_log_care": "记录农事",
+    "btn_close": "关闭档案",
+    "metric_age": "树龄与定植日期",
+    "metric_location": "种植分区与行号",
+    "metric_yield": "上季产量记录",
+    "metric_nfc": "NFC 射频芯片"
+  },
+  "filters": {
+    "category": "农事类别",
+    "all_categories": "全部农事类别",
+    "from_date": "开始日期",
+    "to_date": "结束日期",
+    "supply": "使用农资",
+    "all_supplies": "全部农资",
+    "search": "关键词搜索",
+    "reset": "重置"
+  },
+  "categories": {
+    "water": "灌溉浇水",
+    "fertilize": "施肥作业",
+    "pesticide": "植保喷药",
+    "labor": "人工成本",
+    "fruit_audit": "结果审计盘点",
+    "disease": "病虫害监测",
+    "harvest": "采收归集"
+  },
+  "fruit_audit": {
+    "stage_fruit_set": "坐果期",
+    "stage_young_fruit": "幼果期",
+    "stage_ripe_fruit": "成熟期",
+    "label_stage": "挂果阶段",
+    "label_count": "实盘果数",
+    "label_culled": "落果/疏果",
+    "label_time": "盘点时间",
+    "label_reason": "原因说明"
+  },
+  "report": {
+    "title": "农事种植追溯报告",
+    "copy_link": "复制链接",
+    "export_csv": "导出 CSV (Excel)",
+    "print_pdf": "打印报告 / 导出 PDF"
   }
 }

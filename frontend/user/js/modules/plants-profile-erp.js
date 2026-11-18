@@ -60,7 +60,8 @@ export async function openPlantProfileModal(plantId) {
 
   const farmName = plant.farm_name || (getFarmsCache().find(f => f.id == plant.farm_id)?.name) || 'Trang trại';
   const plotStr = plant.plot_code || plant.location || 'Chưa phân lô';
-  const varietyStr = plant.plant_variety ? `${plant.plant_type || 'Cây'} (${plant.plant_variety})` : (plant.plant_type || 'Cây trồng');
+  const cleanPlantType = String(plant.plant_type || 'Cây').replace(/\s*\([^)]*\)\s*$/g, '').trim() || plant.plant_type || 'Cây';
+  const varietyStr = plant.plant_variety ? `${cleanPlantType} (${plant.plant_variety})` : (plant.plant_type || 'Cây trồng');
   const subtitleEl = document.getElementById('erp-plant-modal-subtitle');
   if (subtitleEl) {
     subtitleEl.textContent = `Trang trại: ${farmName} · Lô: ${plotStr} · Giống: ${varietyStr}`;
@@ -248,6 +249,9 @@ export async function openPlantProfileModal(plantId) {
     window.lucide.createIcons();
   }
   if (window.refreshIcons) window.refreshIcons();
+  if (window.PlantBookI18n && typeof window.PlantBookI18n.applyDomTranslations === 'function') {
+    window.PlantBookI18n.applyDomTranslations();
+  }
 }
 
 export function closePlantProfileModal() {
@@ -351,72 +355,7 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
 
   if (logsCountEl) logsCountEl.textContent = logs.length;
 
-  // Render Timeline
-  if (timelineContainer) {
-    if (!logs.length) {
-      timelineContainer.innerHTML = `
-        <div style="text-align:center;padding:28px 16px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:12px;color:#64748b;">
-          <i data-lucide="calendar-off" class="lucide-md" style="color:#94a3b8;margin-bottom:6px;"></i>
-          <div style="font-weight:700;font-size:13px;color:#334155;">Chưa có dữ liệu nhật ký canh tác</div>
-          <div style="font-size:12px;margin-top:2px;">Bấm nút "+ Thêm nhật ký mới" để ghi lại hoạt động tưới tiêu, bón phân, phun thuốc hoặc thu hoạch.</div>
-        </div>
-      `;
-    } else {
-      timelineContainer.innerHTML = logs.map((log) => {
-        let typeColor = '#059669';
-        let typeBg = '#ecfdf5';
-        let iconName = 'clipboard-check';
-        const typeStr = String(log.log_type || '').toLowerCase();
-        if (typeStr.includes('tưới') || typeStr.includes('tuoi') || typeStr.includes('water')) {
-          typeColor = '#0284c7'; typeBg = '#f0f9ff'; iconName = 'droplet';
-        } else if (typeStr.includes('nhân công') || typeStr.includes('nhan cong') || typeStr.includes('labor')) {
-          typeColor = '#2563eb'; typeBg = '#eff6ff'; iconName = 'users';
-        } else if (typeStr.includes('phân') || typeStr.includes('phan') || typeStr.includes('fertil')) {
-          typeColor = '#16a34a'; typeBg = '#f0fdf4'; iconName = 'sprout';
-        } else if (typeStr.includes('thuốc') || typeStr.includes('thuoc') || typeStr.includes('pest') || typeStr.includes('sâu') || typeStr.includes('bệnh')) {
-          typeColor = '#d97706'; typeBg = '#fffbeb'; iconName = 'shield-alert';
-        } else if (typeStr.includes('kiểm toán quả') || typeStr.includes('kiem toan qua')) {
-          typeColor = '#0f766e'; typeBg = '#f0fdfa'; iconName = 'clipboard-check';
-        } else if (typeStr.includes('thu hoạch') || typeStr.includes('harvest')) {
-          typeColor = '#9333ea'; typeBg = '#faf5ff'; iconName = 'package-check';
-        } else if (typeStr.includes('tỉa') || typeStr.includes('pruning')) {
-          typeColor = '#475569'; typeBg = '#f8fafc'; iconName = 'scissors';
-        }
-
-        const rawPhotos = Array.isArray(log.media_urls) ? log.media_urls : (log.media_urls ? [log.media_urls] : []);
-        const photos = rawPhotos.map(p => (typeof p === 'object' && p !== null) ? p.url : p).filter(Boolean);
-
-        return `
-          <div style="background:#ffffff;border:1px solid #e2e8f0;border-left:4px solid ${typeColor};border-radius:10px;padding:12px 14px;display:flex;gap:12px;align-items:flex-start;box-shadow:0 1px 3px rgba(0,0,0,0.02);">
-            <div style="width:34px;height:34px;border-radius:8px;background:${typeBg};color:${typeColor};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;margin-top:2px;">
-              <i data-lucide="${iconName}" class="lucide-sm"></i>
-            </div>
-            <div style="flex:1;min-width:0;">
-              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:4px;">
-                <span style="font-size:13px;font-weight:800;color:#0f172a;">${esc(log.log_type || 'Nhật ký chăm sóc')}</span>
-                <span style="font-size:11.5px;color:#64748b;font-weight:600;display:inline-flex;align-items:center;gap:4px;">
-                  <i data-lucide="clock" class="lucide-xs"></i> ${esc(log.log_date || log.created_at || '—')}
-                </span>
-              </div>
-              <div style="font-size:12px;color:#334155;line-height:1.5;">
-                ${esc(log.note || log.action || 'Không có ghi chú chi tiết.')}
-              </div>
-              ${(log.operator_name || log.equipment_used) ? `
-                <div style="font-size:11px;color:#64748b;margin-top:6px;display:flex;gap:10px;flex-wrap:wrap;">
-                  ${log.operator_name ? `<span><i data-lucide="user" class="lucide-xs"></i> Nhân sự: <strong>${esc(log.operator_name)}</strong></span>` : ''}
-                  ${log.equipment_used ? `<span><i data-lucide="wrench" class="lucide-xs"></i> Thiết bị: <strong>${esc(log.equipment_used)}</strong></span>` : ''}
-                </div>` : ''}
-              ${photos.length ? `
-                <div style="display:flex;gap:6px;margin-top:8px;overflow-x:auto;">
-                  ${photos.map(pUrl => `<img src="${esc(pUrl)}" style="width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid #cbd5e1;cursor:pointer;" onclick="if(window.openLightbox) openLightbox('${esc(pUrl)}')">`).join('')}
-                </div>` : ''}
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-  }
-
+  // Timeline renders cleanly after cost & comparison chain enrichment below
   // Calculate Costs & Supplies Breakdown & Harvest Economics FIRST
   let totalCost = 0;
   let fertCost = 0;
@@ -586,141 +525,14 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
     };
   });
 
-  // Render Timeline (Tab 2) WITH INLINE COST & SUPPLY BADGES
-  if (timelineContainer) {
-    if (!enrichedLogs.length) {
-      timelineContainer.innerHTML = `
-        <div style="text-align:center;padding:28px 16px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:12px;color:#64748b;">
-          <i data-lucide="calendar-off" class="lucide-md" style="color:#94a3b8;margin-bottom:6px;"></i>
-          <div style="font-weight:700;font-size:13px;color:#334155;">Chưa có dữ liệu nhật ký canh tác</div>
-          <div style="font-size:12px;margin-top:2px;">Bấm nút "+ Thêm nhật ký mới" để ghi lại hoạt động tưới tiêu, bón phân, phun thuốc hoặc thu hoạch.</div>
-        </div>
-      `;
-    } else {
-      timelineContainer.innerHTML = enrichedLogs.map((log) => {
-        let typeColor = '#059669';
-        let typeBg = '#ecfdf5';
-        let iconName = 'clipboard-check';
-        const typeStr = String(log.log_type || '').toLowerCase();
-        if (typeStr.includes('tưới') || typeStr.includes('tuoi') || typeStr.includes('water')) {
-          typeColor = '#0284c7'; typeBg = '#f0f9ff'; iconName = 'droplet';
-        } else if (typeStr.includes('nhân công') || typeStr.includes('nhan cong') || typeStr.includes('labor')) {
-          typeColor = '#2563eb'; typeBg = '#eff6ff'; iconName = 'users';
-        } else if (typeStr.includes('phân') || typeStr.includes('phan') || typeStr.includes('fertil')) {
-          typeColor = '#16a34a'; typeBg = '#f0fdf4'; iconName = 'sprout';
-        } else if (typeStr.includes('thuốc') || typeStr.includes('thuoc') || typeStr.includes('pest') || typeStr.includes('sâu') || typeStr.includes('bệnh')) {
-          typeColor = '#d97706'; typeBg = '#fffbeb'; iconName = 'shield-alert';
-        } else if (typeStr.includes('kiểm toán quả') || typeStr.includes('kiem toan qua')) {
-          typeColor = '#0f766e'; typeBg = '#f0fdfa'; iconName = 'clipboard-check';
-        } else if (typeStr.includes('thu hoạch') || typeStr.includes('harvest')) {
-          typeColor = '#9333ea'; typeBg = '#faf5ff'; iconName = 'package-check';
-        } else if (typeStr.includes('tỉa') || typeStr.includes('pruning')) {
-          typeColor = '#475569'; typeBg = '#f8fafc'; iconName = 'scissors';
-        }
-
-        const rawPhotos = Array.isArray(log.media_urls) ? log.media_urls : (log.media_urls ? [log.media_urls] : []);
-        const photos = rawPhotos.map(p => (typeof p === 'object' && p !== null) ? p.url : p).filter(Boolean);
-
-        return `
-          <div style="background:#ffffff;border:1px solid #e2e8f0;border-left:4px solid ${typeColor};border-radius:12px;padding:12px 14px;display:flex;gap:12px;align-items:flex-start;box-shadow:0 1px 3px rgba(0,0,0,0.02);">
-            <div style="width:36px;height:36px;border-radius:10px;background:${typeBg};color:${typeColor};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;margin-top:2px;">
-              <i data-lucide="${iconName}" class="lucide-sm"></i>
-            </div>
-            <div style="flex:1;min-width:0;">
-              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:4px;">
-                <span style="font-size:13.5px;font-weight:800;color:#0f172a;">${esc(log.log_type || 'Nhật ký chăm sóc')}</span>
-                <span style="font-size:11.5px;color:#64748b;font-weight:600;display:inline-flex;align-items:center;gap:4px;">
-                  <i data-lucide="clock" class="lucide-xs"></i> ${esc(log.log_date || log.created_at || '—')}
-                </span>
-              </div>
-              
-              <div style="font-size:12px;color:#334155;line-height:1.5;">
-                ${esc(log.note || log.action || 'Không có ghi chú chi tiết.')}
-              </div>
-
-              ${log._isFruitAudit ? `
-                <div style="margin-top:8px;padding:10px 14px;background:linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);border:1.5px solid #5eead4;border-radius:10px;">
-                  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-                    <div style="font-size:13px;color:#0f766e;font-weight:800;display:inline-flex;align-items:center;gap:6px;">
-                      <i data-lucide="clipboard-check" class="lucide-sm" style="color:#0d9488;"></i>
-                      <span>Giai đoạn: <strong>[${esc(log._fruitAuditItem.stage)}]</strong> · Đếm: <strong style="font-size:14px;">${log._fruitAuditItem.fruit_count} quả</strong></span>
-                    </div>
-                    ${log._fruitAuditItem.estimated_yield_kg > 0 ? `
-                      <span style="font-size:12.5px;font-weight:800;color:#065f46;background:#ffffff;border:1px solid #99f6e4;padding:2px 8px;border-radius:6px;">
-                        Ước tính: ~${log._fruitAuditItem.estimated_yield_kg} kg
-                      </span>
-                    ` : ''}
-                  </div>
-                  <div style="margin-top:5px;display:flex;gap:12px;flex-wrap:wrap;font-size:11.5px;color:#115e59;font-weight:600;">
-                    <span>Rụng/Tỉa bỏ: <strong>${log._fruitAuditItem.culled_count} quả</strong></span>
-                    ${log._fruitAuditItem.audit_time ? `<span>Giờ kiểm đếm: <strong>${esc(log._fruitAuditItem.audit_time)}</strong></span>` : ''}
-                    ${log._fruitAuditItem.reason ? `<span>Lý do: <strong>${esc(log._fruitAuditItem.reason)}</strong></span>` : ''}
-                  </div>
-                  ${log._fruitAuditItem.comparison_text ? `
-                    <div style="margin-top:6px;padding:6px 10px;background:#ffffff;border:1px solid #99f6e4;border-radius:7px;font-size:11.5px;font-weight:700;color:#0f766e;">
-                      <i data-lucide="git-compare" class="lucide-xs"></i> ${esc(log._fruitAuditItem.comparison_text)}
-                    </div>
-                  ` : ''}
-                </div>
-              ` : log._isHarvest ? `
-                <div style="margin-top:8px;padding:10px 14px;background:linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);border:1.5px solid #d8b4fe;border-radius:10px;box-shadow:0 2px 6px rgba(147,51,234,0.06);">
-                  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-                    <div style="font-size:13px;color:#6b21a8;font-weight:800;display:inline-flex;align-items:center;gap:6px;">
-                      <i data-lucide="package-check" class="lucide-sm" style="color:#9333ea;"></i>
-                      <span>Sản lượng: <strong style="color:#581c87;font-size:14px;">${log._harvestItem.amount} ${log._harvestItem.unit}</strong> ${log._harvestItem.fruit_count > 0 ? `(${log._harvestItem.fruit_count} quả)` : ''}</span>
-                    </div>
-                    <div style="font-size:13px;font-weight:900;color:#047857;background:#dcfce7;border:1px solid #86efac;padding:3px 10px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;">
-                      <i data-lucide="badge-dollar-sign" class="lucide-xs"></i>
-                      <span>+${log._harvestItem.revenue.toLocaleString('vi-VN')} VNĐ</span>
-                    </div>
-                  </div>
-                  <div style="margin-top:6px;padding-top:6px;border-top:1px dashed #e9d5ff;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;font-size:11.5px;color:#7e22ce;">
-                    ${log._harvestItem.avg_price_per_fruit > 0 ? `
-                      <span style="display:inline-flex;align-items:center;gap:4px;font-weight:700;">
-                        <i data-lucide="calculator" class="lucide-xs"></i> Bình quân: <strong>${log._harvestItem.avg_price_per_fruit.toLocaleString('vi-VN')} VNĐ/quả</strong>
-                      </span>
-                    ` : ''}
-                    ${log._harvestItem.quality ? `
-                      <span style="display:inline-flex;align-items:center;gap:4px;color:#6b21a8;font-weight:600;">
-                        <i data-lucide="award" class="lucide-xs"></i> ${esc(log._harvestItem.quality)}
-                      </span>
-                    ` : ''}
-                    ${(log.batch_code || (log.details && log.details.batch_code)) ? `
-                      <span style="font-family:monospace;font-weight:700;color:#0369a1;background:#e0f2fe;padding:1px 6px;border-radius:4px;border:1px solid #bae6fd;">
-                        <i data-lucide="scan" class="lucide-xs"></i> Lô: ${esc(log.batch_code || log.details.batch_code)}
-                      </span>
-                    ` : ''}
-                  </div>
-                </div>
-              ` : (log._materialName && log._cost > 0) ? `
-                <div style="margin-top:8px;padding:8px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-                  <div style="font-size:12px;color:#166534;font-weight:700;display:inline-flex;align-items:center;gap:6px;">
-                    <i data-lucide="package" class="lucide-xs" style="color:#16a34a;"></i>
-                    <span>Vật tư: <strong>${esc(log._materialName)}</strong> ${log._materialQty ? `(${esc(log._materialQty)})` : ''}</span>
-                  </div>
-                  <div style="font-size:12.5px;font-weight:800;color:#15803d;background:#dcfce7;padding:2px 8px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;">
-                    <i data-lucide="receipt" class="lucide-xs"></i>
-                    <span>Tiêu hao: ${log._cost.toLocaleString('vi-VN')} VNĐ</span>
-                  </div>
-                </div>
-              ` : ''}
-
-              ${(log.operator_name || log.equipment_used) ? `
-                <div style="font-size:11px;color:#64748b;margin-top:6px;display:flex;gap:12px;flex-wrap:wrap;">
-                  ${log.operator_name ? `<span><i data-lucide="user" class="lucide-xs"></i> Nhân sự: <strong>${esc(log.operator_name)}</strong></span>` : ''}
-                  ${log.equipment_used ? `<span><i data-lucide="wrench" class="lucide-xs"></i> Thiết bị: <strong>${esc(log.equipment_used)}</strong></span>` : ''}
-                </div>` : ''}
-              
-              ${photos.length ? `
-                <div style="display:flex;gap:6px;margin-top:8px;overflow-x:auto;">
-                  ${photos.map(pUrl => `<img src="${esc(pUrl)}" style="width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid #cbd5e1;cursor:pointer;" onclick="if(window.openLightbox) openLightbox('${esc(pUrl)}')">`).join('')}
-                </div>` : ''}
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
+  // Store enriched logs + audit comparison chain for filtering & full detail rendering
+  _enrichErpAuditChain(enrichedLogs);
+  window._currentErpEnrichedLogs = enrichedLogs;
+  _populateErpSupplyFilter(enrichedLogs);
+  if (typeof window.resetErpModalLogFilters === 'function') {
+    window.resetErpModalLogFilters(true);
   }
+  _renderErpModalLogsList(enrichedLogs);
 
   // Render Cost Breakdown in Tab 3
   if (costTotalEl) costTotalEl.textContent = `${totalCost.toLocaleString('vi-VN')} VNĐ`;
@@ -866,6 +678,9 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
     window.lucide.createIcons();
   }
   if (window.refreshIcons) window.refreshIcons();
+  if (window.PlantBookI18n && typeof window.PlantBookI18n.applyDomTranslations === 'function') {
+    window.PlantBookI18n.applyDomTranslations();
+  }
   setTimeout(() => {
     if (window.lucide && typeof window.lucide.createIcons === 'function') {
       window.lucide.createIcons();
@@ -873,11 +688,343 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
   }, 50);
 }
 
+function _fmtErpShortDate(dVal) {
+  if (!dVal) return '';
+  const str = String(dVal);
+  const isoMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoMatch) return `${isoMatch[3]}/${isoMatch[2]}/${isoMatch[1]}`;
+  const d = new Date(dVal);
+  if (!isNaN(d.getTime())) {
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  }
+  return str.slice(0, 10);
+}
+
+export function _formatErpLogDateTime(log) {
+  if (!log) return '—';
+  const details = (typeof log.details === 'string') ? (() => { try { return JSON.parse(log.details); } catch (_) { return {}; } })() : (log.details || {});
+  const datePart = _fmtErpShortDate(log.log_date || log.created_at);
+  let timePart = '';
+  if (details.audit_time && /^\d{1,2}:\d{2}/.test(String(details.audit_time))) {
+    timePart = String(details.audit_time).slice(0, 5);
+  } else if (details.performed_at || log.created_at) {
+    const d = new Date(details.performed_at || log.created_at);
+    if (!isNaN(d.getTime())) {
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mi = String(d.getMinutes()).padStart(2, '0');
+      if (hh !== '00' || mi !== '00') timePart = `${hh}:${mi}`;
+    }
+  }
+  if (!datePart) return '—';
+  return timePart ? `${datePart} · ${timePart}` : datePart;
+}
+
+function _enrichErpAuditChain(logs) {
+  if (!Array.isArray(logs) || !logs.length) return;
+  const targets = logs.filter(l => l && (l.log_type === 'Kiểm toán quả' || l.log_type === 'Thu hoạch' || l._isFruitAudit || l._isHarvest));
+  targets.sort((a, b) => {
+    const dA = a.log_date ? String(a.log_date).slice(0, 10) : '';
+    const dB = b.log_date ? String(b.log_date).slice(0, 10) : '';
+    if (dA !== dB) return dA.localeCompare(dB);
+    const tA = (a.details && (a.details.audit_time || a.details.performed_at)) || a.created_at || '';
+    const tB = (b.details && (b.details.audit_time || b.details.performed_at)) || b.created_at || '';
+    return String(tA).localeCompare(String(tB)) || ((a.id || 0) - (b.id || 0));
+  });
+
+  let lastAudit = null;
+  for (const l of targets) {
+    let d = l.details || {};
+    if (typeof d === 'string') {
+      try { d = JSON.parse(d); } catch (_) { d = {}; }
+      l.details = d;
+    }
+    const dIso = (l.log_date || l.created_at) ? String(l.log_date || l.created_at).slice(0, 10) : '';
+    if (l.log_type === 'Kiểm toán quả' || l._isFruitAudit) {
+      const stage = d.audit_stage || d.fruit_stage || (l._fruitAuditItem && l._fruitAuditItem.stage) || 'Đậu quả';
+      const cnt = parseInt(d.fruit_count ?? d.amount ?? (l._fruitAuditItem && l._fruitAuditItem.fruit_count), 10);
+      if (!isNaN(cnt)) {
+        if (lastAudit) {
+          const delta = cnt - lastAudit.count;
+          const pct = lastAudit.count > 0 ? Number(((delta / lastAudit.count) * 100).toFixed(1)) : 0;
+          const label = delta < 0 ? `Suy giảm ${Math.abs(delta)} quả (${pct}%)` : (delta > 0 ? `Tăng ${delta} quả (+${pct}%)` : 'Giữ nguyên số quả (0%)');
+          d.prev_stage = lastAudit.stage;
+          d.prev_fruit_count = lastAudit.count;
+          d.prev_log_date = lastAudit.dateIso;
+          d.delta_count = delta;
+          d.delta_pct = pct;
+          d.comparison_text = `${lastAudit.stage} (${_fmtErpShortDate(lastAudit.dateIso)}): ${lastAudit.count} quả → ${stage} (${_fmtErpShortDate(dIso)}): ${cnt} quả (${label})`;
+        } else {
+          d.comparison_text = d.comparison_text || `Khởi tạo mốc ${stage} (${_fmtErpShortDate(dIso)}): ${cnt} quả`;
+        }
+        if (l._fruitAuditItem) l._fruitAuditItem.comparison_text = d.comparison_text;
+        lastAudit = { stage, count: cnt, dateIso: dIso };
+      }
+    } else if (l.log_type === 'Thu hoạch' || l._isHarvest) {
+      const hCount = parseInt(d.fruit_count ?? (l._harvestItem && l._harvestItem.fruit_count), 10);
+      if (lastAudit && !isNaN(hCount) && hCount > 0) {
+        const delta = hCount - lastAudit.count;
+        const pct = lastAudit.count > 0 ? Number(((delta / lastAudit.count) * 100).toFixed(1)) : 0;
+        const label = delta < 0 ? `Suy giảm ${Math.abs(delta)} quả (${pct}%)` : (delta > 0 ? `Tăng ${delta} quả (+${pct}%)` : 'Khớp 100% số quả');
+        d.prev_audit_stage = lastAudit.stage;
+        d.prev_audit_count = lastAudit.count;
+        d.prev_audit_date = lastAudit.dateIso;
+        d.harvest_delta_count = delta;
+        d.harvest_delta_pct = pct;
+        d.harvest_comparison_text = `So với Kiểm toán ${lastAudit.stage} (${_fmtErpShortDate(lastAudit.dateIso)}: ${lastAudit.count} quả): Thu hoạch ${hCount} quả (${label})`;
+        if (l._harvestItem) l._harvestItem.harvest_comparison_text = d.harvest_comparison_text;
+      }
+    }
+  }
+}
+
+function _populateErpSupplyFilter(logs) {
+  const sel = document.getElementById('erp-log-filter-supply');
+  if (!sel) return;
+  const suppliesSet = new Set();
+  (logs || []).forEach(l => {
+    let d = l.details || {};
+    if (typeof d === 'string') { try { d = JSON.parse(d); } catch (_) { d = {}; } }
+    const name = l._materialName || d.supply_name || d.material_name || d.fertilizer_name || d.pesticide_name || d.name || '';
+    if (name && String(name).trim()) suppliesSet.add(String(name).trim());
+  });
+  const opts = ['<option value="all">Tất cả vật tư</option>'];
+  Array.from(suppliesSet).sort((a, b) => a.localeCompare(b, 'vi')).forEach(name => {
+    opts.push(`<option value="${esc(name)}">${esc(name)}</option>`);
+  });
+  sel.innerHTML = opts.join('');
+}
+
+function _buildErpLogSpecialFieldsHtml(log) {
+  let d = log.details || {};
+  if (typeof d === 'string') { try { d = JSON.parse(d); } catch (_) { d = {}; } }
+  if (log._isFruitAudit) {
+    return `
+      <div style="margin-top:8px;padding:10px 14px;background:linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);border:1.5px solid #5eead4;border-radius:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+          <div style="font-size:13px;color:#0f766e;font-weight:800;display:inline-flex;align-items:center;gap:6px;">
+            <i data-lucide="clipboard-check" class="lucide-sm" style="color:#0d9488;"></i>
+            <span>Giai đoạn: <strong>[${esc(log._fruitAuditItem.stage)}]</strong> · Đếm: <strong style="font-size:14px;">${log._fruitAuditItem.fruit_count} quả</strong></span>
+          </div>
+          ${log._fruitAuditItem.estimated_yield_kg > 0 ? `<span style="font-size:12px;font-weight:800;color:#065f46;background:#ffffff;border:1px solid #99f6e4;padding:2px 8px;border-radius:6px;">Ước tính: ~${log._fruitAuditItem.estimated_yield_kg} kg</span>` : ''}
+        </div>
+        <div style="margin-top:5px;display:flex;gap:12px;flex-wrap:wrap;font-size:11.5px;color:#115e59;font-weight:600;">
+          <span>Rụng/Tỉa bỏ: <strong>${log._fruitAuditItem.culled_count} quả</strong></span>
+          ${log._fruitAuditItem.audit_time ? `<span>Giờ kiểm đếm: <strong>${esc(log._fruitAuditItem.audit_time)}</strong></span>` : ''}
+          ${log._fruitAuditItem.reason ? `<span>Lý do: <strong>${esc(log._fruitAuditItem.reason)}</strong></span>` : ''}
+        </div>
+        ${log._fruitAuditItem.comparison_text ? `<div style="margin-top:6px;padding:6px 10px;background:#ffffff;border:1px solid #99f6e4;border-radius:7px;font-size:11.5px;font-weight:700;color:#0f766e;"><i data-lucide="git-compare" class="lucide-xs"></i> ${esc(log._fruitAuditItem.comparison_text)}</div>` : ''}
+      </div>
+    `;
+  }
+  if (log._isHarvest) {
+    return `
+      <div style="margin-top:8px;padding:10px 14px;background:linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);border:1.5px solid #d8b4fe;border-radius:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+          <div style="font-size:13px;color:#6b21a8;font-weight:800;display:inline-flex;align-items:center;gap:6px;">
+            <i data-lucide="package-check" class="lucide-sm" style="color:#9333ea;"></i>
+            <span>Sản lượng: <strong style="color:#581c87;font-size:14px;">${log._harvestItem.amount} ${esc(log._harvestItem.unit)}</strong> ${log._harvestItem.fruit_count > 0 ? `(${log._harvestItem.fruit_count} quả)` : ''}</span>
+          </div>
+          <div style="font-size:12.5px;font-weight:900;color:#047857;background:#dcfce7;border:1px solid #86efac;padding:3px 10px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;">
+            <i data-lucide="badge-dollar-sign" class="lucide-xs"></i>
+            <span>+${log._harvestItem.revenue.toLocaleString('vi-VN')} VNĐ</span>
+          </div>
+        </div>
+        <div style="margin-top:6px;padding-top:6px;border-top:1px dashed #e9d5ff;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;font-size:11.5px;color:#7e22ce;">
+          ${log._harvestItem.avg_price_per_fruit > 0 ? `<span style="font-weight:700;">Bình quân: <strong>${log._harvestItem.avg_price_per_fruit.toLocaleString('vi-VN')} VNĐ/quả</strong></span>` : ''}
+          ${log._harvestItem.quality ? `<span style="color:#6b21a8;font-weight:600;">Phẩm cấp: <strong>${esc(log._harvestItem.quality)}</strong></span>` : ''}
+          ${(log.batch_code || d.batch_code) ? `<span style="font-family:monospace;font-weight:700;color:#0369a1;background:#e0f2fe;padding:1px 6px;border-radius:4px;border:1px solid #bae6fd;">Lô: ${esc(log.batch_code || d.batch_code)}</span>` : ''}
+        </div>
+        ${(d.harvest_comparison_text || log._harvestItem.harvest_comparison_text) ? `<div style="margin-top:6px;padding:6px 10px;background:#ffffff;border:1px solid #e9d5ff;border-radius:7px;font-size:11.5px;font-weight:700;color:#6b21a8;">${esc(d.harvest_comparison_text || log._harvestItem.harvest_comparison_text)}</div>` : ''}
+      </div>
+    `;
+  }
+  const typeLower = String(log.log_type || '').toLowerCase();
+  const chips = [];
+  if (d.method) chips.push(`<span>Phương pháp: <strong>${esc(d.method)}</strong></span>`);
+  if (d.active_ingredient) chips.push(`<span>Hoạt chất: <strong>${esc(d.active_ingredient)}</strong></span>`);
+  if (d.water_volume) chips.push(`<span>Nước pha: <strong>${esc(d.water_volume)} L</strong></span>`);
+  if (d.phi_days) chips.push(`<span>Cách ly PHI: <strong>${esc(d.phi_days)} ngày</strong></span>`);
+  if (d.work_content) chips.push(`<span>Công việc: <strong>${esc(d.work_content)}</strong></span>`);
+  if (d.worker_count || d.workers_count) chips.push(`<span>Nhân công: <strong>${esc(d.worker_count || d.workers_count)} người</strong></span>`);
+  if (d.time_range) chips.push(`<span>Ca làm: <strong>${esc(d.time_range)}</strong></span>`);
+  if (d.disease_name) chips.push(`<span>Tên bệnh: <strong>${esc(d.disease_name)}</strong></span>`);
+  if (d.severity) chips.push(`<span>Mức độ: <strong>${esc(d.severity)}</strong></span>`);
+  if (typeLower.includes('bệnh') && (d.treatment || d.solution)) chips.push(`<span>Xử lý: <strong>${esc(d.treatment || d.solution)}</strong></span>`);
+
+  const supplyHtml = (log._materialName || log._cost > 0) ? `
+    <div style="margin-top:8px;padding:8px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+      <div style="font-size:12px;color:#166534;font-weight:700;display:inline-flex;align-items:center;gap:6px;">
+        <i data-lucide="package" class="lucide-xs" style="color:#16a34a;"></i>
+        <span>Vật tư: <strong>${esc(log._materialName || 'Vật tư canh tác')}</strong> ${log._materialQty ? `(${esc(log._materialQty)})` : ''}</span>
+      </div>
+      ${log._cost > 0 ? `
+        <div style="font-size:12.5px;font-weight:800;color:#15803d;background:#dcfce7;padding:2px 8px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;">
+          <i data-lucide="receipt" class="lucide-xs"></i>
+          <span>Tiêu hao: ${log._cost.toLocaleString('vi-VN')} VNĐ</span>
+        </div>
+      ` : ''}
+    </div>
+  ` : '';
+
+  const chipsHtml = chips.length ? `
+    <div style="margin-top:6px;padding:7px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;display:flex;flex-wrap:wrap;gap:10px;font-size:11.5px;color:#334155;font-weight:600;">
+      ${chips.join('')}
+    </div>
+  ` : '';
+
+  return supplyHtml + chipsHtml;
+}
+
+export function _renderErpModalLogsList(logsToRender) {
+  const timelineContainer = document.getElementById('erp-plant-logs-timeline-container');
+  const summaryEl = document.getElementById('erp-log-filter-summary');
+  const totalCount = (window._currentErpEnrichedLogs || []).length;
+  const shownCount = (logsToRender || []).length;
+  if (summaryEl) {
+    summaryEl.textContent = totalCount > 0 ? `Hiển thị ${shownCount} / ${totalCount} nhật ký canh tác` : '';
+  }
+  if (!timelineContainer) return;
+
+  if (!shownCount) {
+    timelineContainer.innerHTML = `
+      <div style="text-align:center;padding:28px 16px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:12px;color:#64748b;">
+        <i data-lucide="calendar-off" class="lucide-md" style="color:#94a3b8;margin-bottom:6px;"></i>
+        <div style="font-weight:700;font-size:13px;color:#334155;">${totalCount > 0 ? 'Không có nhật ký phù hợp với bộ lọc' : 'Chưa có dữ liệu nhật ký canh tác'}</div>
+        <div style="font-size:12px;margin-top:2px;">${totalCount > 0 ? 'Thử thay đổi hạng mục, khoảng ngày hoặc vật tư để xem kết quả khác.' : 'Bấm nút "+ Thêm nhật ký mới" để ghi lại hoạt động tưới tiêu, bón phân, phun thuốc hoặc thu hoạch.'}</div>
+      </div>
+    `;
+  } else {
+    timelineContainer.innerHTML = logsToRender.map((log) => {
+      let typeColor = '#059669';
+      let typeBg = '#ecfdf5';
+      let iconName = 'clipboard-check';
+      const typeStr = String(log.log_type || '').toLowerCase();
+      if (typeStr.includes('tưới') || typeStr.includes('tuoi') || typeStr.includes('water')) {
+        typeColor = '#0284c7'; typeBg = '#f0f9ff'; iconName = 'droplet';
+      } else if (typeStr.includes('nhân công') || typeStr.includes('nhan cong') || typeStr.includes('labor')) {
+        typeColor = '#2563eb'; typeBg = '#eff6ff'; iconName = 'users';
+      } else if (typeStr.includes('phân') || typeStr.includes('phan') || typeStr.includes('fertil')) {
+        typeColor = '#16a34a'; typeBg = '#f0fdf4'; iconName = 'sprout';
+      } else if (typeStr.includes('thuốc') || typeStr.includes('thuoc') || typeStr.includes('pest') || typeStr.includes('sâu') || typeStr.includes('bệnh')) {
+        typeColor = '#d97706'; typeBg = '#fffbeb'; iconName = 'shield-alert';
+      } else if (typeStr.includes('kiểm toán quả') || typeStr.includes('kiem toan qua')) {
+        typeColor = '#0f766e'; typeBg = '#f0fdfa'; iconName = 'clipboard-check';
+      } else if (typeStr.includes('thu hoạch') || typeStr.includes('harvest')) {
+        typeColor = '#9333ea'; typeBg = '#faf5ff'; iconName = 'package-check';
+      } else if (typeStr.includes('tỉa') || typeStr.includes('pruning')) {
+        typeColor = '#475569'; typeBg = '#f8fafc'; iconName = 'scissors';
+      }
+
+      const rawPhotos = Array.isArray(log.media_urls) ? log.media_urls : (log.media_urls ? [log.media_urls] : []);
+      const photos = rawPhotos.map(p => (typeof p === 'object' && p !== null) ? p.url : p).filter(Boolean);
+      const formattedTime = _formatErpLogDateTime(log);
+      const dObj = (typeof log.details === 'string') ? (() => { try { return JSON.parse(log.details); } catch (_) { return {}; } })() : (log.details || {});
+      const operatorDisplay = log.operator_name || log.creator_name || dObj.operator_name || 'Kỹ thuật viên trang trại';
+      const noteText = (log.note && String(log.note).trim()) ? log.note : (log.action && String(log.action).trim() ? log.action : 'Không có ghi chú chi tiết.');
+
+      return `
+        <div style="background:#ffffff;border:1px solid #e2e8f0;border-left:4px solid ${typeColor};border-radius:12px;padding:12px 14px;display:flex;gap:12px;align-items:flex-start;box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+          <div style="width:36px;height:36px;border-radius:10px;background:${typeBg};color:${typeColor};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;margin-top:2px;">
+            <i data-lucide="${iconName}" class="lucide-sm"></i>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:4px;">
+              <span style="font-size:13.5px;font-weight:800;color:#0f172a;">${esc(log.log_type || 'Nhật ký chăm sóc')}</span>
+              <span style="font-size:11.5px;color:#64748b;font-weight:700;display:inline-flex;align-items:center;gap:4px;">
+                <i data-lucide="clock" class="lucide-xs"></i> ${esc(formattedTime)}
+              </span>
+            </div>
+
+            <div style="font-size:12px;color:#334155;line-height:1.5;">
+              <span style="color:#64748b;font-weight:700;">Ghi chú:</span> ${esc(noteText)}
+            </div>
+
+            ${_buildErpLogSpecialFieldsHtml(log)}
+
+            <div style="font-size:11px;color:#64748b;margin-top:7px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+              <span><i data-lucide="user" class="lucide-xs"></i> Nhân sự: <strong>${esc(operatorDisplay)}</strong></span>
+              ${log.equipment_used ? `<span><i data-lucide="wrench" class="lucide-xs"></i> Thiết bị: <strong>${esc(log.equipment_used)}</strong></span>` : ''}
+            </div>
+
+            ${photos.length ? `
+              <div style="display:flex;gap:6px;margin-top:8px;overflow-x:auto;">
+                ${photos.map(pUrl => `<img src="${esc(pUrl)}" style="width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid #cbd5e1;cursor:pointer;" onclick="if(window.openLightbox) openLightbox('${esc(pUrl)}')">`).join('')}
+              </div>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
+  if (window.refreshIcons) window.refreshIcons();
+  if (window.PlantBookI18n && typeof window.PlantBookI18n.applyDomTranslations === 'function') {
+    window.PlantBookI18n.applyDomTranslations();
+  }
+}
+
+export function filterErpModalLogs() {
+  const all = window._currentErpEnrichedLogs || [];
+  const typeVal = document.getElementById('erp-log-filter-type')?.value || 'all';
+  const fromVal = document.getElementById('erp-log-filter-from')?.value || '';
+  const toVal = document.getElementById('erp-log-filter-to')?.value || '';
+  const supplyVal = (document.getElementById('erp-log-filter-supply')?.value || 'all').toLowerCase();
+  const searchVal = (document.getElementById('erp-log-filter-search')?.value || '').trim().toLowerCase();
+
+  const filtered = all.filter(log => {
+    if (typeVal !== 'all' && String(log.log_type || '').toLowerCase() !== typeVal.toLowerCase()) {
+      return false;
+    }
+    const rawDate = log.log_date || log.created_at || '';
+    const dateIso = rawDate ? String(rawDate).slice(0, 10) : '';
+    if (fromVal && dateIso && dateIso < fromVal) return false;
+    if (toVal && dateIso && dateIso > toVal) return false;
+
+    let d = log.details || {};
+    if (typeof d === 'string') { try { d = JSON.parse(d); } catch (_) { d = {}; } }
+    const mat = String(log._materialName || d.supply_name || d.material_name || d.fertilizer_name || d.pesticide_name || d.name || '').toLowerCase();
+    if (supplyVal !== 'all' && !mat.includes(supplyVal)) return false;
+
+    if (searchVal) {
+      const hay = [
+        log.log_type, log.note, log.action, log.operator_name, log.creator_name, log.equipment_used,
+        mat, d.audit_stage, d.fruit_stage, d.comparison_text, d.reason, d.work_content, d.disease_name, log.batch_code
+      ].filter(Boolean).join(' ').toLowerCase();
+      if (!hay.includes(searchVal)) return false;
+    }
+    return true;
+  });
+
+  _renderErpModalLogsList(filtered);
+  return filtered;
+}
+
+export function resetErpModalLogFilters(silent) {
+  const typeEl = document.getElementById('erp-log-filter-type');
+  const fromEl = document.getElementById('erp-log-filter-from');
+  const toEl = document.getElementById('erp-log-filter-to');
+  const supEl = document.getElementById('erp-log-filter-supply');
+  const searchEl = document.getElementById('erp-log-filter-search');
+  if (typeEl) typeEl.value = 'all';
+  if (fromEl) fromEl.value = '';
+  if (toEl) toEl.value = '';
+  if (supEl) supEl.value = 'all';
+  if (searchEl) searchEl.value = '';
+  if (!silent) {
+    filterErpModalLogs();
+  }
+}
+
 window.openPlantProfileModal = openPlantProfileModal;
 window.closePlantProfileModal = closePlantProfileModal;
 window.switchErpProfileTab = switchErpProfileTab;
 window.onErpProfileCareClick = onErpProfileCareClick;
 window.onErpProfileNfcClick = onErpProfileNfcClick;
+window.filterErpModalLogs = filterErpModalLogs;
+window.resetErpModalLogFilters = resetErpModalLogFilters;
 
 // ── Growth Stage Photo Timeline & Gallery Controller (Append-Only) ──
 function _getGrowthStageLucideIcon(stageStr) {

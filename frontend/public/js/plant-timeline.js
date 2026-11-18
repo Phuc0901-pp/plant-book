@@ -27,7 +27,7 @@ function enrichPublicPlantLogsWithAuditChain(logs) {
     const d = l.details;
     const dDateIso = l.log_date ? new Date(l.log_date).toISOString().slice(0, 10) : '';
     if (l.log_type === 'Kiểm toán quả') {
-      const stage = d.audit_stage || 'Đậu quả';
+      const stage = d.audit_stage || d.fruit_stage || 'Đậu quả';
       const cnt = parseInt(d.fruit_count ?? d.amount, 10);
       if (!isNaN(cnt)) {
         if (lastAudit) {
@@ -124,7 +124,7 @@ function getCareLogSummary(log) {
     return `Đã thụ phấn chéo ban đêm. Tỷ lệ tiếp nhận phấn: <strong>${esc(details.pollination_rate || '95%')}</strong>.`;
   }
   if (log.log_type === 'Kiểm toán quả') {
-    const stage = details.audit_stage || 'Đậu quả';
+    const stage = details.audit_stage || details.fruit_stage || 'Đậu quả';
     const cnt = details.fruit_count !== undefined ? details.fruit_count : (qty || 0);
     const reasonStr = details.reason ? ` · Ghi nhận: <strong>${esc(details.reason)}</strong>` : '';
     const cmpColor = (typeof details.delta_count === 'number' && details.delta_count < 0) ? '#dc2626' : '#0f766e';
@@ -191,7 +191,7 @@ function getShortSummary(log) {
     return `Thụ phấn hoa chéo ban đêm (${esc(details.pollination_rate || 'Đạt 95%')})`;
   }
   if (log.log_type === 'Kiểm toán quả') {
-    const stage = details.audit_stage || 'Đậu quả';
+    const stage = details.audit_stage || details.fruit_stage || 'Đậu quả';
     const cnt = details.fruit_count !== undefined ? details.fruit_count : (qty || 0);
     const cmpShort = details.comparison_text ? ` · ${details.comparison_text}` : '';
     return `[${esc(stage)}] ${esc(cnt)} quả${esc(cmpShort)}`;
@@ -211,6 +211,80 @@ function getShortSummary(log) {
     return `${sevIcon} Phát hiện bệnh: ${esc(details.disease_name || 'Bệnh chưa xác định')}`;
   }
   return esc(log.note || '').slice(0, 50) + (log.note && log.note.length > 50 ? '...' : '');
+}
+
+function _buildPublicSpecialFieldsHtml(log) {
+  const details = (log && log.details && typeof log.details === 'object') ? log.details : {};
+  const qty = getQuantity(details);
+  const unit = getUnit(details, log.log_type === 'Tưới nước' ? 'Lít' : 'kg');
+  const items = [];
+  let boxClass = 'log-special-fields-box';
+
+  if (log.log_type === 'Kiểm toán quả') {
+    boxClass += ' audit-box';
+    const stage = details.audit_stage || details.fruit_stage || 'Đậu quả';
+    const cnt = details.fruit_count !== undefined ? details.fruit_count : (qty || 0);
+    items.push(`<span>Giai đoạn: <strong>[${esc(stage)}]</strong></span>`);
+    items.push(`<span>Số quả đếm: <strong>${esc(cnt)} quả</strong></span>`);
+    if (details.dropped_or_culled_count !== undefined && details.dropped_or_culled_count !== '') {
+      items.push(`<span>Rụng/Tỉa bỏ: <strong>${esc(details.dropped_or_culled_count)} quả</strong></span>`);
+    }
+    if (details.audit_time) items.push(`<span>Giờ kiểm đếm: <strong>${esc(details.audit_time)}</strong></span>`);
+    if (details.reason) items.push(`<span>Lý do: <strong>${esc(details.reason)}</strong></span>`);
+    if (details.comparison_text) {
+      items.push(`<span style="flex-basis:100%; margin-top:2px; padding:4px 8px; background:#ffffff; border:1px solid #99f6e4; border-radius:6px; font-weight:700;">${esc(details.comparison_text)}</span>`);
+    }
+  } else if (log.log_type === 'Thu hoạch') {
+    boxClass += ' harvest-box';
+    const yieldKg = details.yield_kg || details.amount || qty || '';
+    if (yieldKg !== '') items.push(`<span>Sản lượng: <strong>${esc(yieldKg)} ${esc(details.unit || 'kg')}</strong></span>`);
+    if (details.fruit_count) items.push(`<span>Số quả: <strong>${esc(details.fruit_count)} quả</strong></span>`);
+    if (details.quality) items.push(`<span>Phẩm cấp: <strong>${esc(details.quality)}</strong></span>`);
+    if (log.batch_code || details.batch_code) items.push(`<span>Mã lô VietGAP: <strong>${esc(log.batch_code || details.batch_code)}</strong></span>`);
+    if (details.harvest_comparison_text) {
+      items.push(`<span style="flex-basis:100%; margin-top:2px; padding:4px 8px; background:#ffffff; border:1px solid #e9d5ff; border-radius:6px; font-weight:700;">${esc(details.harvest_comparison_text)}</span>`);
+    }
+  } else if (log.log_type === 'Tưới nước') {
+    const method = details.method || log.equipment_used || 'Tưới gốc';
+    const qtyStr = qty ? `${qty} ${unit}` : (details.water_liters ? `${details.water_liters} Lít` : '');
+    items.push(`<span>Phương pháp: <strong>${esc(method)}</strong></span>`);
+    if (qtyStr) items.push(`<span>Lượng nước: <strong>${esc(qtyStr)}</strong></span>`);
+    if (details.duration) items.push(`<span>Thời lượng: <strong>${esc(details.duration)}</strong></span>`);
+    if (details.source) items.push(`<span>Nguồn nước: <strong>${esc(details.source)}</strong></span>`);
+  } else if (log.log_type === 'Bón phân') {
+    const fertName = getFertilizerName(details) || 'Phân bón chuyên dụng';
+    items.push(`<span>Vật tư: <strong>${esc(fertName)}</strong></span>`);
+    if (qty) items.push(`<span>Liều lượng: <strong>${esc(qty)} ${esc(unit)}</strong></span>`);
+    if (details.method) items.push(`<span>Phương pháp: <strong>${esc(details.method)}</strong></span>`);
+    if (details.active_ingredient) items.push(`<span>Thành phần: <strong>${esc(details.active_ingredient)}</strong></span>`);
+  } else if (log.log_type === 'Phun thuốc') {
+    const pestName = getPesticideName(details) || 'Thuốc bảo vệ thực vật';
+    items.push(`<span>Vật tư: <strong>${esc(pestName)}</strong></span>`);
+    if (qty) items.push(`<span>Liều lượng: <strong>${esc(qty)} ${esc(unit)}</strong></span>`);
+    if (details.water_volume) items.push(`<span>Nước pha: <strong>${esc(details.water_volume)} L</strong></span>`);
+    if (details.active_ingredient) items.push(`<span>Hoạt chất: <strong>${esc(details.active_ingredient)}</strong></span>`);
+    if (details.target_pest) items.push(`<span>Đối tượng: <strong>${esc(details.target_pest)}</strong></span>`);
+    if (details.phi_days) items.push(`<span>Cách ly PHI: <strong>${esc(details.phi_days)} ngày</strong></span>`);
+  } else if (log.log_type === 'Nhân công') {
+    const work = details.work_content || details.activity || 'Canh tác vườn';
+    items.push(`<span>Công việc: <strong>${esc(work)}</strong></span>`);
+    if (details.worker_count || details.workers_count) items.push(`<span>Số công: <strong>${esc(details.worker_count || details.workers_count)} người</strong></span>`);
+    if (details.time_range) items.push(`<span>Ca làm: <strong>${esc(details.time_range)}</strong></span>`);
+  } else if (log.log_type === 'Bệnh cây') {
+    boxClass += ' disease-box';
+    items.push(`<span>Bệnh hại: <strong>${esc(details.disease_name || 'Bệnh chưa xác định')}</strong></span>`);
+    if (details.severity) items.push(`<span>Mức độ: <strong>${esc(details.severity)}</strong></span>`);
+    if (details.symptoms || details.description) items.push(`<span>Triệu chứng: <strong>${esc(details.symptoms || details.description)}</strong></span>`);
+    if (details.treatment || details.solution) items.push(`<span>Xử lý: <strong>${esc(details.treatment || details.solution)}</strong></span>`);
+  } else {
+    const extraKeys = Object.entries(details).filter(([k, v]) => v !== null && v !== undefined && v !== '' && !['performed_at', 'media_urls'].includes(k));
+    extraKeys.slice(0, 4).forEach(([k, v]) => {
+      items.push(`<span>${esc(k)}: <strong>${esc(typeof v === 'object' ? JSON.stringify(v) : v)}</strong></span>`);
+    });
+  }
+
+  if (!items.length) return '';
+  return `<div class="${boxClass}">${items.join('')}</div>`;
 }
 
 function _renderTimelineItemHtml(log) {
@@ -271,8 +345,8 @@ function _renderTimelineItemHtml(log) {
     chibiKey = 'chibi-disease';
   }
   
-  const timeVal = (log.details && log.details.performed_at) ? log.details.performed_at : log.created_at;
-  const fullDateTime = fmtDateTime(timeVal);
+  const timeVal = (log.details && log.details.performed_at) ? log.details.performed_at : (log.created_at || log.log_date);
+  const fullDateTime = typeof fmtDateTime === 'function' ? fmtDateTime(timeVal) : _fmtPublicShortDate(timeVal);
 
   let mediaUrls = [];
   if (log.media_urls) {
@@ -289,7 +363,7 @@ function _renderTimelineItemHtml(log) {
     mediaUrls = Array.isArray(log.details.media_urls) ? log.details.media_urls : [];
   }
   // Smart correlation fallback: If mediaUrls is empty and currentPlantData has media gallery items
-  if ((!mediaUrls || mediaUrls.length === 0) && currentPlantData && Array.isArray(currentPlantData.media) && currentPlantData.media.length > 0) {
+  if ((!mediaUrls || mediaUrls.length === 0) && typeof currentPlantData !== 'undefined' && currentPlantData && Array.isArray(currentPlantData.media) && currentPlantData.media.length > 0) {
     const logDateStr = log.log_date ? new Date(log.log_date).toISOString().slice(0, 10) : '';
     if (log.log_type === 'Bệnh cây') {
       const matched = currentPlantData.media.filter(m => {
@@ -323,9 +397,15 @@ function _renderTimelineItemHtml(log) {
       }).join('')}
     </div>` : '';
 
-  const noteHtml = log.note
-    ? `<div class="log-body" style="margin-top: 6px; color: var(--text-secondary); font-size:12px;"><i data-lucide="message-circle" class="lucide-sm"></i> ${esc(log.note)}</div>`
+  const dObj = (log.details && typeof log.details === 'object') ? log.details : {};
+  const operatorName = log.operator_name || log.creator_name || dObj.operator_name || 'Kỹ thuật viên trang trại';
+  const equipText = log.equipment_used || dObj.equipment_used || '';
+  const batchText = log.batch_code || dObj.batch_code || '';
+  const rawNote = (log.note && String(log.note).trim()) ? String(log.note).trim() : '';
+  const visibleNoteHtml = rawNote
+    ? `<div class="log-note-visible"><span style="font-weight:700;color:#475569;">Ghi chú:</span> ${esc(rawNote)}</div>`
     : '';
+  const specialFieldsHtml = _buildPublicSpecialFieldsHtml(log);
 
   return `
     <div class="timeline-item">
@@ -341,20 +421,141 @@ function _renderTimelineItemHtml(log) {
             <i data-lucide="chevron-down" class="toggle-arrow lucide-sm"></i>
           </div>
         </div>
-        <div class="log-short-preview" style="font-size: 13px; color: var(--text-secondary); margin-top: 6px; font-weight: 500;">
+        <div class="log-short-preview" style="font-size: 13px; color: var(--text-primary); margin-top: 6px; font-weight: 600;">
           ${getShortSummary(log)}
         </div>
+        <div class="log-meta-bar">
+          <span class="meta-pill"><i data-lucide="user" class="lucide-xs" style="color:#059669;"></i> Người thực hiện: <strong>${esc(operatorName)}</strong></span>
+          ${equipText ? `<span class="meta-pill"><i data-lucide="wrench" class="lucide-xs" style="color:#0284c7;"></i> Thiết bị: <strong>${esc(equipText)}</strong></span>` : ''}
+          ${batchText ? `<span class="meta-pill" style="font-family:var(--font-mono);"><i data-lucide="scan" class="lucide-xs" style="color:#7c3aed;"></i> Lô: <strong>${esc(batchText)}</strong></span>` : ''}
+        </div>
+        ${specialFieldsHtml}
+        ${visibleNoteHtml}
         <div class="timeline-details">
           <div class="log-body">
             ${getCareLogSummary(log)}
           </div>
-          ${noteHtml}
           ${mediaThumbs}
         </div>
       </div>
     </div>
   `;
 }
+
+function _populatePublicTimelineSupplyOptions(logs) {
+  const sel = document.getElementById('pub-log-filter-supply');
+  if (!sel) return;
+  const set = new Set();
+  (logs || []).forEach(l => {
+    const d = (l && l.details && typeof l.details === 'object') ? l.details : {};
+    const name = getFertilizerName(d) || getPesticideName(d) || d.supply_name || d.material_name || '';
+    if (name && String(name).trim()) set.add(String(name).trim());
+  });
+  const opts = ['<option value="all">Tất cả vật tư</option>'];
+  Array.from(set).sort((a, b) => a.localeCompare(b, 'vi')).forEach(name => {
+    opts.push(`<option value="${esc(name)}">${esc(name)}</option>`);
+  });
+  sel.innerHTML = opts.join('');
+}
+window._populatePublicTimelineSupplyOptions = _populatePublicTimelineSupplyOptions;
+
+function _regroupPublicLogs(logs) {
+  const grouped = {};
+  const dates = [];
+  (logs || []).forEach(log => {
+    const dateStr = (typeof fmtDate === 'function') ? fmtDate(log.log_date) : _fmtPublicShortDate(log.log_date);
+    if (!grouped[dateStr]) {
+      grouped[dateStr] = [];
+      dates.push(dateStr);
+    }
+    grouped[dateStr].push(log);
+  });
+  return { grouped, dates };
+}
+
+function applyPublicTimelineFilters() {
+  const all = window._allPublicPlantLogs || [];
+  const typeEl = document.getElementById('pub-log-filter-type');
+  const supplyEl = document.getElementById('pub-log-filter-supply');
+  const fromEl = document.getElementById('pub-log-filter-from');
+  const toEl = document.getElementById('pub-log-filter-to');
+  const searchEl = document.getElementById('pub-log-filter-search');
+  const statusEl = document.getElementById('pub-log-filter-status');
+
+  const typeVal = typeEl ? typeEl.value : 'all';
+  const supplyVal = (supplyEl ? supplyEl.value : 'all').toLowerCase();
+  const fromVal = fromEl ? fromEl.value : '';
+  const toVal = toEl ? toEl.value : '';
+  const searchVal = (searchEl ? searchEl.value : '').trim().toLowerCase();
+
+  document.querySelectorAll('#pub-log-filter-chips .pub-filter-chip').forEach(btn => {
+    const bt = btn.getAttribute('data-log-type');
+    btn.classList.toggle('active', bt === typeVal);
+  });
+
+  const filtered = all.filter(log => {
+    if (typeVal !== 'all' && String(log.log_type || '').toLowerCase() !== typeVal.toLowerCase()) {
+      return false;
+    }
+    const rawDate = log.log_date || log.created_at || '';
+    const dateIso = rawDate ? String(rawDate).slice(0, 10) : '';
+    if (fromVal && dateIso && dateIso < fromVal) return false;
+    if (toVal && dateIso && dateIso > toVal) return false;
+
+    const d = (log.details && typeof log.details === 'object') ? log.details : {};
+    const supName = (getFertilizerName(d) || getPesticideName(d) || d.supply_name || d.material_name || '').toLowerCase();
+    if (supplyVal !== 'all' && !supName.includes(supplyVal)) return false;
+
+    if (searchVal) {
+      const hay = [
+        log.log_type, log.note, log.operator_name, log.creator_name, log.equipment_used,
+        log.batch_code, supName, d.audit_stage, d.fruit_stage, d.comparison_text,
+        d.harvest_comparison_text, d.reason, d.work_content, d.disease_name, d.method, d.active_ingredient
+      ].filter(Boolean).join(' ').toLowerCase();
+      if (!hay.includes(searchVal)) return false;
+    }
+    return true;
+  });
+
+  const { grouped, dates } = _regroupPublicLogs(filtered);
+  window._publicLogsGrouped = grouped;
+  window._publicLogDates = dates;
+  const hasFilter = typeVal !== 'all' || supplyVal !== 'all' || Boolean(fromVal) || Boolean(toVal) || Boolean(searchVal);
+  window._publicLogIsExpanded = hasFilter ? true : Boolean(window._publicLogIsExpanded);
+
+  if (statusEl) {
+    statusEl.textContent = all.length > 0
+      ? `Hiển thị ${filtered.length} / ${all.length} nhật ký (${dates.length} ngày canh tác)`
+      : '';
+  }
+
+  renderPublicLogTimeline(1, hasFilter ? true : window._publicLogIsExpanded);
+  return filtered;
+}
+window.applyPublicTimelineFilters = applyPublicTimelineFilters;
+
+function selectPublicTimelineCategoryChip(type) {
+  const typeEl = document.getElementById('pub-log-filter-type');
+  if (typeEl) typeEl.value = type || 'all';
+  applyPublicTimelineFilters();
+}
+window.selectPublicTimelineCategoryChip = selectPublicTimelineCategoryChip;
+
+function resetPublicTimelineFilters() {
+  const typeEl = document.getElementById('pub-log-filter-type');
+  const supEl = document.getElementById('pub-log-filter-supply');
+  const fromEl = document.getElementById('pub-log-filter-from');
+  const toEl = document.getElementById('pub-log-filter-to');
+  const searchEl = document.getElementById('pub-log-filter-search');
+  if (typeEl) typeEl.value = 'all';
+  if (supEl) supEl.value = 'all';
+  if (fromEl) fromEl.value = '';
+  if (toEl) toEl.value = '';
+  if (searchEl) searchEl.value = '';
+  window._publicLogIsExpanded = false;
+  applyPublicTimelineFilters();
+}
+window.resetPublicTimelineFilters = resetPublicTimelineFilters;
 
 function renderPublicLogTimeline(page = 1, expanded = false) {
   const container = document.getElementById('public-timeline-container');
@@ -363,13 +564,18 @@ function renderPublicLogTimeline(page = 1, expanded = false) {
 
   const dates = window._publicLogDates || [];
   if (dates.length === 0) {
+    const hasTotal = (window._allPublicPlantLogs || []).length > 0;
     container.innerHTML = `
-      <div style="text-align: center; padding: 40px 0; color: var(--text-muted);">
+      <div style="text-align: center; padding: 36px 0; color: var(--text-muted);">
         <i data-lucide="clipboard" class="lucide-sm" style="font-size: 32px; margin-bottom: 12px;"></i>
-        <p style="font-size: 13px;">Cây chưa có ghi chép nhật ký nào.</p>
+        <p style="font-size: 13px; font-weight: 600;">${hasTotal ? 'Không có bản ghi nhật ký phù hợp với điều kiện lọc.' : 'Cây chưa có ghi chép nhật ký nào.'}</p>
       </div>
     `;
     if (paginationBox) paginationBox.style.display = 'none';
+    if (window.lucide) lucide.createIcons();
+    if (window.PlantBookI18n && typeof window.PlantBookI18n.applyDomTranslations === 'function') {
+      window.PlantBookI18n.applyDomTranslations();
+    }
     return;
   }
 
@@ -379,13 +585,13 @@ function renderPublicLogTimeline(page = 1, expanded = false) {
     visibleDates = dates.slice(0, 3);
   } else {
     // Mode 2: Expanded with pagination (5 days per page)
-    const totalPages = Math.ceil(dates.length / window._publicLogPageSize) || 1;
+    const totalPages = Math.ceil(dates.length / (window._publicLogPageSize || 5)) || 1;
     if (page < 1) page = 1;
     if (page > totalPages) page = totalPages;
     window._publicLogCurrentPage = page;
 
-    const startIdx = (page - 1) * window._publicLogPageSize;
-    const endIdx = startIdx + window._publicLogPageSize;
+    const startIdx = (page - 1) * (window._publicLogPageSize || 5);
+    const endIdx = startIdx + (window._publicLogPageSize || 5);
     visibleDates = dates.slice(startIdx, endIdx);
   }
 
@@ -419,8 +625,8 @@ function renderPublicLogTimeline(page = 1, expanded = false) {
         paginationBox.style.display = 'none';
       }
     } else {
-      const totalPages = Math.ceil(dates.length / window._publicLogPageSize) || 1;
-      const curPage = window._publicLogCurrentPage;
+      const totalPages = Math.ceil(dates.length / (window._publicLogPageSize || 5)) || 1;
+      const curPage = window._publicLogCurrentPage || 1;
       paginationBox.style.display = 'flex';
       paginationBox.innerHTML = `
         <div style="width:100%; display:flex; flex-direction:column; align-items:center; gap:12px; margin-top:16px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.08);">
@@ -443,6 +649,9 @@ function renderPublicLogTimeline(page = 1, expanded = false) {
     }
   }
   if (window.lucide) lucide.createIcons();
+  if (window.PlantBookI18n && typeof window.PlantBookI18n.applyDomTranslations === 'function') {
+    window.PlantBookI18n.applyDomTranslations();
+  }
 }
 
 window.togglePublicLogExpand = function(expanded) {

@@ -12,6 +12,80 @@ const {
   buildLogFilterQuery, isFullNfcUid, normalizeCareLogType, enrichFruitAuditAndHarvestDetails
 } = require('./helpers');
 
+/**
+ * Scrub confidential pricing/formula fields from a single public plant_logs row
+ * while preserving operator/equipment/batch traceability fields.
+ */
+function scrubPublicPlantLogRow(log) {
+  let safeDetails = {};
+  if (log && log.details) {
+    let rawDetails = {};
+    if (typeof log.details === 'string') {
+      try { rawDetails = JSON.parse(log.details); } catch (_) { rawDetails = {}; }
+    } else {
+      rawDetails = { ...log.details };
+    }
+    delete rawDetails.unit_price;
+    delete rawDetails.total_cost;
+    delete rawDetails.cost;
+    delete rawDetails.package_price;
+    delete rawDetails.package_unit;
+    delete rawDetails.formula_secret;
+    delete rawDetails.supplier_price;
+    delete rawDetails.vendor_name;
+    delete rawDetails.vendor_phone;
+    delete rawDetails.accounting_code;
+    delete rawDetails.stock_deducted;
+    safeDetails = rawDetails;
+  }
+
+  let parsedMediaUrls = [];
+  if (log && log.media_urls) {
+    if (Array.isArray(log.media_urls)) {
+      parsedMediaUrls = log.media_urls;
+    } else if (typeof log.media_urls === 'string') {
+      try { parsedMediaUrls = JSON.parse(log.media_urls); } catch (_) { parsedMediaUrls = []; }
+    }
+  }
+  if (parsedMediaUrls.length === 0 && log && log.media_url) {
+    parsedMediaUrls = [{ url: log.media_url, type: /\.(mp4|mov|avi|mkv|webm)/i.test(log.media_url) ? 'video' : 'image' }];
+  }
+
+  return {
+    id: log.id,
+    plant_id: log.plant_id,
+    log_date: log.log_date,
+    log_type: log.log_type,
+    note: log.note,
+    details: safeDetails,
+    operator_name: log.operator_name || log.creator_name || (safeDetails && safeDetails.operator_name) || 'Kỹ thuật viên trang trại',
+    creator_name: log.creator_name || log.operator_name || 'Kỹ thuật viên trang trại',
+    equipment_used: log.equipment_used || (safeDetails && safeDetails.equipment_used) || null,
+    batch_code: log.batch_code || (safeDetails && safeDetails.batch_code) || null,
+    puc_code: log.puc_code || (safeDetails && safeDetails.puc_code) || null,
+    media_url: log.media_url,
+    media_urls: parsedMediaUrls,
+    created_at: log.created_at
+  };
+}
+
+async function fetchAndScrubPublicPlantLogs(dbPool, plantId) {
+  const logs = await dbPool.query(
+    `SELECT pl.*, u.full_name as creator_name
+     FROM plant_logs pl
+     LEFT JOIN users u ON u.id = pl.created_by
+     WHERE pl.plant_id = $1 AND (pl.is_deleted IS NOT TRUE)
+     ORDER BY pl.log_date DESC, pl.id DESC`,
+    [plantId]
+  );
+  return {
+    logs,
+    scrubbedLogs: logs.rows.map(scrubPublicPlantLogRow)
+  };
+}
+
+router.scrubPublicPlantLogRow = scrubPublicPlantLogRow;
+
 router.get('/farms/:farmId/public-portal', async (req, res) => {
   try {
     const farmId = parseInt(req.params.farmId);
@@ -146,51 +220,7 @@ router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
     if (plantQuery.rows.length > 0) {
       const row = plantQuery.rows[0];
       const media = await pool.query('SELECT * FROM plant_media WHERE plant_id=$1 ORDER BY uploaded_at DESC', [row.id]);
-      const logs = await pool.query('SELECT * FROM plant_logs WHERE plant_id=$1 AND (is_deleted IS NOT TRUE) ORDER BY log_date DESC', [row.id]);
-
-      // Data Scrubbing
-      const scrubbedLogs = logs.rows.map(log => {
-        let safeDetails = {};
-        if (log.details) {
-          let rawDetails = typeof log.details === 'string' ? JSON.parse(log.details) : { ...log.details };
-          delete rawDetails.unit_price;
-          delete rawDetails.total_cost;
-          delete rawDetails.cost;
-          delete rawDetails.package_price;
-          delete rawDetails.package_unit;
-          delete rawDetails.formula_secret;
-          delete rawDetails.supplier_price;
-          delete rawDetails.vendor_name;
-          delete rawDetails.vendor_phone;
-          delete rawDetails.accounting_code;
-          delete rawDetails.stock_deducted;
-          safeDetails = rawDetails;
-        }
-
-        let parsedMediaUrls = [];
-        if (log.media_urls) {
-          if (Array.isArray(log.media_urls)) {
-            parsedMediaUrls = log.media_urls;
-          } else if (typeof log.media_urls === 'string') {
-            try { parsedMediaUrls = JSON.parse(log.media_urls); } catch (_) { parsedMediaUrls = []; }
-          }
-        }
-        if (parsedMediaUrls.length === 0 && log.media_url) {
-          parsedMediaUrls = [{ url: log.media_url, type: /\.(mp4|mov|avi|mkv|webm)/i.test(log.media_url) ? 'video' : 'image' }];
-        }
-
-        return {
-          id: log.id,
-          plant_id: log.plant_id,
-          log_date: log.log_date,
-          log_type: log.log_type,
-          note: log.note,
-          details: safeDetails,
-          media_url: log.media_url,
-          media_urls: parsedMediaUrls,
-          created_at: log.created_at
-        };
-      });
+      const { logs, scrubbedLogs } = await fetchAndScrubPublicPlantLogs(pool, row.id);
 
       let farm_boundary = null;
       if (row.farm_polygon) {
@@ -416,51 +446,7 @@ router.get('/public/:slug', async (req, res) => {
     }
 
     const media = await pool.query('SELECT * FROM plant_media WHERE plant_id=$1 ORDER BY uploaded_at DESC', [plant.rows[0].id]);
-    const logs = await pool.query('SELECT * FROM plant_logs WHERE plant_id=$1 AND (is_deleted IS NOT TRUE) ORDER BY log_date DESC', [plant.rows[0].id]);
-
-    // Data Scrubbing: Remove confidential financial and proprietary formula data
-    const scrubbedLogs = logs.rows.map(log => {
-      let safeDetails = {};
-      if (log.details) {
-        let rawDetails = typeof log.details === 'string' ? JSON.parse(log.details) : { ...log.details };
-        delete rawDetails.unit_price;
-        delete rawDetails.total_cost;
-        delete rawDetails.cost;
-        delete rawDetails.package_price;
-        delete rawDetails.package_unit;
-        delete rawDetails.formula_secret;
-        delete rawDetails.supplier_price;
-        delete rawDetails.vendor_name;
-        delete rawDetails.vendor_phone;
-        delete rawDetails.accounting_code;
-        delete rawDetails.stock_deducted;
-        safeDetails = rawDetails;
-      }
-
-      let parsedMediaUrls = [];
-      if (log.media_urls) {
-        if (Array.isArray(log.media_urls)) {
-          parsedMediaUrls = log.media_urls;
-        } else if (typeof log.media_urls === 'string') {
-          try { parsedMediaUrls = JSON.parse(log.media_urls); } catch (_) { parsedMediaUrls = []; }
-        }
-      }
-      if (parsedMediaUrls.length === 0 && log.media_url) {
-        parsedMediaUrls = [{ url: log.media_url, type: /\.(mp4|mov|avi|mkv|webm)/i.test(log.media_url) ? 'video' : 'image' }];
-      }
-
-      return {
-        id: log.id,
-        plant_id: log.plant_id,
-        log_date: log.log_date,
-        log_type: log.log_type,
-        note: log.note,
-        details: safeDetails,
-        media_url: log.media_url,
-        media_urls: parsedMediaUrls,
-        created_at: log.created_at
-      };
-    });
+    const { logs, scrubbedLogs } = await fetchAndScrubPublicPlantLogs(pool, plant.rows[0].id);
 
     // Build GeoJSON geometry for the farm boundary polygon
     const row = plant.rows[0];

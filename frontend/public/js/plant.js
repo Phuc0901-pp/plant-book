@@ -1512,8 +1512,10 @@ async function renderPlant(plant, isEditable) {
 
   const actionSlot = document.getElementById('erp-header-actions-slot');
   if (actionSlot) {
+    const langSwitcherHtml = `<div id="export-lang-switcher" style="display:inline-flex; align-items:center; gap:2px; background:#f1f5f9; border:1px solid #cbd5e1; border-radius:9px; padding:2px; margin-right:4px;" title="Chuyển đổi ngôn ngữ truy xuất xuất khẩu (Tiếng Việt / English / 中文)"><button type="button" data-lang-btn="vi" onclick="if(window.switchExportLanguage)window.switchExportLanguage('vi')" style="border:none; border-radius:7px; padding:4px 7px; font-size:11px; font-weight:800; cursor:pointer; background:#059669; color:#ffffff;">🇻🇳 VI</button><button type="button" data-lang-btn="en" onclick="if(window.switchExportLanguage)window.switchExportLanguage('en')" style="border:none; border-radius:7px; padding:4px 7px; font-size:11px; font-weight:700; cursor:pointer; background:transparent; color:#334155;">🇬🇧 EN</button><button type="button" data-lang-btn="zh" onclick="if(window.switchExportLanguage)window.switchExportLanguage('zh')" style="border:none; border-radius:7px; padding:4px 7px; font-size:11px; font-weight:700; cursor:pointer; background:transparent; color:#334155;">🇨🇳 中文</button></div>`;
     if (isEditable && user && user.id) {
       actionSlot.innerHTML = `
+        ${langSwitcherHtml}
         <button type="button" class="erp-nav-btn" onclick="window.print()" title="In hồ sơ cây trồng">
           <i data-lucide="printer" class="lucide-xs"></i> <span>In hồ sơ</span>
         </button>
@@ -1526,6 +1528,7 @@ async function renderPlant(plant, isEditable) {
       `;
     } else {
       actionSlot.innerHTML = `
+        ${langSwitcherHtml}
         <button type="button" class="erp-nav-btn" onclick="window.print()" title="In hồ sơ cây trồng">
           <i data-lucide="printer" class="lucide-xs"></i> <span>In hồ sơ</span>
         </button>
@@ -2088,6 +2091,59 @@ async function renderPlant(plant, isEditable) {
       <!-- Detail Collapsible Container (Shown when expanded) -->
       <div id="timeline-detail-content" class="erp-detail-collapsible" style="display:none;">
         <div class="glass-panel glass-card">
+          <!-- Thanh Bộ Lọc Nhật Ký Canh Tác Đa Chiều (Hạng mục · Ngày · Vật tư · Từ khóa) -->
+          <div id="public-timeline-filter-bar" class="public-timeline-filter-bar">
+            <div class="pub-filter-chips-row" id="pub-log-filter-chips">
+              <button type="button" class="pub-filter-chip active" data-log-type="all" onclick="selectPublicTimelineCategoryChip('all')">Tất cả</button>
+              <button type="button" class="pub-filter-chip" data-log-type="Tưới nước" onclick="selectPublicTimelineCategoryChip('Tưới nước')">Tưới nước</button>
+              <button type="button" class="pub-filter-chip" data-log-type="Bón phân" onclick="selectPublicTimelineCategoryChip('Bón phân')">Bón phân</button>
+              <button type="button" class="pub-filter-chip" data-log-type="Phun thuốc" onclick="selectPublicTimelineCategoryChip('Phun thuốc')">Phun thuốc</button>
+              <button type="button" class="pub-filter-chip" data-log-type="Nhân công" onclick="selectPublicTimelineCategoryChip('Nhân công')">Nhân công</button>
+              <button type="button" class="pub-filter-chip" data-log-type="Kiểm toán quả" onclick="selectPublicTimelineCategoryChip('Kiểm toán quả')">Kiểm toán quả</button>
+              <button type="button" class="pub-filter-chip" data-log-type="Bệnh cây" onclick="selectPublicTimelineCategoryChip('Bệnh cây')">Bệnh cây</button>
+              <button type="button" class="pub-filter-chip" data-log-type="Thu hoạch" onclick="selectPublicTimelineCategoryChip('Thu hoạch')">Thu hoạch</button>
+            </div>
+            <div class="pub-filter-controls-grid">
+              <div class="pub-filter-field">
+                <label for="pub-log-filter-type">Hạng mục canh tác</label>
+                <select id="pub-log-filter-type" onchange="if(window.applyPublicTimelineFilters)window.applyPublicTimelineFilters()">
+                  <option value="all">Tất cả hạng mục</option>
+                  <option value="Tưới nước">Tưới nước</option>
+                  <option value="Bón phân">Bón phân</option>
+                  <option value="Phun thuốc">Phun thuốc</option>
+                  <option value="Nhân công">Nhân công</option>
+                  <option value="Kiểm toán quả">Kiểm toán quả</option>
+                  <option value="Bệnh cây">Bệnh cây</option>
+                  <option value="Thu hoạch">Thu hoạch</option>
+                </select>
+              </div>
+              <div class="pub-filter-field">
+                <label for="pub-log-filter-supply">Vật tư sử dụng</label>
+                <select id="pub-log-filter-supply" onchange="if(window.applyPublicTimelineFilters)window.applyPublicTimelineFilters()">
+                  <option value="all">Tất cả vật tư</option>
+                </select>
+              </div>
+              <div class="pub-filter-field">
+                <label for="pub-log-filter-from">Từ ngày</label>
+                <input type="date" id="pub-log-filter-from" onchange="if(window.applyPublicTimelineFilters)window.applyPublicTimelineFilters()">
+              </div>
+              <div class="pub-filter-field">
+                <label for="pub-log-filter-to">Đến ngày</label>
+                <input type="date" id="pub-log-filter-to" onchange="if(window.applyPublicTimelineFilters)window.applyPublicTimelineFilters()">
+              </div>
+              <div class="pub-filter-field">
+                <label for="pub-log-filter-search">Tìm kiếm từ khóa</label>
+                <input type="text" id="pub-log-filter-search" placeholder="Vật tư, ghi chú, người nhập..." oninput="if(window.applyPublicTimelineFilters)window.applyPublicTimelineFilters()">
+              </div>
+              <div class="pub-filter-actions">
+                <button type="button" class="pub-filter-reset-btn" onclick="if(window.resetPublicTimelineFilters)window.resetPublicTimelineFilters()">
+                  <i data-lucide="rotate-ccw" class="lucide-xs"></i> <span>Đặt lại</span>
+                </button>
+              </div>
+            </div>
+            <div id="pub-log-filter-status" class="pub-filter-status-bar"></div>
+          </div>
+
           <div id="public-timeline-container">
             <!-- Rendered dynamically -->
           </div>
@@ -2261,11 +2317,18 @@ async function renderPlant(plant, isEditable) {
     mediaCardsContainer.innerHTML = window.renderMediaItemsHtml(allMediaList);
   }
 
-  // Populate farm supplies into care modals
+  // Populate farm supplies into care modals & timeline filter
   populateCareSuppliesDropdowns(plant.farm_supplies || []);
+  window._allPublicPlantLogs = logs;
+  if (typeof window._populatePublicTimelineSupplyOptions === 'function') {
+    window._populatePublicTimelineSupplyOptions(logs);
+  }
 
   // Render initial care timeline
   renderPublicLogTimeline(1, false);
+  if (window.PlantBookI18n && typeof window.PlantBookI18n.applyDomTranslations === 'function') {
+    window.PlantBookI18n.applyDomTranslations();
+  }
 
   // Satellite Layer Switcher for Public Plant Map
   window._currentPlantSatSource = 'google';

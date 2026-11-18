@@ -88,5 +88,52 @@
     "unit_kg": "kg",
     "unit_ton_ha": "tấn/ha",
     "redacted_notice": "Chế độ bảo mật RBAC: Dữ liệu tài chính BI chỉ dành cho Chủ trang trại, Giám đốc HTX và Quản trị viên."
+  },
+  "profile_modal": {
+    "title": "Hồ Sơ Cây Trồng",
+    "tab_overview": "1. Thông Số Nông Học & GPS",
+    "tab_logs": "2. Lịch Sử Canh Tác",
+    "tab_cost": "3. Chi Phí & Vật Tư Tiêu Hao",
+    "btn_log_care": "Ghi nhật ký",
+    "btn_close": "Đóng hồ sơ",
+    "metric_age": "Tuổi cây & Ngày trồng",
+    "metric_location": "Lô & Hàng vị trí",
+    "metric_yield": "Năng suất mùa trước",
+    "metric_nfc": "Thẻ NFC RFID"
+  },
+  "filters": {
+    "category": "Hạng mục canh tác",
+    "all_categories": "Tất cả hạng mục",
+    "from_date": "Từ ngày",
+    "to_date": "Đến ngày",
+    "supply": "Vật tư sử dụng",
+    "all_supplies": "Tất cả vật tư",
+    "search": "Tìm kiếm từ khóa",
+    "reset": "Đặt lại"
+  },
+  "categories": {
+    "water": "Tưới nước",
+    "fertilize": "Bón phân",
+    "pesticide": "Phun thuốc",
+    "labor": "Nhân công",
+    "fruit_audit": "Kiểm toán quả",
+    "disease": "Bệnh cây",
+    "harvest": "Thu hoạch"
+  },
+  "fruit_audit": {
+    "stage_fruit_set": "Đậu quả",
+    "stage_young_fruit": "Quả non",
+    "stage_ripe_fruit": "Quả chín",
+    "label_stage": "Giai đoạn",
+    "label_count": "Số quả đếm",
+    "label_culled": "Rụng/Tỉa bỏ",
+    "label_time": "Giờ kiểm đếm",
+    "label_reason": "Lý do"
+  },
+  "report": {
+    "title": "Báo cáo lịch trình canh tác",
+    "copy_link": "Sao chép liên kết",
+    "export_csv": "Xuất CSV (Excel)",
+    "print_pdf": "In báo cáo / Tải PDF"
   }
 }

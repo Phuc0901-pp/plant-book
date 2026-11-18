@@ -16,6 +16,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="/assets/js/lucide-auto-hydrator.js"></script>
   <script src="/assets/js/enterprise-security-guard.js"></script>
+  <script src="/js/i18n-engine.js?v=1.3.7"></script>
   <!-- Mapbox GL JS & CSS -->
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.css" rel="stylesheet">
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.js"></script>
@@ -31,6 +32,11 @@
       <span class="brand-name">TANBAO AgTech</span>
     </div>
     <div class="actions-wrap">
+      <div id="export-lang-switcher" style="display:inline-flex; align-items:center; gap:2px; background:#f1f5f9; border:1px solid #cbd5e1; border-radius:9px; padding:2px;" title="Chuyển đổi ngôn ngữ (Tiếng Việt / English / 中文)">
+        <button type="button" data-lang-btn="vi" onclick="if(window.switchExportLanguage)window.switchExportLanguage('vi')" style="border:none; border-radius:7px; padding:4px 7px; font-size:11px; font-weight:800; cursor:pointer; background:#059669; color:#ffffff;">🇻🇳 VI</button>
+        <button type="button" data-lang-btn="en" onclick="if(window.switchExportLanguage)window.switchExportLanguage('en')" style="border:none; border-radius:7px; padding:4px 7px; font-size:11px; font-weight:700; cursor:pointer; background:transparent; color:#334155;">🇬🇧 EN</button>
+        <button type="button" data-lang-btn="zh" onclick="if(window.switchExportLanguage)window.switchExportLanguage('zh')" style="border:none; border-radius:7px; padding:4px 7px; font-size:11px; font-weight:700; cursor:pointer; background:transparent; color:#334155;">🇨🇳 中文</button>
+      </div>
       <button class="btn btn-secondary" id="btn-copy-link" onclick="copyReportLink()">
         <i data-lucide="link" class="lucide-sm"></i> Sao chép liên kết
       </button>

@@ -88,5 +88,52 @@
     "unit_kg": "kg",
     "unit_ton_ha": "tons/ha",
     "redacted_notice": "RBAC Security Policy: Executive BI financial data is restricted to Farm Owners, Cooperative Directors, and Administrators."
+  },
+  "profile_modal": {
+    "title": "Tree Dossier",
+    "tab_overview": "1. Agronomic Specs & GPS",
+    "tab_logs": "2. Cultivation History",
+    "tab_cost": "3. Costs & Supply Consumption",
+    "btn_log_care": "Log Care",
+    "btn_close": "Close Dossier",
+    "metric_age": "Tree Age & Planting Date",
+    "metric_location": "Plot & Row Location",
+    "metric_yield": "Prior Season Yield",
+    "metric_nfc": "NFC RFID Tag"
+  },
+  "filters": {
+    "category": "Cultivation Category",
+    "all_categories": "All Categories",
+    "from_date": "From Date",
+    "to_date": "To Date",
+    "supply": "Supply / Material",
+    "all_supplies": "All Supplies",
+    "search": "Keyword Search",
+    "reset": "Reset"
+  },
+  "categories": {
+    "water": "Irrigation",
+    "fertilize": "Fertilization",
+    "pesticide": "Pesticide Spray",
+    "labor": "Labor",
+    "fruit_audit": "Fruit Audit",
+    "disease": "Plant Disease",
+    "harvest": "Harvest"
+  },
+  "fruit_audit": {
+    "stage_fruit_set": "Fruit Set",
+    "stage_young_fruit": "Young Fruit",
+    "stage_ripe_fruit": "Ripe Fruit",
+    "label_stage": "Stage",
+    "label_count": "Counted Fruits",
+    "label_culled": "Dropped / Culled",
+    "label_time": "Audit Time",
+    "label_reason": "Reason"
+  },
+  "report": {
+    "title": "Cultivation Traceability Report",
+    "copy_link": "Copy Link",
+    "export_csv": "Export CSV (Excel)",
+    "print_pdf": "Print / Export PDF"
   }
 }
