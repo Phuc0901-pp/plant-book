@@ -267,69 +267,91 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
     final noteController = TextEditingController();
     final detailController = TextEditingController();
     final formKey = GlobalKey<FormState>();
+    String selectedFruitStage = 'Đậu quả';
+    final bool isFruitAudit = activityType == 'Kiểm toán quả';
 
     String detailLabel = 'Thông số chi tiết:';
     if (activityType == 'Tưới nước') detailLabel = 'Lượng nước (lít):';
     if (activityType == 'Bón phân') detailLabel = 'Tên phân bón:';
     if (activityType == 'Phun thuốc') detailLabel = 'Tên thuốc BVTV:';
     if (activityType == 'Thuê nhân công' || activityType == 'Cắt cành/lá' || activityType == 'Tỉa hoa/quả') detailLabel = 'Công việc thuê nhân công (Tỉa cành/Tỉa hoa/Làm cỏ...):';
+    if (isFruitAudit) detailLabel = 'Số quả đếm được trên cây (quả):';
     if (activityType == 'Bệnh cây') detailLabel = 'Tên sâu bệnh phát hiện:';
 
     final bool? confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        title: Text(
-          'Ghi nhanh: $activityType',
-          style: const TextStyle(color: AppTheme.textMain, fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(detailLabel, style: const TextStyle(color: AppTheme.textMuted, fontSize: 12, fontWeight: FontWeight.w500)),
-              const SizedBox(height: 6),
-              TextFormField(
-                controller: detailController,
-                style: const TextStyle(color: AppTheme.textMain, fontSize: 14),
-                decoration: const InputDecoration(
-                  fillColor: Color(0xFFF8FAFC),
-                  hintText: 'Nhập thông tin...',
-                  hintStyle: TextStyle(color: Colors.black26, fontSize: 13),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: Colors.white,
+          title: Text(
+            'Ghi nhanh: $activityType',
+            style: const TextStyle(color: AppTheme.textMain, fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (isFruitAudit) ...[
+                  const Text('Giai đoạn kiểm toán (3 mục con):', style: TextStyle(color: AppTheme.textMuted, fontSize: 12, fontWeight: FontWeight.w500)),
+                  const SizedBox(height: 6),
+                  DropdownButtonFormField<String>(
+                    value: selectedFruitStage,
+                    decoration: const InputDecoration(
+                      fillColor: Color(0xFFF0FDFA),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                    items: const ['Đậu quả', 'Quả non', 'Quả chín']
+                        .map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold))))
+                        .toList(),
+                    onChanged: (v) => setDialogState(() => selectedFruitStage = v ?? 'Đậu quả'),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                Text(detailLabel, style: const TextStyle(color: AppTheme.textMuted, fontSize: 12, fontWeight: FontWeight.w500)),
+                const SizedBox(height: 6),
+                TextFormField(
+                  controller: detailController,
+                  keyboardType: isFruitAudit ? TextInputType.number : TextInputType.text,
+                  style: const TextStyle(color: AppTheme.textMain, fontSize: 14),
+                  decoration: InputDecoration(
+                    fillColor: const Color(0xFFF8FAFC),
+                    hintText: isFruitAudit ? 'VD: 120' : 'Nhập thông tin...',
+                    hintStyle: const TextStyle(color: Colors.black26, fontSize: 13),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  validator: (val) => val == null || val.isEmpty ? 'Trường này không được trống' : null,
                 ),
-                validator: (val) => val == null || val.isEmpty ? 'Trường này không được trống' : null,
-              ),
-              const SizedBox(height: 12),
-              const Text('Ghi chú thêm:', style: TextStyle(color: AppTheme.textMuted, fontSize: 12, fontWeight: FontWeight.w500)),
-              const SizedBox(height: 6),
-              TextFormField(
-                controller: noteController,
-                maxLines: 2,
-                style: const TextStyle(color: AppTheme.textMain, fontSize: 14),
-                decoration: const InputDecoration(
-                  fillColor: Color(0xFFF8FAFC),
-                  hintText: 'Nhập ghi chú...',
-                  hintStyle: TextStyle(color: Colors.black26, fontSize: 13),
-                  contentPadding: EdgeInsets.all(12),
+                const SizedBox(height: 12),
+                const Text('Ghi chú thêm:', style: TextStyle(color: AppTheme.textMuted, fontSize: 12, fontWeight: FontWeight.w500)),
+                const SizedBox(height: 6),
+                TextFormField(
+                  controller: noteController,
+                  maxLines: 2,
+                  style: const TextStyle(color: AppTheme.textMain, fontSize: 14),
+                  decoration: const InputDecoration(
+                    fillColor: Color(0xFFF8FAFC),
+                    hintText: 'Nhập ghi chú...',
+                    hintStyle: TextStyle(color: Colors.black26, fontSize: 13),
+                    contentPadding: EdgeInsets.all(12),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Hủy', style: TextStyle(color: AppTheme.textMuted)),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.green),
+              child: const Text('Ghi lại'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Hủy', style: TextStyle(color: AppTheme.textMuted)),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.green),
-            child: const Text('Ghi lại'),
-          ),
-        ],
       ),
     );
 
@@ -344,6 +366,18 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
       if (activityType == 'Thuê nhân công' || activityType == 'Cắt cành/lá' || activityType == 'Tỉa hoa/quả') {
         details['work_content'] = value;
         details['activity'] = value;
+      }
+      if (isFruitAudit) {
+        final int count = int.tryParse(value) ?? 0;
+        final DateTime now = DateTime.now();
+        final String auditTime = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+        details['fruit_stage'] = selectedFruitStage;
+        details['fruit_count'] = count;
+        details['amount'] = count;
+        details['unit'] = 'quả';
+        details['audit_time'] = auditTime;
+        details['performed_at'] = now.toIso8601String();
+        details['value'] = 'Kiểm toán quả [$selectedFruitStage]: $count quả · Lúc $auditTime';
       }
       if (activityType == 'Bệnh cây') details['disease'] = value;
 
@@ -685,6 +719,7 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
       {'label': 'Bón phân', 'icon': Icons.opacity_rounded, 'color': Colors.green},
       {'label': 'Phun thuốc', 'icon': Icons.science_rounded, 'color': Colors.orange},
       {'label': 'Thuê nhân công', 'icon': Icons.engineering_rounded, 'color': Colors.cyan},
+      {'label': 'Kiểm toán quả', 'icon': Icons.fact_check_rounded, 'color': Colors.teal},
       {'label': 'Bệnh cây', 'icon': Icons.error_outline_rounded, 'color': Colors.red},
     ];
 

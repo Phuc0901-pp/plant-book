@@ -723,7 +723,7 @@ function renderActivityFilterChips(logs) {
     counts[canonical] = (counts[canonical] || 0) + 1;
   });
 
-  const chipTypes = ['all', 'Tưới nước', 'Bón phân', 'Phun thuốc', 'Nhân công', 'Bệnh cây', 'Thu hoạch'];
+  const chipTypes = ['all', 'Tưới nước', 'Bón phân', 'Phun thuốc', 'Nhân công', 'Kiểm toán quả', 'Bệnh cây', 'Thu hoạch'];
   const availableTypes = chipTypes.filter(t => t === 'all' || counts[t] > 0);
 
   const chipStyles = {
@@ -732,6 +732,7 @@ function renderActivityFilterChips(logs) {
     'Bón phân': { icon: 'sprout', inactBorder: '#fde68a', inactBg: '#fef3c7', inactColor: '#92400e' },
     'Phun thuốc': { icon: 'spray-can', inactBorder: '#ddd6fe', inactBg: '#f3e8ff', inactColor: '#6b21a8' },
     'Nhân công': { icon: 'users', inactBorder: '#bae6fd', inactBg: '#f0f9ff', inactColor: '#0369a1' },
+    'Kiểm toán quả': { icon: 'clipboard-check', inactBorder: '#99f6e4', inactBg: '#f0fdfa', inactColor: '#0f766e' },
     'Bệnh cây': { icon: 'bug', inactBorder: '#fca5a5', inactBg: '#fef2f2', inactColor: '#b91c1c' },
     'Thu hoạch': { icon: 'shopping-bag', inactBorder: '#fef08a', inactBg: '#fefce8', inactColor: '#a16207' }
   };
@@ -845,6 +846,7 @@ function renderDetailTimeline() {
     'Bón phân': { bg: '#fef3c7', color: '#78350f', border: '#fde68a', icon: 'sprout', iconColor: '#92400e' },
     'Phun thuốc': { bg: '#f3e8ff', color: '#6b21a8', border: '#ddd6fe', icon: 'spray-can', iconColor: '#8b5cf6' },
     'Nhân công': { bg: '#f0f9ff', color: '#0369a1', border: '#bae6fd', icon: 'users', iconColor: '#0284c7' },
+    'Kiểm toán quả': { bg: '#f0fdfa', color: '#0f766e', border: '#99f6e4', icon: 'clipboard-check', iconColor: '#0d9488' },
     'Cắt lá': { bg: '#ecfdf5', color: '#047857', border: '#a7f3d0', icon: 'scissors', iconColor: '#10b981' },
     'Tỉa hoa': { bg: '#fff7ed', color: '#c2410c', border: '#ffedd5', icon: 'scissors', iconColor: '#ea580c' },
     'Bệnh cây': { bg: '#fef2f2', color: '#b91c1c', border: '#fca5a5', icon: 'bug', iconColor: '#ef4444' },
@@ -913,7 +915,11 @@ function renderDetailTimeline() {
       const reason = details.reason || '';
       const workContent = details.work_content || '';
       const workerCount = details.worker_count || '';
+      const fruitStage = details.fruit_stage || '';
       const fruitCount = details.fruit_count || '';
+      const culledCount = details.dropped_or_culled_count || 0;
+      const estimatedYieldKg = details.estimated_yield_kg || '';
+      const auditTime = details.audit_time || '';
       const batchCode = l.batch_code || details.batch_code || '';
       const cost = parseFloat(details.cost || details.supply_cost || l.cost || 0);
 
@@ -926,7 +932,7 @@ function renderDetailTimeline() {
       }
 
       let supplyBoxHtml = '';
-      if (supplyName || cost > 0 || quantity || method || reason || workContent || workerCount || fruitCount || batchCode) {
+      if (supplyName || cost > 0 || quantity || method || reason || workContent || workerCount || fruitCount || batchCode || fruitStage) {
         supplyBoxHtml = `
           <div style="margin-top:10px; background:#f8fafc; border:1px solid ${cfg.border}; border-radius:10px; padding:8px 12px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
             <div style="display:flex; align-items:center; gap:10px;">
@@ -935,10 +941,12 @@ function renderDetailTimeline() {
                 : `<div style="width:40px; height:40px; border-radius:8px; background:${cfg.bg}; color:${cfg.iconColor}; display:flex; align-items:center; justify-content:center; font-size:18px;"><i data-lucide="${cfg.icon}" class="lucide-sm"></i></div>`
               }
               <div>
-                <div style="font-size:13px; font-weight:800; color:#0f172a;">${esc(workContent || supplyName || l.log_type)}</div>
+                <div style="font-size:13px; font-weight:800; color:#0f172a;">${esc(fruitStage ? `Giai đoạn: ${fruitStage}` : (workContent || supplyName || l.log_type))}</div>
                 ${workerCount ? `<div style="font-size:11.5px; color:#475569; font-weight:600;">Số công: <strong>${esc(workerCount)} người</strong></div>` : ''}
-                ${quantity ? `<div style="font-size:11.5px; color:#475569; font-weight:600;">${l.log_type === 'Thu hoạch' ? 'Sản lượng' : 'Liều lượng'}: <strong>${esc(quantity)} ${esc(unit)}</strong></div>` : ''}
-                ${fruitCount ? `<div style="font-size:11.5px; color:#475569; font-weight:600;">Số lượng trái: <strong>${esc(fruitCount)} quả</strong></div>` : ''}
+                ${quantity && l.log_type !== 'Kiểm toán quả' ? `<div style="font-size:11.5px; color:#475569; font-weight:600;">${l.log_type === 'Thu hoạch' ? 'Sản lượng' : 'Liều lượng'}: <strong>${esc(quantity)} ${esc(unit)}</strong></div>` : ''}
+                ${fruitCount ? `<div style="font-size:11.5px; color:#475569; font-weight:600;">${l.log_type === 'Kiểm toán quả' ? 'Số quả trên cây' : 'Số lượng trái'}: <strong>${esc(fruitCount)} quả</strong>${culledCount ? ` · Rụng/tỉa: <strong>${esc(culledCount)} quả</strong>` : ''}</div>` : ''}
+                ${estimatedYieldKg ? `<div style="font-size:11.5px; color:#0f766e; font-weight:600;">Sản lượng ước tính: <strong>~${esc(estimatedYieldKg)} kg</strong></div>` : ''}
+                ${auditTime ? `<div style="font-size:11.5px; color:#475569; font-weight:600;">Giờ kiểm đếm: <strong>${esc(auditTime)}</strong></div>` : ''}
                 ${batchCode ? `<div style="font-size:11.5px; color:#475569; font-weight:600;">Mã lô VietGAP: <strong style="font-family:monospace;">${esc(batchCode)}</strong></div>` : ''}
                 ${method ? `<div style="font-size:11.5px; color:#475569; font-weight:600;">Phương thức: <strong>${esc(method)}</strong></div>` : ''}
                 ${reason ? `<div style="font-size:11.5px; color:#475569; font-weight:600;">Mục đích: <strong>${esc(reason)}</strong></div>` : ''}

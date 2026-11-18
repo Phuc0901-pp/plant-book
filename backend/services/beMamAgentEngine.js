@@ -147,7 +147,7 @@ const BUILTIN_ENCYCLOPEDIA_ARTICLES = [
     category: 'Cẩm nang Ứng dụng',
     title: 'Hướng Dẫn Toàn Tập Sổ Nông Tân Bảo: Tạo Vườn, Gắn NFC (/sub), Thuê Nhân Công & Xuất VietGAP',
     topic_keywords: 'hướng dẫn sử dụng, sài sao, dùng sao, tạo trang trại, quét nfc, ntag213, thuê nhân công, xuất vietgap, bản đồ gis',
-    content: '1. Cổng Định Danh Nhanh (/sub): Thực hiện 4 bước: Đăng nhập -> Chọn/Tạo Vườn -> Tạo Cây Mới -> Chạm thẻ NTAG213 để ghi mã định danh chống giả.\n2. Hồ Sơ Cây Thực Địa (/:farm/:plant/:uid): Chạm điện thoại vào thẻ NFC trên cây, chọn 1 trong 6 thao tác Chibi chuẩn ISO: Tưới nước, Bón phân, Phun thuốc, Thuê nhân công, Bệnh cây, Thu hoạch.\n3. Cổng Nông Hộ (/user/): Quản lý danh mục trang trại, xem dự báo thời tiết 24h & độ ẩm đất 3 tầng, quản lý tồn kho vật tư và xem biểu đồ chi phí.\n4. Xuất Báo Cáo VietGAP: Tại hồ sơ cây hoặc trang quản trị, nhấn "Xuất VietGAP / PDF A4" để tải báo cáo truy xuất nguồn gốc kèm chuỗi băm SHA-256.',
+    content: '1. Cổng Định Danh Nhanh (/sub): Thực hiện 4 bước: Đăng nhập -> Chọn/Tạo Vườn -> Tạo Cây Mới -> Chạm thẻ NTAG213 để ghi mã định danh chống giả.\n2. Hồ Sơ Cây Thực Địa (/:farm/:plant/:uid): Chạm điện thoại vào thẻ NFC trên cây, chọn 1 trong 7 thao tác Chibi chuẩn ISO: Tưới nước, Bón phân, Phun thuốc, Thuê nhân công, Kiểm toán quả (Đậu quả / Quả non / Quả chín), Bệnh cây, Thu hoạch.\n3. Cổng Nông Hộ (/user/): Quản lý danh mục trang trại, xem dự báo thời tiết 24h & độ ẩm đất 3 tầng, quản lý tồn kho vật tư và xem biểu đồ chi phí.\n4. Xuất Báo Cáo VietGAP: Tại hồ sơ cây hoặc trang quản trị, nhấn "Xuất VietGAP / PDF A4" để tải báo cáo truy xuất nguồn gốc kèm chuỗi băm SHA-256.',
     priority: 9
   }
 ];
@@ -352,6 +352,16 @@ function formatLogDetailSummary(log) {
     }
   }
   if (!d || typeof d !== 'object') d = {};
+
+  if (log.log_type === 'Kiểm toán quả') {
+    const stage = d.fruit_stage || 'Đậu quả';
+    const count = d.fruit_count ?? d.amount ?? 0;
+    const culled = d.dropped_or_culled_count ? ` (Rụng/tỉa: ${d.dropped_or_culled_count} quả)` : '';
+    const estKg = d.estimated_yield_kg ? ` · Ước tính ~${d.estimated_yield_kg} kg` : '';
+    const auditTime = d.audit_time ? ` · Lúc ${d.audit_time}` : '';
+    const noteTail = log.note && String(log.note).trim() ? ` - ${String(log.note).trim()}` : '';
+    return `Giai đoạn ${stage}: Đếm ${count} quả${culled}${estKg}${auditTime}${noteTail}`.trim();
+  }
 
   const parts = [];
 

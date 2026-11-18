@@ -32,8 +32,8 @@ function openExportModal() {
     fromDateInput.value = oneYearAgo.toISOString().split('T')[0];
   }
   
-  // Populate 6 Canonical SSOT Categories
-  const categories = ["Tưới nước", "Bón phân", "Phun thuốc", "Nhân công", "Bệnh cây", "Thu hoạch"];
+  // Populate Canonical SSOT Categories + Kiểm toán quả
+  const categories = ["Tưới nước", "Bón phân", "Phun thuốc", "Nhân công", "Kiểm toán quả", "Bệnh cây", "Thu hoạch"];
   
   // Append any extra unique category present in logs (skip legacy labor aliases merged into Nhân công)
   const logs = currentPlantData.logs || [];
@@ -162,6 +162,12 @@ function exportPublicLogsCsv() {
       detailsText = `Số cành/lá tỉa: ${d.amount || '—'}, Lý do: ${d.reason || '—'}`;
     } else if (log.log_type === 'Tỉa hoa') {
       detailsText = `Số bông/trái tỉa: ${d.amount || '—'}, Lý do: ${d.reason || '—'}`;
+    } else if (log.log_type === 'Nhân công') {
+      detailsText = `Công việc: ${d.work_content || 'Chăm sóc vườn'}, Số công: ${d.worker_count || d.amount || 1} người`;
+    } else if (log.log_type === 'Kiểm toán quả') {
+      detailsText = `Giai đoạn: ${d.fruit_stage || 'Đậu quả'}, Số quả trên cây: ${d.fruit_count ?? d.amount ?? 0} quả, Rụng/Tỉa: ${d.dropped_or_culled_count || 0} quả, Ước tính: ${d.estimated_yield_kg || 0} kg, Giờ đếm: ${d.audit_time || '—'}`;
+    } else if (log.log_type === 'Thu hoạch') {
+      detailsText = `Sản lượng: ${d.amount || d.yield_kg || '—'} ${d.unit || 'kg'}, Số trái: ${d.fruit_count || '—'}, Chất lượng: ${d.quality || 'Đạt chuẩn'}`;
     } else if (log.log_type === 'Bệnh cây') {
       detailsText = `Bệnh: ${d.disease_name || 'Chưa rõ'}, Mức độ: ${d.severity || '—'}, Mô tả: ${d.description || '—'}`;
     } else {

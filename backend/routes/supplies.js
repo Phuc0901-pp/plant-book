@@ -1257,6 +1257,8 @@ router.get('/profit-overview', auth, async (req, res) => {
         OR pl.details::text ILIKE '%price_per_tree%'
         OR pl.details::text ILIKE '%total_revenue%'
       )
+        AND pl.log_type != 'Kiểm toán quả'
+        AND (pl.details->>'fruit_stage') IS NULL
         AND (pl.is_deleted IS NOT TRUE)
     `;
     const harvestParams = [];

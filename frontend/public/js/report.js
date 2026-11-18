@@ -58,6 +58,10 @@
       if (log.log_type === 'Bệnh cây') {
         return `Bệnh: ${esc(details.disease_name || 'Bệnh chưa xác định')} | Mức độ: ${esc(details.severity || '—')} | Mô tả: ${esc(details.description || '—')}`;
       }
+      if (log.log_type === 'Kiểm toán quả') {
+        const auditTime = details.audit_time || formatTime(details.performed_at || log.created_at);
+        return `Giai đoạn: ${esc(details.fruit_stage || 'Đậu quả')} | Số quả trên cây: ${esc(details.fruit_count ?? details.amount ?? '—')} quả | Rụng/Tỉa: ${esc(details.dropped_or_culled_count || 0)} quả | Ước tính: ${esc(details.estimated_yield_kg || '—')} kg | Giờ đếm: ${esc(auditTime)}`;
+      }
       if (log.log_type === 'Thu hoạch') {
         const yieldVal = details.amount || details.yield_kg || '—';
         const yieldUnit = details.unit || 'kg';

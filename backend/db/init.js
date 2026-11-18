@@ -619,7 +619,8 @@ async function initDB() {
       { key: 'water_methods', value: JSON.stringify(["Tưới tay thủ công", "Tưới nhỏ giọt", "Tưới phun mưa", "Tưới phun sương"]) },
       { key: 'leaf_cut_reasons', value: JSON.stringify(["Lá già úa/vàng", "Lá bị sâu bệnh hại", "Tỉa cành tạo tán", "Tỉa bớt lá thông thoáng"]) },
       { key: 'flower_prune_reasons', value: JSON.stringify(["Tỉa hoa tàn", "Tỉa bớt nụ còi", "Tỉa cành tạo dáng", "Kích thích ra chồi mới"]) },
-      { key: 'labor_work_types', value: JSON.stringify(["Cắt cành / Tỉa lá tạo tán", "Tỉa hoa / Tỉa trái non", "Làm cỏ / Vệ sinh gốc", "Bao trái / Chống cành", "Thụ phấn bổ sung", "Bón phân / Phun thuốc thuê ngoài"]) }
+      { key: 'labor_work_types', value: JSON.stringify(["Cắt cành / Tỉa lá tạo tán", "Tỉa hoa / Tỉa trái non", "Làm cỏ / Vệ sinh gốc", "Bao trái / Chống cành", "Thụ phấn bổ sung", "Bón phân / Phun thuốc thuê ngoài"]) },
+      { key: 'fruit_audit_stages', value: JSON.stringify(["Đậu quả", "Quả non", "Quả chín"]) }
     ];
 
     for (const config of defaultConfigs) {
@@ -767,8 +768,8 @@ async function initDB() {
               )
           WHERE id = 2683740 OR log_type LIKE '%B%n%ph%n%' OR log_type LIKE '%\uFFFD%';
 
-          -- Chuẩn hóa Thu hoạch TRƯỚC HẾT để không bị các từ khóa khác bắt nhầm
-          UPDATE plant_logs SET log_type = 'Thu hoạch' WHERE (log_type ILIKE '%thu%ho%ch%' OR log_type ILIKE '%harvest%' OR details::text ILIKE '%fruit_count%' OR details::text ILIKE '%price_per_tree%') AND log_type != 'Thu hoạch';
+          -- Chuẩn hóa Thu hoạch TRƯỚC HẾT (bỏ qua Kiểm toán quả) để không bị các từ khóa khác bắt nhầm
+          UPDATE plant_logs SET log_type = 'Thu hoạch' WHERE (log_type ILIKE '%thu%ho%ch%' OR log_type ILIKE '%harvest%' OR details::text ILIKE '%fruit_count%' OR details::text ILIKE '%price_per_tree%') AND log_type != 'Thu hoạch' AND log_type != 'Kiểm toán quả' AND details->>'fruit_stage' IS NULL;
           UPDATE plant_logs SET log_type = 'Bón phân' WHERE (log_type ILIKE '%ph%n%' AND log_type ILIKE '%B%') AND log_type NOT ILIKE '%thu%ho%ch%' AND log_type != 'Bón phân';
           UPDATE plant_logs SET log_type = 'Phun thuốc' WHERE (log_type ILIKE '%phun%' OR (log_type ILIKE '%thu%c%' AND log_type NOT ILIKE '%thu%ho%ch%' AND log_type NOT ILIKE '%harvest%')) AND log_type != 'Phun thuốc';
           UPDATE plant_logs SET log_type = 'Tưới nước' WHERE (log_type ILIKE '%t%i%n%c%' OR log_type ILIKE '%t%i%') AND log_type != 'Tưới nước';
@@ -787,7 +788,7 @@ async function initDB() {
             OR details::text ILIKE '%avg_price_per_fruit%'
             OR (details::text ILIKE '%"quality"%' AND details::text ILIKE '%Loại%')
             OR (equipment_used ILIKE '%kéo%' AND details::text ILIKE '%"kg"%' AND log_type = 'Phun thuốc')
-          ) AND log_type != 'Thu hoạch';
+          ) AND log_type != 'Thu hoạch' AND log_type != 'Kiểm toán quả' AND details->>'fruit_stage' IS NULL;
 
           -- Dọn dẹp chi phí vật tư bị ghi nhận nhầm từ các log thu hoạch
           DELETE FROM supply_usages 

@@ -59,6 +59,14 @@ function getCareLogSummary(log) {
   if (log.log_type === 'Thụ phấn') {
     return `Đã thụ phấn chéo ban đêm. Tỷ lệ tiếp nhận phấn: <strong>${esc(details.pollination_rate || '95%')}</strong>.`;
   }
+  if (log.log_type === 'Kiểm toán quả') {
+    const stage = details.fruit_stage || 'Đậu quả';
+    const count = details.fruit_count ?? qty ?? 0;
+    const culled = details.dropped_or_culled_count ? ` · Rụng/tỉa: <strong>${details.dropped_or_culled_count} quả</strong>` : '';
+    const estKg = details.estimated_yield_kg ? ` · Ước tính: <strong>~${details.estimated_yield_kg} kg</strong>` : '';
+    const auditTime = details.audit_time ? ` · Lúc <strong>${esc(details.audit_time)}</strong>` : '';
+    return `Kiểm toán giai đoạn <strong>[${esc(stage)}]</strong>: Đếm <strong>${esc(count)} quả</strong> trên cây${culled}${estKg}${auditTime}.`;
+  }
   if (log.log_type === 'Thu hoạch') {
     const yieldKg = details.yield_kg || qty || '—';
     const fruitCount = details.fruit_count ? ` (${details.fruit_count} trái)` : '';
@@ -109,6 +117,13 @@ function getShortSummary(log) {
   }
   if (log.log_type === 'Thụ phấn') {
     return `Thụ phấn hoa chéo ban đêm (${esc(details.pollination_rate || 'Đạt 95%')})`;
+  }
+  if (log.log_type === 'Kiểm toán quả') {
+    const stage = details.fruit_stage || 'Đậu quả';
+    const count = details.fruit_count ?? qty ?? 0;
+    const estStr = details.estimated_yield_kg ? ` (~${details.estimated_yield_kg} kg)` : '';
+    const timeStr = details.audit_time ? ` · ${esc(details.audit_time)}` : '';
+    return `[${esc(stage)}] Đếm ${esc(count)} quả${estStr}${timeStr}`;
   }
   if (log.log_type === 'Thu hoạch') {
     const yieldKg = details.yield_kg || qty || '';
@@ -167,6 +182,11 @@ function _renderTimelineItemHtml(log) {
     tagClass = 'tag-flower';
     icon = 'sparkles';
     chibiKey = 'chibi-fertilize';
+  } else if (log.log_type === 'Kiểm toán quả') {
+    markerClass = 'marker-water';
+    tagClass = 'tag-water';
+    icon = 'clipboard-check';
+    chibiKey = 'chibi-fruit-audit';
   } else if (log.log_type === 'Thu hoạch') {
     markerClass = 'marker-fertilize';
     tagClass = 'tag-fertilize';

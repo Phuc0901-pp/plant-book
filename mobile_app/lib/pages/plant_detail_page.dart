@@ -429,6 +429,8 @@ class _PlantDetailPageState extends State<PlantDetailPage>
                     Colors.orange, 'Phun thuốc'),
                 _quickCareTile(
                     'Thuê nhân công', Icons.groups_rounded, Colors.indigo, 'Nhân công'),
+                _quickCareTile(
+                    'Kiểm toán quả', Icons.fact_check_rounded, Colors.teal, 'Kiểm toán quả'),
                 _quickCareTile('Bệnh cây', Icons.error_outline_rounded,
                     Colors.red, 'Bệnh cây'),
                 _quickCareTile('Thu hoạch', Icons.agriculture_rounded,
@@ -1184,6 +1186,19 @@ class _PlantDetailPageState extends State<PlantDetailPage>
       if (timeRange != null && timeRange.toString().isNotEmpty) {
         parts.add('Giờ làm: $timeRange');
       }
+    } else if (logType == 'Kiểm toán quả') {
+      final dynamic stage = details['fruit_stage'] ?? 'Đậu quả';
+      final dynamic fruitCount = details['fruit_count'] ?? details['amount'];
+      final dynamic culled = details['dropped_or_culled_count'];
+      final dynamic estKg = details['estimated_yield_kg'];
+      final dynamic auditTime = details['audit_time'];
+      parts.add('Giai đoạn: $stage');
+      if (fruitCount != null) parts.add('Số quả: $fruitCount quả');
+      if (culled != null && culled != 0) parts.add('Rụng/tỉa: $culled quả');
+      if (estKg != null && estKg != 0) parts.add('Ước tính: ~$estKg kg');
+      if (auditTime != null && auditTime.toString().isNotEmpty) {
+        parts.add('Giờ đếm: $auditTime');
+      }
     } else if (logType == 'Thu hoạch') {
       final dynamic yieldVal = details['yield_kg'] ?? details['amount'];
       final dynamic unit = details['unit'] ?? 'kg';
@@ -1253,6 +1268,8 @@ class _PlantDetailPageState extends State<PlantDetailPage>
         return Icons.bug_report_rounded;
       case 'Nhân công':
         return Icons.groups_rounded;
+      case 'Kiểm toán quả':
+        return Icons.fact_check_rounded;
       case 'Thu hoạch':
         return Icons.shopping_basket_rounded;
       case 'Tỉa cành/lá':

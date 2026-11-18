@@ -519,14 +519,17 @@ router.get(['/:id/full-dataset', '/:id/export-json'], async (req, res) => {
         });
       }
 
-      // Bóc tách hồ sơ Doanh thu & Sản lượng Thu hoạch (Harvest & Revenue Logs)
+      // Bóc tách hồ sơ Doanh thu & Sản lượng Thu hoạch (Harvest & Revenue Logs - loại trừ Kiểm toán quả)
+      const isFruitAuditLog = lTypeLower.includes('kiểm toán quả') || lTypeLower.includes('kiem toan qua') || Boolean(details.fruit_stage);
       if (
-        lTypeLower.includes('thu hoạch') ||
-        lTypeLower.includes('thu') ||
-        lTypeLower.includes('harvest') ||
-        details.total_revenue ||
-        details.price_per_tree ||
-        details.fruit_count
+        !isFruitAuditLog && (
+          lTypeLower.includes('thu hoạch') ||
+          lTypeLower.includes('thu') ||
+          lTypeLower.includes('harvest') ||
+          details.total_revenue ||
+          details.price_per_tree ||
+          details.fruit_count
+        )
       ) {
         const rev = parseFloat(details.total_revenue) || parseFloat(details.price_per_tree) || parseFloat(details.revenue) || parseFloat(log.cost) || 0;
         const weightKg = parseFloat(details.amount) || parseFloat(details.yield_kg) || parseFloat(details.quantity) || 0;

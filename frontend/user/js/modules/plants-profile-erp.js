@@ -375,6 +375,8 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
           typeColor = '#16a34a'; typeBg = '#f0fdf4'; iconName = 'sprout';
         } else if (typeStr.includes('thuốc') || typeStr.includes('thuoc') || typeStr.includes('pest') || typeStr.includes('sâu') || typeStr.includes('bệnh')) {
           typeColor = '#d97706'; typeBg = '#fffbeb'; iconName = 'shield-alert';
+        } else if (typeStr.includes('kiểm toán quả') || typeStr.includes('kiem toan qua')) {
+          typeColor = '#0f766e'; typeBg = '#f0fdfa'; iconName = 'clipboard-check';
         } else if (typeStr.includes('thu hoạch') || typeStr.includes('harvest')) {
           typeColor = '#9333ea'; typeBg = '#faf5ff'; iconName = 'package-check';
         } else if (typeStr.includes('tỉa') || typeStr.includes('pruning')) {
@@ -435,7 +437,23 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
       try { details = JSON.parse(details); } catch(e) { details = {}; }
     }
 
-    // Smart Dual-Defense: Tự động phát hiện log thu hoạch dù log_type có bị lưu nhầm
+    // Smart Dual-Defense: Ưu tiên tách riêng Kiểm toán quả khỏi nhận diện Thu hoạch
+    const isFruitAudit = typeStr.includes('kiểm toán quả') || typeStr.includes('kiem toan qua') || Boolean(details.fruit_stage);
+    if (isFruitAudit) {
+      return {
+        ...log,
+        log_type: 'Kiểm toán quả',
+        _isFruitAudit: true,
+        _fruitAuditItem: {
+          stage: details.fruit_stage || 'Đậu quả',
+          fruit_count: parseInt(details.fruit_count || details.amount || 0, 10) || 0,
+          culled_count: parseInt(details.dropped_or_culled_count || 0, 10) || 0,
+          estimated_yield_kg: parseFloat(details.estimated_yield_kg || 0) || 0,
+          audit_time: details.audit_time || ''
+        }
+      };
+    }
+
     const isExplicitHarvest = typeStr.includes('thu hoạch') || typeStr.includes('harvest');
     const isHarvestByDetails = parseFloat(details.fruit_count) > 0 || 
                                parseFloat(details.price_per_tree) > 0 || 
@@ -590,6 +608,8 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
           typeColor = '#16a34a'; typeBg = '#f0fdf4'; iconName = 'sprout';
         } else if (typeStr.includes('thuốc') || typeStr.includes('thuoc') || typeStr.includes('pest') || typeStr.includes('sâu') || typeStr.includes('bệnh')) {
           typeColor = '#d97706'; typeBg = '#fffbeb'; iconName = 'shield-alert';
+        } else if (typeStr.includes('kiểm toán quả') || typeStr.includes('kiem toan qua')) {
+          typeColor = '#0f766e'; typeBg = '#f0fdfa'; iconName = 'clipboard-check';
         } else if (typeStr.includes('thu hoạch') || typeStr.includes('harvest')) {
           typeColor = '#9333ea'; typeBg = '#faf5ff'; iconName = 'package-check';
         } else if (typeStr.includes('tỉa') || typeStr.includes('pruning')) {
@@ -616,7 +636,25 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
                 ${esc(log.note || log.action || 'Không có ghi chú chi tiết.')}
               </div>
 
-              ${log._isHarvest ? `
+              ${log._isFruitAudit ? `
+                <div style="margin-top:8px;padding:10px 14px;background:linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);border:1.5px solid #5eead4;border-radius:10px;">
+                  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                    <div style="font-size:13px;color:#0f766e;font-weight:800;display:inline-flex;align-items:center;gap:6px;">
+                      <i data-lucide="clipboard-check" class="lucide-sm" style="color:#0d9488;"></i>
+                      <span>Giai đoạn: <strong>[${esc(log._fruitAuditItem.stage)}]</strong> · Đếm: <strong style="font-size:14px;">${log._fruitAuditItem.fruit_count} quả</strong></span>
+                    </div>
+                    ${log._fruitAuditItem.estimated_yield_kg > 0 ? `
+                      <span style="font-size:12.5px;font-weight:800;color:#065f46;background:#ffffff;border:1px solid #99f6e4;padding:2px 8px;border-radius:6px;">
+                        Ước tính: ~${log._fruitAuditItem.estimated_yield_kg} kg
+                      </span>
+                    ` : ''}
+                  </div>
+                  <div style="margin-top:5px;display:flex;gap:12px;flex-wrap:wrap;font-size:11.5px;color:#115e59;font-weight:600;">
+                    <span>Rụng/Tỉa bỏ: <strong>${log._fruitAuditItem.culled_count} quả</strong></span>
+                    ${log._fruitAuditItem.audit_time ? `<span>Giờ kiểm đếm: <strong>${esc(log._fruitAuditItem.audit_time)}</strong></span>` : ''}
+                  </div>
+                </div>
+              ` : log._isHarvest ? `
                 <div style="margin-top:8px;padding:10px 14px;background:linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);border:1.5px solid #d8b4fe;border-radius:10px;box-shadow:0 2px 6px rgba(147,51,234,0.06);">
                   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
                     <div style="font-size:13px;color:#6b21a8;font-weight:800;display:inline-flex;align-items:center;gap:6px;">

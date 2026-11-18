@@ -118,9 +118,10 @@ export function groupCareLogs(logs) {
     
     // Tên vật tư hoặc hoạt chất chính
     const supplyName = (log.details?.supply_name || log.details?.fertilizer_name || log.details?.pesticide_name || log.details?.foliar_nutrition || log.details?.fertilizer || log.details?.pesticide || '').trim().toLowerCase();
+    const stageSuffix = (logType === 'Kiểm toán quả' && log.details?.fruit_stage) ? `__${log.details.fruit_stage}` : '';
     
-    // Khóa gom nhóm chính: Cùng ngày + Cùng nông trại + Cùng loại hoạt động + Cùng vật tư
-    const key = `${dateStr}__${farmId}__${logType}__${supplyName}`;
+    // Khóa gom nhóm chính: Cùng ngày + Cùng nông trại + Cùng loại hoạt động + Cùng vật tư (+ Mục con Kiểm toán quả)
+    const key = `${dateStr}__${farmId}__${logType}__${supplyName}${stageSuffix}`;
 
     if (!regularGroups.has(key)) {
       regularGroups.set(key, {
@@ -301,6 +302,13 @@ export function groupCareLogsByDay(logs) {
       let detailsStr = esc(l.note || '');
       if (l.details && Object.keys(l.details).length > 0) {
         const parts = [];
+        if (l.log_type === 'Kiểm toán quả') {
+          if (l.details.fruit_stage) parts.push(`Giai đoạn: ${l.details.fruit_stage}`);
+          if (l.details.fruit_count !== undefined) parts.push(`Số quả: ${l.details.fruit_count} quả`);
+          if (l.details.dropped_or_culled_count) parts.push(`Rụng/tỉa: ${l.details.dropped_or_culled_count} quả`);
+          if (l.details.estimated_yield_kg) parts.push(`Ước tính: ${l.details.estimated_yield_kg} kg`);
+          if (l.details.audit_time) parts.push(`Giờ đếm: ${l.details.audit_time}`);
+        }
         if (l.details.work_content)    parts.push(`Công việc: ${l.details.work_content}`);
         if (l.details.worker_count)    parts.push(`Số người: ${l.details.worker_count} người`);
         if (l.details.time_range)      parts.push(`Giờ làm: ${l.details.time_range}`);
@@ -317,7 +325,7 @@ export function groupCareLogsByDay(logs) {
         }
       }
 
-      const mediaHtml = (l.log_type === 'Bệnh cây' || l.log_type === 'Nhân công')
+      const mediaHtml = (l.log_type === 'Bệnh cây' || l.log_type === 'Nhân công' || l.log_type === 'Kiểm toán quả')
         ? buildMediaThumbnailsHtml(l.media_urls, 36)
         : '';
 
@@ -326,6 +334,7 @@ export function groupCareLogsByDay(logs) {
         'Bón phân':  'badge-brown',
         'Phun thuốc': 'badge-purple',
         'Nhân công': 'badge-blue',
+        'Kiểm toán quả': 'badge-green',
         'Cắt lá':    'badge-green',
         'Tỉa hoa':   'badge-amber',
         'Thu hoạch': 'badge-amber'
@@ -474,6 +483,9 @@ export function renderUserLogsTable(logs) {
       } else if (l.log_type === 'Bệnh cây') {
         badgeClass = 'badge-red';
         icon = 'bug';
+      } else if (l.log_type === 'Kiểm toán quả') {
+        badgeClass = 'badge-green';
+        icon = 'clipboard-check';
       } else if (l.log_type === 'Thu hoạch') {
         badgeClass = 'badge-yellow';
         icon = 'wheat';
@@ -497,6 +509,11 @@ export function renderUserLogsTable(logs) {
           if (l.details.work_content) parts.push(`Nội dung: <strong style="color:#0f172a;">${esc(l.details.work_content)}</strong>`);
           if (l.details.worker_count) parts.push(`Số lượng: <strong style="color:#0284c7;">${l.details.worker_count} người</strong>`);
           if (l.details.time_range) parts.push(`Giờ làm: <strong>${esc(l.details.time_range)}</strong>`);
+        } else if (l.log_type === 'Kiểm toán quả') {
+          if (l.details.fruit_stage) parts.push(`Giai đoạn: <strong style="color:#0f766e;">[${esc(l.details.fruit_stage)}]</strong>`);
+          if (l.details.fruit_count !== undefined) parts.push(`Đếm được: <strong style="color:#059669;">${l.details.fruit_count} quả</strong>`);
+          if (l.details.dropped_or_culled_count) parts.push(`Rụng/tỉa: <strong style="color:#d97706;">${l.details.dropped_or_culled_count} quả</strong>`);
+          if (l.details.estimated_yield_kg) parts.push(`Ước tính: <strong>~${l.details.estimated_yield_kg} kg</strong>`);
         } else {
           if (supName) parts.push(`Vật tư: <strong style="color:#0f172a;">${esc(supName)}</strong>`);
           if (qtyVal !== undefined && qtyVal !== null && qtyVal !== '' && qtyVal > 0) parts.push(`Tổng lượng: <strong style="color:#059669;">${qtyVal} ${unitVal}</strong>`);
@@ -625,6 +642,7 @@ function _renderLogPage() {
     'Bón phân': 'sprout',
     'Phun thuốc': 'flask-conical',
     'Nhân công': 'users',
+    'Kiểm toán quả': 'clipboard-check',
     'Cắt tỉa': 'scissors',
     'Cắt lá': 'scissors',
     'Làm cỏ': 'scissors',
@@ -673,6 +691,12 @@ function _renderLogPage() {
           if (l.details.work_content) parts.push(`Nội dung: ${l.details.work_content}`);
           if (l.details.worker_count) parts.push(`Số người: ${l.details.worker_count} người`);
           if (l.details.time_range)   parts.push(`Giờ làm: ${l.details.time_range}`);
+        } else if (l.log_type === 'Kiểm toán quả') {
+          if (l.details.fruit_stage) parts.push(`Giai đoạn: [${l.details.fruit_stage}]`);
+          if (l.details.fruit_count !== undefined) parts.push(`Số quả trên cây: ${l.details.fruit_count} quả`);
+          if (l.details.dropped_or_culled_count) parts.push(`Rụng/tỉa: ${l.details.dropped_or_culled_count} quả`);
+          if (l.details.estimated_yield_kg) parts.push(`Ước tính: ~${l.details.estimated_yield_kg} kg`);
+          if (l.details.audit_time) parts.push(`Giờ đếm: ${l.details.audit_time}`);
         } else {
           if (supName) parts.push(`Vật tư: ${supName}`);
           if (qtyVal !== undefined && qtyVal !== null && qtyVal !== '') parts.push(`Lượng: ${qtyVal} ${unitVal}`);
@@ -830,6 +854,13 @@ function _logRow(l) {
   let detailsStr = esc(l.note || '');
   if (l.details && Object.keys(l.details).length > 0) {
     const parts = [];
+    if (l.log_type === 'Kiểm toán quả') {
+      if (l.details.fruit_stage) parts.push(`Giai đoạn: [${l.details.fruit_stage}]`);
+      if (l.details.fruit_count !== undefined) parts.push(`Số quả: ${l.details.fruit_count} quả`);
+      if (l.details.dropped_or_culled_count) parts.push(`Rụng/tỉa: ${l.details.dropped_or_culled_count} quả`);
+      if (l.details.estimated_yield_kg) parts.push(`Ước tính: ~${l.details.estimated_yield_kg} kg`);
+      if (l.details.audit_time) parts.push(`Giờ đếm: ${l.details.audit_time}`);
+    }
     if (l.details.work_content)    parts.push(`Nội dung: ${l.details.work_content}`);
     if (l.details.worker_count)    parts.push(`Số người: ${l.details.worker_count} người`);
     if (l.details.time_range)      parts.push(`Giờ làm: ${l.details.time_range}`);
@@ -845,7 +876,7 @@ function _logRow(l) {
     }
   }
 
-  const mediaHtml = (l.log_type === 'Bệnh cây' || l.log_type === 'Nhân công')
+  const mediaHtml = (l.log_type === 'Bệnh cây' || l.log_type === 'Nhân công' || l.log_type === 'Kiểm toán quả')
     ? buildMediaThumbnailsHtml(l.media_urls, 40)
     : '';
 
@@ -887,6 +918,7 @@ function _logRow(l) {
     'Tưới nước': 'badge-blue',
     'Bón phân':  'badge-brown',
     'Phun thuốc': 'badge-purple',
+    'Kiểm toán quả': 'badge-green',
     'Cắt lá':    'badge-green',
     'Tỉa hoa':   'badge-amber'
   };
@@ -1392,8 +1424,8 @@ export function openUserExportLogsModal() {
   if (fromDateInput) fromDateInput.value = fromDateStr;
   if (toDateInput) toDateInput.value = today;
 
-  // Populate 6 Canonical SSOT categories checkboxes
-  const standardCats = ["Tưới nước", "Bón phân", "Phun thuốc", "Nhân công", "Bệnh cây", "Thu hoạch"];
+  // Populate Canonical SSOT categories + Kiểm toán quả
+  const standardCats = ["Tưới nước", "Bón phân", "Phun thuốc", "Nhân công", "Kiểm toán quả", "Bệnh cây", "Thu hoạch"];
   if (catsContainer) {
     catsContainer.innerHTML = standardCats.map(cat => {
       const label = cat === 'Nhân công' ? 'Thuê nhân công' : cat;
@@ -1475,6 +1507,12 @@ function formatLogDetailsText(log) {
   } else if (log.log_type === 'Tỉa hoa') {
     if (d.amount) parts.push(`Số lượng hoa/quả: ${d.amount}`);
     if (d.reason) parts.push(`Mục đích: ${d.reason}`);
+  } else if (log.log_type === 'Kiểm toán quả') {
+    if (d.fruit_stage) parts.push(`Giai đoạn: ${d.fruit_stage}`);
+    if (d.fruit_count !== undefined) parts.push(`Số quả trên cây: ${d.fruit_count} quả`);
+    if (d.dropped_or_culled_count) parts.push(`Rụng/tỉa: ${d.dropped_or_culled_count} quả`);
+    if (d.estimated_yield_kg) parts.push(`Sản lượng ước tính: ${d.estimated_yield_kg} kg`);
+    if (d.audit_time) parts.push(`Giờ đếm: ${d.audit_time}`);
   } else if (log.log_type === 'Thu hoạch') {
     if (d.amount || d.yield_kg) parts.push(`Sản lượng: ${d.amount || d.yield_kg} ${d.unit || 'kg'}`);
     if (d.fruit_count) parts.push(`Số lượng trái: ${d.fruit_count} trái`);

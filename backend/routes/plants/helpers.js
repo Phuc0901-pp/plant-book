@@ -482,6 +482,20 @@ const LEGACY_LABOR_LOG_TYPES = [
 function normalizeCareLogType(rawLogType, parsedDetails = {}) {
   let effectiveLogType = rawLogType || 'Nhật ký chăm sóc';
   const lower = String(effectiveLogType).toLowerCase();
+
+  // ƯU TIÊN TUYỆT ĐỐI: Nhận diện Kiểm toán quả trước Thu hoạch để không bị ép nhầm do dùng chung fruit_count
+  if (
+    lower.includes('kiểm toán quả') ||
+    lower.includes('kiem toan qua') ||
+    lower.includes('đếm quả') ||
+    Boolean(parsedDetails.fruit_stage)
+  ) {
+    if (!parsedDetails.fruit_stage) {
+      parsedDetails.fruit_stage = 'Đậu quả';
+    }
+    return 'Kiểm toán quả';
+  }
+
   if (
     lower.includes('thu hoạch') ||
     lower.includes('harvest') ||
@@ -559,6 +573,13 @@ function buildLogFilterQuery(req, bodyOrQuery) {
       baseQuery += ` AND pl.log_type = $${idx} `;
       params.push(cleanLogType);
     }
+    idx++;
+  }
+
+  // 4B. Fruit Stage filter (Mục con Kiểm toán quả: Đậu quả / Quả non / Quả chín)
+  if (bodyOrQuery.fruit_stage && bodyOrQuery.fruit_stage !== 'all') {
+    baseQuery += ` AND pl.details->>'fruit_stage' = $${idx} `;
+    params.push(String(bodyOrQuery.fruit_stage).trim());
     idx++;
   }
 

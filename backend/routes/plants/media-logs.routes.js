@@ -373,8 +373,8 @@ router.post(['/:id/logs', '/:id/care-log'], auth, async (req, res) => {
     let resolvedUnitPrice = 0;
     let resolvedTotCost = parseFloat(parsedDetails.total_cost) || 0;
 
-    // Chỉ tính toán trừ kho và vật tư tiêu hao nếu KHÔNG PHẢI là Thu hoạch
-    if (effectiveLogType !== 'Thu hoạch') {
+    // Chỉ tính toán trừ kho và vật tư tiêu hao nếu KHÔNG PHẢI là Thu hoạch hoặc Kiểm toán quả
+    if (effectiveLogType !== 'Thu hoạch' && effectiveLogType !== 'Kiểm toán quả') {
       try {
         let resolvedSupplyId = parsedDetails.supply_id || null;
         const rawAmount = parseFloat(parsedDetails.quantity || parsedDetails.volume || parsedDetails.amount || 0);

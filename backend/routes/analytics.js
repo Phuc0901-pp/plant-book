@@ -341,7 +341,8 @@ async function aggregateExecutiveBiData(ctx) {
       try { d = JSON.parse(d); } catch (_) { d = {}; }
     }
     d = (d && typeof d === 'object') ? d : {};
-    const isHarvest = lt.includes('thu hoạch') || lt.includes('harvest') || d.total_revenue || d.price_per_tree || d.fruit_count;
+    const isFruitAudit = lt.includes('kiểm toán quả') || lt.includes('kiem toan qua') || Boolean(d.fruit_stage);
+    const isHarvest = !isFruitAudit && (lt.includes('thu hoạch') || lt.includes('harvest') || d.total_revenue || d.price_per_tree || d.fruit_count);
     if (isHarvest) {
       const rev = parseFloat(d.total_revenue) || parseFloat(d.price_per_tree) || parseFloat(d.revenue) || 0;
       const fruits = parseFloat(d.fruit_count) || 0;

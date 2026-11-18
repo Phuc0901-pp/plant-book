@@ -244,6 +244,9 @@ function _renderMultiTreeSelector(checkboxListEl, multiEl, preselectedPlantId = 
     if (typeof calculateLaborCostPreview === 'function') {
       calculateLaborCostPreview();
     }
+    if (typeof calculateFruitAuditPreview === 'function') {
+      calculateFruitAuditPreview();
+    }
   };
 
   const totalPlantsCount = _plants().length;
@@ -365,6 +368,8 @@ export async function onCareLogTypeChange() {
     calculateCareSupplyCostPreview();
   } else if (logType === 'Nhân công') {
     calculateLaborCostPreview();
+  } else if (logType === 'Kiểm toán quả') {
+    calculateFruitAuditPreview();
   } else if (logType === 'Thu hoạch') {
     calculateHarvestEconomicsPreview();
   }
@@ -753,6 +758,62 @@ export function calculateHarvestEconomicsPreview() {
 }
 window.calculateHarvestEconomicsPreview = calculateHarvestEconomicsPreview;
 
+export function selectFruitAuditStage(stage, btnEl) {
+  const inputEl = document.getElementById('c-detail-fruit-stage');
+  if (inputEl) inputEl.value = stage;
+  if (btnEl && btnEl.parentElement) {
+    btnEl.parentElement.querySelectorAll('button').forEach(b => {
+      b.style.borderColor = '#cbd5e1';
+      b.style.background = '#ffffff';
+      b.style.color = '#334155';
+      b.style.fontWeight = '600';
+    });
+    btnEl.style.borderColor = '#0d9488';
+    btnEl.style.background = '#ccfbf1';
+    btnEl.style.color = '#0f766e';
+    btnEl.style.fontWeight = '800';
+  }
+  calculateFruitAuditPreview();
+}
+window.selectFruitAuditStage = selectFruitAuditStage;
+
+export function calculateFruitAuditPreview() {
+  const stage = document.getElementById('c-detail-fruit-stage')?.value || 'Đậu quả';
+  const fruitCount = parseInt(document.getElementById('c-detail-fruit-audit-count')?.value, 10) || 0;
+  const avgGram = parseFloat(document.getElementById('c-detail-fruit-audit-avg-gram')?.value) || 0;
+  const auditTime = document.getElementById('c-detail-fruit-audit-time')?.value || '';
+
+  const isMulti = document.getElementById('c-plant-multi-select')?.style.display === 'block';
+  let treeCount = 1;
+  if (isMulti) {
+    const checked = document.querySelectorAll('.c-plant-checkbox:checked');
+    if (checked.length > 0) treeCount = checked.length;
+  }
+
+  const singleKg = (fruitCount > 0 && avgGram > 0) ? Number(((fruitCount * avgGram) / 1000).toFixed(2)) : 0;
+  const totalKg = Number((singleKg * treeCount).toFixed(2));
+  const totalFruits = fruitCount * treeCount;
+
+  const stageTimeEl = document.getElementById('fruit-audit-calc-stage-time');
+  const singleKgEl = document.getElementById('fruit-audit-calc-single-kg');
+  const totalKgEl = document.getElementById('fruit-audit-calc-total-kg');
+  const treeNoteEl = document.getElementById('fruit-audit-calc-tree-note');
+
+  if (stageTimeEl) {
+    stageTimeEl.textContent = `${stage}${auditTime ? ` · Lúc ${auditTime}` : ''}`;
+  }
+  if (singleKgEl) {
+    singleKgEl.textContent = `${fruitCount.toLocaleString('vi-VN')} quả / cây${singleKg > 0 ? ` (~${singleKg} kg)` : ''}`;
+  }
+  if (totalKgEl) {
+    totalKgEl.textContent = totalKg > 0 ? `${totalKg.toLocaleString('vi-VN')} kg` : `${totalFruits.toLocaleString('vi-VN')} quả`;
+  }
+  if (treeNoteEl) {
+    treeNoteEl.textContent = treeCount > 1 ? `Tổng ${treeCount} cây (${totalFruits.toLocaleString('vi-VN')} quả)` : '1 cây được kiểm toán';
+  }
+}
+window.calculateFruitAuditPreview = calculateFruitAuditPreview;
+
 /**
  * Trả về HTML form fields theo loại hoạt động.
  * @private
@@ -1069,6 +1130,94 @@ function _buildDetailFields(logType, configs, supplies = []) {
         <div class="field"><label>Lý do tỉa hoa/quả *</label><select id="c-detail-reason">${reasons.map(r => `<option>${esc(r)}</option>`).join('')}</select></div>
         <div class="field"><label>Số lượng hoa/quả đã tỉa</label><input type="number" id="c-detail-amount" value="3" min="1"></div>`;
     }
+    case 'Kiểm toán quả': {
+      const nowTime = new Date().toTimeString().slice(0, 5);
+      return `
+        <!-- 1. Chọn giai đoạn Kiểm toán quả (3 mục con) -->
+        <div class="field" style="margin-bottom:12px;">
+          <label><i data-lucide="clipboard-check" class="lucide-sm" style="color:#0d9488;"></i> Giai đoạn kiểm toán quả (3 mục con) *</label>
+          <input type="hidden" id="c-detail-fruit-stage" value="Đậu quả">
+          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-top:4px;">
+            <button type="button" data-fruit-stage="Đậu quả" onclick="selectFruitAuditStage('Đậu quả', this)" style="padding:9px 8px; border-radius:10px; border:1.5px solid #0d9488; background:#ccfbf1; color:#0f766e; font-size:12.5px; font-weight:800; cursor:pointer; text-align:center;">
+              🌼 Đậu quả<br><span style="font-size:10px; font-weight:600; opacity:0.85;">Sau xổ nhụy</span>
+            </button>
+            <button type="button" data-fruit-stage="Quả non" onclick="selectFruitAuditStage('Quả non', this)" style="padding:9px 8px; border-radius:10px; border:1px solid #cbd5e1; background:#ffffff; color:#334155; font-size:12.5px; font-weight:600; cursor:pointer; text-align:center;">
+              🍈 Quả non<br><span style="font-size:10px; font-weight:600; opacity:0.8;">Đang nuôi trái</span>
+            </button>
+            <button type="button" data-fruit-stage="Quả chín" onclick="selectFruitAuditStage('Quả chín', this)" style="padding:9px 8px; border-radius:10px; border:1px solid #cbd5e1; background:#ffffff; color:#334155; font-size:12.5px; font-weight:600; cursor:pointer; text-align:center;">
+              🌕 Quả chín<br><span style="font-size:10px; font-weight:600; opacity:0.8;">Chờ thu hoạch</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. Số quả đếm trên cây & Số quả rụng / tỉa bỏ -->
+        <div class="field" style="display:flex; gap:10px; margin-bottom:12px;">
+          <div style="flex:1;">
+            <label><i data-lucide="hash" class="lucide-sm" style="color:#0f766e;"></i> Số quả trên cây *</label>
+            <input type="number" id="c-detail-fruit-audit-count" min="0" step="1" value="" placeholder="VD: 120" oninput="calculateFruitAuditPreview()" onchange="calculateFruitAuditPreview()" style="width:100%; padding:9px 10px; border:1.5px solid #5eead4; border-radius:8px; font-weight:800; color:#0f766e; background:#f0fdfa;">
+          </div>
+          <div style="flex:1;">
+            <label><i data-lucide="scissors" class="lucide-sm" style="color:#d97706;"></i> Quả rụng / tỉa bỏ</label>
+            <input type="number" id="c-detail-fruit-audit-culled" min="0" step="1" value="0" placeholder="VD: 15" style="width:100%; padding:9px 10px; border:1.5px solid var(--gray-200); border-radius:8px; font-weight:700;">
+          </div>
+        </div>
+
+        <!-- 3. Trọng lượng bình quân 1 quả & Giờ kiểm đếm cụ thể -->
+        <div class="field" style="display:flex; gap:10px; margin-bottom:12px;">
+          <div style="flex:1.2;">
+            <label><i data-lucide="scale" class="lucide-sm" style="color:#0284c7;"></i> Trọng lượng TB 1 quả (gram)</label>
+            <input type="number" id="c-detail-fruit-audit-avg-gram" min="0" step="10" value="" placeholder="VD: 350 hoặc 2800" oninput="calculateFruitAuditPreview()" onchange="calculateFruitAuditPreview()" style="width:100%; padding:9px 10px; border:1.5px solid var(--gray-200); border-radius:8px; font-weight:600;">
+          </div>
+          <div style="flex:0.8;">
+            <label><i data-lucide="clock" class="lucide-sm" style="color:#0d9488;"></i> Giờ kiểm đếm *</label>
+            <input type="time" id="c-detail-fruit-audit-time" value="${nowTime}" oninput="calculateFruitAuditPreview()" onchange="calculateFruitAuditPreview()" style="width:100%; padding:8px 10px; border:1.5px solid var(--gray-200); border-radius:8px; font-weight:700;">
+          </div>
+        </div>
+
+        <!-- 4. Khối tự động dự báo sản lượng định kỳ -->
+        <div id="fruit-audit-preview-box" class="calc-breakdown-card" style="margin-bottom:14px; padding:12px 16px; background:linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%); border:1.5px solid #5eead4; border-radius:12px;">
+          <div style="font-size:11px; font-weight:800; color:#0f766e; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; justify-content:space-between;">
+            <span style="display:flex; align-items:center; gap:6px;">
+              <i data-lucide="calculator" class="lucide-sm" style="color:#0d9488;"></i> THỐNG KÊ KIỂM TOÁN QUẢ ĐỊNH KỲ
+            </span>
+            <span style="background:#ccfbf1; color:#0f766e; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:700; border:1px solid #99f6e4;">BBCH 71-89</span>
+          </div>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:8px; padding-top:8px; border-top:1px dashed #5eead4;">
+            <div>
+              <div style="font-size:11px; color:#115e59; font-weight:700;">Mục con &amp; Giờ kiểm:</div>
+              <div id="fruit-audit-calc-stage-time" style="font-size:13px; font-weight:800; color:#0f766e; margin-top:2px;">Đậu quả · Lúc ${nowTime}</div>
+              <div id="fruit-audit-calc-single-kg" style="font-size:11.5px; color:#475569; margin-top:2px;">0 quả / cây</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:11px; color:#065f46; font-weight:700;">Tổng ước tính toàn đợt:</div>
+              <div id="fruit-audit-calc-total-kg" style="font-size:17px; font-weight:900; color:#0f766e; margin-top:2px;">0 quả</div>
+              <div id="fruit-audit-calc-tree-note" style="font-size:11px; color:#115e59; margin-top:2px;">1 cây được kiểm toán</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Chụp ảnh chùm quả kiểm toán (Tùy chọn) -->
+        <div class="field">
+          <label><i data-lucide="camera" class="lucide-sm" style="color:#0d9488;"></i> Ảnh thực địa chùm quả (Tự động đóng dấu thời gian)</label>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <input type="file" id="c-detail-media-capture" accept="image/*" capture="environment" multiple style="display:none;" onchange="onCareMediaSelected('capture')">
+            <input type="file" id="c-detail-media-video" accept="video/*" capture="environment" style="display:none;" onchange="onCareMediaSelected('video')">
+            <input type="file" id="c-detail-media-library" accept="image/*,video/*" multiple style="display:none;" onchange="onCareMediaSelected('library')">
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-secondary btn-sm" type="button" onclick="document.getElementById('c-detail-media-capture').click()" style="flex:1;justify-content:center;gap:5px;padding:9px 4px;display:inline-flex;align-items:center;font-size:12px;font-weight:600;">
+                <i data-lucide="camera" class="lucide-sm"></i> Chụp hình
+              </button>
+              <button class="btn btn-secondary btn-sm" type="button" onclick="document.getElementById('c-detail-media-video').click()" style="flex:1;justify-content:center;gap:5px;padding:9px 4px;display:inline-flex;align-items:center;font-size:12px;font-weight:600;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;">
+                <i data-lucide="video" class="lucide-sm"></i> Quay video
+              </button>
+              <button class="btn btn-secondary btn-sm" type="button" onclick="document.getElementById('c-detail-media-library').click()" style="flex:1;justify-content:center;gap:5px;padding:9px 4px;background:#fff;display:inline-flex;align-items:center;font-size:12px;font-weight:600;">
+                <i data-lucide="images" class="lucide-sm"></i> Thư viện
+              </button>
+            </div>
+            <div id="c-media-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;"></div>
+          </div>
+        </div>`;
+    }
     case 'Thu hoạch': {
       const currentPlantId = document.getElementById('c-plant-id')?.value;
       const targetPlant = _plants().find(p => p.id == currentPlantId);
@@ -1213,6 +1362,17 @@ function _populateDetailFields(log) {
   } else if (t === 'Cắt lá' || t === 'Tỉa hoa') {
     _setVal('c-detail-reason',     d.reason);
     _setVal('c-detail-amount',     d.amount);
+  } else if (t === 'Kiểm toán quả') {
+    const stage = d.fruit_stage || 'Đậu quả';
+    _setVal('c-detail-fruit-stage', stage);
+    const stageBtn = document.querySelector(`[data-fruit-stage="${stage}"]`);
+    if (stageBtn) selectFruitAuditStage(stage, stageBtn);
+    _setVal('c-detail-fruit-audit-count', d.fruit_count !== undefined ? d.fruit_count : (d.amount || ''));
+    _setVal('c-detail-fruit-audit-culled', d.dropped_or_culled_count !== undefined ? d.dropped_or_culled_count : 0);
+    _setVal('c-detail-fruit-audit-avg-gram', d.avg_weight_gram || '');
+    _setVal('c-detail-fruit-audit-time', d.audit_time || '');
+    renderMediaPreviews();
+    if (typeof calculateFruitAuditPreview === 'function') calculateFruitAuditPreview();
   } else if (t === 'Thu hoạch') {
     _setVal('c-detail-harvest-fruit-count', d.fruit_count);
     _setVal('c-detail-harvest-amount',      d.amount);
@@ -1257,6 +1417,12 @@ function _buildDetailsString(logType, details) {
   } else if (logType === 'Tỉa hoa') {
     if (d.reason) parts.push(`Lý do: ${d.reason}`);
     if (d.amount) parts.push(`Lượng: ${d.amount}`);
+  } else if (logType === 'Kiểm toán quả') {
+    if (d.fruit_stage) parts.push(`Giai đoạn: ${d.fruit_stage}`);
+    if (d.fruit_count !== undefined) parts.push(`Số quả: ${d.fruit_count} quả`);
+    if (d.dropped_or_culled_count) parts.push(`Rụng/tỉa: ${d.dropped_or_culled_count} quả`);
+    if (d.estimated_yield_kg) parts.push(`Ước tính: ${d.estimated_yield_kg} kg`);
+    if (d.audit_time) parts.push(`Giờ đếm: ${d.audit_time}`);
   } else if (logType === 'Thu hoạch') {
     if (d.amount) parts.push(`Sản lượng: ${d.amount} ${d.unit || 'kg'}`);
     if (d.fruit_count) parts.push(`Số trái: ${d.fruit_count} quả`);
@@ -1338,6 +1504,36 @@ window.renderMediaPreviews = renderMediaPreviews;
 window.removeExistingPhoto = removeExistingPhoto;
 
 // ── Save ──────────────────────────────────────────────────────
+
+async function _uploadWatermarkedCareMedia(selectedPlants, watermarkLabel, btn) {
+  const mediaUrls = [...(window._existingMediaUrls || [])];
+  if (selectedCareFiles.length > 0 && selectedPlants[0]?.id) {
+    if (btn) btn.innerHTML = '<span class="spinner"></span> Đóng dấu ảnh...';
+    const formData = new FormData();
+    const primaryTreeCode = selectedPlants[0].treeCode;
+    for (const file of selectedCareFiles) {
+      const processed = file.type.startsWith('image/')
+        ? await watermarkImage(file, primaryTreeCode, watermarkLabel)
+        : file;
+      formData.append('files', processed, file.name);
+    }
+    const uploadRes = await fetch(`${API}/plants/${selectedPlants[0].id}/media`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData
+    });
+    if (!uploadRes.ok) {
+      const errData = await uploadRes.json().catch(() => ({}));
+      throw new Error(errData.error || 'Lỗi tải ảnh/video lên máy chủ');
+    }
+    const uploaded = await uploadRes.json();
+    const uploadedArr = Array.isArray(uploaded) ? uploaded : (uploaded.uploaded || []);
+    uploadedArr.forEach(f => {
+      mediaUrls.push({ url: f.url, type: f.media_type });
+    });
+  }
+  return mediaUrls;
+}
 
 /**
  * Xác thực, xử lý media, và lưu nhật ký chăm sóc lên API.
@@ -1530,38 +1726,42 @@ export async function saveCareLog() {
       };
 
       // Tải lên & đóng dấu ảnh đoàn người tham gia (nếu có chọn ảnh/video)
-      let mediaUrls = [...(window._existingMediaUrls || [])];
-      if (selectedCareFiles.length > 0) {
-        if (btn) btn.innerHTML = '<span class="spinner"></span> Đóng dấu ảnh...';
-        const formData = new FormData();
-        const primaryTreeCode = selectedPlants[0].treeCode;
-        for (const file of selectedCareFiles) {
-          const processed = file.type.startsWith('image/')
-            ? await watermarkImage(file, primaryTreeCode, `Nhân công: ${workContent}`)
-            : file;
-          formData.append('files', processed, file.name);
-        }
-        const uploadRes = await fetch(`${API}/plants/${selectedPlants[0].id}/media`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
-          body: formData
-        });
-        if (!uploadRes.ok) {
-          const errData = await uploadRes.json();
-          throw new Error(errData.error || 'Lỗi tải ảnh/video lên máy chủ');
-        }
-        const uploaded = await uploadRes.json();
-        uploaded.forEach(f => {
-          mediaUrls.push({ url: f.url, type: f.media_type });
-        });
-      }
-      body.media_urls = mediaUrls;
+      body.media_urls = await _uploadWatermarkedCareMedia(selectedPlants, `Nhân công: ${workContent}`, btn);
 
     } else if (logType === 'Cắt lá') {
       body.details = { reason: document.getElementById('c-detail-reason')?.value, amount: parseInt(document.getElementById('c-detail-amount')?.value) || 0 };
 
     } else if (logType === 'Tỉa hoa') {
       body.details = { reason: document.getElementById('c-detail-reason')?.value, amount: parseInt(document.getElementById('c-detail-amount')?.value) || 0 };
+
+    } else if (logType === 'Kiểm toán quả') {
+      const fruitStage = document.getElementById('c-detail-fruit-stage')?.value || 'Đậu quả';
+      const fruitCount = parseInt(document.getElementById('c-detail-fruit-audit-count')?.value, 10);
+      if (isNaN(fruitCount) || fruitCount < 0) throw new Error('Vui lòng nhập số lượng quả kiểm đếm hợp lệ!');
+      const culledCount = parseInt(document.getElementById('c-detail-fruit-audit-culled')?.value, 10) || 0;
+      const avgWeightGram = parseFloat(document.getElementById('c-detail-fruit-audit-avg-gram')?.value) || 0;
+      const estimatedYieldKg = (fruitCount > 0 && avgWeightGram > 0)
+        ? Number(((fruitCount * avgWeightGram) / 1000).toFixed(2))
+        : 0;
+      const auditTime = document.getElementById('c-detail-fruit-audit-time')?.value || new Date().toTimeString().slice(0, 5);
+      const performedAtIso = new Date(`${logDate}T${auditTime}:00`).toISOString();
+
+      body.details = {
+        fruit_stage: fruitStage,
+        fruit_count: fruitCount,
+        amount: fruitCount,
+        quantity: fruitCount,
+        unit: 'quả',
+        dropped_or_culled_count: culledCount,
+        avg_weight_gram: avgWeightGram,
+        estimated_yield_kg: estimatedYieldKg,
+        audit_time: auditTime,
+        time: auditTime,
+        performed_at: performedAtIso,
+        value: `Kiểm toán quả [${fruitStage}]: ${fruitCount} quả${culledCount > 0 ? ` (Rụng/tỉa: ${culledCount})` : ''}${estimatedYieldKg > 0 ? ` · Ước tính ~${estimatedYieldKg} kg` : ''} · Lúc ${auditTime}`
+      };
+
+      body.media_urls = await _uploadWatermarkedCareMedia(selectedPlants, `Kiểm toán quả: ${fruitStage}`, btn);
 
     } else if (logType === 'Thu hoạch') {
       const amount = parseFloat(document.getElementById('c-detail-harvest-amount')?.value) || 0;
@@ -1591,36 +1791,7 @@ export async function saveCareLog() {
         description: document.getElementById('c-detail-description')?.value.trim()
       };
 
-      // Hợp nhất ảnh cũ và ảnh mới
-      let mediaUrls = [...(window._existingMediaUrls || [])];
-
-      if (selectedCareFiles.length > 0) {
-        if (btn) btn.innerHTML = '<span class="spinner"></span> Đóng dấu ảnh...';
-        const formData  = new FormData();
-        const primaryTreeCode  = selectedPlants[0].treeCode;
-
-        for (const file of selectedCareFiles) {
-          const processed = file.type.startsWith('image/')
-            ? await watermarkImage(file, primaryTreeCode, disease_name)
-            : file;
-          formData.append('files', processed, file.name);
-        }
-
-        const uploadRes = await fetch(`${API}/plants/${selectedPlants[0].id}/media`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
-          body: formData
-        });
-        if (!uploadRes.ok) {
-          const errData = await uploadRes.json();
-          throw new Error(errData.error || 'Lỗi tải ảnh/video lên máy chủ');
-        }
-        const uploaded = await uploadRes.json();
-        uploaded.forEach(f => {
-          mediaUrls.push({ url: f.url, type: f.media_type });
-        });
-      }
-      body.media_urls = mediaUrls;
+      body.media_urls = await _uploadWatermarkedCareMedia(selectedPlants, disease_name, btn);
     }
 
     if (window._activeEditLogId) {
@@ -1693,6 +1864,8 @@ export async function saveCareLog() {
 
       if (logType === 'Thu hoạch' && lastSavedResult && lastSavedResult.batch_code) {
         toast(`🌾 Thu hoạch thành công! Đã cấp Mã Lô VietGAP: ${lastSavedResult.batch_code}`, 'success');
+      } else if (logType === 'Kiểm toán quả') {
+        toast(`🍈 Đã ghi nhật ký Kiểm toán quả [${body.details?.fruit_stage || 'Đậu quả'}] thành công!`, 'success');
       } else if (logType === 'Nhân công') {
         toast('👷 Đã ghi nhật ký Nhân công & tự động hạch toán chi phí lên bảng BI!', 'success');
       } else if (supplyId) {

@@ -386,7 +386,7 @@ Xưng hô: Xưng là "Bé Mầm" hoặc "em", gọi người dùng là "${isAdmi
 📘 [BỘ KIẾN THỨC CẨM NANG HỆ THỐNG SỔ NÔNG TÂN BẢO]:
 - Bước 1: Tạo Trang Trại Mới: Vào menu "Trang trại" -> Bấm "+ Khởi tạo Trang trại mới (GPS)" -> Nhập tên vườn, diện tích và lấy vị trí GPS vệ tinh.
 - Bước 2: Thêm Cây & Định danh NFC (/sub): Bấm "+ Thêm cây" hoặc vào cổng /sub để gán thẻ NFC NTAG213.
-- Bước 3: Ghi Nhật Ký Canh Tác: Chọn 1 trong 6 thao tác Chibi ISO (Tưới nước, Bón phân, Phun thuốc, Thuê nhân công, Bệnh cây, Thu hoạch).
+- Bước 3: Ghi Nhật Ký Canh Tác: Chọn 1 trong 7 thao tác Chibi ISO (Tưới nước, Bón phân, Phun thuốc, Thuê nhân công, Kiểm toán quả [Đậu quả / Quả non / Quả chín], Bệnh cây, Thu hoạch).
 - Bước 4: Quản Lý Vật Tư & Xuất Báo Cáo VietGAP: Tự động khấu trừ tồn kho, hạch toán chi phí và niêm phong chuỗi băm SHA-256.
 
 🌿 [NGUYÊN TẮC AN TOÀN SINH HỌC & VIETGAP BẮT BUỘC]:

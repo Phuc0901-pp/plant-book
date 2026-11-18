@@ -166,6 +166,31 @@ async function submitCareLog(event, type, modalId, formId) {
     const harvestNoteInput = document.getElementById('harvest-note');
     note = harvestNoteInput ? harvestNoteInput.value.trim() : '';
   }
+  else if (type === 'Kiểm toán quả') {
+    const fruitStage = document.getElementById('fruit-audit-stage')?.value || 'Đậu quả';
+    const fruitCount = parseInt(document.getElementById('fruit-audit-count')?.value, 10) || 0;
+    const culledCount = parseInt(document.getElementById('fruit-audit-culled')?.value, 10) || 0;
+    const avgWeightGram = parseFloat(document.getElementById('fruit-audit-avg-gram')?.value) || 0;
+    const estimatedYieldKg = (fruitCount > 0 && avgWeightGram > 0)
+      ? Number(((fruitCount * avgWeightGram) / 1000).toFixed(2))
+      : 0;
+    const dtVal = document.getElementById('fruit-audit-datetime')?.value || '';
+    const auditTime = dtVal && dtVal.includes('T') ? dtVal.slice(11, 16) : new Date().toTimeString().slice(0, 5);
+
+    details.fruit_stage = fruitStage;
+    details.fruit_count = fruitCount;
+    details.amount = fruitCount;
+    details.unit = 'quả';
+    details.dropped_or_culled_count = culledCount;
+    details.avg_weight_gram = avgWeightGram;
+    details.estimated_yield_kg = estimatedYieldKg;
+    details.audit_time = auditTime;
+    details.time = auditTime;
+    details.operator_name = document.getElementById('fruit-audit-operator-name')?.value.trim() || '';
+    details.equipment_used = document.getElementById('fruit-audit-equipment-used')?.value.trim() || '';
+    details.value = `Kiểm toán quả [${fruitStage}]: ${fruitCount} quả${culledCount > 0 ? ` (Rụng/tỉa: ${culledCount})` : ''}${estimatedYieldKg > 0 ? ` · Ước tính ~${estimatedYieldKg} kg` : ''} · Lúc ${auditTime}`;
+    note = document.getElementById('fruit-audit-note')?.value.trim() || '';
+  }
 
   const dtInput = form.querySelector('input[type="datetime-local"]');
   let performedAt = new Date().toISOString();
@@ -250,6 +275,17 @@ function calculatePublicHarvestEconomics() {
   }
 }
 window.calculatePublicHarvestEconomics = calculatePublicHarvestEconomics;
+
+function calculatePublicFruitAuditPreview() {
+  const count = parseFloat(document.getElementById('fruit-audit-count')?.value) || 0;
+  const avgGram = parseFloat(document.getElementById('fruit-audit-avg-gram')?.value) || 0;
+  const estEl = document.getElementById('public-fruit-audit-est-kg');
+  if (estEl) {
+    const estKg = (count > 0 && avgGram > 0) ? ((count * avgGram) / 1000).toFixed(2) : '0';
+    estEl.textContent = `${estKg} kg`;
+  }
+}
+window.calculatePublicFruitAuditPreview = calculatePublicFruitAuditPreview;
 
 // ── Bệnh cây Feature ─────────────────────────────────────────────
 let diseaseImageFiles = [];
