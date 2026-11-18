@@ -1,8 +1,6 @@
-﻿<!-- ── ERP AGTECH PLANT EDIT & PROFILE MODAL ── -->
 <div class="modal-overlay" id="plant-modal" style="display:none" onclick="if(event.target===this)closePlantModal()">
   <div class="modal plant-erp-modal" style="background:#ffffff; border-radius:18px; width:92%; max-width:860px; height:720px; max-height:88vh; min-height:540px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 25px 60px -15px rgba(0,0,0,0.35); border:1px solid #cbd5e1; position:relative; z-index:20001;">
-    
-    <!-- 1. ERP Gradient Header with Live Badges -->
+
     <div class="modal-header" style="background:linear-gradient(135deg, #064e3b 0%, #047857 100%); color:#ffffff; padding:18px 24px; border-bottom:1px solid rgba(255,255,255,0.12); position:sticky; top:0; z-index:10; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
       <div style="display:flex; align-items:center; gap:14px;">
         <div style="width:46px; height:46px; border-radius:12px; background:rgba(255,255,255,0.15); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center; font-size:22px; color:#a7f3d0; border:1px solid rgba(255,255,255,0.25); box-shadow:0 4px 12px rgba(0,0,0,0.1); flex-shrink:0;">
@@ -24,10 +22,8 @@
       <button class="modal-close" onclick="closePlantModal()" style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.2); width:36px; height:36px; border-radius:10px; color:#ffffff; font-size:20px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s; outline:none;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">×</button>
     </div>
 
-    <!-- 2. Scrollable Body with Fixed Viewport Container -->
     <div class="modal-body" style="padding:20px 24px; overflow-y:auto; background:#f8fafc; flex:1; min-height:0;">
 
-      <!-- Segmented Navigation Tab Bar -->
       <div class="tabs plant-modal-tabs" style="display:flex; gap:6px; background:#e2e8f0; padding:5px; border-radius:12px; margin-bottom:18px; border-bottom:none; flex-shrink:0;">
         <div class="tab active" onclick="switchTab(this,'tab-info')" style="flex:1; text-align:center; padding:9px 12px; font-size:13px; font-weight:700; border-radius:8px; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:6px; border:none; margin:0;">
           <i data-lucide="info" class="lucide-sm"></i> <span>Thông tin cơ bản</span>
@@ -41,10 +37,8 @@
         </div>
       </div>
 
-      <!-- ── TAB 1: THÔNG TIN CƠ BẢN ── -->
       <div class="tab-pane active" id="tab-info">
-        
-        <!-- Mode Selector (Chỉ hiển thị khi tạo cây mới) -->
+
         <div id="plant-create-mode-wrap" style="margin-bottom:16px; padding:12px 16px; background:#ffffff; border:1.5px solid #cbd5e1; border-radius:12px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; box-shadow:0 2px 6px rgba(0,0,0,0.02);">
           <div style="font-size:12.5px; font-weight:800; color:#1e293b; display:flex; align-items:center; gap:6px;">
             <i data-lucide="sliders" class="lucide-sm" style="color:#059669;"></i> Chế độ khởi tạo cây:
@@ -61,13 +55,11 @@
           </div>
         </div>
 
-        <!-- Group 1:  Định danh & Phân loại giống cây -->
         <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
           <div style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:14px; display:flex; align-items:center; gap:8px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
             <i data-lucide="tag" class="lucide-sm" style="color:#059669;"></i> Định danh &amp; Phân loại giống cây
           </div>
 
-          <!-- 1. Single Mode Tree Code Field -->
           <div class="form-row" id="wrap-single-tree-code" style="margin-bottom:12px;">
             <div class="field" style="margin-bottom:0;">
               <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px;">Mã số cây (ID trong vườn) *</label>
@@ -81,7 +73,6 @@
             </div>
           </div>
 
-          <!-- 2. Range Mode Fields (XX -> XY) -->
           <div id="wrap-range-tree-code" style="display:none; background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:12px; padding:14px; margin-bottom:14px;">
             <div style="font-size:12.5px; font-weight:800; color:#065f46; display:flex; align-items:center; gap:6px; margin-bottom:10px;">
               <i data-lucide="layers" class="lucide-sm"></i> Tạo hàng loạt cây cùng thông tin từ số XX đến số XY
@@ -133,7 +124,6 @@
           </div>
         </div>
 
-        <!-- Group 2:  Trạng thái sinh trưởng & Quản lý vị trí -->
         <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
           <div style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:14px; display:flex; align-items:center; gap:8px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
             <i data-lucide="activity" class="lucide-sm" style="color:#059669;"></i> Trạng thái sinh trưởng &amp; Quản lý thực địa
@@ -161,7 +151,6 @@
           </div>
         </div>
 
-        <!-- Group 3:  Định vị tọa độ GPS & Bản đồ số -->
         <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
             <div style="font-size:13px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
@@ -183,7 +172,6 @@
           </div>
         </div>
 
-        <!-- Group 4:  Cổng tra cứu công khai (Public QR / URL) -->
         <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:0; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
           <div style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:14px; display:flex; align-items:center; gap:8px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
             <i data-lucide="globe" class="lucide-sm" style="color:#059669;"></i> Cổng tra cứu công khai &amp; Mã định danh số
@@ -196,7 +184,6 @@
               <option value="false"> Riêng tư (Chỉ dành cho quản trị viên và chủ nông hộ)</option>
             </select>
           </div>
-          <!-- Public URL display -->
           <div class="public-url-box" id="public-url-section" style="display:none; background:#f0fdf4; border:1.5px solid #86efac; border-radius:12px; padding:14px;">
             <div style="font-size:12px; font-weight:800; color:#166534; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
               <i data-lucide="link" class="lucide-sm"></i> Đường dẫn tra cứu công khai của cây:
@@ -214,7 +201,6 @@
         </div>
       </div>
 
-      <!-- ── TAB 2: DỮ LIỆU MỞ RỘNG (DYNAMIC SCHEMA) ── -->
       <div class="tab-pane" id="tab-extra">
         <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.02); min-height:280px;">
           <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; border-bottom:1px solid #f1f5f9; padding-bottom:10px;">
@@ -233,7 +219,6 @@
         </div>
       </div>
 
-      <!-- ── TAB 3: THƯ VIỆN ẢNH & VIDEO ── -->
       <div class="tab-pane" id="tab-media">
         <div id="plant-media-container" style="min-height:280px;">
           <div class="empty-state" style="padding:40px 20px; text-align:center; background:#ffffff; border-radius:14px; border:1.5px dashed #cbd5e1;">
@@ -246,7 +231,6 @@
 
     </div>
 
-    <!-- 3. ERP Sticky Bottom Action Footer -->
     <div class="modal-footer" style="padding:16px 24px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; position:sticky; bottom:0; background:#ffffff; z-index:10; border-radius:0 0 18px 18px; flex-shrink:0;">
       <div style="font-size:12px; color:#64748b; display:flex; align-items:center; gap:6px;">
         <i data-lucide="shield-check" class="lucide-sm" style="color:#059669;"></i> <span>Sổ Nông Tân Bảo AgTech · Chuẩn ERP</span>

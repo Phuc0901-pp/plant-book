@@ -1,9 +1,6 @@
-/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-// Universal Helper to extract Exact GPS Center [lng, lat] of ANY Farm
 function getFarmExactGpsCenter(farm, plants) {
   if (!farm) return null;
 
-  // 1. Try to extract from polygon_coordinates
   let raw = farm.polygon_coordinates;
   let coords = [];
   try {
@@ -34,7 +31,6 @@ function getFarmExactGpsCenter(farm, plants) {
     }
   }
 
-  // 2. Try farm's direct latitude / longitude fields if present
   if (farm.latitude && farm.longitude) {
     let v1 = parseFloat(farm.longitude);
     let v2 = parseFloat(farm.latitude);
@@ -45,7 +41,6 @@ function getFarmExactGpsCenter(farm, plants) {
     }
   }
 
-  // 3. Try to calculate average from farm's plants
   const farmPlants = (plants || []).filter(p => p.farm_id === farm.id && p.latitude && p.longitude);
   if (farmPlants.length > 0) {
     let sumLng = 0, sumLat = 0, count = 0;
@@ -68,7 +63,6 @@ function getFarmExactGpsCenter(farm, plants) {
   return null;
 }
 
-// Universal Helper to extract closed Polygon GeoJSON Ring [[lng, lat], ...]
 function getFarmPolygonGeoJson(farm) {
   let raw = farm.polygon_coordinates;
   let coords = [];
@@ -96,7 +90,7 @@ function getFarmPolygonGeoJson(farm) {
   });
 
   if (validRing.length >= 3) {
-    if (validRing[0][0] !== validRing[validRing.length - 1][0] || 
+    if (validRing[0][0] !== validRing[validRing.length - 1][0] ||
         validRing[0][1] !== validRing[validRing.length - 1][1]) {
       validRing.push(validRing[0]);
     }
@@ -151,7 +145,6 @@ function removeContourLinesFromMap(map) {
 }
 window.removeContourLinesFromMap = removeContourLinesFromMap;
 
-// Helper tính khoảng cách giữa 2 điểm GPS (Haversine Formula)
 function getDist(p1, p2) {
   if (!p1 || !p2) return 0;
   const R = 6371000;
@@ -164,7 +157,6 @@ function getDist(p1, p2) {
   return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 10) / 10;
 }
 
-// Helper cắt gọn mã cây trồng hiển thị trên icon marker bản đồ (VD: KH001-001 -> 1, KH001-058 -> 58)
 function getShortTreeCode(treeCode, plantId) {
   const code = String(treeCode || plantId || '').trim();
   if (!code) return '';
@@ -175,16 +167,15 @@ function getShortTreeCode(treeCode, plantId) {
   return code;
 }
 
-// Bảng màu phân biệt trang trại theo từng Nông hộ / Khách hàng
 const CUSTOMER_PALETTE = [
-  '#10b981', // Emerald green
-  '#3b82f6', // Royal blue
-  '#f59e0b', // Amber gold
-  '#8b5cf6', // Purple
-  '#ec4899', // Pink
-  '#06b6d4', // Cyan
-  '#ef4444', // Red
-  '#84cc16'  // Lime
+  '#10b981',
+  '#3b82f6',
+  '#f59e0b',
+  '#8b5cf6',
+  '#ec4899',
+  '#06b6d4',
+  '#ef4444',
+  '#84cc16'
 ];
 
 function getCustomerColor(userId) {
@@ -221,13 +212,12 @@ let activeFarmId = null;
 let currentFarms = [];
 let currentPlants = [];
 
-// Populate farms select in plant modal
 async function loadFarmsDropdown() {
   try {
     const farms = await api('/farms');
     const select = document.getElementById('f-farm-id');
     if (select) {
-      select.innerHTML = '<option value="">— Không thuộc trang trại nào —</option>' + 
+      select.innerHTML = '<option value="">— Không thuộc trang trại nào —</option>' +
         farms.map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join('');
     }
   } catch (err) {
@@ -235,11 +225,10 @@ async function loadFarmsDropdown() {
   }
 }
 
-// Initialize Overview map on Dashboard (Trang tổng quan: Hiển thị ghim màu theo từng khách hàng, KHÔNG vẽ đường đồng mức)
 function initDashboardMap(farms, plants) {
   const mapContainer = document.getElementById('dashboard-map');
   if (!mapContainer) return;
-  
+
   if (dashboardMap) {
     try {
       dashboardMap.remove();
@@ -300,8 +289,7 @@ function initDashboardMap(farms, plants) {
     farms.forEach(farm => {
       const farmColor = getCustomerColor(farm.user_id);
       const center = getFarmExactGpsCenter(farm, plants);
-      
-      // 1. Draw polygon if available
+
       const polyRing = getFarmPolygonGeoJson(farm);
       if (polyRing) {
         const farmSourceId = `farm-source-${farm.id}`;
@@ -361,7 +349,6 @@ function initDashboardMap(farms, plants) {
         }
       }
 
-      // 2. Add Pin Marker at exact GPS Center
       if (center) {
         const [centerLng, centerLat] = center;
         if (centerLng >= 102 && centerLng <= 112 && centerLat >= 9 && centerLat <= 23) {
@@ -372,7 +359,7 @@ function initDashboardMap(farms, plants) {
         const pinEl = document.createElement('div');
         const initialZoom = map.getZoom ? map.getZoom() : 6.2;
         pinEl.className = `farm-dashboard-pin ${initialZoom >= 12 ? 'is-full' : 'is-dot'}`;
-        
+
         pinEl.innerHTML = `
           <div class="farm-pin-dot-wrap" title="Trang trại: ${esc(farm.name)} (Bấm để phóng to)">
             <div class="farm-pin-pulse" style="background:${farmColor};"></div>
@@ -386,7 +373,6 @@ function initDashboardMap(farms, plants) {
           </div>
         `;
 
-        // Click to smoothly fly in when in Dot mode
         pinEl.addEventListener('click', (ev) => {
           if (map.getZoom() < 12) {
             ev.stopPropagation();
@@ -443,12 +429,11 @@ function initDashboardMap(farms, plants) {
   }, 250);
 }
 
-// Initialize GIS Page
 async function initGisPage(targetFarmId = null) {
   if (targetFarmId) {
     window._pendingSelectFarmId = targetFarmId;
   }
-  
+
   if (!window._pendingSelectFarmId) {
     activeFarmId = null;
     document.getElementById('gis-back-btn').style.display = 'none';
@@ -456,7 +441,7 @@ async function initGisPage(targetFarmId = null) {
     document.getElementById('gis-header-actions').style.display = 'block';
     switchGisView('list');
   }
-  
+
   try {
     await ensureMapboxToken();
     const [farms, plants, users] = await Promise.all([
@@ -466,18 +451,16 @@ async function initGisPage(targetFarmId = null) {
     ]);
     currentFarms = farms;
     currentPlants = plants;
-    
-    // Populate customer filter dropdown
+
     const filterSelect = document.getElementById('filter-farm-user');
     if (filterSelect) {
       filterSelect.innerHTML = '<option value="all">Tất cả khách hàng (nông hộ)</option>' +
         users.map(u => `<option value="${u.id}">${esc(u.full_name)} (${u.role === 'admin' ? 'Admin' : 'Nông hộ'})</option>`).join('');
     }
-    
+
     renderFarmsList(farms);
     initGisMap(farms, plants);
 
-    // Tự động nhảy bản đồ tới trang trại đang được chọn nếu có
     if (window._pendingSelectFarmId) {
       const farmToSelect = window._pendingSelectFarmId;
       selectFarm(farmToSelect);
@@ -596,15 +579,14 @@ function initGisMap(farms, plants) {
   const container = document.getElementById('gis-map');
   if (!container) return;
 
-  // Nếu bản đồ gMap đã được khởi tạo, tái sử dụng để không bị reload / chớp trắng bản đồ
   if (gMap) {
     drawFarmsAndPlantsLayers(farms, plants);
     try { gMap.resize(); } catch(_) {}
     return;
   }
-  
+
   container.innerHTML = '';
-  
+
   gMap = new mapboxgl.Map({
     container: 'gis-map',
     style: 'mapbox://styles/mapbox/satellite-streets-v12',
@@ -643,22 +625,18 @@ function initGisMap(farms, plants) {
   gMap.on('draw.update', updateAreaDisplay);
   gMap.on('draw.delete', updateAreaDisplay);
 
-  // Click map handler cho Chế độ Gắn Point Cây cụ thể hoặc Chế độ Import GIS Cây Trồng
   gMap.on('click', (e) => {
     if (!isGisImportMode && !pinningPlantTargetId) return;
 
-    // Ngăn chặn trigger click nếu đang trong chế độ vẽ polygon
     if (drawControl && drawControl.getMode && drawControl.getMode() !== 'simple_select') return;
 
     const { lng, lat } = e.lngLat;
 
-    // Trường hợp 1: Đang gắn điểm Point GPS cho 1 cây cụ thể từ danh sách Sidebar
     if (pinningPlantTargetId) {
       assignGpsToExistingPlant(pinningPlantTargetId, lat, lng);
       return;
     }
 
-    // Trường hợp 2: Chế độ Import GIS tạo cây mới
     if (gisImportTempMarker) {
       gisImportTempMarker.remove();
       gisImportTempMarker = null;
@@ -677,7 +655,6 @@ function initGisMap(farms, plants) {
   });
 
   gMap.on('load', () => {
-    // ── Cấu hình các nguồn ảnh vệ tinh độ nét cao (Phương án A) ──
     try {
       if (!gMap.getSource('esri-satellite-src')) {
         gMap.addSource('esri-satellite-src', {
@@ -703,7 +680,6 @@ function initGisMap(farms, plants) {
         });
       }
 
-      // Add raster layers (Google Satellite mặc định hiển thị vì độ nét cao và cập nhật thực tế)
       if (!gMap.getLayer('esri-satellite-layer')) {
         gMap.addLayer({
           id: 'esri-satellite-layer',
@@ -735,14 +711,12 @@ function initGisMap(farms, plants) {
   }, 300);
 }
 
-// ── Chuyển đổi Nguồn Ảnh Vệ Tinh (Google mặc định / ESRI Clarity / Mapbox) ──
 let currentSatelliteSource = 'google';
 
 function switchSatelliteSource(source) {
   if (!gMap) return;
   currentSatelliteSource = source;
 
-  // Cập nhật trạng thái active của nút bấm UI
   const btnEsri = document.getElementById('btn-sat-esri');
   const btnGoogle = document.getElementById('btn-sat-google');
   const btnMapbox = document.getElementById('btn-sat-mapbox');
@@ -774,7 +748,6 @@ function switchSatelliteSource(source) {
 }
 window.switchSatelliteSource = switchSatelliteSource;
 
-// Chuyển đổi Bật/Tắt chế độ Import GIS (Click chọn vị trí cây trên bản đồ) & Gắn Point cho cây cụ thể
 let isGisImportMode = false;
 let gisImportTempMarker = null;
 let pinningPlantTargetId = null;
@@ -850,7 +823,6 @@ function toggleGisImportMode(forceState) {
   }
 }
 
-// Bật chế độ gắn điểm Point GPS trên bản đồ cho một cây cụ thể từ danh sách Sidebar
 function startPinSinglePlantGps(plantId, treeCode) {
   if (String(pinningPlantTargetId) === String(plantId)) {
     cancelAllGisPinModes();
@@ -888,7 +860,6 @@ function startPinSinglePlantGps(plantId, treeCode) {
 }
 window.startPinSinglePlantGps = startPinSinglePlantGps;
 
-// Thực thi lưu tọa độ GPS khi click bản đồ cho cây đang chọn từ danh sách
 async function assignGpsToExistingPlant(plantId, lat, lng) {
   const newLat = parseFloat(lat.toFixed(7));
   const newLng = parseFloat(lng.toFixed(7));
@@ -930,7 +901,6 @@ async function assignGpsToExistingPlant(plantId, lat, lng) {
 
     cancelAllGisPinModes();
 
-    // Cập nhật marker tại chỗ hoặc vẽ bổ sung mà không giật zoom bản đồ
     const existingMarker = (gisPlantMarkers || []).find(m => String(m._plantId) === String(plantId));
     if (existingMarker) {
       existingMarker.setLngLat([newLng, newLat]);
@@ -953,7 +923,6 @@ async function assignGpsToExistingPlant(plantId, lat, lng) {
 }
 window.assignGpsToExistingPlant = assignGpsToExistingPlant;
 
-// Bay tới vị trí cây trên bản đồ và mở thẻ thông tin ERP
 function focusPlantOnGisMap(plantId) {
   const marker = (gisPlantMarkers || []).find(m => String(m._plantId) === String(plantId));
   if (marker && gMap) {
@@ -988,13 +957,11 @@ function openAddPlantsManual() {
 async function openPlantModalForGisClick(lng, lat) {
   await openPlantModal(null);
 
-  // Tự động gán Trang trại hiện tại
   if (activeFarmId) {
     const farmSelect = document.getElementById('f-farm-id');
     if (farmSelect) farmSelect.value = activeFarmId;
   }
 
-  // Tự động điền GPS Kinh độ, Vĩ độ & Chuỗi vị trí
   const latInput = document.getElementById('f-latitude');
   const lngInput = document.getElementById('f-longitude');
   const locInput = document.getElementById('f-location');
@@ -1015,14 +982,12 @@ async function openPlantModalForGisClick(lng, lat) {
   toast(`Đã ghim GPS (${lat.toFixed(5)}, ${lng.toFixed(5)}). Hãy nhập thông tin chi tiết cây trồng!`, 'success');
 }
 
-// Hook gọi sau khi lưu cây thành công từ Modal
 window.onPlantSavedHook = function(plant) {
   if (gisImportTempMarker) {
     gisImportTempMarker.remove();
     gisImportTempMarker = null;
   }
 
-  // 1. Cập nhật tức thời dữ liệu cây trồng vào các bộ nhớ đệm GIS
   if (plant && plant.id) {
     if (typeof currentPlants !== 'undefined' && Array.isArray(currentPlants)) {
       const idx = currentPlants.findIndex(p => p.id === plant.id || p.id == plant.id);
@@ -1039,13 +1004,11 @@ window.onPlantSavedHook = function(plant) {
       });
     }
 
-    // 2. MƯỢT MÀ: Cập nhật marker tại chỗ (In-place update) KHÔNG làm giật / nhảy zoom bản đồ
     const existingMarker = (gisPlantMarkers || []).find(m => m._plantId === plant.id || m._plantId == plant.id);
     const newLat = parseFloat(plant.latitude);
     const newLng = parseFloat(plant.longitude);
 
     if (existingMarker && !isNaN(newLat) && !isNaN(newLng)) {
-      // Di chuyển marker nhẹ nhàng tới tọa độ mới mà không reset map
       existingMarker.setLngLat([newLng, newLat]);
       if (existingMarker._updatePopupCoords) {
         existingMarker._updatePopupCoords(newLat, newLng);
@@ -1058,7 +1021,6 @@ window.onPlantSavedHook = function(plant) {
     }
   }
 
-  // Nếu cây mới hoàn toàn chưa có marker trên bản đồ thì vẽ lại danh sách lớp mà không ép zoom
   if (activeFarmId && typeof currentFarms !== 'undefined') {
     const farm = currentFarms.find(f => f.id === activeFarmId || f.id == activeFarmId);
     if (farm) {
@@ -1077,7 +1039,6 @@ window.onPlantSavedHook = function(plant) {
 let gisPlantMarkers = [];
 let gisFarmMarkers = [];
 
-// ── Xóa Point (Gỡ ghim GPS) của cây trên bản đồ mượt mà không reload ──
 async function removePlantPointGps(plantId, treeCode) {
   if (!confirm(`Xóa vị trí điểm ghim (Point GPS) của cây #${treeCode || plantId} khỏi bản đồ?\n\nLưu ý: Hồ sơ và dữ liệu nhật ký của cây vẫn được giữ nguyên, chỉ gỡ ghim tọa độ khỏi bản đồ để bạn định vị lại.`)) {
     return;
@@ -1092,7 +1053,6 @@ async function removePlantPointGps(plantId, treeCode) {
       })
     });
 
-    // 1. Gỡ marker và đóng popup ngay tại chỗ (In-place removal, không giật màn hình)
     const mIdx = (gisPlantMarkers || []).findIndex(m => m._plantId === plantId || m._plantId == plantId);
     if (mIdx !== -1) {
       const markerObj = gisPlantMarkers[mIdx];
@@ -1107,7 +1067,6 @@ async function removePlantPointGps(plantId, treeCode) {
       gisPlantMarkers.splice(mIdx, 1);
     }
 
-    // 2. Cập nhật bộ nhớ đệm
     if (typeof currentPlants !== 'undefined' && Array.isArray(currentPlants)) {
       const pIdx = currentPlants.findIndex(p => p.id === plantId || p.id == plantId);
       if (pIdx !== -1) {
@@ -1141,13 +1100,11 @@ window.removePlantPointGps = removePlantPointGps;
 function drawFarmsAndPlantsLayers(farms, plants) {
   if (!gMap) return;
 
-  // Clear existing plant markers on map
   gisPlantMarkers.forEach(m => {
     try { m.remove(); } catch(_) {}
   });
   gisPlantMarkers = [];
 
-  // Clear existing farm markers on map
   gisFarmMarkers.forEach(m => {
     try { m.remove(); } catch(_) {}
   });
@@ -1172,8 +1129,8 @@ function drawFarmsAndPlantsLayers(farms, plants) {
         const outlineId = `gis-farm-outline-${farm.id}`;
 
         const polyCoords = [...coords];
-        if (polyCoords.length > 0 && 
-            (polyCoords[0][0] !== polyCoords[polyCoords.length - 1][0] || 
+        if (polyCoords.length > 0 &&
+            (polyCoords[0][0] !== polyCoords[polyCoords.length - 1][0] ||
              polyCoords[0][1] !== polyCoords[polyCoords.length - 1][1])) {
           polyCoords.push(polyCoords[0]);
         }
@@ -1209,7 +1166,7 @@ function drawFarmsAndPlantsLayers(farms, plants) {
           gMap.on('click', layerId, () => {
             selectFarm(farm.id);
           });
-          
+
           gMap.on('mouseenter', layerId, () => gMap.getCanvas().style.cursor = 'pointer');
           gMap.on('mouseleave', layerId, () => gMap.getCanvas().style.cursor = '');
         } else {
@@ -1246,7 +1203,6 @@ function drawFarmsAndPlantsLayers(farms, plants) {
       }
   });
 
-  // ── HYBRID GPU CLUSTER LAYER FOR LARGE PLANTATIONS (>= 250 TREES, 60 FPS) ──
   try {
     const adminClusterSrcId = 'admin-plants-gpu-src';
     const adminClusterLayerId = 'admin-plants-gpu-clusters';
@@ -1334,7 +1290,6 @@ function drawFarmsAndPlantsLayers(farms, plants) {
       let lat = parseFloat(plant.latitude);
       let lng = parseFloat(plant.longitude);
       if (!isNaN(lat) && !isNaN(lng)) {
-        // Auto-fix swapped latitude/longitude (lat > 90 or < -90)
         if ((lat < -90 || lat > 90) && (lng >= -90 && lng <= 90)) {
           const tmp = lat;
           lat = lng;
@@ -1449,7 +1404,6 @@ function drawFarmsAndPlantsLayers(farms, plants) {
           `;
         }
 
-        // Tạo popup ổn định nhưng KHÔNG tự động bật khi kéo thả marker (chỉ bật khi click)
         const popup = new mapboxgl.Popup({
           offset: 22,
           closeButton: true,
@@ -1464,7 +1418,6 @@ function drawFarmsAndPlantsLayers(farms, plants) {
 
         marker.on('dragstart', () => {
           isDraggingMarker = true;
-          // Khi bắt đầu kéo point: đóng ngay mọi thông tin popup/tooltip đang mở
           if (popup.isOpen()) {
             popup.remove();
           }
@@ -1486,7 +1439,6 @@ function drawFarmsAndPlantsLayers(farms, plants) {
             isDraggingMarker = false;
           }, 300);
 
-          // Tuyệt đối không hiển thị popup khi vừa kéo xong
           if (popup.isOpen()) {
             popup.remove();
           }
@@ -1514,12 +1466,10 @@ function drawFarmsAndPlantsLayers(farms, plants) {
             plant.latitude = newLat;
             plant.longitude = newLng;
             plant.location = updated.location || ('GPS: ' + newLat.toFixed(6) + ', ' + newLng.toFixed(6));
-            
-            // Cập nhật nội dung popup ngầm để lần sau người dùng click vào sẽ thấy tọa độ mới
+
             popup.setHTML(getPopupContent(plant, newLat, newLng));
             popup.setLngLat([newLng, newLat]);
 
-            // Đồng bộ dữ liệu trong bộ nhớ đệm
             if (typeof currentPlants !== 'undefined' && Array.isArray(currentPlants)) {
               const pIdx = currentPlants.findIndex(p => p.id === plant.id || p.id == plant.id);
               if (pIdx !== -1) currentPlants[pIdx] = { ...currentPlants[pIdx], ...plant };
@@ -1546,13 +1496,11 @@ function drawFarmsAndPlantsLayers(farms, plants) {
           }
         });
 
-        // Chỉ khi người dùng CLICK thực sự (không phải kéo thả) vào điểm point thì mới mở thẻ thông tin
         wrapper.addEventListener('click', (e) => {
           e.stopPropagation();
           if (isDraggingMarker || (Date.now() - dragEndTimestamp < 300)) {
             return;
           }
-          // Đóng popup của các cây khác để giao diện gọn gàng
           (gisPlantMarkers || []).forEach(m => {
             if (m !== marker && m._popup && m._popup.isOpen()) {
               m._popup.remove();
@@ -1589,7 +1537,6 @@ function drawFarmsAndPlantsLayers(farms, plants) {
     gMap.fitBounds(bounds, { padding: 50, maxZoom: 19, duration: 1000 });
   }
 
-  // Add contour lines (đường đồng mức) ONLY if a specific farm is selected
   const activeFarm = activeFarmId ? farms.find(f => f.id === activeFarmId) : null;
   const farmCoords = activeFarm ? activeFarm.polygon_coordinates : null;
   if (farmCoords) {
@@ -1619,7 +1566,7 @@ async function loadUsersDropdown(selectedUserId = '', farmId = null) {
     const users = await api('/users');
     const select = document.getElementById('farm-user-id');
     if (select) {
-      select.innerHTML = '<option value="">— Chưa gán cho ai —</option>' + 
+      select.innerHTML = '<option value="">— Chưa gán cho ai —</option>' +
         users.map(u => {
           const isSelected = (selectedUserId && u.id == selectedUserId) || (farmId && u.farm_id == farmId);
           const roleLabel = u.role === 'admin' ? ' (Admin)' : ' (Nông hộ)';
@@ -1631,7 +1578,6 @@ async function loadUsersDropdown(selectedUserId = '', farmId = null) {
   }
 }
 
-// ── GIS Farm Boundary Drawing & Vertex Editing Helpers ─────────────────
 function enableDirectSelectMode() {
   if (!drawControl) return;
   const all = drawControl.getAll();
@@ -1662,7 +1608,6 @@ function clearDrawnPolygon() {
   updateAreaDisplay();
   toast('Đã xóa ranh giới đang vẽ', 'info');
 }
-// [Modularized] GPS parser & multi-point import moved to gis-gps-tools.js
 async function openFarmForm() {
   activeFarmId = null;
   gisEdgeMarkers.forEach(m => { try { m.remove(); } catch(_) {} });
@@ -1674,7 +1619,7 @@ async function openFarmForm() {
   document.getElementById('gis-sidebar-title').textContent = 'Tạo Trang trại';
   document.getElementById('gis-header-actions').style.display = 'none';
   switchGisView('form');
-  
+
   document.getElementById('farm-name').value = '';
   document.getElementById('farm-desc').value = '';
   if (document.getElementById('farm-puc-code')) document.getElementById('farm-puc-code').value = '';
@@ -1725,7 +1670,7 @@ async function saveFarm() {
   const allow_view_plants = document.getElementById('farm-perm-plants')?.checked;
   const allow_shared_history = document.getElementById('farm-perm-history')?.checked;
   const allow_shared_supplies = document.getElementById('farm-perm-supplies')?.checked;
-  
+
   if (!name) {
     toast('Vui lòng nhập tên trang trại!', 'error');
     return;
@@ -1760,7 +1705,7 @@ async function saveFarm() {
     const editingFarmId = activeFarmId;
     const method = editingFarmId ? 'PUT' : 'POST';
     const url = editingFarmId ? `/farms/${editingFarmId}` : '/farms';
-    
+
     const savedFarm = await api(url, {
       method,
       body: JSON.stringify(body)
@@ -1770,7 +1715,7 @@ async function saveFarm() {
     drawControl.changeMode('simple_select');
     drawControl.deleteAll();
     clearGisGpsBeacon();
-    
+
     window._plantFiltersLoaded = false;
     const targetId = (savedFarm && savedFarm.id) || editingFarmId;
     await initGisPage(targetId);
@@ -1825,15 +1770,14 @@ async function selectFarm(farmId, syncUrl = true) {
 
     const descEl = document.getElementById('farm-details-desc');
     if (descEl) descEl.innerHTML = ownerHtml + (farm.description ? `<p class="gis-farm-info" style="margin-top:6px;">${esc(farm.description)}</p>` : '<p class="gis-farm-info" style="font-style:italic; color:#94a3b8; margin-top:6px;">Không có mô tả.</p>');
-    
+
     const sbTitle = document.getElementById('gis-sidebar-title');
     if (sbTitle) sbTitle.textContent = farm.name;
-    
+
     const areaVal = formatSmartArea(farm.area);
     const areaEl = document.getElementById('farm-details-area');
     if (areaEl) areaEl.innerHTML = `<i data-lucide="trending-up" class="lucide-sm"></i> ${areaVal}`;
-    
-    // Lưu danh sách cây của nông trại đang mở để phục vụ tìm kiếm thông minh & sắp xếp tự nhiên
+
     window._currentSidebarFarmPlants = Array.isArray(farm.plants) ? farm.plants : [];
     renderCurrentSidebarPlantList();
     if (typeof syncFarmApiStatusUI === 'function') syncFarmApiStatusUI(farm);
@@ -1884,14 +1828,12 @@ async function selectFarm(farmId, syncUrl = true) {
     }
   }
 
-  // 1. INSTANT LOCAL CACHE RENDERING & ZOOM (0ms perceived latency)
   const cachedFarm = (currentFarms || []).find(f => String(f.id) === String(farmId));
   if (cachedFarm) {
     renderFarmDetailsUI(cachedFarm);
     zoomMapToFarm(cachedFarm);
   }
 
-  // 2. BACKGROUND DATA SYNC (Updates plant tree details & live certs)
   try {
     const farm = await api(`/farms/${farmId}`);
     if (window._pendingSelectFarmId === farmId) {
@@ -1907,7 +1849,6 @@ async function selectFarm(farmId, syncUrl = true) {
   }
 }
 
-// ── Sắp xếp tự nhiên (A->Z, 1->99) & Tìm kiếm thông minh danh sách cây ở Sidebar ──
 let currentSidebarPlantSearchQuery = '';
 
 function sortPlantsNaturally(plants) {
@@ -1926,7 +1867,6 @@ function renderCurrentSidebarPlantList() {
   const plantCountEl = document.getElementById('farm-details-plant-count');
   if (!listEl) return;
 
-  // Đồng bộ nguồn dữ liệu cây mới nhất của nông trại hiện tại
   let rawPlants = window._currentSidebarFarmPlants || [];
   if (activeFarmId && typeof currentFarms !== 'undefined' && Array.isArray(currentFarms)) {
     const activeFarmObj = currentFarms.find(f => String(f.id) === String(activeFarmId));
@@ -1945,10 +1885,8 @@ function renderCurrentSidebarPlantList() {
     return;
   }
 
-  // 1. Sắp xếp tự nhiên A -> Z, 1 -> 99
   const sortedPlants = sortPlantsNaturally(rawPlants);
 
-  // 2. Lọc thông minh theo từ khóa (VD: gõ "1" ra 1, 10, 11, 12, 21...)
   const q = String(currentSidebarPlantSearchQuery || '').trim().toLowerCase();
   const filteredPlants = q
     ? sortedPlants.filter(p => {
@@ -2062,7 +2000,6 @@ function backToFarmsList() {
   initGisPage();
 }
 
-// ── Bật/Tắt vị trí ghim các cây trên bản đồ trang trại ──────────────────
 let arePlantMarkersVisible = true;
 function togglePlantMarkers(forceState) {
   if (typeof forceState === 'boolean') {
@@ -2078,8 +2015,8 @@ function togglePlantMarkers(forceState) {
 
   const btn = document.getElementById('btn-toggle-plant-markers');
   if (btn) {
-    btn.innerHTML = arePlantMarkersVisible 
-      ? '<i data-lucide="eye" class="lucide-sm"></i> Hiện / Ẩn Vị Trí Cây' 
+    btn.innerHTML = arePlantMarkersVisible
+      ? '<i data-lucide="eye" class="lucide-sm"></i> Hiện / Ẩn Vị Trí Cây'
       : '<i data-lucide="eye-off" class="lucide-sm"></i> Đã Ẩn Vị Trí Cây';
     btn.style.background = arePlantMarkersVisible ? '#fff' : '#fef3c7';
     btn.style.borderColor = arePlantMarkersVisible ? '#cbd5e1' : '#f59e0b';
@@ -2089,7 +2026,6 @@ function togglePlantMarkers(forceState) {
   toast(arePlantMarkersVisible ? 'Đã BẬT vị trí cây trồng' : 'Đã ẨN vị trí cây trồng', 'info');
 }
 
-// ── Đo đạc hiển thị kích thước cạnh ranh giới, diện tích & chu vi ───────
 let gisEdgeMarkers = [];
 
 function renderFarmDimensions(farm) {
@@ -2138,14 +2074,12 @@ function renderFarmDimensions(farm) {
     const lengthMeters = turf.distance(from, to, { units: 'meters' });
     totalPerimeter += lengthMeters;
 
-    // Bỏ qua các điểm trùng nhau có chiều dài < 0.2m (lỗi 0.0m)
     if (lengthMeters < 0.2) continue;
 
     const vStart = getVertexLabel(i);
     const vEnd = getVertexLabel((i + 1) % n);
     const segName = `${vStart}${vEnd}`;
 
-    // 1. Render Vertex Marker Badge at Corner (A, B, C, D...)
     const cornerBadgeEl = document.createElement('div');
     cornerBadgeEl.className = 'farm-corner-badge';
     cornerBadgeEl.style.cssText = `
@@ -2173,14 +2107,12 @@ function renderFarmDimensions(farm) {
 
     gisEdgeMarkers.push(cornerMarker);
 
-    // 2. Render Edge Segment Badge at Midpoint (AB: 98m, BC: 50m...)
-    // Đối với đoạn cuối nối về điểm đầu (i === n - 1), không show nhãn lên bản đồ theo yêu cầu
     if (i !== n - 1) {
       const midLng = (pt1[0] + pt2[0]) / 2;
       const midLat = (pt1[1] + pt2[1]) / 2;
 
-      const formattedLength = lengthMeters >= 1000 
-        ? (lengthMeters / 1000).toFixed(2) + ' km' 
+      const formattedLength = lengthMeters >= 1000
+        ? (lengthMeters / 1000).toFixed(2) + ' km'
         : lengthMeters.toFixed(1) + ' m';
 
       const edgeBadgeEl = document.createElement('div');
@@ -2222,8 +2154,8 @@ function renderFarmDimensions(farm) {
 
   const farmAreaM2 = parseFloat(farm.area || 0) || Math.round(turf.area(turf.polygon([[...coords, coords[0]]])));
   const farmAreaHa = (farmAreaM2 / 10000).toFixed(2);
-  const formattedPerimeter = totalPerimeter >= 1000 
-    ? (totalPerimeter / 1000).toFixed(2) + ' km' 
+  const formattedPerimeter = totalPerimeter >= 1000
+    ? (totalPerimeter / 1000).toFixed(2) + ' km'
     : totalPerimeter.toFixed(1) + ' m';
 
   const summaryBadgeEl = document.createElement('div');
@@ -2262,7 +2194,6 @@ function renderFarmDimensions(farm) {
   }
 }
 
-// ── Import Bản Vẽ Thiết Kế (CAD / GeoJSON / Image Overlay) ───────────────
 let selectedDrawingFile = null;
 
 function openDesignDrawingModal() {
@@ -2350,7 +2281,6 @@ async function submitDesignDrawingImport() {
         }
       }
     } else {
-      // Image Overlay (PNG / JPG / PDF)
       const reader = new FileReader();
       reader.onload = function(e) {
         const imageUrl = e.target.result;
@@ -2368,10 +2298,10 @@ async function submitDesignDrawingImport() {
           });
 
           const imgCoords = [
-            [minLng, maxLat], // Top-Left
-            [maxLng, maxLat], // Top-Right
-            [maxLng, minLat], // Bottom-Right
-            [minLng, minLat]  // Bottom-Left
+            [minLng, maxLat],
+            [maxLng, maxLat],
+            [maxLng, minLat],
+            [minLng, minLat]
           ];
 
           if (gMap.getSource('farm-design-drawing-img-src')) {
@@ -2409,13 +2339,11 @@ async function editFarm() {
     const farm = currentFarms.find(f => f.id === activeFarmId);
     if (!farm) return;
 
-    // 1. Remove edge dimension badges and corner markers that block pointer events on polygon vertices
     gisEdgeMarkers.forEach(m => {
       try { m.remove(); } catch(_) {}
     });
     gisEdgeMarkers = [];
 
-    // 2. Remove 3D contour lines and temporarily hide static polygon layers to avoid overlap with Draw control
     if (gMap) {
       removeContourLinesFromMap(gMap);
       const farmLayerId = `gis-farm-layer-${farm.id}`;
@@ -2432,7 +2360,6 @@ async function editFarm() {
     if (document.getElementById('farm-vietgap-cert')) document.getElementById('farm-vietgap-cert').value = farm.vietgap_cert_number || '';
     if (document.getElementById('farm-vietgap-org')) document.getElementById('farm-vietgap-org').value = farm.vietgap_cert_org || '';
 
-    // Populate GPS fields with farm center coordinates
     const center = getFarmExactGpsCenter(farm, currentPlants);
     if (center && center.length >= 2) {
       const [cLng, cLat] = center;
@@ -2465,8 +2392,8 @@ async function editFarm() {
 
     if (coords && Array.isArray(coords) && coords.length >= 3) {
       const polyCoords = [...coords];
-      if (polyCoords.length > 0 && 
-          (polyCoords[0][0] !== polyCoords[polyCoords.length - 1][0] || 
+      if (polyCoords.length > 0 &&
+          (polyCoords[0][0] !== polyCoords[polyCoords.length - 1][0] ||
            polyCoords[0][1] !== polyCoords[polyCoords.length - 1][1])) {
         polyCoords.push(polyCoords[0]);
       }
@@ -2538,17 +2465,14 @@ async function deleteFarm() {
     return;
   }
 
-  // 1. Smoothly animate sidebar item
   const farmItem = document.getElementById(`farm-item-${targetId}`) || document.querySelector(`.farm-item[data-farm-id="${targetId}"]`);
   if (farmItem) {
     farmItem.classList.add('row-deleting');
   }
 
-  // Preserve state for rollback
   const prevFarms = [...(currentFarms || [])];
   const prevPlants = [...(currentPlants || [])];
 
-  // 2. Switch view back to list smoothly
   activeFarmId = null;
   window._pendingSelectFarmId = null;
   const backBtn = document.getElementById('gis-back-btn');
@@ -2559,7 +2483,6 @@ async function deleteFarm() {
   if (hdActions) hdActions.style.display = 'block';
   switchGisView('list');
 
-  // 3. Optimistically remove from state and redraw
   currentFarms = currentFarms.filter(f => f.id !== targetId);
   currentPlants = currentPlants.filter(p => p.farm_id !== targetId);
   drawFarmsAndPlantsLayers(currentFarms, currentPlants);
@@ -2571,7 +2494,6 @@ async function deleteFarm() {
     window._plantFiltersLoaded = false;
   } catch (err) {
     toast('Lỗi xóa trang trại: ' + err.message, 'error');
-    // Rollback state if delete failed
     currentFarms = prevFarms;
     currentPlants = prevPlants;
     drawFarmsAndPlantsLayers(currentFarms, currentPlants);
@@ -2586,14 +2508,12 @@ function filterFarmsByCustomer() {
     filteredFarms = currentFarms.filter(f => f.user_id == userId);
   }
 
-  // Filter the plants to only show those inside the filtered farms
-  const filteredPlants = (userId === 'all') 
-    ? currentPlants 
+  const filteredPlants = (userId === 'all')
+    ? currentPlants
     : currentPlants.filter(p => filteredFarms.some(f => f.id === p.farm_id));
 
   renderFarmsList(filteredFarms);
-  
-  // Re-initialize the Mapbox GIS map with filtered data
+
   if (gMap) {
     try {
       gMap.remove();
@@ -2603,13 +2523,6 @@ function filterFarmsByCustomer() {
   initGisMap(filteredFarms, filteredPlants);
 }
 
-/**
- * Thêm đường đồng mức siêu dày 1m (1-Meter High-Density Contour Lines)
- * DÀNH RIÊNG CHO RANH GIỚI NÔNG TRẠI (Zero Lag, Tối ưu tối đa hiệu năng).
- * @param {mapboxgl.Map} map - Mapbox map instance
- * @param {Object} options - { defaultVisible: true, showControl: true, farmCoords: Array }
- */
-// [Modularized] Contour lines & A4 export moved to gis-export.js
 function bindPlantTooltips(plants) {
   if (!plants || !plants.length) return;
   setTimeout(function() {
@@ -2642,9 +2555,9 @@ async function confirmClearFarmPlantsGps(farmId) {
     toast('Vui lòng chọn một trang trại trước khi xóa tọa độ GPS!', 'warning');
     return;
   }
-  
+
   const farmTitle = document.getElementById('gis-sidebar-title')?.textContent || `Trang trại #${targetId}`;
-  
+
   if (!confirm(`⚠️ XÁC NHẬN XÓA TOÀN BỘ ĐỊNH VỊ GPS:\n\nBạn có chắc chắn muốn xóa hết tọa độ định vị GPS của TẤT CẢ các cây trong vườn "${farmTitle}" không?\n\nSau khi xóa, toàn bộ cây sẽ chuyển về trạng thái Chưa định vị trên bản đồ (dữ liệu nhật ký và mã cây vẫn được giữ nguyên 100%).`)) {
     return;
   }
@@ -2652,8 +2565,7 @@ async function confirmClearFarmPlantsGps(farmId) {
   try {
     const res = await api(`/farms/${targetId}/clear-gps`, { method: 'POST' });
     toast(res.message || 'Đã xóa toàn bộ tọa độ định vị GPS của các cây trong trang trại thành công!', 'success');
-    
-    // Clear markers from GIS Map
+
     if (plantMarkers && plantMarkers.length > 0) {
       plantMarkers.forEach(m => {
         try { m.remove(); } catch (_) {}
@@ -2661,7 +2573,6 @@ async function confirmClearFarmPlantsGps(farmId) {
       plantMarkers = [];
     }
 
-    // Refresh GIS View
     if (typeof loadFarms === 'function') await loadFarms();
     await selectFarm(targetId);
   } catch (err) {
@@ -2670,5 +2581,3 @@ async function confirmClearFarmPlantsGps(farmId) {
   }
 }
 window.confirmClearFarmPlantsGps = confirmClearFarmPlantsGps;
-
-// [Modularized] Live API dataset modals moved to gis-export.js

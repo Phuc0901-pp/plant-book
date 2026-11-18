@@ -1,17 +1,13 @@
 const crypto = require('crypto');
 
 const SECRET = process.env.JWT_SECRET || 'tbsg_agtech_enterprise_secret_key_2026_plantbook';
-const KEY = crypto.createHash('sha256').update(SECRET).digest(); // 32 bytes for AES-256
+const KEY = crypto.createHash('sha256').update(SECRET).digest();
 
-/**
- * Encrypt a numeric or string user ID into a secure URL-safe token (usr_...)
- * Uses AES-256-GCM with authenticated tag
- */
 function encodeUserId(userId) {
   if (!userId) return null;
-  const iv = crypto.randomBytes(12); // 12 bytes IV for GCM
+  const iv = crypto.randomBytes(12);
   const cipher = crypto.createCipheriv('aes-256-gcm', KEY, iv);
-  
+
   const payload = JSON.stringify({
     uid: parseInt(userId),
     t: Date.now(),
@@ -22,14 +18,9 @@ function encodeUserId(userId) {
   encrypted += cipher.final('hex');
   const tag = cipher.getAuthTag().toString('hex');
 
-  // Format: usr_[iv].[encrypted].[tag] (URL-safe)
   return `usr_${iv.toString('hex')}_${encrypted}_${tag}`;
 }
 
-/**
- * Decrypt a secure URL-safe token back to user ID
- * Returns null if invalid or tampered
- */
 function decodeUserId(token) {
   if (!token || typeof token !== 'string' || !token.startsWith('usr_')) {
     return null;

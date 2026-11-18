@@ -26,7 +26,7 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
   late TabController _tabController;
   final ApiService _apiService = ApiService();
   bool _isLoading = true;
-  int _selectedSoilDepth = 10; // 10, 20, 30 cm
+  int _selectedSoilDepth = 10;
   bool _isPro = false;
   Map<String, dynamic>? _iotData;
   Map<String, dynamic>? _userProfile;
@@ -42,9 +42,7 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-    // 1. Cache-First: Hiển thị tức thì trong 0ms từ bộ nhớ đệm an toàn
     _loadFromCacheFirst();
-    // 2. Revalidation: Đồng bộ ngầm với máy chủ khi có mạng
     _loadInitialData();
   }
 
@@ -138,7 +136,6 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
   }
 
   Future<void> _loadInitialData() async {
-    // Tự động đồng bộ các bản ghi ngoại tuyến khi có kết nối mạng
     _apiService.syncOfflineLogs();
 
     if (_allFarms.isEmpty) {
@@ -276,16 +273,12 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
           : TabBarView(
               controller: _tabController,
               children: [
-                // Subtab 1: Interactive GIS Satellite Map View
                 _buildGisMapTab(),
 
-                // Subtab 2: Plants & Care Logs in this farm
                 _buildPlantsAndLogsTab(),
 
-                // Subtab 3: IoT 3-Depth Soil Sensors
                 _buildIotSensorsTab(),
 
-                // Subtab 4: Weather Forecast & Agronomy Advice
                 _buildWeatherTab(),
               ],
             ),
@@ -301,7 +294,6 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Thanh chọn Nông trại / Vườn canh tác (Farm Selector Bar)
           if (_allFarms.length > 1) ...[
             Container(
               margin: const EdgeInsets.only(bottom: 12),
@@ -345,7 +337,6 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
             ),
           ],
 
-          // 2. Interactive Satellite Map View (Chỉ focus đúng vào vườn được chọn, zoom level chuẩn)
           InteractiveGisMapWidget(
             farms: farm != null ? [farm] : _allFarms,
             allFarms: _allFarms,
@@ -357,7 +348,6 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
           ),
           const SizedBox(height: 16),
 
-          // 3. Farm GIS Metadata Card
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -435,7 +425,6 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Banner Trạm Cảm Biến IoT
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -495,7 +484,6 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
           ),
           const SizedBox(height: 18),
 
-          // ================= MÔI TRƯỜNG 1: KHÔNG KHÍ =================
           _buildFluentSectionCard(
             title: 'Môi trường Không khí',
             icon: Icons.air_rounded,
@@ -531,7 +519,6 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
           ),
           const SizedBox(height: 18),
 
-          // ================= MÔI TRƯỜNG 2: ĐẤT ĐA TẦNG =================
           _buildFluentSectionCard(
             title: 'Cảm biến Đất Đa tầng',
             icon: Icons.layers_rounded,
@@ -579,7 +566,6 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
           ),
           const SizedBox(height: 18),
 
-          // ================= MÔI TRƯỜNG 3: NƯỚC TƯỚI =================
           _buildFluentSectionCard(
             title: 'Môi trường Nước tưới',
             icon: Icons.water_rounded,
@@ -744,7 +730,6 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -790,7 +775,6 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
           ),
           const SizedBox(height: 16),
 
-          // 6 Weather Cards
           ...forecast.map((item) {
             final dayName = item['day_name'] ?? 'Hôm nay';
             final dateStr = item['date_formatted'] ?? '';
@@ -931,7 +915,6 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Quick Stats Header
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
@@ -980,7 +963,6 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
           ),
           const SizedBox(height: 14),
 
-          // 2. Quick Log Action Button
           SizedBox(
             width: double.infinity,
             height: 46,
@@ -997,7 +979,6 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
           ),
           const SizedBox(height: 18),
 
-          // 3. Search input
           TextField(
             onChanged: (val) => setState(() => _plantSearchQuery = val.trim()),
             decoration: InputDecoration(
@@ -1012,7 +993,6 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
           ),
           const SizedBox(height: 16),
 
-          // 4. Section 1: Plants List
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -1064,7 +1044,6 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
 
           const SizedBox(height: 24),
 
-          // 5. Section 2: Cultivation History Logs for this Farm
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [

@@ -4,12 +4,8 @@ const pool = require('../config/db');
 const auth = require('../middleware/auth');
 const { logAuditAction } = require('./history');
 
-// Self-healing migration for fertilizer_composition
 pool.query('ALTER TABLE supplies ADD COLUMN IF NOT EXISTS fertilizer_composition TEXT').catch(err => console.warn('Schema check warning:', err.message));
 
-// ─── 1. SUPPLIES CRUD ─────────────────────────────────────────────
-
-// Helper function chuẩn hóa đơn vị tiêu hao vật tư về đơn vị cơ sở
 function convertSupplyQtyToBaseUnit(rawAmount, rawUnit, supplyUnit) {
   const amt = parseFloat(rawAmount) || 0;
   if (amt <= 0) return 0;
@@ -54,7 +50,6 @@ function isSupplyFinanceRedacted(user, queryRole) {
   return false;
 }
 
-// Function tự động kiểm tra và hiệu chỉnh dữ liệu tồn kho & tiêu hao bị lỗi đơn vị trước đây (Có bộ đệm chống nghẽn hiệu năng)
 async function autoReconcileSuppliesData(userId, force = false) {
   try {
     const uidKey = userId || 0;
@@ -67,7 +62,6 @@ async function autoReconcileSuppliesData(userId, force = false) {
     }
     lastReconcileByUserMap.set(uidKey, now);
 
-    // 1. Tìm các bản ghi supply_usages có liều lượng bất thường do chưa quy đổi gram -> kg
     const corruptedUsages = await pool.query(`
       SELECT su.id, su.supply_id, su.quantity, su.unit_price, su.note, s.unit, s.package_qty, s.package_price
       FROM supply_usages su
@@ -85,14 +79,13 @@ async function autoReconcileSuppliesData(userId, force = false) {
       const realQty = row.quantity / 1000;
       const realCost = realQty * (parseFloat(row.unit_price) || 0);
       await pool.query(
-        `UPDATE supply_usages 
+        `UPDATE supply_usages
          SET quantity = $1, total_cost = $2, note = $3
          WHERE id = $4`,
         [realQty, realCost, (row.note || '') + ' [Đã chuẩn hóa đơn vị kg]', row.id]
       );
     }
 
-    // 2. Tự động phục hồi tồn kho cho các vật tư có stock_quantity = 0 hoặc bị âm bất thường
     const suppliesToFix = await pool.query(`
       SELECT s.id, s.package_qty, s.stock_quantity, s.category,
              COALESCE(SUM(su.quantity), 0) as total_used
@@ -107,7 +100,7 @@ async function autoReconcileSuppliesData(userId, force = false) {
       const pkgQty = parseFloat(sup.package_qty) || 50;
       const totalUsed = parseFloat(sup.total_used) || 0;
       const currentStock = parseFloat(sup.stock_quantity) || 0;
-      
+
       if (currentStock === 0 && totalUsed < pkgQty) {
         const expectedStock = Math.max(0, pkgQty - totalUsed);
         await pool.query(
@@ -121,7 +114,6 @@ async function autoReconcileSuppliesData(userId, force = false) {
   }
 }
 
-// GET /api/supplies — Lấy danh sách vật tư khai báo (kèm hỗ trợ phân quyền dùng chung vật tư trang trại)
 router.get('/', auth, async (req, res) => {
   try {
     const { category, search, user_id, farm_id } = req.query;
@@ -130,11 +122,10 @@ router.get('/', auth, async (req, res) => {
       return res.status(403).json({ error: 'Tài khoản của bạn không được cấp quyền truy cập Kho Vật tư.' });
     }
 
-    // Tự động kiểm tra và cân đối số liệu kho nếu có sai sót đơn vị
     await autoReconcileSuppliesData(req.user.parent_user_id || req.user.id);
-    
+
     let query = `
-      SELECT s.*, 
+      SELECT s.*,
              u.full_name as creator_name,
              COALESCE(SUM(su.total_cost), 0) as total_spent,
              COALESCE(SUM(su.quantity), 0) as total_used_qty
@@ -159,7 +150,6 @@ router.get('/', auth, async (req, res) => {
       }
     } else {
 
-      // Non-admin farmer or sub-account (care_worker / manager / auditor_readonly)
       query += ` AND (
         s.user_id = $${idx}
         OR s.user_id = COALESCE($${idx + 1}::int, 0)
@@ -206,7 +196,6 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const multer = require('multer');
@@ -216,7 +205,6 @@ const upload = multer({
   limits: { fileSize: 15 * 1024 * 1024 }
 });
 
-// POST /api/supplies/upload-image — Tải ảnh bao bì vật tư (phân bón / thuốc BVTV)
 router.post('/upload-image', auth, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'Vui lòng chọn một tệp hình ảnh.' });
@@ -230,10 +218,8 @@ router.post('/upload-image', auth, upload.single('file'), async (req, res) => {
   }
 });
 
-// POST /api/supplies/scan-image — AI Vision Quét & Bóc tách Tự động Thông tin Bao Phân Bón / Thuốc BVTV
-
 const crypto = require('crypto');
-const scanResultCache = new Map(); // Cache max 150 scanned image results in memory to save API tokens
+const scanResultCache = new Map();
 
 function normalizeSupplyCategory(cat, name = '') {
   const text = `${cat || ''} ${name || ''}`.toLowerCase();
@@ -279,7 +265,6 @@ router.post('/scan-image', auth, upload.single('file'), async (req, res) => {
       return res.status(400).json({ error: 'Vui lòng tải lên hoặc chụp ảnh bao bì phân bón / thuốc BVTV.' });
     }
 
-    // 1. Check in-memory hash cache to save API tokens
     const imgHash = crypto.createHash('md5').update(base64Image).digest('hex');
     if (scanResultCache.has(imgHash)) {
       console.log('⚡ Serving scanned supply image from cache (0 API tokens consumed)');
@@ -311,7 +296,6 @@ router.post('/scan-image', auth, upload.single('file'), async (req, res) => {
   "manufacturer": "Tên nhà sản xuất nếu có"
 }`;
 
-      // Iterate through keys (Key Rotation if Rate Limited / 429 / 403)
       keyLoop:
       for (const apiKey of apiKeys) {
         for (const modelName of modelCandidates) {
@@ -342,7 +326,6 @@ router.post('/scan-image', auth, upload.single('file'), async (req, res) => {
               if (scannedData && scannedData.name) {
                 console.log(`Gemini Vision AI succeeded using model ${modelName}`);
 
-                // Normalize category & unit for safe database & UI mapping
                 scannedData.category = normalizeSupplyCategory(scannedData.category, scannedData.name);
                 scannedData.package_unit = normalizeSupplyUnit(scannedData.package_unit);
                 if (scannedData.category === 'Phun thuốc' && (!scannedData.package_qty || scannedData.package_qty > 100)) {
@@ -351,20 +334,18 @@ router.post('/scan-image', auth, upload.single('file'), async (req, res) => {
                   }
                 }
 
-                // Save to cache (limit cache size to 150 items)
                 if (scanResultCache.size > 150) {
                   const firstKey = scanResultCache.keys().next().value;
                   scanResultCache.delete(firstKey);
                 }
                 scanResultCache.set(imgHash, scannedData);
-                break keyLoop; // Successfully scanned! Exit loop.
+                break keyLoop;
               }
             } else {
               const errText = await geminiRes.text();
               console.warn(`Gemini API HTTP ${geminiRes.status} on key ending ...${apiKey.slice(-6)}:`, errText);
-              // If rate limited 429 or 403 quota, break to try next API key in keyLoop
               if (geminiRes.status === 429 || geminiRes.status === 403) {
-                break; // try next key
+                break;
               }
             }
           } catch (mErr) {
@@ -388,28 +369,24 @@ router.post('/scan-image', auth, upload.single('file'), async (req, res) => {
       data: scannedData
     });
 
-
   } catch (err) {
     console.error('Error scanning supply image:', err);
     res.status(500).json({ error: 'Lỗi xử lý hình ảnh bao bì: ' + err.message });
   }
 });
 
-
-// POST /api/supplies — Khai báo vật tư mới (kèm chuẩn VietGAP: PHI, hoạt chất, đối tượng phòng trừ)
 router.post('/', auth, async (req, res) => {
   try {
     if (req.user.role !== 'admin' && ['care_worker', 'auditor_readonly'].includes(req.user.sub_role)) {
       return res.status(403).json({ error: 'Vai trò của bạn không được cấp quyền khai báo hoặc nhập kho vật tư mới.' });
     }
-    const { 
-      category, name, unit, package_size, package_qty, package_unit, 
-      package_price, unit_price, unit_price_small, stock_quantity, note, 
+    const {
+      category, name, unit, package_size, package_qty, package_unit,
+      package_price, unit_price, unit_price_small, stock_quantity, note,
       image_url, fertilizer_type, fertilizer_composition, user_id,
       phi_days, active_ingredient, target_pests, safety_interval_note
     } = req.body;
-    
-    // Auto-normalize category and units to protect against UI mismatches
+
     const validCategories = ['Bón phân', 'Tiền nước', 'Phun thuốc', 'Nhân công'];
     const safeCategory = validCategories.includes(category) ? category : normalizeSupplyCategory(category, name);
     const safeUnit = unit || package_unit || (safeCategory === 'Phun thuốc' ? 'chai' : 'kg');
@@ -443,13 +420,12 @@ router.post('/', auth, async (req, res) => {
       }
     }
 
-    // Kiểm tra nếu sản phẩm cùng loại & cùng tên đã tồn tại trong cùng trang trại / user -> Cộng dồn số lượng tồn kho
     const existingCheck = await pool.query(
-      `SELECT * FROM supplies 
+      `SELECT * FROM supplies
        WHERE (
          ($1::int IS NOT NULL AND (farm_id = $1 OR user_id = $2))
          OR ($1::int IS NULL AND user_id = $2)
-       ) 
+       )
         AND category = $3 AND LOWER(name) = LOWER($4)`,
       [targetFarmId, targetUserId, safeCategory, name.trim()]
     );
@@ -458,7 +434,7 @@ router.post('/', auth, async (req, res) => {
       const existing = existingCheck.rows[0];
       const updatedStock = parseFloat(existing.stock_quantity || 0) + stock;
       const updatedRes = await pool.query(
-        `UPDATE supplies 
+        `UPDATE supplies
          SET stock_quantity = $1, package_price = $2, unit_price = $3, unit_price_small = $4,
              package_qty = $5, package_unit = $6, package_size = $7,
              image_url = COALESCE($8, image_url), note = COALESCE($9, note), fertilizer_type = COALESCE($10, fertilizer_type),
@@ -494,8 +470,8 @@ router.post('/', auth, async (req, res) => {
 
     const result = await pool.query(
       `INSERT INTO supplies (
-        user_id, farm_id, category, name, unit, package_size, package_qty, package_unit, 
-        package_price, unit_price, unit_price_small, stock_quantity, note, 
+        user_id, farm_id, category, name, unit, package_size, package_qty, package_unit,
+        package_price, unit_price, unit_price_small, stock_quantity, note,
         image_url, fertilizer_type, fertilizer_composition, phi_days, active_ingredient, target_pests, safety_interval_note
        )
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
@@ -531,13 +507,12 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
-// PUT /api/supplies/:id — Cập nhật thông tin vật tư
 router.put('/:id', auth, async (req, res) => {
   try {
     const { id } = req.params;
-    const { 
-      category, name, unit, package_size, package_qty, package_unit, 
-      package_price, unit_price, unit_price_small, stock_quantity, note, 
+    const {
+      category, name, unit, package_size, package_qty, package_unit,
+      package_price, unit_price, unit_price_small, stock_quantity, note,
       image_url, fertilizer_type, fertilizer_composition, phi_days, active_ingredient, target_pests, safety_interval_note
     } = req.body;
 
@@ -553,7 +528,7 @@ router.put('/:id', auth, async (req, res) => {
     const pkgQty = parseFloat(package_qty) || check.rows[0].package_qty || 1;
     const pkgPrice = parseFloat(package_price) || check.rows[0].package_price || price;
     const unitPriceSmall = parseFloat(unit_price_small) || (pkgQty > 0 ? price / pkgQty : 0);
-    
+
     let stock = parseFloat(stock_quantity);
     if (isNaN(stock) || stock <= 0) {
       stock = (check.rows[0].stock_quantity > 0) ? check.rows[0].stock_quantity : pkgQty;
@@ -564,9 +539,9 @@ router.put('/:id', auth, async (req, res) => {
     const farmIdVal = req.body.farm_id !== undefined ? (req.body.farm_id ? parseInt(req.body.farm_id) : null) : check.rows[0].farm_id;
 
     const result = await pool.query(
-      `UPDATE supplies 
-       SET category = $1, name = $2, unit = $3, package_size = $4, package_qty = $5, package_unit = $6, 
-           package_price = $7, unit_price = $8, unit_price_small = $9, stock_quantity = $10, note = $11, 
+      `UPDATE supplies
+       SET category = $1, name = $2, unit = $3, package_size = $4, package_qty = $5, package_unit = $6,
+           package_price = $7, unit_price = $8, unit_price_small = $9, stock_quantity = $10, note = $11,
            image_url = $12, fertilizer_type = $13, fertilizer_composition = $14, phi_days = $15, active_ingredient = $16, target_pests = $17,
            safety_interval_note = $18, farm_id = $19, updated_at = NOW()
        WHERE id = $20
@@ -603,7 +578,6 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
-// DELETE /api/supplies/:id — Xóa vật tư
 router.delete('/:id', auth, async (req, res) => {
   try {
     const { id } = req.params;
@@ -629,7 +603,6 @@ router.delete('/:id', auth, async (req, res) => {
   }
 });
 
-// POST /api/supplies/:id/restock — Nhập thêm hàng vào kho (Stock Replenishment)
 router.post('/:id/restock', auth, async (req, res) => {
   try {
     const { id } = req.params;
@@ -672,7 +645,7 @@ router.post('/:id/restock', auth, async (req, res) => {
     const restockFarmId = req.body.farm_id ? parseInt(req.body.farm_id) : supply.farm_id;
 
     const updatedRes = await pool.query(
-      `UPDATE supplies 
+      `UPDATE supplies
        SET stock_quantity = $1, package_price = $2, unit_price = $3, unit_price_small = $4, note = $5, farm_id = $6, updated_at = NOW()
        WHERE id = $7
        RETURNING *`,
@@ -681,7 +654,6 @@ router.post('/:id/restock', auth, async (req, res) => {
 
     const updatedSupply = updatedRes.rows[0];
 
-    // Log audit
     logAuditAction(
       req.user.id,
       req.user.full_name || req.user.email,
@@ -693,7 +665,6 @@ router.post('/:id/restock', auth, async (req, res) => {
       updatedSupply
     );
 
-    // Broadcast WebSocket event
     const broadcast = req.app.get('broadcast');
     if (broadcast) {
       broadcast('supplies_updated', { userId: req.user.id, supplyId: id, restock: { added_qty: qty, new_stock: newStock } });
@@ -710,8 +681,6 @@ router.post('/:id/restock', auth, async (req, res) => {
   }
 });
 
-
-// GET /api/supplies/usages — Lấy nhật ký tiêu hao vật tư
 router.get('/usages', auth, async (req, res) => {
   try {
     const { farm_id, category, limit, user_id } = req.query;
@@ -771,7 +740,6 @@ router.get('/usages', auth, async (req, res) => {
   }
 });
 
-// POST /api/supplies/usages — Ghi nhận tiêu hao vật tư
 router.post('/usages', auth, async (req, res) => {
   try {
     if (req.user.role !== 'admin' && req.user.sub_role === 'auditor_readonly') {
@@ -799,7 +767,6 @@ router.post('/usages', auth, async (req, res) => {
 
     const uDate = usage_date ? new Date(usage_date) : new Date();
 
-    // Auto-resolve farm_id from plants table if missing but plant_id is present
     let resolvedFarmId = farm_id;
     if (!resolvedFarmId && plant_id) {
       const plantRes = await pool.query('SELECT farm_id FROM plants WHERE id = $1', [plant_id]);
@@ -815,12 +782,10 @@ router.post('/usages', auth, async (req, res) => {
       [req.user.id, supply.id, resolvedFarmId || null, plant_id || null, uDate, qty, unit_price, total_cost, note || null]
     );
 
-    // Trừ kho vật tư (chỉ trừ cho phân bón & thuốc BVTV, không trừ cho Tiền nước & Nhân công vì là vật tư vĩnh cửu)
     if (supply.category !== 'Tiền nước' && supply.category !== 'Nhân công' && supply.stock_quantity > 0) {
       await pool.query('UPDATE supplies SET stock_quantity = GREATEST(0, stock_quantity - $1), updated_at = NOW() WHERE id = $2', [qty, supply.id]);
     }
 
-    // Broadcast WebSocket event for real-time cost and supply update
     const broadcast = req.app.get('broadcast');
     if (broadcast) {
       broadcast('supplies_updated', { userId: req.user.id, usage: result.rows[0] });
@@ -836,7 +801,6 @@ router.post('/usages', auth, async (req, res) => {
   }
 });
 
-// DELETE /api/supplies/usages/:id — Xóa nhật ký tiêu hao
 router.delete('/usages/:id', auth, async (req, res) => {
   try {
     if (req.user.role !== 'admin' && ['care_worker', 'auditor_readonly'].includes(req.user.sub_role)) {
@@ -854,7 +818,6 @@ router.delete('/usages/:id', auth, async (req, res) => {
 
     await pool.query('DELETE FROM supply_usages WHERE id = $1', [id]);
 
-    // Restore stock if not permanent category
     if (usage.supply_id && usage.quantity > 0) {
       const supRes = await pool.query('SELECT category FROM supplies WHERE id = $1', [usage.supply_id]);
       if (supRes.rows.length > 0 && supRes.rows[0].category !== 'Tiền nước' && supRes.rows[0].category !== 'Nhân công') {
@@ -862,7 +825,6 @@ router.delete('/usages/:id', auth, async (req, res) => {
       }
     }
 
-    // Broadcast WebSocket event for real-time cost and supply update
     const broadcast = req.app.get('broadcast');
     if (broadcast) {
       broadcast('supplies_updated', { userId: req.user.id, deletedId: id });
@@ -875,16 +837,13 @@ router.delete('/usages/:id', auth, async (req, res) => {
   }
 });
 
-// ─── 3. ANALYTICS & COST MONITORING ──────────────────────────────
-
-// GET /api/supplies/analytics — Thống kê chi phí vật tư theo khoảng thời gian linh hoạt
 router.get('/analytics', auth, async (req, res) => {
   try {
-    const { 
-      period = 'month', 
-      year = new Date().getFullYear(), 
-      month, 
-      farm_id, 
+    const {
+      period = 'month',
+      year = new Date().getFullYear(),
+      month,
+      farm_id,
       user_id,
       from_date,
       to_date,
@@ -898,7 +857,7 @@ router.get('/analytics', auth, async (req, res) => {
 
     const targetUserId = (user_id && req.user.role === 'admin') ? parseInt(user_id) : req.user.id;
     const hideFinance = isSupplyFinanceRedacted(req.user, req.query.role);
-    
+
     let baseWhere = `WHERE (su.user_id = $1 OR su.user_id = COALESCE($2::int, 0) OR su.farm_id IN (SELECT id FROM farms WHERE user_id = $1 OR user_id = COALESCE($2::int, 0) OR id = (SELECT farm_id FROM users WHERE id = $1)))`;
     const params = [targetUserId, req.user.parent_user_id || null];
     let idx = 3;
@@ -993,7 +952,6 @@ router.get('/analytics', auth, async (req, res) => {
       timeGroupOrderBy = `ORDER BY sort_order ASC`;
     }
 
-    // 1. Overall Category Totals for Selected Time Period & Farm
     const catTotalsQuery = `
       SELECT s.category, COALESCE(SUM(su.total_cost), 0) as total_cost, COUNT(su.id) as transaction_count
       FROM supply_usages su
@@ -1029,7 +987,6 @@ router.get('/analytics', auth, async (req, res) => {
       }
     });
 
-    // 2. Time Grouping Breakdown
     const breakdownQuery = `
       SELECT ${timeGroupSelect},
              s.category,
@@ -1063,7 +1020,6 @@ router.get('/analytics', auth, async (req, res) => {
   }
 });
 
-// POST /api/supplies/recalculate-stock — Thủ công kích hoạt cân đối & tính lại tồn kho
 router.post('/recalculate-stock', auth, async (req, res) => {
   try {
     await autoReconcileSuppliesData(req.user.parent_user_id || req.user.id, true);
@@ -1078,7 +1034,6 @@ router.post('/recalculate-stock', auth, async (req, res) => {
   }
 });
 
-// GET /api/supplies/profit-overview — Thống kê chuẩn ERP: Giá trị nhập kho, Tiêu hao lũy kế, Doanh thu thu hoạch theo từng cây trồng (Lọc theo Trang trại & Năm + Role-Adaptive Redaction)
 router.get('/profit-overview', auth, async (req, res) => {
   try {
     const { farm_id, year, user_id } = req.query;
@@ -1087,7 +1042,6 @@ router.get('/profit-overview', auth, async (req, res) => {
     const hideFinance = isSupplyFinanceRedacted(req.user, req.query.role);
     const isAssignedScope = req.user.role !== 'admin' && req.user.view_plants_scope === 'assigned';
 
-    // ── 1. KHỐI 1: GIÁ TRỊ NHẬP KHO & TỒN KHO VẬT TƯ (Vốn nhập hàng vào) ──
     let stockQuery = `
       SELECT s.id, s.name, s.category, s.unit, s.package_qty, s.package_price, s.unit_price, s.stock_quantity, s.created_at, s.farm_id, s.phi_days,
              COALESCE(SUM(su.total_cost), 0) as total_used_cost,
@@ -1131,8 +1085,8 @@ router.get('/profit-overview', auth, async (req, res) => {
     stockQuery += ` GROUP BY s.id`;
     const stockRes = await pool.query(stockQuery, stockParams);
 
-    let totalStockInflowValuation = 0; // Giá trị vốn nhập hàng vào
-    let currentStockValuation = 0;      // Giá trị tồn kho thực tế hiện tại
+    let totalStockInflowValuation = 0;
+    let currentStockValuation = 0;
     const skuCount = stockRes.rows.length;
     let fertilizerSkuCount = 0;
     let pesticideSkuCount = 0;
@@ -1152,7 +1106,6 @@ router.get('/profit-overview', auth, async (req, res) => {
       totalStockInflowValuation += calculatedInflow;
     });
 
-    // ── 2. KHỐI 2: TIÊU HAO VẬT TƯ LŨY KẾ (Dung tích & giá trị đã chiết sử dụng) ──
     let usageQuery = `
       SELECT su.id, su.supply_id, su.farm_id, su.plant_id, su.usage_date, su.quantity, su.unit_price, su.total_cost, su.note,
              COALESCE(s.name, 'Vật tư') as supply_name,
@@ -1244,16 +1197,15 @@ router.get('/profit-overview', auth, async (req, res) => {
       }
     });
 
-    // ── 3. KHỐI 3: DOANH THU & SẢN LƯỢNG THU HOẠCH THEO TỪNG CÂY TRỒNG ──
     let harvestQuery = `
       SELECT pl.id, pl.cost, pl.details, pl.log_date, pl.log_type, pl.plant_id, pl.batch_code,
              p.tree_code, p.plant_type, p.assigned_to_user_id, COALESCE(p.farm_id, (SELECT farm_id FROM users WHERE id = pl.created_by)) as farm_id
       FROM plant_logs pl
       LEFT JOIN plants p ON pl.plant_id = p.id
       WHERE (
-        pl.log_type ILIKE '%thu%' 
+        pl.log_type ILIKE '%thu%'
         OR pl.log_type ILIKE '%harvest%'
-        OR pl.details::text ILIKE '%fruit_count%' 
+        OR pl.details::text ILIKE '%fruit_count%'
         OR pl.details::text ILIKE '%price_per_tree%'
         OR pl.details::text ILIKE '%total_revenue%'
       )
@@ -1276,7 +1228,7 @@ router.get('/profit-overview', auth, async (req, res) => {
         hIdx++;
       } else {
         harvestQuery += ` AND (
-          pl.created_by = $${hIdx} 
+          pl.created_by = $${hIdx}
           OR p.created_by = $${hIdx}
           OR p.farm_id IN (SELECT id FROM farms WHERE user_id = $${hIdx} OR id = (SELECT farm_id FROM users WHERE id = $${hIdx}))
           OR pl.created_by IN (SELECT id FROM users WHERE farm_id IN (SELECT id FROM farms WHERE user_id = $${hIdx}))
@@ -1348,7 +1300,6 @@ router.get('/profit-overview', auth, async (req, res) => {
       hideFinance ? (b.weight - a.weight || b.fruits - a.fruits) : (b.revenue - a.revenue)
     );
 
-    // ── 4. LỢI NHUẬN & HIỆU QUẢ ĐẦU TƯ (ROI) ──
     const netProfit = hideFinance ? 0 : (totalHarvestRevenue - totalSpent);
     const roiPercentage = hideFinance
       ? 0
@@ -1358,14 +1309,12 @@ router.get('/profit-overview', auth, async (req, res) => {
       finance_redacted: hideFinance,
       view_plants_scope: isAssignedScope ? 'assigned' : 'all',
 
-      // Khối 1: Nhập kho & Tồn kho
       total_stock_inflow: hideFinance ? 0 : (totalStockInflowValuation > 0 ? totalStockInflowValuation : currentStockValuation),
       current_stock_valuation: hideFinance ? 0 : currentStockValuation,
       sku_count: skuCount,
       fertilizer_sku_count: fertilizerSkuCount,
       pesticide_sku_count: pesticideSkuCount,
 
-      // Khối 2: Tiêu hao lũy kế
       total_spent: hideFinance ? 0 : totalSpent,
       usage_count: usageCount,
       category_spent: hideFinance
@@ -1373,18 +1322,15 @@ router.get('/profit-overview', auth, async (req, res) => {
         : categorySpent,
       category_usage_count: categoryUsageCount,
 
-      // Khối 3: Doanh thu & Sản lượng thu hoạch theo từng cây
       total_revenue: hideFinance ? 0 : totalHarvestRevenue,
       fruit_count: totalFruitCount,
       harvest_weight: totalHarvestWeight,
       harvest_count: harvestLogsCount,
       tree_breakdown: treeBreakdown,
 
-      // Lợi nhuận & ROI
       net_profit: netProfit,
       roi_percentage: roiPercentage,
 
-      // Metadata bộ lọc
       filtered_farm_id: filterFarmId,
       filtered_year: filterYear
     });
@@ -1395,4 +1341,3 @@ router.get('/profit-overview', auth, async (req, res) => {
 });
 
 module.exports = router;
-

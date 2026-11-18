@@ -1,8 +1,3 @@
-// Modular Admin GIS GPS Parser, Beacon & Multi-Point Import Tools
-// ═════════════════════════════════════════════════════════════════════════════
-// 📍 SMART GPS PARSER & PIN / PING NAVIGATION HELPERS
-// ═════════════════════════════════════════════════════════════════════════════
-
 let gisGpsBeaconMarker = null;
 
 function clearGisGpsBeacon() {
@@ -13,20 +8,11 @@ function clearGisGpsBeacon() {
 }
 window.clearGisGpsBeacon = clearGisGpsBeacon;
 
-/**
- * Smart Parser for any GPS format (Decimal degrees, Google Maps links, DMS)
- * @param {string} input - GPS raw string or URL
- * @returns {{lat: number, lng: number}|null}
- */
 function parseGpsCoordinate(input) {
   if (!input || typeof input !== 'string') return null;
   const str = input.trim();
   if (!str) return null;
 
-  // 1. Google Maps URL patterns:
-  // e.g. https://www.google.com/maps?q=14.05832,108.27721
-  // e.g. https://www.google.com/maps/@14.05832,108.27721,17z
-  // e.g. https://www.google.com/maps/place/14.05832,108.27721
   const mapUrlMatch = str.match(/(@|[?&]q=|[?&]ll=|\/place\/)(-?\d+\.\d+)[,\s]+(-?\d+\.\d+)/);
   if (mapUrlMatch) {
     const v1 = parseFloat(mapUrlMatch[2]);
@@ -36,8 +22,6 @@ function parseGpsCoordinate(input) {
     }
   }
 
-  // 2. Degrees Minutes Seconds (DMS) format:
-  // e.g. 14°03'29.9"N 108°16'38.0"E or 14 03 30 N, 108 16 38 E
   const dmsRegex = /(\d+)[\s°]+(\d+)[\s']+([\d.]+)[\s"]*([NSEWnsew])?/g;
   const dmsMatches = [...str.matchAll(dmsRegex)];
   if (dmsMatches.length >= 2) {
@@ -61,8 +45,6 @@ function parseGpsCoordinate(input) {
     return orientVietnamGps(lat, lng);
   }
 
-  // 3. Decimal Degrees with comma, semicolon, or whitespace:
-  // e.g. "14.05832, 108.27721" or "14.05832 108.27721" or "14.05832;108.27721"
   const cleanStr = str.replace(/[\[\]\(\)]/g, ' ').replace(/[,;]/g, ' ');
   const parts = cleanStr.trim().split(/\s+/).filter(Boolean);
   if (parts.length >= 2) {
@@ -77,25 +59,16 @@ function parseGpsCoordinate(input) {
 }
 window.parseGpsCoordinate = parseGpsCoordinate;
 
-/**
- * Intelligent orientation for Vietnam / Global GPS coordinates
- * Standard order in VN: Lat is ~8..24, Lng is ~102..110
- */
 function orientVietnamGps(v1, v2) {
-  // If one is clearly longitude (>50) and one is clearly latitude (<50)
   if (v1 > 50 && v2 < 50) {
     return { lat: v2, lng: v1 };
   }
   if (v2 > 50 && v1 < 50) {
     return { lat: v1, lng: v2 };
   }
-  // Default: v1 is Lat, v2 is Lng
   return { lat: v1, lng: v2 };
 }
 
-/**
- * Ping / Fly To GPS Location on Map with a pulsing Radar Beacon Marker
- */
 function pingGpsLocationOnMap(lat, lng, label = 'Tọa độ GPS') {
   if (!gMap) {
     toast('Bản đồ GIS chưa được khởi tạo!', 'error');
@@ -106,13 +79,10 @@ function pingGpsLocationOnMap(lat, lng, label = 'Tọa độ GPS') {
     return;
   }
 
-  // Ensure map is properly sized
   gMap.resize();
 
-  // Clear previous beacon
   clearGisGpsBeacon();
 
-  // Create pulsing radar beacon element
   const beaconEl = document.createElement('div');
   beaconEl.className = 'gis-gps-beacon-container';
   beaconEl.innerHTML = `
@@ -142,7 +112,6 @@ function pingGpsLocationOnMap(lat, lng, label = 'Tọa độ GPS') {
     setTimeout(() => { if (window.lucide) lucide.createIcons(); }, 50);
   }
 
-  // Fly to location with smooth animation at high zoom
   gMap.flyTo({
     center: [lng, lat],
     zoom: 18,
@@ -155,9 +124,6 @@ function pingGpsLocationOnMap(lat, lng, label = 'Tọa độ GPS') {
 }
 window.pingGpsLocationOnMap = pingGpsLocationOnMap;
 
-/**
- * Handle Ping button click in the Farm Form
- */
 function pingGpsFromForm() {
   const smartVal = document.getElementById('farm-gps-smart-input')?.value.trim();
   const latVal = document.getElementById('farm-gps-lat')?.value.trim();
@@ -179,7 +145,6 @@ function pingGpsFromForm() {
     return;
   }
 
-  // Sync inputs
   if (document.getElementById('farm-gps-lat')) document.getElementById('farm-gps-lat').value = coords.lat.toFixed(6);
   if (document.getElementById('farm-gps-lng')) document.getElementById('farm-gps-lng').value = coords.lng.toFixed(6);
   if (document.getElementById('farm-gps-smart-input')) document.getElementById('farm-gps-smart-input').value = `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`;
@@ -188,9 +153,6 @@ function pingGpsFromForm() {
 }
 window.pingGpsFromForm = pingGpsFromForm;
 
-/**
- * Sync Lat/Lng inputs to Smart Input
- */
 function syncGpsInputsFromSplit() {
   const lat = document.getElementById('farm-gps-lat')?.value.trim();
   const lng = document.getElementById('farm-gps-lng')?.value.trim();
@@ -201,9 +163,6 @@ function syncGpsInputsFromSplit() {
 }
 window.syncGpsInputsFromSplit = syncGpsInputsFromSplit;
 
-/**
- * Get current device GPS location using HTML5 Geolocation API
- */
 function getCurrentDeviceGpsLocation() {
   if (!navigator.geolocation) {
     toast('Trình duyệt hoặc thiết bị không hỗ trợ định vị GPS!', 'error');
@@ -238,9 +197,6 @@ function getCurrentDeviceGpsLocation() {
 }
 window.getCurrentDeviceGpsLocation = getCurrentDeviceGpsLocation;
 
-/**
- * Generate a Starter Polygon (~1 hectare / 100m x 100m square) around the GPS point
- */
 function generateStarterPolygonAroundGps() {
   let smartVal = document.getElementById('farm-gps-smart-input')?.value.trim();
   let latVal = document.getElementById('farm-gps-lat')?.value.trim();
@@ -266,8 +222,8 @@ function generateStarterPolygonAroundGps() {
 
   const lat = coords.lat;
   const lng = coords.lng;
-  const dLat = 0.00045; // ~50m offset north/south
-  const dLng = 0.00045 / Math.cos(lat * Math.PI / 180); // ~50m offset east/west
+  const dLat = 0.00045;
+  const dLng = 0.00045 / Math.cos(lat * Math.PI / 180);
 
   const polygonCoordinates = [[
     [lng - dLng, lat + dLat],
@@ -290,12 +246,10 @@ function generateStarterPolygonAroundGps() {
   const featureIds = drawControl.add(feature);
   updateAreaDisplay();
 
-  // Fly and fit bounds
   const bounds = new mapboxgl.LngLatBounds();
   polygonCoordinates[0].forEach(pt => bounds.extend(pt));
   gMap.fitBounds(bounds, { padding: 80, maxZoom: 19, duration: 800 });
 
-  // Enable direct select mode so vertices can be immediately dragged
   setTimeout(() => {
     if (featureIds && featureIds.length > 0) {
       try {
@@ -309,10 +263,6 @@ function generateStarterPolygonAroundGps() {
   toast('🟩 Đã tạo khung ranh giới mẫu 1 ha quanh tọa độ GPS! Bạn có thể kéo các điểm tròn trắng để khớp với thực tế.', 'success');
 }
 window.generateStarterPolygonAroundGps = generateStarterPolygonAroundGps;
-
-// ═════════════════════════════════════════════════════════════════════════════
-// 📐 MULTI-POINT GPS BOUNDARY IMPORT MODAL CONTROLLERS
-// ═════════════════════════════════════════════════════════════════════════════
 
 function openMultiPointGpsModal() {
   const modal = document.getElementById('multi-point-gps-modal');
@@ -360,7 +310,6 @@ function submitMultiPointGpsImport() {
     return;
   }
 
-  // Ensure polygon is closed (first point === last point)
   const first = points[0];
   const last = points[points.length - 1];
   if (first[0] !== last[0] || first[1] !== last[1]) {
@@ -385,15 +334,12 @@ function submitMultiPointGpsImport() {
   const featureIds = drawControl.add(feature);
   updateAreaDisplay();
 
-  // Close modal
   closeMultiPointGpsModal();
 
-  // Fit bounds to polygon
   const bounds = new mapboxgl.LngLatBounds();
   points.forEach(pt => bounds.extend(pt));
   gMap.fitBounds(bounds, { padding: 80, maxZoom: 19, duration: 900 });
 
-  // Enable direct select mode
   setTimeout(() => {
     if (featureIds && featureIds.length > 0) {
       try {
@@ -404,7 +350,6 @@ function submitMultiPointGpsImport() {
     }
   }, 200);
 
-  // Sync center to GPS inputs
   const centerLng = (bounds.getWest() + bounds.getEast()) / 2;
   const centerLat = (bounds.getSouth() + bounds.getNorth()) / 2;
   if (document.getElementById('farm-gps-lat')) document.getElementById('farm-gps-lat').value = centerLat.toFixed(6);
@@ -415,4 +360,3 @@ function submitMultiPointGpsImport() {
   toast(`✅ Đã nhập ${points.length - 1} đỉnh GPS và nối thành đa giác ranh giới thành công!`, 'success');
 }
 window.submitMultiPointGpsImport = submitMultiPointGpsImport;
-

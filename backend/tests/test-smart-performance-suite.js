@@ -1,8 +1,3 @@
-/* ═══════════════════════════════════════════════════════════════
-   Plant Book – Performance & Architecture Test Suite
-   tests/test-smart-performance-suite.js
-   ═══════════════════════════════════════════════════════════════ */
-
 const assert = require('assert');
 const { singleflight } = require('../services/singleflight');
 const { invalidateAndBroadcast } = require('../services/eventBus');
@@ -18,20 +13,17 @@ async function runPerformanceTestSuite() {
   let passedTests = 0;
   let totalTests = 6;
 
-  // ── TEST 1: Singleflight Request Deduplication (Chống Thundering Herd) ──
   console.log('🔹 [TEST 1/6] Singleflight Request Deduplication & Concurrency Spike...');
   try {
     let dbExecutionCount = 0;
     const testKey = 'benchmark:plant_range:farm1:1_20';
 
-    // Giả lập 50 request đồng thời query dải cây 1-20
     const concurrentRequests = 50;
     const startTime = Date.now();
 
     const tasks = Array.from({ length: concurrentRequests }, (_, i) => {
       return singleflight.do(testKey, async () => {
         dbExecutionCount++;
-        // Giả lập câu query DB mất 5ms
         await new Promise(r => setTimeout(r, 5));
         return { success: true, count: 20, chunk: '1-20' };
       });
@@ -40,7 +32,6 @@ async function runPerformanceTestSuite() {
     const results = await Promise.all(tasks);
     const elapsed = Date.now() - startTime;
 
-    // Kiểm tra: Dù có 50 request đồng thời, DB chỉ thực thi đúng 1 lần
     assert.strictEqual(dbExecutionCount, 1, `Kỳ vọng DB query đúng 1 lần, thực tế: ${dbExecutionCount}`);
     assert.strictEqual(results.length, 50, '50 request đều nhận được kết quả');
     results.forEach(res => {
@@ -55,7 +46,6 @@ async function runPerformanceTestSuite() {
     console.error('   ❌ FAIL TEST 1:', err.message);
   }
 
-  // ── TEST 2: Range & Chunk Querying Accuracy ──
   console.log('🔹 [TEST 2/6] Range & Chunk Querying Accuracy (0-20, 21-40, 41-60, 61-80)...');
   try {
     const mockPlants = Array.from({ length: 80 }, (_, i) => ({
@@ -93,15 +83,12 @@ async function runPerformanceTestSuite() {
     console.error('   ❌ FAIL TEST 2:', err.message);
   }
 
-  // ── TEST 3: Event-Driven Cache Invalidation & WebSocket Broadcast ──
   console.log('🔹 [TEST 3/6] Event-Driven Cache Invalidation & EventBus Broadcast...');
   try {
-    // 1. Nạp cache mẫu
     await setCache('plants_farm_1_all', [{ id: 1, tree_code: '1' }], 100);
     const cachedBefore = await getCache('plants_farm_1_all');
     assert.ok(cachedBefore, 'Cache đã được lưu');
 
-    // 2. Kích hoạt Invalidation qua EventBus
     let mockWsReceived = null;
     global.broadcastWS = (event, data) => {
       mockWsReceived = { event, data };
@@ -115,11 +102,9 @@ async function runPerformanceTestSuite() {
 
     assert.strictEqual(ok, true, 'EventBus thực thi thành công');
 
-    // 3. Kiểm tra cache đã bị xóa
     const cachedAfter = await getCache('plants_farm_1_all');
     assert.strictEqual(cachedAfter, null, 'Cache key đã bị dọn dẹp sạch');
 
-    // 4. Kiểm tra gói WebSocket
     assert.ok(mockWsReceived, 'WebSocket đã nhận được packet');
     assert.strictEqual(mockWsReceived.event, 'plants_updated');
     assert.strictEqual(mockWsReceived.data.action, 'update');
@@ -131,20 +116,19 @@ async function runPerformanceTestSuite() {
     console.error('   ❌ FAIL TEST 3:', err.message);
   }
 
-  // ── TEST 4: Spatial GPS Proximity Distance (Haversine Formula) ──
   console.log('🔹 [TEST 4/6] Spatial GPS Proximity Distance Calculation...');
   try {
     const userLat = 10.925000;
     const userLng = 107.240000;
 
     const sampleTrees = [
-      { id: 1, tree_code: '1', latitude: 10.925050, longitude: 107.240050 }, // ~7.5m
-      { id: 2, tree_code: '2', latitude: 10.926000, longitude: 107.240000 }, // ~111m
-      { id: 3, tree_code: '3', latitude: 10.925010, longitude: 107.240010 }, // ~1.5m
+      { id: 1, tree_code: '1', latitude: 10.925050, longitude: 107.240050 },
+      { id: 2, tree_code: '2', latitude: 10.926000, longitude: 107.240000 },
+      { id: 3, tree_code: '3', latitude: 10.925010, longitude: 107.240010 },
     ];
 
     const haversine = (lat1, lon1, lat2, lon2) => {
-      const R = 6371000; // meters
+      const R = 6371000;
       const dLat = (lat2 - lat1) * Math.PI / 180;
       const dLon = (lon2 - lon1) * Math.PI / 180;
       const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
@@ -171,7 +155,6 @@ async function runPerformanceTestSuite() {
     console.error('   ❌ FAIL TEST 4:', err.message);
   }
 
-  // ── TEST 5: Soft Delete Lifecycle & Audit Trail Simulation ──
   console.log('🔹 [TEST 5/6] Soft Delete Lifecycle & Audit Trail Data Structure...');
   try {
     let mockPlant = {
@@ -182,15 +165,12 @@ async function runPerformanceTestSuite() {
       deleted_at: null
     };
 
-    // Soft delete action
     mockPlant.deleted_at = new Date().toISOString();
     assert.ok(mockPlant.deleted_at !== null, 'deleted_at đã được đánh dấu');
 
-    // Query active plants filter simulation
     const activePlants = [mockPlant].filter(p => !p.deleted_at);
     assert.strictEqual(activePlants.length, 0, 'Cây đã xóa mềm bị ẩn khỏi danh sách hoạt động');
 
-    // Restore action
     mockPlant.deleted_at = null;
     const restoredPlants = [mockPlant].filter(p => !p.deleted_at);
     assert.strictEqual(restoredPlants.length, 1, 'Cây được khôi phục nguyên vẹn');
@@ -202,7 +182,6 @@ async function runPerformanceTestSuite() {
     console.error('   ❌ FAIL TEST 5:', err.message);
   }
 
-  // ── TEST 6: Smart Agronomic Reminders Calculation ──
   console.log('🔹 [TEST 6/6] Smart Agronomic Reminders Cycle Calculation...');
   try {
     const plants = [{ id: 1, tree_code: '1', plant_type: 'Sầu riêng' }];
@@ -230,7 +209,6 @@ async function runPerformanceTestSuite() {
     console.error('   ❌ FAIL TEST 6:', err.message);
   }
 
-  // ── TỔNG KẾT BENCHMARK ──
   console.log('═══════════════════════════════════════════════════════════════');
   console.log(`🎉 TỔNG KẾT KẾT QUẢ KIỂM THỬ: ${passedTests} / ${totalTests} TEST CASES PASS 100%!`);
   console.log('═══════════════════════════════════════════════════════════════\n');

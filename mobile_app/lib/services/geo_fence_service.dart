@@ -5,7 +5,7 @@ class GeoFenceResult {
   final double? distanceMeters;
   final double allowedRadiusMeters;
   final String message;
-  final String status; // 'VERIFIED_OK', 'GEOFENCE_EXCEEDED', 'NO_GPS_DATA'
+  final String status;
 
   const GeoFenceResult({
     required this.isWithinGeofence,
@@ -25,12 +25,10 @@ class GeoPosition {
 class GeoFenceService {
   static const double defaultGeofenceRadiusMeters = 8.0;
 
-  /// Safe retrieval of current device position with null fallback
   Future<GeoPosition?> getCurrentPositionSafe() async {
     return null;
   }
 
-  /// Calculates Haversine distance in meters between two GPS coordinates
   static double? calculateHaversineDistance({
     required double? lat1,
     required double? lng1,
@@ -46,7 +44,6 @@ class GeoFenceService {
     double pLat2 = lat2;
     double pLng2 = lng2;
 
-    // Handle swapped coordinates (lat > 90)
     if (pLat1.abs() > 90 && pLng1.abs() <= 90) {
       final tmp = pLat1;
       pLat1 = pLng1;
@@ -71,10 +68,9 @@ class GeoFenceService {
     final double c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
     final double distance = earthRadiusMeters * c;
 
-    return (distance * 10).round() / 10.0; // 1 decimal place
+    return (distance * 10).round() / 10.0;
   }
 
-  /// Evaluates whether scan position is within plant's allowed geofence radius (<= 8.0m)
   static GeoFenceResult evaluateGeofence({
     required double? plantLat,
     required double? plantLng,

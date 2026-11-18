@@ -1,14 +1,7 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/* ═══════════════════════════════════════════════════════════════
-   Plant Book – User Portal
-   auth.js — Login, logout, token verification, role routing
-   ═══════════════════════════════════════════════════════════════ */
-
 import { API, api, token, setToken, clearToken, setCurrentUser, currentUser } from './core/api.js';
 import { showPage } from './core/router.js';
 import { connectWebSocket, closeWebSocket } from './core/websocket.js';
 
-// ── Helper Reset Login Button ─────────────────────────────────
 export function resetLoginBtnState() {
   const btn = document.getElementById('login-btn');
   if (btn) {
@@ -18,7 +11,6 @@ export function resetLoginBtnState() {
 }
 window.resetLoginBtnState = resetLoginBtnState;
 
-// ── Đăng nhập ──────────────────────────────────────────────────
 async function doLogin() {
   const email = document.getElementById('login-email')?.value.trim();
   const pass  = document.getElementById('login-pass')?.value;
@@ -37,7 +29,6 @@ async function doLogin() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Đăng nhập thất bại');
 
-    // Phân luồng theo role
     if (data.user.role === 'admin') {
       localStorage.setItem('pb_token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
@@ -46,7 +37,6 @@ async function doLogin() {
       return;
     }
 
-    // Role user (hoặc bất kỳ role nào không phải admin)
     setToken(data.token);
     setCurrentUser(data.user);
     localStorage.setItem('user', JSON.stringify(data.user));
@@ -64,15 +54,12 @@ async function doLogin() {
   }
 }
 
-// Phím Enter → đăng nhập
 document.getElementById('login-pass')?.addEventListener('keydown', e => {
   if (e.key === 'Enter') doLogin();
 });
 
-// Expose doLogin cho nút HTML onclick
 window.doLogin = doLogin;
 
-// ── Password Visibility Toggle ─────────────────────────────────
 function togglePasswordVisibility() {
   const passInput = document.getElementById('login-pass');
   const icon = document.getElementById('toggle-pass-icon');
@@ -84,7 +71,6 @@ function togglePasswordVisibility() {
 }
 window.togglePasswordVisibility = togglePasswordVisibility;
 
-// ── Forgot Password Modal Handlers ─────────────────────────────
 function openForgotPasswordModal() {
   const modal = document.getElementById('forgot-modal');
   const errEl = document.getElementById('forgot-error');
@@ -145,7 +131,6 @@ async function submitForgotPasswordRequest() {
 }
 window.submitForgotPasswordRequest = submitForgotPasswordRequest;
 
-// ── Đăng xuất ─────────────────────────────────────────────────
 export async function logout() {
   closeWebSocket();
   if (token) {
@@ -158,10 +143,8 @@ export async function logout() {
   clearToken();
   setCurrentUser(null);
 
-  // Reset login button state to clean normal state
   resetLoginBtnState();
 
-  // Clear login inputs so saved credentials are not auto-filled
   const emailInput = document.getElementById('login-email');
   const passInput  = document.getElementById('login-pass');
   if (emailInput) emailInput.value = '';
@@ -170,7 +153,6 @@ export async function logout() {
   const errEl = document.getElementById('login-error');
   if (errEl) errEl.style.display = 'none';
 
-  // Reset URL to clean root path '/' to prevent leaking user ID or staying on internal subpath
   window.history.replaceState({}, document.title, '/');
 
   const app       = document.getElementById('app');
@@ -184,7 +166,6 @@ export async function logout() {
 
 window.logout = logout;
 
-// ── Hiển thị App sau đăng nhập thành công ─────────────────────
 function showApp() {
   resetLoginBtnState();
   const app       = document.getElementById('app');
@@ -219,7 +200,6 @@ function showApp() {
     }
   }
 
-  // Cập nhật thông tin ở tab Cài đặt
   const settingNameEl  = document.getElementById('setting-user-name');
   const settingEmailEl = document.getElementById('setting-user-email');
   if (settingNameEl)  settingNameEl.textContent  = user?.full_name || user?.name || '—';
@@ -232,11 +212,9 @@ function showApp() {
   }
 }
 
-// ── Kiểm tra token lưu sẵn khi tải trang ──────────────────────
 window.addEventListener('load', async () => {
   resetLoginBtnState();
   if (!token) {
-    // Nếu chưa đăng nhập mà URL đang chứa slug /usr-* hoặc query params cũ, dọn sạch về root '/'
     if (window.location.pathname.startsWith('/usr-') || window.location.pathname.startsWith('/user') || window.location.search || window.location.hash) {
       window.history.replaceState({}, document.title, '/');
     }
@@ -246,7 +224,6 @@ window.addEventListener('load', async () => {
   try {
     const me = await api('/auth/me');
 
-    // Admin nhầm vào trang user → chuyển về admin
     if (me.role === 'admin') {
       window.location.replace('/admin');
       return;
@@ -255,12 +232,10 @@ window.addEventListener('load', async () => {
     setCurrentUser(me);
     showApp();
   } catch {
-    // Token hết hạn / không hợp lệ
     logout();
   }
 });
 
-// ── 3-Step Farmer Registration Wizard ──────────────────────────
 let currentRegStep = 1;
 
 function openRegisterModal() {
@@ -270,7 +245,6 @@ function openRegisterModal() {
   const errEl = document.getElementById('reg-error');
   if (errEl) errEl.style.display = 'none';
 
-  // Clear inputs
   if (document.getElementById('reg-phone')) document.getElementById('reg-phone').value = '';
   if (document.getElementById('reg-pass')) document.getElementById('reg-pass').value = '';
   if (document.getElementById('reg-pass-confirm')) document.getElementById('reg-pass-confirm').value = '';
@@ -308,7 +282,6 @@ function updateRegStepUI() {
   const titleEl = document.getElementById('reg-modal-title');
   if (titleEl) titleEl.innerHTML = `<i data-lucide="user-plus" class="lucide-sm" style="color:var(--green)"></i> Đăng ký tài khoản Nông hộ (Bước ${currentRegStep}/3)`;
 
-  // Dots
   const dot1 = document.getElementById('step-dot-1');
   const dot2 = document.getElementById('step-dot-2');
   const dot3 = document.getElementById('step-dot-3');
@@ -326,7 +299,6 @@ function updateRegStepUI() {
     dot3.style.color = currentRegStep >= 3 ? 'white' : '#64748b';
   }
 
-  // Buttons
   const prevBtn = document.getElementById('reg-prev-btn');
   const nextBtn = document.getElementById('reg-next-btn');
 
@@ -337,7 +309,6 @@ function updateRegStepUI() {
       : 'Tiếp theo <i data-lucide="arrow-right" class="lucide-sm"></i>';
   }
 
-  // Reset body scroll position
   const modalBody = document.querySelector('#register-modal .modal-body');
   if (modalBody) modalBody.scrollTop = 0;
 
@@ -372,7 +343,6 @@ async function nextRegStep() {
       return;
     }
 
-    // Pre-check if phone exists on server
     if (nextBtn) { nextBtn.innerHTML = '<span class="spinner"></span> Đang kiểm tra...'; nextBtn.disabled = true; }
     try {
       const checkRes = await fetch(`${API}/auth/check-phone?phone=${encodeURIComponent(phone)}`);
@@ -394,10 +364,8 @@ async function nextRegStep() {
     return;
   }
 
-
   if (currentRegStep === 2) {
     currentRegStep = 3;
-    // Populate review step
     const phone = document.getElementById('reg-phone')?.value.trim();
     const name = document.getElementById('reg-name')?.value.trim() || `Nông hộ ${phone}`;
     const plantType = document.getElementById('reg-plant-type')?.value.trim() || 'Chưa khai báo';
@@ -466,7 +434,6 @@ async function submitRegister() {
 
     alert(data.message);
     closeRegisterModal();
-    // Fill login phone for fast login
     const loginEmailInput = document.getElementById('login-email');
     if (loginEmailInput) loginEmailInput.value = phone;
 
@@ -481,7 +448,6 @@ async function submitRegister() {
 }
 window.submitRegister = submitRegister;
 
-// ── Pro Upgrade Modal Handlers ────────────────────────────────
 function openProUpgradeModal(featureKey) {
   const modal = document.getElementById('pro-upgrade-modal');
   if (modal) modal.style.display = 'flex';
@@ -493,5 +459,3 @@ function closeProUpgradeModal() {
   if (modal) modal.style.display = 'none';
 }
 window.closeProUpgradeModal = closeProUpgradeModal;
-
-

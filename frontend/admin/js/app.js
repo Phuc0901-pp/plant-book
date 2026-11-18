@@ -1,8 +1,3 @@
-/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/* ════════════════════════════════════════════════════════
-   Plant Book Admin — app.js (Core Application Router & Globals)
-   ════════════════════════════════════════════════════════ */
-// Passive Event Listeners Patch for 60fps smooth scrolling
 (function() {
   const originalAddEventListener = EventTarget.prototype.addEventListener;
   EventTarget.prototype.addEventListener = function(type, listener, options) {
@@ -33,7 +28,6 @@ var editingSchemaId = null;
 var schemaFields = [];
 var schemasCache = [];
 
-// Dashboard state variables
 var dashboardMap = null;
 var dashboardMarkers = [];
 var allFarms = [];
@@ -41,9 +35,6 @@ var allPlants = [];
 var allRecentLogs = [];
 var currentDashboardFilter = 'all';
 
-/**
- * Common REST API helper
- */
 async function api(path, opts = {}) {
   const res = await fetch(API + path, {
     ...opts,
@@ -78,9 +69,6 @@ let data;
   return data;
 }
 
-/**
- * Toast Notification Helper
- */
 function toast(msg, type = 'success') {
   const toastEl = document.getElementById('toast');
   const iconEl = document.getElementById('toast-icon');
@@ -101,16 +89,10 @@ function toast(msg, type = 'success') {
   setTimeout(() => { toastEl.style.display = 'none'; }, 3500);
 }
 
-/**
- * HTML Escaper
- */
 function esc(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
 }
 
-/**
- * Date Formatter
- */
 function fmtDate(d) {
   if (!d) return '—';
   try {
@@ -119,8 +101,6 @@ function fmtDate(d) {
     return String(d);
   }
 }
-
-// ── Main Page Switcher & URL Router ─────────────────────────────
 
 function generateIsoPublicId(role, numId) {
   const prefix = role === 'admin' ? 'adm' : 'usr';
@@ -182,7 +162,7 @@ function getAdminPageUrl(page) {
 function parseAdminPageFromPath(pathname) {
   const cleanPath = (pathname || '').replace(/^\/+|\/+$/g, '');
   if (!cleanPath) return 'dashboard';
-  
+
   const parts = cleanPath.split('/');
   if (parts[0] === 'admin') parts.shift();
   if (parts[0] && parts[0].startsWith('adm-')) parts.shift();
@@ -191,9 +171,6 @@ function parseAdminPageFromPath(pathname) {
   return adminRoutePageMap[routeSlug] || 'dashboard';
 }
 
-/**
- * Synchronize deep URL parameters: page, sub-tabs, hidden detail views, and pop-up modals
- */
 function syncAdminUrl(params = {}) {
   if (!window.history || !window.history.pushState) return;
 
@@ -202,7 +179,7 @@ function syncAdminUrl(params = {}) {
   const routeSlug = adminPageRouteMap[matchedPage] || matchedPage;
 
   const currentSearch = new URLSearchParams(window.location.search);
-  
+
   if ('tab' in params) {
     if (params.tab) currentSearch.set('tab', params.tab);
     else currentSearch.delete('tab');
@@ -278,40 +255,35 @@ async function showPage(page, pushUrl = true) {
     return;
   }
 
-  // Remove active state from all page sections and nav items
   document.querySelectorAll('.page-section, .page-content').forEach(s => {
     s.classList.remove('active');
     s.style.display = 'none';
   });
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
 
-  // Show target section
   targetSection.classList.add('active');
   targetSection.style.display = 'block';
 
-  // Instant Lucide icon hydration on page transitions
   if (typeof window.refreshIcons === 'function') {
     window.refreshIcons();
     setTimeout(window.refreshIcons, 40);
     setTimeout(window.refreshIcons, 250);
   }
 
-  // Highlight active sidebar menu item safely
   const navItem = document.querySelector(`.nav-item[onclick*="'${page}'"]`);
   if (navItem) navItem.classList.add('active');
 
-  // Push URL to browser address bar for professional standards
   if (pushUrl) {
     syncAdminUrl({ page, tab: null, farm: null, table: null, modal: null, id: null });
   }
 
-  const titles = { 
-    dashboard: 'Dashboard GIS', 
+  const titles = {
+    dashboard: 'Dashboard GIS',
     database: 'Cơ sở dữ liệu & Vận hành',
     'db-check': 'Kiểm tra CSDL Schema',
-    plants: 'Danh sách cây trồng', 
-    schemas: 'Cấu hình loại cây', 
-    media: 'Thư viện Media', 
+    plants: 'Danh sách cây trồng',
+    schemas: 'Cấu hình loại cây',
+    media: 'Thư viện Media',
     users: 'Người dùng & Nông hộ',
     'ai-training': 'Huấn luyện AI Bé Mầm',
     devices: 'Quản lý thiết bị IoT',
@@ -320,7 +292,6 @@ async function showPage(page, pushUrl = true) {
   const titleEl = document.getElementById('page-title');
   if (titleEl) titleEl.textContent = titles[page] || page;
 
-  // Auto-close mobile sidebar if open
   const sidebar = document.querySelector('.sidebar');
   if (sidebar && sidebar.classList.contains('open')) {
     sidebar.classList.remove('open');
@@ -328,7 +299,6 @@ async function showPage(page, pushUrl = true) {
     if (overlay) overlay.style.display = 'none';
   }
 
-  // Safe execution of page loaders
   try {
     if (page === 'dashboard' && typeof loadDashboard === 'function') loadDashboard();
     if (page === 'database' && typeof initDatabasePage === 'function') initDatabasePage();
@@ -361,7 +331,6 @@ async function showPage(page, pushUrl = true) {
     console.error(`Error loading page [${page}]:`, err);
   }
 
-  // Trigger universal smooth count-up animation on all numbers
   setTimeout(() => {
     if (typeof triggerAdminPageCountUpAnimations === 'function') {
       triggerAdminPageCountUpAnimations(page);
@@ -382,10 +351,8 @@ function handleAdminUrlRouting() {
 
   showPage(matchedPage, false);
 
-  // Update base path if needed
   syncAdminUrl({ page: matchedPage, tab, farm, table, modal, id, replace: true });
 
-  // 1. Sub-tab routing
   if (tab) {
     if (matchedPage === 'database' && typeof window.switchDatabaseTab === 'function') {
       window.switchDatabaseTab(tab, false);
@@ -395,7 +362,6 @@ function handleAdminUrlRouting() {
     }
   }
 
-  // 2. Hidden / Detail View routing
   if (matchedPage === 'gis' && farm && typeof window.selectFarm === 'function') {
     setTimeout(() => { window.selectFarm(parseInt(farm), false); }, 300);
   }
@@ -403,7 +369,6 @@ function handleAdminUrlRouting() {
     setTimeout(() => { window.viewTableRecords(table, false); }, 300);
   }
 
-  // 3. Pop-up Modal routing
   if (modal) {
     setTimeout(() => {
       if (modal === 'plant' && typeof window.openPlantModal === 'function') {
@@ -452,8 +417,6 @@ function switchTab(el, tabId) {
     window.refreshIcons();
   }
 }
-
-// ── Configuration tabs & care options ──────────────────────
 
 function switchConfigTab(tab) {
   document.getElementById('config-tab-schema')?.classList.toggle('active', tab === 'schema');
@@ -528,7 +491,6 @@ window.esc = esc;
 window.fmtDate = fmtDate;
 window.showPage = showPage;
 
-// Initialize 3D Animated Chibi Mascot Assistant for Admin Portal
 document.addEventListener('DOMContentLoaded', () => {
   try {
     if (typeof initAdminChibiMascot === 'function') {
@@ -539,7 +501,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Immediate execution fallback
 try {
   if (typeof initAdminChibiMascot === 'function') {
     initAdminChibiMascot();

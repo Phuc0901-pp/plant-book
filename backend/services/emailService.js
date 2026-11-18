@@ -3,7 +3,6 @@ require('dotenv').config();
 
 const ADMIN_EMAIL = 'phphuc0539@gmail.com';
 
-// Configure transporter with fallback credentials & socket timeouts
 function createTransporter() {
   const user = process.env.SMTP_USER || 'phphuc0539@gmail.com';
   const pass = process.env.SMTP_PASS || 'urtu ugxu pang qxjt';
@@ -13,7 +12,7 @@ function createTransporter() {
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
       port: parseInt(process.env.SMTP_PORT || '465'),
       secure: process.env.SMTP_SECURE !== 'false',
-      connectionTimeout: 5000, // 5s timeout to prevent hanging
+      connectionTimeout: 5000,
       greetingTimeout: 5000,
       socketTimeout: 5000,
       auth: { user, pass },
@@ -22,9 +21,6 @@ function createTransporter() {
   return null;
 }
 
-/**
- * Send password reset request notification to Admin email (phphuc0539@gmail.com)
- */
 async function sendAdminResetNotification({ user, requestToken, baseUrl, note }) {
   const approveUrl = `${baseUrl}/api/auth/approve-reset-password?token=${requestToken}`;
   const rejectUrl = `${baseUrl}/api/auth/reject-reset-password?token=${requestToken}`;
@@ -88,9 +84,6 @@ async function sendAdminResetNotification({ user, requestToken, baseUrl, note })
   }
 }
 
-/**
- * Send new password notification email to customer
- */
 async function sendCustomerNewPassword({ user, newPassword }) {
   const html = `
     <div style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">

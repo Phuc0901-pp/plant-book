@@ -1,13 +1,9 @@
 const https = require('https');
 const pool = require('../config/db');
 
-// Default Zalo OA API Endpoints
 const ZALO_OA_MESSAGE_URL = 'https://openapi.zalo.me/v3.0/oa/message/cs';
 const ZALO_ZNS_URL = 'https://business.openapi.zalo.me/message/template';
 
-/**
- * Retrieves Zalo OA configuration from database or environment variables
- */
 async function getZaloConfig() {
   try {
     const res = await pool.query("SELECT key, value FROM system_configs WHERE key IN ('zalo_app_id', 'zalo_oa_id', 'zalo_secret_key', 'zalo_template_id', 'enable_zalo_alerts')");
@@ -39,17 +35,6 @@ async function getZaloConfig() {
   }
 }
 
-/**
- * Formats and sends a security alert message via Zalo Official Account
- * @param {Object} params
- * @param {string} params.phone - Target recipient phone number
- * @param {string} params.farmName - Name of the farm
- * @param {string} params.treeCode - Tree Code or Plant ID
- * @param {number} [params.distance] - Distance in meters from tree
- * @param {string} params.reason - Reason for security alert
- * @param {string} [params.severity='WARNING'] - Alert severity
- * @returns {Promise<Object>}
- */
 async function sendZaloSecurityAlert({ phone, farmName, treeCode, distance, reason, severity = 'WARNING' }) {
   const config = await getZaloConfig();
   const timestamp = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
@@ -64,7 +49,6 @@ async function sendZaloSecurityAlert({ phone, farmName, treeCode, distance, reas
     `• Thời gian: ${timestamp}\n` +
     `Vui lòng kiểm tra lại hiện trường hoặc truy cập Web Admin để xử lý!`;
 
-  // Always log to console for development audit
   console.log(`[Zalo OA Dispatcher] (${phone || 'All Admins'}): ${messageText.replace(/\n/g, ' | ')}`);
 
   if (!config.enabled || !config.secretKey) {
@@ -77,7 +61,6 @@ async function sendZaloSecurityAlert({ phone, farmName, treeCode, distance, reas
     };
   }
 
-  // If live credentials present, dispatch HTTP POST to Zalo OA OpenAPI
   try {
     const payload = JSON.stringify({
       recipient: { phone: phone ? phone.replace(/[^0-9]/g, '') : '' },
@@ -120,9 +103,6 @@ async function sendZaloSecurityAlert({ phone, farmName, treeCode, distance, reas
   }
 }
 
-/**
- * Sends a farming/sensor/VietGAP advisory alert to farmer via Zalo OA
- */
 async function sendZaloFarmingAlert({ phone, farmName, title, message }) {
   const config = await getZaloConfig();
   const timestamp = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });

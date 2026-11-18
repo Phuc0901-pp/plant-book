@@ -1,12 +1,3 @@
-/**
- * ═══════════════════════════════════════════════════════════════════════════════
- * ISO/IEC 29119-3 & ISO/IEC 25010 Enterprise QC/QA Master Test Runner
- * ═══════════════════════════════════════════════════════════════════════════════
- * Executes all 21 automated test suites and generates formal audit artifacts:
- *   - backend/tests/reports/ISO_29119_QC_QA_REPORT.md
- *   - backend/tests/reports/ISO_29119_QC_QA_REPORT.json
- */
-
 const fs = require('fs');
 const path = require('path');
 const { runAllTests } = require('./run-all-tests');

@@ -1,4 +1,3 @@
-// Global silent error handler for browser translation and extension promise rejections
 window.addEventListener('unhandledrejection', function(event) {
   if (event.reason && (
     String(event.reason.message || event.reason).includes('Language detection') ||
@@ -8,7 +7,6 @@ window.addEventListener('unhandledrejection', function(event) {
   }
 });
 
-// Parse Slug info from /:farmId/public/:nfcUid, /:farmId/:plantId/:nfcUid, /:userId/:farmId/:plantId/:nfcUid or /plant/:slug
 function getPublicSlugInfoFromUrl() {
   const pathParts = location.pathname.split('/').filter(p => p.length > 0);
   if (pathParts.length === 0) return { slug: '', plantId: '', nfcUid: '', farmId: '' };
@@ -18,8 +16,7 @@ function getPublicSlugInfoFromUrl() {
   if (pathParts[0] === 'nfc') {
     return { slug: decodeURIComponent(pathParts[1] || ''), plantId: '', nfcUid: decodeURIComponent(pathParts[1] || ''), farmId: '' };
   }
-  
-  // Format: /:farmId/public or /:farmId/public/ (Smart Farm Gateway URL)
+
   if (pathParts.length === 2 && pathParts[1] === 'public') {
     return {
       farmId: decodeURIComponent(pathParts[0]),
@@ -31,7 +28,6 @@ function getPublicSlugInfoFromUrl() {
     };
   }
 
-  // Format: /:farmId/public/:nfcUid (Direct NTAG213 URL format)
   if (pathParts.length === 3 && pathParts[1] === 'public') {
     return {
       farmId: decodeURIComponent(pathParts[0]),
@@ -43,7 +39,6 @@ function getPublicSlugInfoFromUrl() {
     };
   }
 
-  // Format: legacy /:userId/:farmId/:plantId/:nfcUid
   if (pathParts.length >= 4) {
     return {
       farmId: decodeURIComponent(pathParts[1]),
@@ -53,7 +48,6 @@ function getPublicSlugInfoFromUrl() {
       isDirectNfcRoute: false
     };
   }
-  // Format: /:farmId/:plantId/:nfcUid
   if (pathParts.length === 3) {
     return {
       farmId: decodeURIComponent(pathParts[0]),
@@ -63,7 +57,6 @@ function getPublicSlugInfoFromUrl() {
       isDirectNfcRoute: false
     };
   }
-  // Format: /:farmId/:plantId
   if (pathParts.length === 2) {
     return {
       farmId: decodeURIComponent(pathParts[0]),
@@ -76,12 +69,10 @@ function getPublicSlugInfoFromUrl() {
   return { slug: decodeURIComponent(pathParts[0]), plantId: decodeURIComponent(pathParts[0]), nfcUid: '', farmId: '' };
 }
 
-
 const slugInfo = getPublicSlugInfoFromUrl();
 const slug = slugInfo.slug;
 let currentPlantData = null;
 
-// English crop asset mappings
 const CROP_NAME_TO_ENGLISH = {
   'sau_rieng': 'durian', 'sau rieng': 'durian', 'saurieng': 'durian', 'durian': 'durian',
   'ca_phe': 'coffee', 'ca phe': 'coffee', 'caphe': 'coffee', 'coffee': 'coffee',
@@ -204,7 +195,6 @@ window.tryNextCropExt = function(img, cropType) {
   }
 };
 
-// ── Authentication & Authorization for Public Plant Page ──────────
 function getStoredAuth() {
   const token = localStorage.getItem('pb_token') || localStorage.getItem('token') || '';
   let user = null;
@@ -221,7 +211,7 @@ function userHasFarmAccess(user, farmId, farmObj = null) {
   const targetFarmId = Number(farmId);
   if (user.farm_id && Number(user.farm_id) === targetFarmId) return true;
   if (Array.isArray(user.owned_farm_ids) && user.owned_farm_ids.map(Number).includes(targetFarmId)) return true;
-  
+
   if (farmObj) {
     if (farmObj.user_id && Number(farmObj.user_id) === Number(user.id)) return true;
     if (farmObj.farm_owner_user_id && Number(farmObj.farm_owner_user_id) === Number(user.id)) return true;
@@ -229,7 +219,7 @@ function userHasFarmAccess(user, farmId, farmObj = null) {
     if (farmObj.userId && Number(farmObj.userId) === Number(user.id)) return true;
     if (farmObj.farmOwnerUserId && Number(farmObj.farmOwnerUserId) === Number(user.id)) return true;
   }
-  
+
   const currentFarm = window._currentFarmPortalData?.farm;
   if (currentFarm && (!targetFarmId || Number(currentFarm.id) === targetFarmId)) {
     if (currentFarm.user_id && Number(currentFarm.user_id) === Number(user.id)) return true;
@@ -343,7 +333,6 @@ async function doGateLogin() {
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
 
-    // Handle Pending Binding Farm or Gateway Login Flow
     if (window.pendingBindingFarm) {
       const pFarm = window.pendingBindingFarm;
       const isAuthorized = userHasFarmAccess(data.user, pFarm.farmId, pFarm);
@@ -353,13 +342,11 @@ async function doGateLogin() {
         return;
       }
 
-      // If an NFC UID was attached, check if it's already assigned
       if (pFarm.nfcUid) {
         try {
           const checkRes = await fetch(`/api/plants/public-by-farm-uid/${encodeURIComponent(pFarm.farmId)}/${encodeURIComponent(pFarm.nfcUid)}`);
           const checkData = await checkRes.json();
           if (checkRes.ok && checkData.assigned && checkData.plant) {
-            // Already assigned -> Direct redirect into plant profile!
             window.pendingBindingFarm = null;
             currentPlantData = checkData.plant;
             history.replaceState({}, '', `/${pFarm.farmId}/public/${encodeURIComponent(checkData.plant.nfc_uid || pFarm.nfcUid)}`);
@@ -370,14 +357,12 @@ async function doGateLogin() {
           }
         } catch (_) {}
 
-        // Unassigned tag -> open field binding module
         window.pendingBindingFarm = null;
         document.getElementById('auth-gate-view').style.display = 'none';
         showPublicToast(`Chào mừng ${data.user.full_name || data.user.email}! Đang mở giao diện gán thẻ.`);
         initFieldBindingModule(pFarm.farmId, pFarm.farmName, pFarm.pucCode, pFarm.nfcUid, pFarm.inInventory, pFarm.inventoryWarning);
         return;
       } else {
-        // Logged in from Smart Farm Gateway without NFC tag
         window.pendingBindingFarm = null;
         document.getElementById('auth-gate-view').style.display = 'none';
         showPublicToast(`Chào mừng ${data.user.full_name || data.user.email}!`);
@@ -463,7 +448,7 @@ function showPublicToast(msg, type = 'info') {
   toast.style.opacity = '1';
   toast.style.transform = 'translateX(-50%) translateY(0)';
   if (window.lucide) window.lucide.createIcons();
-  
+
   clearTimeout(window._publicToastTimer);
   window._publicToastTimer = setTimeout(() => {
     toast.style.opacity = '0';
@@ -471,7 +456,6 @@ function showPublicToast(msg, type = 'info') {
   }, 3500);
 }
 
-// Global Configurations Cache (Default Fallbacks)
 let configData = {
   water_methods: ["Tưới tay thủ công", "Tưới nhỏ giọt", "Tưới phun mưa", "Tưới phun sương"],
   fertilizers: ["Phân NPK 16-16-8", "Phân hữu cơ trùn quế", "Phân bón lá Đầu Trâu", "Phân chuồng hoai mục"],
@@ -480,10 +464,6 @@ let configData = {
   flower_prune_reasons: ["Tỉa hoa tàn", "Tỉa bớt nụ còi", "Tỉa cành tạo dáng", "Kích thích ra chồi mới"]
 };
 
-// Toggle Custom Input field when "Khác..." is chosen
-// [Modularized] Modal helpers moved to plant-care-modals.js
-
-// Load configurations from backend API
 async function loadConfigurations() {
   try {
     const res = await fetch('/api/config');
@@ -499,7 +479,6 @@ async function loadConfigurations() {
     console.warn('Cannot fetch configurations, using local fallbacks', err);
   }
 
-  // Populate all dropdowns safely
   populateDropdown('water-method-select', configData.water_methods, 'water-method');
   populateDropdown('fertilizer-select', configData.fertilizers, 'fertilizer');
   populateDropdown('fertilizer-supply-select', configData.fertilizers, 'fertilizer');
@@ -509,13 +488,11 @@ async function loadConfigurations() {
   populateDropdown('flower-reason-select', configData.flower_prune_reasons, 'flower-reason');
 }
 
-// Format Date Utility
 function fmtDate(d) {
   if (!d) return '—';
   return new Date(d).toLocaleDateString('vi-VN', {day:'2-digit', month:'2-digit', year:'numeric'});
 }
 
-// Format full DateTime: HH:mm DD/MM/YYYY
 function fmtDateTime(d) {
   if (!d) return '—';
   const dt = new Date(d);
@@ -524,7 +501,6 @@ function fmtDateTime(d) {
   return `${hhmm} — ${ddmmyyyy}`;
 }
 
-// Format VNĐ Currency
 function formatVnd(amount) {
   const val = Math.round(parseFloat(amount) || 0);
   return new Intl.NumberFormat('vi-VN').format(val) + ' VNĐ';
@@ -657,7 +633,7 @@ function renderSuppliesTableHtml(supplies = [], currentPage = 1, pageSize = 10, 
         if (p === 1 || p === totalPages || (p >= page - 1 && p <= page + 1)) {
           const isActive = p === page;
           pageButtonsHtml += `
-            <button type="button" class="btn btn-xs ${isActive ? 'btn-primary' : 'btn-secondary'}" onclick="${onPageChangeFnName}(${p})" 
+            <button type="button" class="btn btn-xs ${isActive ? 'btn-primary' : 'btn-secondary'}" onclick="${onPageChangeFnName}(${p})"
               style="padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-radius: 6px; border: 1px solid ${isActive ? '#059669' : '#cbd5e1'}; background: ${isActive ? '#059669' : '#ffffff'}; color: ${isActive ? '#ffffff' : '#334155'}; cursor: ${isActive ? 'default' : 'pointer'}; min-width: 30px; height: 28px;">
               ${p}
             </button>
@@ -728,11 +704,9 @@ function _formatSupplyOptionText(s) {
   return `${esc(s.name)} (${pkgText}) — ${formattedPrice} / ${s.unit}${stockBadge}`;
 }
 
-// Populate farm supplies into care modals
 function populateCareSuppliesDropdowns(supplies = []) {
   window._publicFarmSupplies = supplies;
 
-  // 1. Water supply dropdown
   const waterSelect = document.getElementById('water-supply-select');
   if (waterSelect) {
     const waterSupplies = supplies.filter(s => s.category === 'Tiền nước');
@@ -753,7 +727,6 @@ function populateCareSuppliesDropdowns(supplies = []) {
     calculatePublicWaterCost();
   }
 
-  // 2. Fertilizer supply dropdown
   const fertSelect = document.getElementById('fertilizer-supply-select');
   if (fertSelect) {
     const fertSupplies = supplies.filter(s => s.category === 'Bón phân');
@@ -777,7 +750,6 @@ function populateCareSuppliesDropdowns(supplies = []) {
     onPublicFertilizerSelected(fertSelect);
   }
 
-  // 3. Pesticide supply dropdown
   const pestSelect = document.getElementById('pesticide-supply-select');
   if (pestSelect) {
     const pestSupplies = supplies.filter(s => s.category === 'Phun thuốc');
@@ -802,7 +774,6 @@ function populateCareSuppliesDropdowns(supplies = []) {
   }
 }
 
-// Auto Water Cost Calculation
 function calculatePublicWaterCost() {
   const amountInput = document.getElementById('water-amount');
   const unitSelect = document.getElementById('water-unit');
@@ -829,7 +800,6 @@ function calculatePublicWaterCost() {
   costEl.textContent = totalCost > 0 ? formatVnd(totalCost) : '0 VNĐ (Không tính phí)';
 }
 
-// Auto Fertilizer Cost Calculation
 function onPublicFertilizerSelected(selectEl) {
   if (!selectEl) return;
   const customInput = document.getElementById('fertilizer-custom');
@@ -894,7 +864,6 @@ function calculatePublicFertilizerCost() {
   costEl.textContent = cost > 0 ? formatVnd(cost) : '0 VNĐ';
 }
 
-// Auto Pesticide Cost Calculation & Notice
 function onPublicPesticideSelected(selectEl) {
   if (!selectEl) return;
   const customInput = document.getElementById('pesticide-custom');
@@ -964,7 +933,6 @@ function calculatePublicPesticideCost() {
   costEl.textContent = cost > 0 ? formatVnd(cost) : '0 VNĐ';
 }
 
-// Voice Recognition Handler for Public Modals
 let _publicActiveSpeechRec = null;
 function startPublicVoiceInput(textareaId, btnEl) {
   const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1032,24 +1000,22 @@ function startPublicVoiceInput(textareaId, btnEl) {
   }
 }
 
-// Escape HTML utility
 function esc(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
 }
 
-// Dynamic Crop image loading retry with multiple extensions
 function handleCropImageError(img) {
   if (img.getAttribute('data-is-cover') === 'true') {
     fallbackToTreeIcon(img);
     return;
   }
-  
+
   const extensions = ['.jpg', '.jpeg', '.webp', '.png'];
   let extIdx = parseInt(img.getAttribute('data-ext-idx') || '0');
   const base = img.getAttribute('data-base');
   const currentSrc = img.src || '';
   let nextExt = '';
-  
+
   while (extIdx < extensions.length) {
     const ext = extensions[extIdx];
     extIdx++;
@@ -1059,7 +1025,7 @@ function handleCropImageError(img) {
       break;
     }
   }
-  
+
   if (nextExt) {
     img.src = base + nextExt;
   } else {
@@ -1078,7 +1044,6 @@ function fallbackToTreeIcon(img) {
   }
 }
 
-// Lightbox controller
 function openLightbox(url, type) {
   const content = document.getElementById('lightbox-content');
   if (!content) return;
@@ -1113,7 +1078,6 @@ function closeLightbox() {
   }, 100);
 }
 
-// Share plant url
 function sharePage() {
   if (navigator.share) {
     navigator.share({ title: document.title, url: location.href });
@@ -1123,7 +1087,6 @@ function sharePage() {
   }
 }
 
-// Helper: Validate Full NFC UID (at least 4 hex pairs separated by : or - OR continuous hex string of 8-20 chars)
 function isFullNfcUid(uid) {
   if (!uid || typeof uid !== 'string') return false;
   const clean = decodeURIComponent(uid).trim();
@@ -1132,7 +1095,6 @@ function isFullNfcUid(uid) {
   return false;
 }
 
-// Toast notification for GPS Auto-Sync
 function showNfcGpsToast(msg) {
   let toast = document.getElementById('nfc-gps-toast');
   if (!toast) {
@@ -1148,10 +1110,8 @@ function showNfcGpsToast(msg) {
   }, 6000);
 }
 
-// Auto-sync GPS location when scanned via physical Full NFC UID
 async function autoSyncNfcGpsLocation(plant, nfcUid) {
   if (!isFullNfcUid(nfcUid)) {
-    // Không phải Full NFC UID (ví dụ chỉ là '04' hoặc slug thông thường) -> Không cập nhật GPS
     return;
   }
 
@@ -1186,7 +1146,6 @@ async function autoSyncNfcGpsLocation(plant, nfcUid) {
           plant.longitude = lng;
           showNfcGpsToast(`Đã tự động cập nhật vị trí GPS (${lat.toFixed(6)}, ${lng.toFixed(6)}) cho cây trồng từ thẻ NFC!`);
 
-          // Update map marker if map exists
           if (window._publicPlantMap && window._publicPlantMarker) {
             window._publicPlantMarker.setLngLat([lng, lat]);
             window._publicPlantMap.flyTo({ center: [lng, lat], zoom: 18, duration: 1500 });
@@ -1203,7 +1162,6 @@ async function autoSyncNfcGpsLocation(plant, nfcUid) {
   );
 }
 
-// Render Revoked / Frozen NFC Tag notice
 function renderRevokedTagView(nfcUid, errorMsg) {
   document.getElementById('loader').style.display = 'none';
   const errorView = document.getElementById('error-view');
@@ -1231,27 +1189,23 @@ function renderRevokedTagView(nfcUid, errorMsg) {
   }
 }
 
-// Global State for Field Binding
 window.currentBindingFarmId = null;
 window.currentBindingFarmName = null;
 window.currentBindingUid = null;
 window.currentBindingGps = null;
 window.currentUnassignedTrees = [];
 
-// Load Plant Profile on startup
 async function loadPlant() {
   try {
-    // ─── Case 0: Smart Farm Gateway Route /:farmId/public or /:farmId/public/ ───
     if (slugInfo.isFarmPortalRoute && slugInfo.farmId) {
       await loadFarmPortal(slugInfo.farmId);
       return;
     }
 
-    // ─── Case 1: Direct NTAG213 Route /:farmId/public/:nfcUid (hoặc có farmId và nfcUid) ───
     if (slugInfo.farmId && (slugInfo.isDirectNfcRoute || slugInfo.nfcUid)) {
       const farmId = slugInfo.farmId;
       const nfcUid = slugInfo.nfcUid || slugInfo.slug;
-      
+
       const tagRes = await fetch(`/api/plants/public-by-farm-uid/${encodeURIComponent(farmId)}/${encodeURIComponent(nfcUid)}`);
       const tagData = await tagRes.json();
 
@@ -1264,7 +1218,6 @@ async function loadPlant() {
         throw new Error(tagData.error || 'Không tìm thấy thông tin thẻ hoặc nông trại.');
       }
 
-      // If already assigned to a plant:
       if (tagData.assigned && tagData.plant) {
         const plant = tagData.plant;
         currentPlantData = plant;
@@ -1277,16 +1230,13 @@ async function loadPlant() {
         if (hasAccess) {
           await renderPlant(plant, true);
         } else {
-          // Public visitor view: Full traceability without care edit
           await renderPlant(plant, false);
         }
 
-        // Auto-sync GPS in background if full NFC UID
         autoSyncNfcGpsLocation(plant, nfcUid);
         return;
       }
 
-      // If UNASSIGNED TAG:
       const { token, user } = getStoredAuth();
       const isFarmAuthorized = user && (user.role === 'admin' || Number(user.farm_id) === Number(farmId));
 
@@ -1311,7 +1261,6 @@ async function loadPlant() {
       return;
     }
 
-    // ─── Case 2: Standard Plant Slug / ID ───
     const primarySlug = slugInfo.slug || slug;
     let res = await fetch(`/api/plants/public/${encodeURIComponent(primarySlug)}`);
     let plant = await res.json();
@@ -1321,7 +1270,6 @@ async function loadPlant() {
       return;
     }
 
-    // Fallback: If primary slug (e.g. nfcUid) returned 404, fallback to plantId (e.g. /0/2/1/04:17:...)
     if (!res.ok && slugInfo.plantId && slugInfo.plantId !== primarySlug) {
       const fallbackRes = await fetch(`/api/plants/public/${encodeURIComponent(slugInfo.plantId)}`);
       if (fallbackRes.ok) {
@@ -1332,7 +1280,6 @@ async function loadPlant() {
 
     if (!res.ok) throw new Error(plant.error || 'Không tìm thấy hồ sơ cây trồng.');
 
-    // Enforce 1-Tree-1-Tag URL Match: If URL contains a specific NFC UID, it MUST match the plant's currently active nfc_uid
     const activeNfcUid = slugInfo.nfcUid || (isFullNfcUid(slugInfo.slug) ? slugInfo.slug : '');
     if (activeNfcUid) {
       if (!plant.nfc_uid || plant.nfc_uid.toUpperCase() !== activeNfcUid.toUpperCase()) {
@@ -1363,10 +1310,6 @@ async function loadPlant() {
   }
 }
 
-// [Modularized] Field binding, Web NFC & Smart Farm Gateway moved to plant-nfc-gateway.js
-// Helper: Get fertilizer / supply / pesticide name from details
-// [Modularized] Timeline & agronomic calculators moved to plant-timeline.js
-// Render dynamic plant data with 4-Section Enterprise Profile System
 async function renderPlant(plant, isEditable) {
   document.title = `Sổ Nông Nhàn - TBSG Agtech - Hồ sơ cây ${plant.tree_code || plant.id} - Vườn ${plant.farm_name || 'Tân Bảo'}`;
   const extra = plant.data || {};
@@ -1380,21 +1323,18 @@ async function renderPlant(plant, isEditable) {
     isEditable = userHasPlantAccess(user, plant);
   }
 
-  // Render health status badge
   let healthClass = 'badge-gray';
   if (plant.health_status === 'Tốt') healthClass = 'badge-tot';
   else if (plant.health_status === 'Bình thường') healthClass = 'badge-binhthuong';
   else if (plant.health_status === 'Cần chú ý') healthClass = 'badge-chuyi';
   else if (plant.health_status === 'Bệnh') healthClass = 'badge-benh';
 
-  // Group logs by date for timeline pagination
   window._publicLogsGrouped = {};
   window._publicLogDates = [];
   window._publicLogCurrentPage = 1;
   window._publicLogPageSize = 5;
   window._publicLogIsExpanded = false;
 
-  // Cache supplies for plant profile pagination (10 items / page)
   window._plantSuppliesData = plant.farm_supplies || [];
   window._plantSuppliesCurrentPage = 1;
   window._plantSuppliesPageSize = 10;
@@ -1412,22 +1352,18 @@ async function renderPlant(plant, isEditable) {
     window._publicLogsGrouped[dateStr].push(log);
   });
 
-  // Calculate planting date & age
   const plantDateVal = plant.planting_date || extra.planting_date || extra.planted_date;
-  const plantDateFormatted = plantDateVal 
-    ? fmtDate(plantDateVal) 
+  const plantDateFormatted = plantDateVal
+    ? fmtDate(plantDateVal)
     : (extra.planting_year ? `Năm ${extra.planting_year}` : (plant.plant_type && plant.plant_type.toLowerCase().includes('sầu') ? '01/01/2006' : 'Chưa ghi nhận'));
   const treeAgeFormatted = calculateTreeAge(plantDateVal) || (plant.plant_type && plant.plant_type.toLowerCase().includes('sầu') ? 'Gốc lâu năm (~18 năm)' : 'Đang sinh trưởng');
 
-  // Calculate PHI Quarantine status
   const phiStatus = calculatePlantPhiStatus(plant);
 
-  // GPS Coordinates & Satellite Lock info
   let plantLat = parseFloat(plant.latitude);
   let plantLng = parseFloat(plant.longitude);
   const hasRealCoords = !isNaN(plantLat) && !isNaN(plantLng) && (plantLat !== 0 || plantLng !== 0);
 
-  // Traceability & Passport IDs
   const traceCode = `TB-TRC-${plant.farm_id || '00'}-${esc(plant.tree_code || plant.id)}`;
   const pucCode = plant.puc_code || 'VN-ĐN-OR-0017';
   const vietgapNumber = plant.vietgap_cert_number || 'VG-2024-8892';
@@ -1443,7 +1379,6 @@ async function renderPlant(plant, isEditable) {
   const gpsAccuracyText = plant.gps_accuracy ? `±${parseFloat(plant.gps_accuracy).toFixed(1)}m` : '±1.2m (RTK-GPS)';
   const securityHash = `SHA256-TBAG-${((Number(plant.id || 1) * 883 + 1307) % 65535).toString(16).toUpperCase()}-VERIFIED`;
 
-  // ── Media Categorization Engine ──
   const allMediaList = [];
   const mediaSeenUrls = new Set();
 
@@ -1459,19 +1394,16 @@ async function renderPlant(plant, isEditable) {
     });
   }
 
-  // 1. Direct media array
   (plant.media || []).forEach(m => {
     let cat = m.category || (m.media_type === 'video' ? 'video' : 'growth');
     if (m.caption && /bệnh|sâu|nấm|thối|rệp|chích/i.test(m.caption)) cat = 'disease';
     addMediaItem(m.url, m.media_type, m.caption, cat, m.created_at);
   });
 
-  // 2. Cover image (if real photo)
   if (plant.cover_image && !plant.cover_image.includes('photo-1587293852726-70cdb56c2866')) {
     addMediaItem(plant.cover_image, 'image', `Ảnh sinh trưởng Cây #${plant.tree_code || plant.id}`, 'growth', plant.created_at);
   }
 
-  // 3. Media from logs
   (plant.logs || []).forEach(l => {
     const details = l.details || {};
     const photoUrl = l.photo_url || details.photo_url || details.image_url;
@@ -1493,7 +1425,6 @@ async function renderPlant(plant, isEditable) {
 
   window._allPublicMedia = allMediaList;
 
-  // Update Enterprise Unified Header Slots
   const breadcrumbSlot = document.getElementById('erp-header-breadcrumbs-slot');
   if (breadcrumbSlot) {
     breadcrumbSlot.innerHTML = `
@@ -1542,7 +1473,6 @@ async function renderPlant(plant, isEditable) {
     }
   }
 
-  // Construct UI using Enterprise 4-Section Layout Standards
   let html = `
     <!-- =========================================================================
          SECTION I: THÔNG TIN CHI TIẾT CỦA CÂY TRỒNG (Chi tiết & Hộ chiếu cây trồng)
@@ -1575,13 +1505,13 @@ async function renderPlant(plant, isEditable) {
               <div>
                 <h1 class="plant-name">${esc(plant.plant_type)} — Cây #${esc(plant.tree_code || plant.id)}</h1>
                 <p class="plant-variety">
-                  Giống: <strong>${esc(plant.plant_variety || 'Tiêu chuẩn')}</strong> &nbsp;•&nbsp; 
+                  Giống: <strong>${esc(plant.plant_variety || 'Tiêu chuẩn')}</strong> &nbsp;•&nbsp;
                   Trang trại: <strong>${esc(plant.farm_name || 'Trang trại Tân Bảo')}</strong>
                   ${plant.location ? ` &nbsp;•&nbsp; Vị trí: <strong>${esc(plant.location)}</strong>` : ''}
                 </p>
               </div>
             </div>
-            
+
             <div class="badges-row">
               <span class="badge ${phiStatus.badgeClass}">
                 <i data-lucide="${phiStatus.isSafe ? 'check-circle-2' : 'alert-triangle'}" class="lucide-xs"></i>
@@ -1590,9 +1520,9 @@ async function renderPlant(plant, isEditable) {
               ${isEditable
                 ? `<span class="badge ${healthClass} badge-health-interactive" onclick="toggleHealthStatus()" style="cursor:pointer;" title="Bấm để chuyển trạng thái sức khỏe"><i data-lucide="activity" class="lucide-xs"></i> Tình trạng: ${esc(plant.health_status || 'Bình thường')}</span>`
                 : `<span class="badge ${healthClass}" style="cursor:default;" title="Chế độ chỉ xem — Không thể can thiệp"><i data-lucide="activity" class="lucide-xs"></i> Tình trạng: ${esc(plant.health_status || 'Bình thường')}</span>`}
-              
+
               ${plant.nfc_uid ? `<span class="badge badge-info" style="font-family:var(--font-mono); font-size:11px;"><i data-lucide="radio" class="lucide-xs"></i> NFC: ${esc(plant.nfc_uid)}</span>` : ''}
-              
+
               ${isEditable && plant.nfc_uid ? `
                 <span class="badge" onclick="writePlantUrlToNfcChip(currentPlantData)" style="background:#ecfdf5; border:1px solid #10b981; color:#047857; cursor:pointer; font-weight:700; display:inline-flex; align-items:center; gap:4px;" title="Chạm máy vào thẻ NFC để nạp link trực tiếp vào chip">
                   <i data-lucide="smartphone-nfc" class="lucide-xs"></i> Nạp link thẻ NFC
@@ -1603,7 +1533,7 @@ async function renderPlant(plant, isEditable) {
                 <i data-lucide="calendar" class="lucide-xs"></i> ${treeAgeFormatted}
               </span>
             </div>
-            
+
             <!-- 6-Tile Balanced ERP Telemetry Grid -->
             <div class="erp-telemetry-grid">
               <!-- Tile 1: Giống & Độ Tuổi -->
@@ -1733,7 +1663,7 @@ async function renderPlant(plant, isEditable) {
                   </button>
                 </span>
               </div>
-              
+
               <div class="passport-spec-row">
                 <span class="spec-label"><i data-lucide="boxes" class="lucide-xs"></i> Mã Lô VietGAP</span>
                 <span class="spec-value mono highlight-blue">${esc(batchCode)}</span>
@@ -1991,7 +1921,7 @@ async function renderPlant(plant, isEditable) {
                 </span>
                 <span style="font-size: 11.5px; color: #64748b; font-weight: 600;">Tổng ${(plant.farm_supplies || []).length} loại vật tư khai báo</span>
               </h3>
-              
+
               <div id="plant-supplies-table-container">
                 ${renderSuppliesTableHtml(plant.farm_supplies || [], 1, 10, 'changePlantSuppliesPage')}
               </div>
@@ -2171,8 +2101,8 @@ async function renderPlant(plant, isEditable) {
           <span>IV. Thao Tác Canh Tác Nhanh</span>
         </h2>
         <span class="section-block-badge">
-          ${isEditable 
-            ? '<i data-lucide="edit-3"></i> Quyền ghi nhận thực địa' 
+          ${isEditable
+            ? '<i data-lucide="edit-3"></i> Quyền ghi nhận thực địa'
             : '<i data-lucide="shield-check"></i> Cổng minh bạch công khai'}
         </span>
       </div>
@@ -2225,7 +2155,7 @@ async function renderPlant(plant, isEditable) {
       </div>
       `}
     </section>
-    
+
     <!-- =========================================================================
          ENTERPRISE ERP FOOTER & 2 NAVIGATION BLOCKS
          ========================================================================= -->
@@ -2311,26 +2241,22 @@ async function renderPlant(plant, isEditable) {
   view.style.display = 'block';
   if (window.lucide) window.lucide.createIcons();
 
-  // Render initial media cards
   const mediaCardsContainer = document.getElementById('public-media-cards-container');
   if (mediaCardsContainer && window.renderMediaItemsHtml) {
     mediaCardsContainer.innerHTML = window.renderMediaItemsHtml(allMediaList);
   }
 
-  // Populate farm supplies into care modals & timeline filter
   populateCareSuppliesDropdowns(plant.farm_supplies || []);
   window._allPublicPlantLogs = logs;
   if (typeof window._populatePublicTimelineSupplyOptions === 'function') {
     window._populatePublicTimelineSupplyOptions(logs);
   }
 
-  // Render initial care timeline
   renderPublicLogTimeline(1, false);
   if (window.PlantBookI18n && typeof window.PlantBookI18n.applyDomTranslations === 'function') {
     window.PlantBookI18n.applyDomTranslations();
   }
 
-  // Satellite Layer Switcher for Public Plant Map
   window._currentPlantSatSource = 'google';
   window.switchPlantSatelliteSource = function(source) {
     window._currentPlantSatSource = source;
@@ -2358,7 +2284,6 @@ async function renderPlant(plant, isEditable) {
     }
   };
 
-  // Initialize Mapbox plant location map if coordinates or farm polygon exist
   if (hasMap) {
     const mapContainerEl = document.getElementById('plant-location-map');
     if (mapContainerEl) {
@@ -2377,7 +2302,6 @@ async function renderPlant(plant, isEditable) {
 
         mapboxgl.accessToken = MAPBOX_TOKEN;
 
-    // Validate coordinates with auto-fix for swapped latitude/longitude
     let plantLat = parseFloat(plant.latitude);
     let plantLng = parseFloat(plant.longitude);
 
@@ -2450,7 +2374,6 @@ async function renderPlant(plant, isEditable) {
 
       window._publicPlantMap = plantMap;
 
-      // Only add plant marker pin if plant has real GPS coordinates
       if (hasValidPlantCoords) {
         const treeCodeDisplay = esc(plant.tree_code || '1');
 
@@ -2483,7 +2406,6 @@ async function renderPlant(plant, isEditable) {
         window._publicPlantMarker = null;
       }
 
-      // Map on load: Setup satellite raster layers & farm boundaries
       plantMap.on('load', () => {
         try {
           if (!plantMap.getSource('google-satellite-src')) {
@@ -2511,7 +2433,6 @@ async function renderPlant(plant, isEditable) {
           console.warn('Google satellite source init warning:', layerErr);
         }
 
-        // Draw farm polygon if available
         if (plant.farm_boundary && plant.farm_boundary.coordinates) {
           try {
             plantMap.addSource('farm-poly', {
@@ -2531,7 +2452,6 @@ async function renderPlant(plant, isEditable) {
               paint: { 'line-color': '#22c55e', 'line-width': 2.5, 'line-opacity': 0.9 }
             });
 
-            // Fit bounds to perfectly frame farm boundary and plant marker
             const bounds = new mapboxgl.LngLatBounds();
             let hasValidBounds = false;
             const coords = plant.farm_boundary.coordinates[0];
@@ -2584,19 +2504,15 @@ async function renderPlant(plant, isEditable) {
   }
 }
 
-// [Modularized] Care log submission & drafts moved to plant-care-modals.js
-// Toggle timeline item expanded state (accordion)
 function toggleTimelineItem(event, el) {
-  // Ignore clicks on lightbox media thumbnails, play icons or buttons
   if (event.target.closest('.log-media-item') || event.target.closest('.remove-preview') || event.target.tagName === 'BUTTON') {
     return;
   }
   const item = el.closest('.timeline-item');
   const details = item.querySelector('.timeline-details');
   item.classList.toggle('expanded');
-  
+
   if (item.classList.contains('expanded')) {
-    // Add buffer space for scrollHeight to handle image loads
     details.style.maxHeight = (details.scrollHeight + 150) + "px";
     details.style.opacity = "1";
   } else {
@@ -2605,7 +2521,6 @@ function toggleTimelineItem(event, el) {
   }
 }
 
-// Toggle health status between Tốt / Bệnh
 async function toggleHealthStatus() {
   if (!currentPlantData) return;
   const { token, user } = getStoredAuth();
@@ -2615,12 +2530,11 @@ async function toggleHealthStatus() {
   }
 
   const current = currentPlantData.health_status;
-  // If it's anything else than Bệnh, toggle to Bệnh. Otherwise, toggle to Tốt.
   const nextStatus = current === 'Bệnh' ? 'Tốt' : 'Bệnh';
-  
+
   const confirmed = confirm(`Bạn có chắc chắn muốn thay đổi trạng thái sức khỏe cây trồng này thành "${nextStatus}" không?`);
   if (!confirmed) return;
-  
+
   try {
     const targetId = currentPlantData.public_slug || currentPlantData.id || slug;
     const headers = { 'Content-Type': 'application/json' };
@@ -2640,9 +2554,8 @@ async function toggleHealthStatus() {
       }
       throw new Error(errData.error || 'Lỗi hệ thống');
     }
-    
+
     showPublicToast(`Đã chuyển trạng thái sức khỏe thành: ${nextStatus}`);
-    // Reload plant profile directly to reflect status changes
     try {
       const fetchKey = currentPlantData?.id || targetId;
       const refRes = await fetch(`/api/plants/public/${encodeURIComponent(fetchKey)}`);
@@ -2663,12 +2576,10 @@ async function toggleHealthStatus() {
   }
 }
 
-// [Modularized] Export, certificates & contour map export moved to plant-export-certs.js
-// Startup
 async function init() {
   await loadConfigurations();
   await loadPlant();
-  await restoreDiseaseDraft(); // Restore on initial load in case page reloaded while capturing
+  await restoreDiseaseDraft();
 }
 
 init();

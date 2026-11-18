@@ -1,4 +1,3 @@
-// Modular Plant Care Log Modals, Draft Persistence & Submission
 function toggleCustomInput(prefix) {
   const select = document.getElementById(`${prefix}-select`) || document.getElementById(`${prefix}-supply-select`);
   const custom = document.getElementById(`${prefix}-custom`);
@@ -13,16 +12,14 @@ function toggleCustomInput(prefix) {
   }
 }
 
-// Open / Close Modal Helpers
 function openModal(id) {
   document.getElementById(id).style.display = 'flex';
   document.body.style.overflow = 'hidden';
-  
-  // Set default datetime to local now in YYYY-MM-DDTHH:mm format
+
   const now = new Date();
   const offset = now.getTimezoneOffset() * 60000;
   const localISOTime = (new Date(now - offset)).toISOString().slice(0, 16);
-  
+
   const dtInput = document.getElementById(id).querySelector('input[type="datetime-local"]');
   if (dtInput) {
     dtInput.value = localISOTime;
@@ -31,11 +28,9 @@ function openModal(id) {
 function closeModal(id) {
   document.getElementById(id).style.display = 'none';
   document.getElementById(id).querySelector('form')?.reset();
-  // Reset custom input visibility
   const customInputs = document.getElementById(id).querySelectorAll('input[id$="-custom"]');
   customInputs.forEach(i => i.style.display = 'none');
-  
-  // Restore body overflow only if there are no other open modals
+
   const openModals = Array.from(document.querySelectorAll('.modal-overlay')).filter(m => m.style.display === 'flex');
   if (openModals.length === 0) {
     document.body.style.overflow = '';
@@ -47,7 +42,6 @@ function closeModalOnOuterClick(event, id) {
   }
 }
 
-// Populates a dropdown select with options and appends a "Khác..." option
 function populateDropdown(selectId, list, prefix) {
   const select = document.getElementById(selectId);
   if (!select || !list) return;
@@ -57,17 +51,15 @@ function populateDropdown(selectId, list, prefix) {
   if (prefix) toggleCustomInput(prefix);
 }
 
-// Submit log entries from care forms
 async function submitCareLog(event, type, modalId, formId) {
   event.preventDefault();
-  
+
   const form = document.getElementById(formId);
   const submitBtn = form.querySelector('.btn-submit');
   const oldText = submitBtn.innerHTML;
   submitBtn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang lưu...';
   submitBtn.disabled = true;
 
-  // Gather details depending on log type
   const details = {};
   let note = '';
 
@@ -81,14 +73,14 @@ async function submitCareLog(event, type, modalId, formId) {
     details.operator_name = document.getElementById('water-operator-name')?.value.trim() || '';
     details.equipment_used = document.getElementById('water-equipment-used')?.value.trim() || '';
     note = document.getElementById('water-note')?.value.trim() || '';
-  } 
+  }
   else if (type === 'Bón phân') {
     const selectEl = document.getElementById('fertilizer-supply-select');
     const selectVal = selectEl?.value;
     const opt = selectEl?.options[selectEl?.selectedIndex];
     const isCustom = selectVal === '__custom__';
-    details.type = isCustom 
-      ? document.getElementById('fertilizer-custom')?.value.trim() 
+    details.type = isCustom
+      ? document.getElementById('fertilizer-custom')?.value.trim()
       : (opt?.getAttribute('data-name') || selectVal || 'Phân bón');
     details.supply_id = (isCustom || !selectVal) ? null : selectVal;
     details.amount = parseFloat(document.getElementById('fertilizer-amount')?.value) || 0;
@@ -97,14 +89,14 @@ async function submitCareLog(event, type, modalId, formId) {
     details.operator_name = document.getElementById('fertilizer-operator-name')?.value.trim() || '';
     details.equipment_used = document.getElementById('fertilizer-equipment-used')?.value.trim() || '';
     note = document.getElementById('fertilizer-note')?.value.trim() || '';
-  } 
+  }
   else if (type === 'Phun thuốc') {
     const selectEl = document.getElementById('pesticide-supply-select');
     const selectVal = selectEl?.value;
     const opt = selectEl?.options[selectEl?.selectedIndex];
     const isCustom = selectVal === '__custom__';
-    details.type = isCustom 
-      ? document.getElementById('pesticide-custom')?.value.trim() 
+    details.type = isCustom
+      ? document.getElementById('pesticide-custom')?.value.trim()
       : (opt?.getAttribute('data-name') || selectVal || 'Thuốc BVTV');
     details.supply_id = (isCustom || !selectVal) ? null : selectVal;
     details.active_ingredient = opt?.getAttribute('data-ing') || '';
@@ -116,7 +108,7 @@ async function submitCareLog(event, type, modalId, formId) {
     details.operator_name = document.getElementById('pesticide-operator-name')?.value.trim() || '';
     details.equipment_used = document.getElementById('pesticide-equipment-used')?.value.trim() || '';
     note = document.getElementById('pesticide-note')?.value.trim() || '';
-  } 
+  }
   else if (type === 'Nhân công') {
     const selectVal = document.getElementById('labor-work-select')?.value;
     const workContent = selectVal === '__custom__' ? document.getElementById('labor-work-custom')?.value.trim() : selectVal;
@@ -155,7 +147,7 @@ async function submitCareLog(event, type, modalId, formId) {
     details.operator_name = document.getElementById('leaf-operator-name')?.value.trim() || '';
     details.equipment_used = document.getElementById('leaf-equipment-used')?.value.trim() || '';
     note = document.getElementById('leaf-note')?.value.trim() || '';
-  } 
+  }
   else if (type === 'Tỉa hoa') {
     details.amount = document.getElementById('flower-amount')?.value.trim() || '';
     const selectVal = document.getElementById('flower-reason-select')?.value;
@@ -192,7 +184,7 @@ async function submitCareLog(event, type, modalId, formId) {
     performedAt = localDate.toISOString();
     logDate = dtInput.value.slice(0, 10);
   }
-  
+
   details.performed_at = performedAt;
 
   const payload = {
@@ -219,7 +211,7 @@ async function submitCareLog(event, type, modalId, formId) {
       headers: headers,
       body: JSON.stringify(payload)
     });
-    
+
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
       if (res.status === 401 || res.status === 403) {
@@ -229,11 +221,10 @@ async function submitCareLog(event, type, modalId, formId) {
       }
       throw new Error(errData.error || 'Lỗi server khi lưu nhật ký');
     }
-    
+
     closeModal(modalId);
     showPublicToast(`Đã lưu nhật ký "${type}" thành công!`);
-    
-    // Refresh current plant logs directly without breaking view
+
     try {
       const fetchKey = currentPlantData?.id || targetSlug;
       const refRes = await fetch(`/api/plants/public/${encodeURIComponent(fetchKey)}`);
@@ -342,11 +333,9 @@ function calculatePublicHarvestEconomics() {
 }
 window.calculatePublicHarvestEconomics = calculatePublicHarvestEconomics;
 
-// ── Bệnh cây Feature ─────────────────────────────────────────────
 let diseaseImageFiles = [];
 let diseaseVideoFiles = [];
 
-// IndexedDB for File Caching
 const DB_NAME = 'PlantAppDB';
 const DB_VERSION = 1;
 const STORE_NAME = 'draftFiles';
@@ -390,7 +379,6 @@ async function clearDraftFiles() {
   });
 }
 
-// Save text inputs to localStorage
 function saveDiseaseDraftText() {
   const draft = {
     name: document.getElementById('disease-name').value,
@@ -402,7 +390,6 @@ function saveDiseaseDraftText() {
   localStorage.setItem(`diseaseText_${slug}`, JSON.stringify(draft));
 }
 
-// Restore draft text and files
 async function restoreDiseaseDraft() {
   const draftTxt = localStorage.getItem(`diseaseText_${slug}`);
   if (draftTxt) {
@@ -425,7 +412,6 @@ async function restoreDiseaseDraft() {
   }
 }
 
-// Bind auto-save to inputs
 document.querySelectorAll('#form-disease input, #form-disease textarea, #form-disease select').forEach(el => {
   if (el.type !== 'file') {
     el.addEventListener('input', saveDiseaseDraftText);
@@ -447,7 +433,6 @@ async function handleDiseaseFiles(input, type) {
     renderDiseasePreviews('videos');
     await saveDraftFiles(`diseaseVideos_${slug}`, diseaseVideoFiles);
   }
-  // Reset file input so the same file can be re-selected if needed
   input.value = '';
 }
 
@@ -560,7 +545,6 @@ async function submitDiseaseLog(event) {
     const res = await fetch(`/api/plants/public/${encodeURIComponent(targetSlug)}/logs`, {
       method: 'POST',
       headers: headers,
-      // Do NOT set Content-Type — browser sets multipart/form-data with boundary automatically
       body: formData
     });
 
@@ -574,7 +558,6 @@ async function submitDiseaseLog(event) {
       throw new Error(errData.error || 'Lỗi server khi lưu nhật ký');
     }
 
-    // Reset form and clear drafts
     document.getElementById('form-disease').reset();
     diseaseImageFiles = [];
     diseaseVideoFiles = [];
@@ -586,7 +569,6 @@ async function submitDiseaseLog(event) {
     closeModal('modal-disease');
     showPublicToast('Đã ghi nhận nhật ký bệnh cây thành công!');
 
-    // Refresh current plant logs directly without breaking view
     try {
       const fetchKey = currentPlantData?.id || targetSlug;
       const refRes = await fetch(`/api/plants/public/${encodeURIComponent(fetchKey)}`);
@@ -610,7 +592,6 @@ async function submitDiseaseLog(event) {
   }
 }
 
-// Restore drafts or refresh audit comparison previews when modal opens
 function onModalOpen(modalId) {
   if (modalId === 'modal-disease') {
     restoreDiseaseDraft();
@@ -622,10 +603,8 @@ function onModalOpen(modalId) {
   }
 }
 
-// Modifying the existing openModal function:
 const originalOpenModal = openModal;
 openModal = function(modalId) {
   originalOpenModal(modalId);
   onModalOpen(modalId);
 };
-

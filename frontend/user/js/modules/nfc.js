@@ -1,22 +1,13 @@
-/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/* ═══════════════════════════════════════════════════════════════
-   Plant Book – User Portal
-   modules/nfc.js — NFC Tag Definition & Reassignment
-   ═══════════════════════════════════════════════════════════════ */
-
 import { api }        from '../core/api.js';
 import { toast, esc } from '../core/utils.js';
 import { getPlantsCache, renderUserPlantsTable } from './plants.js';
 
-// ── State ──────────────────────────────────────────────────────
-let _currentPlant      = null;   // { id, tree_code, public_slug, nfc_uid, farm_id, user_id, plant_type, plant_variety, latitude, longitude, location }
-let _currentFarmPlants = [];     // List of trees in the same farm, sorted by sequential number
-let _currentPlantIndex = 0;      // Current active index in _currentFarmPlants
-let _nfcReader         = null;   // NDEFReader instance (Web NFC)
+let _currentPlant      = null;
+let _currentFarmPlants = [];
+let _currentPlantIndex = 0;
+let _nfcReader         = null;
 let _scanning          = false;
-let _capturedGps       = null;   // { latitude, longitude } captured from mobile GPS
-
-// ── Open / Close & Tree Sequential Navigator ───────────────────
+let _capturedGps       = null;
 
 function _buildHierarchicalPlantUrl(farmId, plantId, nfcUid) {
   const f = farmId || 0;
@@ -39,12 +30,12 @@ function _renderCurrentNfcPlant() {
   const publicSlug = plantObj.public_slug || plantId;
   _capturedGps = null;
 
-  _currentPlant = { 
-    id: plantId, 
-    tree_code: treeCode, 
-    public_slug: publicSlug, 
-    nfc_uid: currentNfcUid, 
-    farm_id: plantObj.farm_id, 
+  _currentPlant = {
+    id: plantId,
+    tree_code: treeCode,
+    public_slug: publicSlug,
+    nfc_uid: currentNfcUid,
+    farm_id: plantObj.farm_id,
     user_id: plantObj.user_id,
     plant_type: plantObj.plant_type,
     plant_variety: plantObj.plant_variety,
@@ -55,7 +46,6 @@ function _renderCurrentNfcPlant() {
 
   _setEl('nfc-modal-plant-name', `${treeCode}${plantObj.plant_type ? ` (${plantObj.plant_type})` : ''}`);
 
-  // Stepper / Navigator bar UI
   const total = _currentFarmPlants.length;
   const currentNum = _currentPlantIndex + 1;
   _setEl('nfc-nav-tree-info', `Cây #${treeCode}${plantObj.plant_type ? ` · ${plantObj.plant_type}` : ''} (${currentNum}/${total})`);
@@ -65,19 +55,16 @@ function _renderCurrentNfcPlant() {
     : `<span class="badge badge-gray" style="font-size:12px; padding:4px 8px;"><i data-lucide="unlink" class="lucide-sm"></i> Chưa gắn thẻ</span>`;
   _setEl('nfc-modal-current-uid', uidBadge, true);
 
-  // Render 3-segment Public Plant URL: https://domain.com/<farm_id>/<plant_id>/<nfc_uid>
   const fullPlantUrl = _buildHierarchicalPlantUrl(plantObj.farm_id, plantId, currentNfcUid);
   const urlInput = document.getElementById('nfc-public-url-input');
   const urlLink = document.getElementById('nfc-public-url-link');
   if (urlInput) urlInput.value = fullPlantUrl;
   if (urlLink) urlLink.href = fullPlantUrl;
 
-  // Render Metadata Component IDs (Standard 3-segment breakdown)
   _setEl('nfc-meta-farm-id', plantObj.farm_id ? `#${plantObj.farm_id}` : '#0');
   _setEl('nfc-meta-plant-id', `#${plantId}`);
   _setEl('nfc-meta-tag-id', currentNfcUid ? currentNfcUid : 'Chưa gắn');
 
-  // Render GPS info & Manual Location
   _updateGpsDisplay(plantObj);
 
   const manualInput = document.getElementById('nfc-manual-uid');
@@ -158,7 +145,6 @@ export function openNfcModal(plantId, treeCode, publicSlug, currentNfcUid) {
   const plantObj = cache.find(p => p.id == plantId) || {};
   const farmId = plantObj.farm_id;
 
-  // Filter all plants belonging to the same farm (or entire cache if unassigned)
   _currentFarmPlants = (farmId !== undefined && farmId !== null && farmId !== '')
     ? cache.filter(p => p.farm_id == farmId)
     : [...cache];
@@ -167,7 +153,6 @@ export function openNfcModal(plantId, treeCode, publicSlug, currentNfcUid) {
     _currentFarmPlants = [plantObj];
   }
 
-  // Sort logically and naturally by tree_code or id (1, 2, 3, 4, 10...)
   _currentFarmPlants.sort((a, b) => {
     const rawA = (a.tree_code || a.id || '').toString();
     const rawB = (b.tree_code || b.id || '').toString();
@@ -186,12 +171,11 @@ export function openNfcModal(plantId, treeCode, publicSlug, currentNfcUid) {
   _setNfcStatus('idle');
 
   const modal = document.getElementById('nfc-modal');
-  if (modal) { 
-    modal.classList.add('open'); 
-    document.body.style.overflow = 'hidden'; 
+  if (modal) {
+    modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
   }
 
-  // Check Web NFC support (Web NFC requires HTTPS & Chrome on Android with NFC hardware)
   if ('NDEFReader' in window && 'ontouchstart' in window) {
     startNfcScan();
   } else {
@@ -216,11 +200,10 @@ export function copyNfcPublicUrl() {
       const hasNfcTag = _currentPlant && _currentPlant.nfc_uid;
       if (hasNfcTag) {
         toast('✨ Đã copy URL public! Đang mở ứng dụng NFC Tools để ghi vào thẻ...', 'success');
-        
-        // Deep link to NFC Tools app (wakdev NFC Tools)
+
         const isAndroid = /Android/i.test(navigator.userAgent);
         const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-        
+
         setTimeout(() => {
           if (isAndroid) {
             window.location.href = 'intent://#Intent;package=com.wakdev.wdnfc;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.wakdev.wdnfc;end';
@@ -313,21 +296,20 @@ export function getNfcCurrentGps() {
       const lat = pos.coords.latitude;
       const lng = pos.coords.longitude;
       _capturedGps = { latitude: lat, longitude: lng };
-      
+
       _setEl('nfc-modal-gps-text', `<span style="display:inline-flex; align-items:center; gap:3px;"><i data-lucide="map-pin" class="lucide-xs"></i> ${lat.toFixed(6)}, ${lng.toFixed(6)} (Đang lưu...)</span>`, true);
       if (window.lucide) { try { lucide.createIcons(); } catch (_) {} }
-      
+
       try {
         const res = await api(`/plants/${_currentPlant.id}/gps`, {
           method: 'PUT',
           body: JSON.stringify({ latitude: lat, longitude: lng })
         });
-        
+
         _currentPlant.latitude = lat;
         _currentPlant.longitude = lng;
         _updateGpsDisplay(_currentPlant);
 
-        // Update cache & table
         if (_currentFarmPlants[_currentPlantIndex]) {
           _currentFarmPlants[_currentPlantIndex].latitude = lat;
           _currentFarmPlants[_currentPlantIndex].longitude = lng;
@@ -340,7 +322,6 @@ export function getNfcCurrentGps() {
           renderUserPlantsTable(cache);
         }
 
-        // Live sync: instantly render marker on Mapbox map and focus view to tree location!
         if (typeof window.updateUserMapMarkers === 'function') {
           window.updateUserMapMarkers(cache, true);
         }
@@ -404,7 +385,6 @@ export async function clearNfcGps() {
     _capturedGps = null;
     _updateGpsDisplay(_currentPlant);
 
-    // Update cache & table
     if (_currentFarmPlants[_currentPlantIndex]) {
       _currentFarmPlants[_currentPlantIndex].latitude = null;
       _currentFarmPlants[_currentPlantIndex].longitude = null;
@@ -419,7 +399,6 @@ export async function clearNfcGps() {
       renderUserPlantsTable(cache);
     }
 
-    // Live sync: update Mapbox map markers
     if (typeof window.updateUserMapMarkers === 'function') {
       window.updateUserMapMarkers(cache, false);
     }
@@ -446,7 +425,6 @@ export async function saveNfcLocationManually() {
   }
 
   try {
-    // Check if input matches coordinates format: "10.846851, 107.292044" or "10.846851 107.292044"
     const coordMatch = rawInput.match(/^(-?\d+(?:\.\d+)?)[,\s]+(-?\d+(?:\.\d+)?)$/);
     let lat = null;
     let lng = null;
@@ -479,7 +457,6 @@ export async function saveNfcLocationManually() {
     }
     _updateGpsDisplay(_currentPlant);
 
-    // Update caches and table
     if (_currentFarmPlants[_currentPlantIndex]) {
       _currentFarmPlants[_currentPlantIndex].location = loc;
       if (lat !== null && lng !== null) {
@@ -498,7 +475,6 @@ export async function saveNfcLocationManually() {
       renderUserPlantsTable(cache);
     }
 
-    // Live sync: instantly render marker on Mapbox map!
     if (typeof window.updateUserMapMarkers === 'function') {
       window.updateUserMapMarkers(cache, lat !== null && lng !== null);
     }
@@ -552,9 +528,9 @@ async function _saveUid(uid) {
       method: 'PUT',
       body: JSON.stringify(payload)
     });
-    
+
     toast(res.message || (uid ? 'Đã gán thẻ định danh thành công!' : 'Đã hủy kích hoạt thẻ thành công.'));
-    
+
     _currentPlant.nfc_uid = uid;
     if (!uid) {
       _currentPlant.latitude = null;
@@ -574,7 +550,6 @@ async function _saveUid(uid) {
       gpsBtn.disabled = false;
     }
 
-    // Update modal UI live
     const uidBadge = uid
       ? `<span class="badge badge-green" style="font-size:12px; padding:4px 8px; font-weight:700;"><i data-lucide="tag" class="lucide-sm"></i> ${uid}</span>`
       : `<span class="badge badge-gray" style="font-size:12px; padding:4px 8px;"><i data-lucide="unlink" class="lucide-sm"></i> Chưa gắn thẻ</span>`;
@@ -591,7 +566,6 @@ async function _saveUid(uid) {
     const deactivateBtn = document.getElementById('nfc-deactivate-btn');
     if (deactivateBtn) deactivateBtn.style.display = uid ? 'flex' : 'none';
 
-    // Update cache & table
     if (_currentFarmPlants[_currentPlantIndex]) {
       _currentFarmPlants[_currentPlantIndex].nfc_uid = uid;
       _currentFarmPlants[_currentPlantIndex].public_url = fullPlantUrl;

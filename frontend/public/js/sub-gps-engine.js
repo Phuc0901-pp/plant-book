@@ -1,10 +1,6 @@
-/* Plant Book AgTech (c) 2026 TBSG AgTech. All Rights Reserved.
-   modules/sub-gps-engine.js — Sub-1-Meter High-Precision GPS Engine with Anti-Drift Smoothing
-   ======================================================================================== */
-
 export class SubGpsEngine {
   constructor(options = {}) {
-    this.targetAccuracy = options.targetAccuracy || 2.0; // Target < +-2.0m for field lock
+    this.targetAccuracy = options.targetAccuracy || 2.0;
     this.maxSamples = options.maxSamples || 12;
     this.samples = [];
     this.watchId = null;
@@ -17,9 +13,6 @@ export class SubGpsEngine {
     this.onLockCallback = options.onLock || (() => {});
   }
 
-  /**
-   * Start listening for high precision GPS positions
-   */
   start() {
     if (!('geolocation' in navigator)) {
       this.onUpdateCallback({
@@ -48,9 +41,6 @@ export class SubGpsEngine {
     );
   }
 
-  /**
-   * Process incoming position sample with Kalman/Low-pass anti-jitter filter
-   */
   _handlePosition(pos) {
     if (!this.active || this.locked) return;
 
@@ -58,9 +48,7 @@ export class SubGpsEngine {
     const lng = pos.coords.longitude;
     const rawAcc = pos.coords.accuracy || 20;
 
-    // Filter out crazy outliers (e.g. sudden 0,0 or jumps > 500m)
     if (this.smoothedLat !== null && rawAcc > 100) {
-      // Ignore poor spike
     }
 
     this.samples.push({
@@ -74,24 +62,22 @@ export class SubGpsEngine {
       this.samples.shift();
     }
 
-    // Compute optimal coordinate
     const computed = this._computeOptimalCoordinate();
 
-    // Determine status rating and guidance text
     let quality = 'poor';
     let statusText = '';
-    
+
     if (computed.accuracy <= 2.0) {
-      quality = 'excellent'; // Green <= 2.0m
+      quality = 'excellent';
       statusText = 'Tín hiệu vệ tinh xuất sắc (< ±2m)';
     } else if (computed.accuracy <= 10.0) {
-      quality = 'good'; // Yellow 2m - 10m
+      quality = 'good';
       statusText = 'Đang tinh chỉnh vệ tinh (Khá tốt)';
     } else if (computed.accuracy <= 30.0) {
-      quality = 'warning'; // Orange 10m - 30m
+      quality = 'warning';
       statusText = 'Đang hội tụ vệ tinh. Giữ yên máy...';
     } else {
-      quality = 'poor'; // Red > 30m
+      quality = 'poor';
       statusText = 'Định vị Wifi/IP trong nhà. Ra ngoài trời để đạt ±1m!';
     }
 
@@ -121,7 +107,6 @@ export class SubGpsEngine {
       };
     }
 
-    // Inverse-variance weighted average: w_i = 1 / (acc_i ^ 2)
     let totalWeight = 0;
     let weightedLat = 0;
     let weightedLng = 0;
@@ -138,12 +123,11 @@ export class SubGpsEngine {
     const optimalLat = weightedLat / totalWeight;
     const optimalLng = weightedLng / totalWeight;
 
-    // Exponential smoothing with previous smoothed position to prevent visual jitter
     if (this.smoothedLat === null) {
       this.smoothedLat = optimalLat;
       this.smoothedLng = optimalLng;
     } else {
-      const alpha = 0.65; // Smoothing factor
+      const alpha = 0.65;
       this.smoothedLat = this.smoothedLat * (1 - alpha) + optimalLat * alpha;
       this.smoothedLng = this.smoothedLng * (1 - alpha) + optimalLng * alpha;
     }
@@ -167,9 +151,6 @@ export class SubGpsEngine {
     this.onUpdateCallback({ error: msg, code: err.code });
   }
 
-  /**
-   * Set manual coordinate
-   */
   setManualCoord(lat, lng) {
     this.locked = true;
     this.lockedCoord = {
@@ -183,9 +164,6 @@ export class SubGpsEngine {
     return this.lockedCoord;
   }
 
-  /**
-   * Lock current optimal coordinate
-   */
   lock() {
     const computed = this._computeOptimalCoordinate();
     this.locked = true;
@@ -199,9 +177,6 @@ export class SubGpsEngine {
     return this.lockedCoord;
   }
 
-  /**
-   * Stop watching
-   */
   stop() {
     if (this.watchId !== null) {
       navigator.geolocation.clearWatch(this.watchId);

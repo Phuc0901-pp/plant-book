@@ -1,29 +1,19 @@
-﻿<!-- ====================================================================
-     PLANT BOOK ENTERPRISE ERP — ADMIN PORTAL
-     Auto-assembled via backend/scripts/build-html.js
-     DO NOT edit index.html directly; edit modular files in src/
-     ==================================================================== -->
 <!-- @include 'layout/head.html' -->
 
 <!-- @include 'modals/auth-modals.html' -->
 
-<!-- ════════════════ APP ════════════════ -->
 <div id="app" style="display:none;flex-direction:row">
   <div class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
-  
+
   <!-- @include 'layout/sidebar.html' -->
 
-  <!-- Main -->
   <main class="main">
     <!-- @include 'layout/topbar.html' -->
 
     <div class="content">
-      <!-- ── 1. DASHBOARD & GIS COCKPIT ── -->
       <!-- @include 'views/dashboard.html' -->
 
-      <!-- ── 2. DATABASE & AGRONOMIC MASTER DATA (8 SUB-VIEWS) ── -->
       <div class="page-section" id="page-database">
-        <!-- Executive Royal AgTech Header -->
         <div class="royal-page-header">
           <div style="position:relative; z-index:1;">
             <div style="font-size:11px; color:#059669; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; margin-bottom:4px; display:inline-flex; align-items:center; gap:6px; background:#ecfdf5; border:1px solid #a7f3d0; padding:2px 8px; border-radius:6px;">
@@ -44,7 +34,6 @@
           </div>
         </div>
 
-        <!-- 8 Sub-tabs in Database section -->
         <div class="tabs" style="margin-bottom: 20px;">
           <div class="tab active" id="db-tab-cultivation" onclick="switchDatabaseTab('cultivation')">
             <i data-lucide="sprout" class="lucide-sm"></i> Dữ liệu canh tác
@@ -86,17 +75,14 @@
         <!-- @include 'views/database/version.html' -->
       </div>
 
-      <!-- ── 3. USERS & GOVERNANCE ── -->
       <!-- @include 'views/users.html' -->
 
-      <!-- ── 4. AI TRAINING STUDIO & KNOWLEDGE BASE ── -->
       <!-- @include 'views/ai-training.html' -->
 
-    </div><!-- /content -->
+    </div>
   </main>
 </div>
 
-<!-- ════════════════ MODALS & POPUPS ════════════════ -->
 <!-- @include 'modals/plant-modal.html' -->
 <!-- @include 'modals/schema-modal.html' -->
 <!-- @include 'modals/user-modal.html' -->

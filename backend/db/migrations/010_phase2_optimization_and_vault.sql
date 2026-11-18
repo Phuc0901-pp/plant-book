@@ -1,16 +1,5 @@
 -- +migrate Up
--- ============================================================================
--- Migration: 010_phase2_optimization_and_vault.sql
--- Purpose:   Phase 2 Database Optimization & Enterprise Vault Hardening:
---            1. Soft-delete 10 legacy orphan records (2 plant_logs, 8 plants) with audit trail
---            2. Tune autovacuum on public.users to prevent dead-tuple bloat
---            3. Add TTL retention cleanup function for _sync_tombstones (> 90 days)
---            4. Store NFC HMAC secret in supabase_vault with service_role-only accessor
---            5. Narrow public_qr_read_* policies to anon to resolve multiple_permissive_policies
--- Idempotent: Yes.
--- ============================================================================
 
--- 1. Soft-delete legacy orphan records with full audit trail
 INSERT INTO public.data_audit_logs (user_id, user_name, action_type, target_type, record_id, title, old_data, new_data, note)
 SELECT
   NULL,
@@ -47,14 +36,12 @@ UPDATE public.plants
 SET is_deleted = true, deleted_at = COALESCE(deleted_at, NOW()), is_public = false
 WHERE farm_id IS NULL AND COALESCE(is_deleted, false) = false;
 
--- 2. Tune autovacuum on public.users to eliminate dead-tuple bloat
 ALTER TABLE public.users SET (
   autovacuum_vacuum_scale_factor = 0.05,
   autovacuum_vacuum_threshold = 10,
   autovacuum_analyze_scale_factor = 0.05
 );
 
--- 3. TTL retention cleanup helper for _sync_tombstones
 CREATE OR REPLACE FUNCTION public.cleanup_old_sync_tombstones(p_retention_days integer DEFAULT 90)
 RETURNS integer
 LANGUAGE plpgsql
@@ -78,7 +65,6 @@ $fn$;
 REVOKE ALL ON FUNCTION public.cleanup_old_sync_tombstones(integer) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.cleanup_old_sync_tombstones(integer) TO service_role;
 
--- 4. Store NFC HMAC Secret in supabase_vault (ISO/IEC 27001 Key Management)
 DO $v$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM vault.secrets WHERE name = 'plantbook_nfc_hmac_secret') THEN
@@ -106,7 +92,6 @@ $fn$;
 REVOKE ALL ON FUNCTION public.get_nfc_hmac_secret() FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.get_nfc_hmac_secret() TO service_role;
 
--- 5. Narrow public_qr_read_* policies to anon to eliminate multiple_permissive_policies
 ALTER POLICY public_qr_read_plants ON public.plants TO anon;
 ALTER POLICY public_qr_read_farms ON public.farms TO anon;
 ALTER POLICY public_qr_read_plant_logs ON public.plant_logs TO anon;

@@ -12,7 +12,6 @@ class AppConstants {
   static const String baseUrl = 'https://plant-book.onrender.com/api';
   static const String wsUrl = 'wss://plant-book.onrender.com';
 
-  // Tiêu chuẩn Bảo mật Quốc tế & Định danh Vật lý - Số
   static const String securityStandardBadge =
       'OWASP MASVS v2.0 · ISO/IEC 27001 · Gallagher 8.30 · NIST FIPS 180-4';
   static const double nfcGeofenceMaxMeters = 8.0;

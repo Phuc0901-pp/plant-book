@@ -1,7 +1,5 @@
-﻿<!-- ════════════════ 4. AI TRAINING STUDIO & KNOWLEDGE BASE ════════════════ -->
 <div class="page-section" id="page-ai-training" style="display:none;">
 
-  <!-- Header Section (Executive Enterprise ERP) -->
   <div class="royal-page-header">
     <div style="max-width:680px;">
       <div class="royal-page-header-badge" style="font-size:11px; color:#059669; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; margin-bottom:4px; display:inline-flex; align-items:center; gap:6px;">
@@ -15,7 +13,6 @@
       </p>
     </div>
 
-    <!-- Top Action Buttons -->
     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
       <button class="royal-pill-btn royal-pill-btn-primary" onclick="openAiKnowledgeModal()">
         <i data-lucide="plus" class="lucide-sm"></i> + Thêm Tri Thức SOP
@@ -29,9 +26,7 @@
     </div>
   </div>
 
-  <!-- KPI Badges (4 Metrics) -->
   <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:24px;">
-    <!-- Metric 1: Tri Thức -->
     <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; box-shadow:0 2px 8px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
       <div style="width:48px; height:48px; border-radius:12px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;">
         <i data-lucide="bookmark" class="lucide-sm"></i>
@@ -42,7 +37,6 @@
       </div>
     </div>
 
-    <!-- Metric 2: Q&A Fine-Tuning -->
     <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; box-shadow:0 2px 8px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
       <div style="width:48px; height:48px; border-radius:12px; background:#eff6ff; color:#0284c7; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;">
         <i data-lucide="message-circle" class="lucide-sm"></i>
@@ -53,7 +47,6 @@
       </div>
     </div>
 
-    <!-- Metric 3: Nhật Ký Bảo Mật -->
     <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; box-shadow:0 2px 8px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
       <div style="width:48px; height:48px; border-radius:12px; background:#fef2f2; color:#dc2626; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;">
         <i data-lucide="shield-check" class="lucide-sm"></i>
@@ -64,7 +57,6 @@
       </div>
     </div>
 
-    <!-- Metric 4: Trạng thái AI Engine -->
     <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; box-shadow:0 2px 8px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
       <div style="width:48px; height:48px; border-radius:12px; background:#f5f3ff; color:#7c3aed; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;">
         <i data-lucide="network" class="lucide-sm"></i>
@@ -76,7 +68,6 @@
     </div>
   </div>
 
-  <!-- Sub-Tabs Navigation -->
   <div class="tabs" style="margin-bottom:20px;">
     <div class="tab active" id="ai-subtab-btn-knowledge" onclick="switchAiTrainingSubtab('knowledge')">
       <i data-lucide="book" class="lucide-sm"></i> 1. Kho Tri Thức Quy Trình SOP
@@ -92,12 +83,9 @@
     </div>
   </div>
 
-
-  <!-- ════════════════ SUB-TAB 1: KHO TRI THỨC SOP ════════════════ -->
   <div id="ai-subtab-knowledge" class="ai-subtab-pane" style="display:block;">
     <div class="card" style="padding:20px; border-radius:16px; border:1px solid #e2e8f0; background:#ffffff;">
-      
-      <!-- Toolbar Filters -->
+
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px;">
         <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:280px;">
           <div style="position:relative; flex:1;">
@@ -115,7 +103,6 @@
         </div>
       </div>
 
-      <!-- Table Container -->
       <div style="overflow-x:auto;">
         <table style="width:100%; border-collapse:collapse; font-size:13px;" id="ai-knowledge-table">
           <thead>
@@ -138,18 +125,14 @@
         </table>
       </div>
 
-      <!-- Knowledge Pagination (10 bản ghi / trang) -->
       <div id="ai-knowledge-pagination" style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding-top:12px; border-top:1px solid #f1f5f9; flex-wrap:wrap; gap:10px;"></div>
 
     </div>
   </div>
 
-
-  <!-- ════════════════ SUB-TAB 2: CẶP Q&A HUẤN LUYỆN ════════════════ -->
   <div id="ai-subtab-qa" class="ai-subtab-pane" style="display:none;">
     <div class="card" style="padding:20px; border-radius:16px; border:1px solid #e2e8f0; background:#ffffff;">
-      
-      <!-- Toolbar Filters -->
+
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px;">
         <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:280px;">
           <div style="position:relative; flex:1;">
@@ -166,25 +149,20 @@
         </div>
       </div>
 
-      <!-- Q&A List Cards Container -->
       <div id="ai-qa-list-container" style="display:flex; flex-direction:column; gap:14px;">
         <div style="text-align:center; padding:30px; color:#94a3b8;">
           <i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải danh sách Q&amp;A...
         </div>
       </div>
 
-      <!-- QA Pagination (10 bản ghi / trang) -->
       <div id="ai-qa-pagination" style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding-top:12px; border-top:1px solid #f1f5f9; flex-wrap:wrap; gap:10px;"></div>
 
     </div>
   </div>
 
-
-  <!-- ════════════════ SUB-TAB 3: PHÒNG THỬ NGHIỆM AI SANDBOX ════════════════ -->
   <div id="ai-subtab-simulator" class="ai-subtab-pane" style="display:none;">
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
-      
-      <!-- Left: Test Input & Controls -->
+
       <div class="card" style="padding:22px; border-radius:16px; border:1px solid #e2e8f0; background:#ffffff;">
         <h4 style="font-size:15px; font-weight:800; color:#0f172a; margin:0 0 12px 0; display:flex; align-items:center; gap:8px;">
           <span style="color:#059669;"><i data-lucide="terminal" class="lucide-sm"></i></span> Giả Lập Câu Hỏi Của Nông Dân
@@ -195,7 +173,6 @@
 
         <textarea id="ai-test-input" rows="4" placeholder="Ví dụ: Vừa xịt thuốc nấm hóa học xong có được tưới men vi sinh không? Hoặc: cây sầu riêng bị xì mủ đọt non..." style="width:100%; border:1.5px solid #cbd5e1; border-radius:12px; padding:12px; font-size:13.5px; font-family:inherit; outline:none; resize:vertical; margin-bottom:14px;" onfocus="this.style.borderColor='#059669'" onblur="this.style.borderColor='#cbd5e1'"></textarea>
 
-        <!-- Quick Prompt Samples -->
         <div style="margin-bottom:16px;">
           <div style="font-size:12px; font-weight:700; color:#64748b; margin-bottom:6px;"> Câu hỏi mẫu thử nhanh:</div>
           <div style="display:flex; flex-wrap:wrap; gap:6px;">
@@ -211,7 +188,6 @@
         </button>
       </div>
 
-      <!-- Right: Test Result & Diagnostic Output -->
       <div class="card" style="padding:22px; border-radius:16px; border:1px solid #e2e8f0; background:#ffffff; display:flex; flex-direction:column;">
         <h4 style="font-size:15px; font-weight:800; color:#0f172a; margin:0 0 12px 0; display:flex; align-items:center; justify-content:space-between;">
           <span style="display:flex; align-items:center; gap:8px;">
@@ -233,11 +209,9 @@
     </div>
   </div>
 
-
-  <!-- ════════════════ SUB-TAB 4: NHẬT KÝ BẢO MẬT & AUDIT TRAIL ════════════════ -->
   <div id="ai-subtab-security" class="ai-subtab-pane" style="display:none;">
     <div class="card" style="padding:20px; border-radius:16px; border:1px solid #e2e8f0; background:#ffffff;">
-      
+
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
         <h4 style="font-size:15px; font-weight:800; color:#0f172a; margin:0; display:flex; align-items:center; gap:8px;">
           <span style="color:#dc2626;"><i data-lucide="shield-check" class="lucide-sm"></i></span> Lịch Sử Thay Đổi Dữ Liệu &amp; Giám Sát An Ninh AI
@@ -269,7 +243,6 @@
         </table>
       </div>
 
-      <!-- Security Logs Pagination (10 bản ghi / trang) -->
       <div id="ai-security-logs-pagination" style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding-top:12px; border-top:1px solid #f1f5f9; flex-wrap:wrap; gap:10px;"></div>
 
     </div>

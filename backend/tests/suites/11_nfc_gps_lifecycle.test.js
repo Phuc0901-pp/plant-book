@@ -1,9 +1,3 @@
-/**
- * ═══════════════════════════════════════════════════════════════
- * Suite 11: NFC & GPS Full Lifecycle, Deep Link & Map Resolution
- * ═══════════════════════════════════════════════════════════════
- */
-
 const { describe, it, expect } = require('../test-framework');
 
 describe('Suite 11: NFC & GPS Full Lifecycle, Deep Link & Public Map Coordinate Resolution', () => {
@@ -17,7 +11,6 @@ describe('Suite 11: NFC & GPS Full Lifecycle, Deep Link & Public Map Coordinate 
         return { isValid: false, latitude: null, longitude: null };
       }
 
-      // Handle swapped coordinates
       let finalLat = latVal;
       let finalLng = lngVal;
       if (Math.abs(finalLat) > 90 && Math.abs(finalLng) <= 90) {
@@ -33,24 +26,20 @@ describe('Suite 11: NFC & GPS Full Lifecycle, Deep Link & Public Map Coordinate 
       };
     };
 
-    // Valid Vietnam Dak Lak coordinates
     const r1 = parseGps(12.679636, 108.053804);
     expect(r1.isValid).toBe(true);
     expect(r1.latitude).toBe(12.679636);
     expect(r1.longitude).toBe(108.053804);
 
-    // Swapped coordinates auto-fix
     const r2 = parseGps(108.053804, 12.679636);
     expect(r2.isValid).toBe(true);
     expect(r2.latitude).toBe(12.679636);
     expect(r2.longitude).toBe(108.053804);
 
-    // Null or empty inputs
     expect(parseGps(null, null).isValid).toBe(false);
     expect(parseGps('', '')).toEqual({ isValid: false, latitude: null, longitude: null });
     expect(parseGps(undefined, undefined)).toEqual({ isValid: false, latitude: null, longitude: null });
 
-    // Out of range coordinates
     expect(parseGps(195.0, 108.0).isValid).toBe(false);
     expect(parseGps(12.0, 250.0).isValid).toBe(false);
   });
@@ -70,7 +59,7 @@ describe('Suite 11: NFC & GPS Full Lifecycle, Deep Link & Public Map Coordinate 
     };
 
     const targetUrl = 'https://dev-plantbook.onrender.com/16/35/04:5C:D0:F2:E3:21:91';
-    
+
     const androidLink = buildNfcToolsDeepLink('android', targetUrl);
     expect(androidLink).toContain('package=com.wakdev.wdnfc');
     expect(androidLink).toContain('intent://#Intent');
@@ -98,7 +87,6 @@ describe('Suite 11: NFC & GPS Full Lifecycle, Deep Link & Public Map Coordinate 
         };
       }
 
-      // Farm polygon centroid calculation
       let centerLng = 107.241850;
       let centerLat = 10.941520;
       if (farmBoundary && farmBoundary.coordinates && farmBoundary.coordinates[0]) {
@@ -122,7 +110,7 @@ describe('Suite 11: NFC & GPS Full Lifecycle, Deep Link & Public Map Coordinate 
       }
 
       return {
-        hasMarker: false, // NEVER place marker pin when tree has no GPS
+        hasMarker: false,
         markerLat: null,
         markerLng: null,
         centerLat,
@@ -131,7 +119,6 @@ describe('Suite 11: NFC & GPS Full Lifecycle, Deep Link & Public Map Coordinate 
       };
     };
 
-    // Case A: Plant with real GPS
     const plantWithGps = { latitude: 12.679636, longitude: 108.053804 };
     const resA = resolveMapCoordinates(plantWithGps, null);
     expect(resA.hasMarker).toBe(true);
@@ -139,7 +126,6 @@ describe('Suite 11: NFC & GPS Full Lifecycle, Deep Link & Public Map Coordinate 
     expect(resA.markerLng).toBe(108.053804);
     expect(resA.isFarmFallback).toBe(false);
 
-    // Case B: Plant without GPS but in farm with rectangular polygon
     const plantWithoutGps = { latitude: null, longitude: null };
     const farmPoly = {
       type: 'Polygon',
@@ -152,7 +138,7 @@ describe('Suite 11: NFC & GPS Full Lifecycle, Deep Link & Public Map Coordinate 
       ]]
     };
     const resB = resolveMapCoordinates(plantWithoutGps, farmPoly);
-    expect(resB.hasMarker).toBe(false); // No fake marker pin
+    expect(resB.hasMarker).toBe(false);
     expect(resB.isFarmFallback).toBe(true);
     expect(resB.centerLat).toBeGreaterThan(12.670);
     expect(resB.centerLat).toBeLessThan(12.680);
@@ -310,11 +296,11 @@ describe('Suite 11: NFC & GPS Full Lifecycle, Deep Link & Public Map Coordinate 
 
     const csvOutput = buildNfcCsvExport(mockTags);
 
-    expect(csvOutput.startsWith('\uFEFF')).toBe(true); // UTF-8 BOM present
+    expect(csvOutput.startsWith('\uFEFF')).toBe(true);
     expect(csvOutput).toContain('Mã Thẻ NFC (UID)');
     expect(csvOutput).toContain('04:20:CF:5A:25:20:91');
     expect(csvOutput).toContain('Đã gán cây');
-    expect(csvOutput).toContain('"Khu A, Hàng 1"'); // Comma in location correctly escaped
+    expect(csvOutput).toContain('"Khu A, Hàng 1"');
     expect(csvOutput).toContain('10.762622');
     expect(csvOutput).toContain('106.660172');
     expect(csvOutput).toContain('04:21:D1:5A:25:20:92');
@@ -432,7 +418,6 @@ describe('Suite 11: NFC & GPS Full Lifecycle, Deep Link & Public Map Coordinate 
       return { totalRows: lines.length - (hasHeader ? 1 : 0), items, validTags: items, duplicates, treeCount };
     };
 
-    // Case 1: Standard exported CSV symmetrical roundtrip
     const sampleCsv = `\uFEFF"STT","Mã Thẻ NFC (UID)","Trạng Thái","Mã Cây Gắn","Loại Cây / Giống","Vị Trí","Vĩ Độ (Lat)","Kinh Độ (Lng)","Link Public URL","Thời Gian Nhập Kho"
 "1","04:20:CF:5A:25:20:91","Đã gán cây","12","Sầu riêng (Ri6)","Khu A, Hàng 1","10.762622","106.660172","https://...","14/09/2026 16:30:00"
 "2","04:21:D1:5A:25:20:92","Còn trống (Sẵn sàng)","","","","","","","14/09/2026 16:31:00"
@@ -440,7 +425,7 @@ describe('Suite 11: NFC & GPS Full Lifecycle, Deep Link & Public Map Coordinate 
 
     const parsed1 = parseNfcCsv(sampleCsv);
     expect(parsed1.totalRows).toBe(3);
-    expect(parsed1.items.length).toBe(2); // 1 duplicate filtered
+    expect(parsed1.items.length).toBe(2);
     expect(parsed1.duplicates.length).toBe(1);
     expect(parsed1.duplicates[0]).toBe('04:20:CF:5A:25:20:91');
     expect(parsed1.treeCount).toBe(1);
@@ -450,14 +435,12 @@ describe('Suite 11: NFC & GPS Full Lifecycle, Deep Link & Public Map Coordinate 
     expect(parsed1.items[0].latitude).toBe('10.762622');
     expect(parsed1.items[0].longitude).toBe('106.660172');
 
-    // Case 2: Raw continuous hex without separators
     const rawHexCsv = `UID\n0420CF5A252091\n0421D15A252092`;
     const parsed2 = parseNfcCsv(rawHexCsv);
     expect(parsed2.items.length).toBe(2);
     expect(parsed2.items[0].uid).toBe('04:20:CF:5A:25:20:91');
     expect(parsed2.items[1].uid).toBe('04:21:D1:5A:25:20:92');
 
-    // Case 3: Semicolon-delimited CSV with hyphens
     const semicolonCsv = `STT;Mã Thẻ;Số Cây;Vĩ Độ;Kinh Độ\n1;04-20-CF-5A-25-20-91;SR-01;12.679636;108.053804`;
     const parsed3 = parseNfcCsv(semicolonCsv);
     expect(parsed3.items.length).toBe(1);

@@ -1,18 +1,11 @@
-/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/* ═══════════════════════════════════════════════════════════════
-   Plant Book – User Portal
-   modules/care-modal.js — Care log modal: open, close, form fields, save
-   ═══════════════════════════════════════════════════════════════ */
-
 import { api, token, API }      from '../core/api.js';
 import { toast, esc }           from '../core/utils.js';
 import { selectedCareFiles, clearSelectedFiles, watermarkImage } from './media.js';
 import { getLogsCache }         from './logs.js';
 import { getPlantsCache }       from './plants.js';
 
-// ── Truy cập config/plants qua window để tránh circular import ──
 function _configs()  { return window._allConfigsCache || {}; }
-function _plants()   { 
+function _plants()   {
   const p = window._allPlantsCache;
   if (Array.isArray(p) && p.length > 0) return p;
   const fromCache = typeof getPlantsCache === 'function' ? getPlantsCache() : [];
@@ -20,19 +13,6 @@ function _plants()   {
   return [];
 }
 
-// ── Open / Close ──────────────────────────────────────────────
-
-/**
- * Mở modal nhật ký chăm sóc.
- * - Nếu plantId được cung cấp → khoá vào 1 cây cụ thể
- * - Nếu plantId = null (FAB) → hiển thị dropdown chọn cây
- * - Nếu logId được cung cấp → chuyển sang chế độ CHỈNH SỬA nhật ký
- *
- * @param {number|null} plantId
- * @param {string|null} treeCode
- * @param {string|null} plantType
- * @param {number|null} logId
- */
 export function openCareModal(plantId, treeCode, plantType, logId = null) {
   clearSelectedFiles();
 
@@ -47,7 +27,6 @@ export function openCareModal(plantId, treeCode, plantType, logId = null) {
   const multiEl     = document.getElementById('c-plant-multi-select');
   const checkboxListEl = document.getElementById('c-plant-checkboxes-list');
 
-  // Register select all toggler globally
   window.toggleSelectAllPlants = function(masterCb) {
     const checkboxes = document.querySelectorAll('.c-plant-checkbox');
     checkboxes.forEach(cb => {
@@ -56,7 +35,6 @@ export function openCareModal(plantId, treeCode, plantType, logId = null) {
   };
 
   if (logId) {
-    // ── CHẾ ĐỘ CHỈNH SỬA (EDIT MODE) ──
     const log = getLogsCache().find(l => l.id === logId);
     if (!log) {
       toast('Không tìm thấy dữ liệu nhật ký này trong bộ nhớ.', 'error');
@@ -85,24 +63,20 @@ export function openCareModal(plantId, treeCode, plantType, logId = null) {
     if (dateEl) dateEl.value = log.log_date ? new Date(log.log_date).toISOString().slice(0, 10) : '';
     if (logTypeEl) {
       logTypeEl.value = log.log_type;
-      logTypeEl.disabled = true; // Khóa loại hoạt động để bảo toàn schema details
+      logTypeEl.disabled = true;
     }
 
-    // Loại bỏ phần thông tin thời gian chỉnh sửa cũ trong ghi chú để điền vào textarea
     if (noteEl) {
       noteEl.value = (log.note || '').replace(/\n\(Chỉnh sửa lúc: .*\)/g, '').trim();
     }
 
-    // Render form fields
     onCareLogTypeChange();
 
-    // Điền dữ liệu chi tiết của log cũ vào form sau khi render xong
     setTimeout(() => {
       _populateDetailFields(log);
     }, 50);
 
   } else {
-    // ── CHẾ ĐỘ GHI MỚI (CREATE MODE) ──
     window._activeEditLogId = null;
     window._existingMediaUrls = [];
 
@@ -167,14 +141,12 @@ export function openCareModal(plantId, treeCode, plantType, logId = null) {
     window.lucide.createIcons();
   }
 
-  // Tự động tải lại vật tư mới nhất từ server trong nền
   refreshCareSuppliesDropdowns(true).catch(() => {});
 }
 
 function _renderMultiTreeSelector(checkboxListEl, multiEl, preselectedPlantId = null) {
   if (!multiEl || !checkboxListEl) return;
 
-  // Group plants by farm
   const plantsByFarm = {};
   _plants().forEach(p => {
     const farmId = p.farm_id || 0;
@@ -185,7 +157,6 @@ function _renderMultiTreeSelector(checkboxListEl, multiEl, preselectedPlantId = 
     plantsByFarm[farmId].list.push(p);
   });
 
-  // Register farm select all toggler
   window.toggleFarmSelectAll = function(masterCb, farmId) {
     const checkboxes = document.querySelectorAll(`.c-plant-checkbox-farm-${farmId}`);
     checkboxes.forEach(cb => {
@@ -199,7 +170,6 @@ function _renderMultiTreeSelector(checkboxListEl, multiEl, preselectedPlantId = 
     }
   };
 
-  // Master select all across all farms
   window.toggleSelectAllGlobal = function(status) {
     const checkboxes = document.querySelectorAll('.c-plant-checkbox');
     checkboxes.forEach(cb => {
@@ -216,7 +186,6 @@ function _renderMultiTreeSelector(checkboxListEl, multiEl, preselectedPlantId = 
     }
   };
 
-  // Sync chip style on check/uncheck
   window.syncChipStyle = function(cb) {
     const label = cb.closest('.plant-chip-item');
     if (label) {
@@ -232,7 +201,6 @@ function _renderMultiTreeSelector(checkboxListEl, multiEl, preselectedPlantId = 
     }
   };
 
-  // Register selected count updater
   window.updateSelectedCount = function() {
     const checkboxes = document.querySelectorAll('.c-plant-checkbox:checked');
     const count = checkboxes.length;
@@ -263,8 +231,8 @@ function _renderMultiTreeSelector(checkboxListEl, multiEl, preselectedPlantId = 
   let html = '';
 
   if (totalPlantsCount === 0) {
-    const farm = typeof window.getActiveFarm === 'function' 
-      ? (window.getActiveFarm() || {}) 
+    const farm = typeof window.getActiveFarm === 'function'
+      ? (window.getActiveFarm() || {})
       : (window._allFarmsCache && window._allFarmsCache.length ? window._allFarmsCache[0] : {});
     const farmName = farm.name || 'Trang trại Nông hộ';
     const count = farm.plant_count || farm.total_plants || 0;
@@ -332,9 +300,6 @@ function _renderMultiTreeSelector(checkboxListEl, multiEl, preselectedPlantId = 
   }
 }
 
-/**
- * Đóng modal nhật ký chăm sóc.
- */
 export function closeCareModal() {
   try {
     if (typeof stopVoiceInput === 'function' && _isCareRecording) {
@@ -349,17 +314,11 @@ export function closeCareModal() {
 }
 window.closeCareModal = closeCareModal;
 
-// ── Dynamic Form Fields ───────────────────────────────────────
-
-/**
- * Cập nhật các trường form trong modal khi người dùng thay đổi loại hoạt động.
- */
 export async function onCareLogTypeChange() {
   const logType   = document.getElementById('c-log-type')?.value;
   const container = document.getElementById('care-detail-fields');
   if (!container || !logType) return;
 
-  // Load supplies if not loaded
   if (!window._declaredSuppliesCache) {
     try {
       window._declaredSuppliesCache = await api('/supplies');
@@ -427,10 +386,6 @@ export function updatePesticideNotice(selectEl) {
 window.updatePesticideNotice = updatePesticideNotice;
 window.updatePesticidePhiNotice = updatePesticideNotice;
 
-/**
- * Tự động reload danh sách vật tư vào modal chăm sóc (không làm gián đoạn giao diện/dữ liệu đang nhập).
- * @param {boolean} forceFetch
- */
 export async function refreshCareSuppliesDropdowns(forceFetch = true) {
   try {
     if (forceFetch || !window._declaredSuppliesCache) {
@@ -535,7 +490,7 @@ export function calculateWaterCostPreview() {
 
   const singleVolumeM3 = amountLiters / 1000;
   const totalVolumeM3 = singleVolumeM3 * treeCount;
-  
+
   if (treeCount > 1) {
     volEl.textContent = `${amountLiters} Lít/cây x ${treeCount} cây = ${amountLiters * treeCount} Lít (${totalVolumeM3 < 0.01 ? totalVolumeM3.toFixed(3) : totalVolumeM3.toFixed(2)} m³)`;
   } else {
@@ -550,7 +505,7 @@ export function calculateWaterCostPreview() {
   const supplies = window._declaredSuppliesCache || [];
   const supply = supplies.find(s => s.id == supplyId);
   const unitPriceM3 = supply ? (parseFloat(supply.unit_price) || 0) : 0;
-  
+
   const singleCost = singleVolumeM3 * unitPriceM3;
   const totalCost = singleCost * treeCount;
 
@@ -956,10 +911,6 @@ function _renderCareMediaPickerHtml(labelText) {
     </div>`;
 }
 
-/**
- * Trả về HTML form fields theo loại hoạt động.
- * @private
- */
 function _buildDetailFields(logType, configs, supplies = []) {
   switch (logType) {
     case 'Tưới nước': {
@@ -979,7 +930,7 @@ function _buildDetailFields(logType, configs, supplies = []) {
             </select>
           ` : `
             <div style="padding:8px 12px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; font-size:12px; color:#166534;">
-              <i data-lucide="info" class="lucide-sm"></i> Chưa khai báo đơn giá m³ nước. 
+              <i data-lucide="info" class="lucide-sm"></i> Chưa khai báo đơn giá m³ nước.
               <a href="#" onclick="closeCareModal(); showPage('supplies'); openSupplyModal(); return false;" style="color:#2563eb; font-weight:700;">
                 <i data-lucide="plus" class="lucide-sm"></i> Khai báo đơn giá 1m³ nước
               </a>
@@ -1413,7 +1364,6 @@ function _buildDetailFields(logType, configs, supplies = []) {
   }
 }
 
-// ── Điền giá trị chi tiết khi sửa đổi ─────────────────────────────
 function _populateDetailFields(log) {
   const t = log.log_type;
   const d = log.details || {};
@@ -1517,14 +1467,11 @@ function _buildDetailsString(logType, details) {
   return parts.join(', ');
 }
 
-// ── Preview & Xóa Media ─────────────────────────────────────────
-
 export function renderMediaPreviews() {
   const preview = document.getElementById('c-media-preview');
   if (!preview) return;
   preview.innerHTML = '';
 
-  // 1. Ảnh hiện tại (Đã lưu)
   const existing = window._existingMediaUrls || [];
   existing.forEach((item, index) => {
     const div = Object.assign(document.createElement('div'), {});
@@ -1545,7 +1492,6 @@ export function renderMediaPreviews() {
     window.lucide.createIcons();
   }
 
-  // 2. Ảnh mới (Đang chờ upload)
   selectedCareFiles.forEach((file) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -1584,8 +1530,6 @@ export function removeExistingPhoto(index) {
 window.renderMediaPreviews = renderMediaPreviews;
 window.removeExistingPhoto = removeExistingPhoto;
 
-// ── Save ──────────────────────────────────────────────────────
-
 async function _uploadCareMediaFiles(primaryPlantId, primaryTreeCode, caption, btn) {
   const mediaUrls = [...(window._existingMediaUrls || [])];
   if (selectedCareFiles.length > 0 && primaryPlantId) {
@@ -1615,12 +1559,9 @@ async function _uploadCareMediaFiles(primaryPlantId, primaryTreeCode, caption, b
   return mediaUrls;
 }
 
-/**
- * Xác thực, xử lý media, và lưu nhật ký chăm sóc lên API.
- */
 export async function saveCareLog() {
   const isMulti = document.getElementById('c-plant-multi-select')?.style.display === 'block';
-  let selectedPlants = []; // Array of { id, treeCode }
+  let selectedPlants = [];
   const allPlantsCount = _plants().length;
 
   if (isMulti) {
@@ -1641,14 +1582,11 @@ export async function saveCareLog() {
     }
   }
 
-  // ── Validation scope: ──
-  // Khi tài khoản có danh sách cây lẻ -> Bắt buộc chọn ít nhất 1 cây
   if (allPlantsCount > 0 && selectedPlants.length === 0) {
     toast('Vui lòng chọn ít nhất một cây trồng!', 'error');
     return;
   }
 
-  // Khi tài khoản chưa được cấp tính năng cây lẻ (dùng GPS Toàn vườn) -> Chấp nhận tự động cho Toàn vườn
   if (allPlantsCount === 0 && selectedPlants.length === 0) {
     const activeFarm = typeof window.getActiveFarm === 'function' ? window.getActiveFarm() : null;
     const farmName = activeFarm ? activeFarm.name : 'Toàn vườn';
@@ -1658,9 +1596,7 @@ export async function saveCareLog() {
     });
   }
 
-
   const logTypeRaw = document.getElementById('c-log-type')?.value;
-  // Dual Defense: Nếu form đang chứa các input thu hoạch thì cưỡng chế log_type = 'Thu hoạch'
   const isHarvestDom = !!document.getElementById('c-detail-harvest-fruit-count') || !!document.getElementById('c-detail-harvest-amount');
   const logType = isHarvestDom ? 'Thu hoạch' : logTypeRaw;
 
@@ -1669,14 +1605,14 @@ export async function saveCareLog() {
   const operatorName = document.getElementById('c-operator-name')?.value.trim() || '';
   const equipmentUsed = document.getElementById('c-equipment-used')?.value.trim() || '';
 
-  const body = { 
-    log_type: logType, 
-    log_date: logDate, 
-    note, 
+  const body = {
+    log_type: logType,
+    log_date: logDate,
+    note,
     operator_name: operatorName,
     equipment_used: equipmentUsed,
-    media_urls: [], 
-    details: {} 
+    media_urls: [],
+    details: {}
   };
 
   const btn     = document.getElementById('care-save-btn');
@@ -1684,7 +1620,6 @@ export async function saveCareLog() {
   if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Đang lưu...'; }
 
   try {
-    // ── Thu thập details theo loại ──────────────────────────
     const suppliesCache = window._declaredSuppliesCache || [];
 
     if (logType === 'Tưới nước') {
@@ -1695,9 +1630,9 @@ export async function saveCareLog() {
       const unitPrice = sup ? (parseFloat(sup.unit_price) || 0) : 0;
       const singleVolM3 = amount / 1000;
       const singleCost = Math.round(singleVolM3 * unitPrice);
-      body.details = { 
-        method: document.getElementById('c-detail-method')?.value, 
-        amount, 
+      body.details = {
+        method: document.getElementById('c-detail-method')?.value,
+        amount,
         unit: 'lít',
         supply_id: supplyId ? parseInt(supplyId) : null,
         supply_name: sup ? sup.name : 'Nước tưới',
@@ -1717,11 +1652,11 @@ export async function saveCareLog() {
       if (sup && (sup.unit === 'kg' || sup.unit === 'kilogram') && (unit === 'gam' || unit === 'g')) baseQty = amount / 1000;
       const unitPrice = sup ? (parseFloat(sup.unit_price) || 0) : 0;
       const singleCost = Math.round(baseQty * unitPrice);
-      body.details = { 
+      body.details = {
         fertilizer_name: supName,
         material_name: supName,
         supply_name: supName,
-        amount, 
+        amount,
         unit,
         supply_id: supplyId ? parseInt(supplyId) : null,
         unit_price: unitPrice,
@@ -1739,11 +1674,11 @@ export async function saveCareLog() {
       if (sup && (sup.unit === 'lít' || sup.unit === 'lit') && (unit === 'ml' || unit === 'cc')) baseQty = amount / 1000;
       const unitPrice = sup ? (parseFloat(sup.unit_price) || 0) : 0;
       const singleCost = Math.round(baseQty * unitPrice);
-      body.details = { 
+      body.details = {
         pesticide_name: supName,
         material_name: supName,
         supply_name: supName,
-        amount, 
+        amount,
         unit,
         supply_id: supplyId ? parseInt(supplyId) : null,
         unit_price: unitPrice,
@@ -1805,7 +1740,6 @@ export async function saveCareLog() {
         material_name: `Nhân công: ${workContent}`
       };
 
-      // Tải lên & đóng dấu ảnh đoàn người tham gia (nếu có chọn ảnh/video)
       body.media_urls = await _uploadCareMediaFiles(
         selectedPlants[0].id,
         selectedPlants[0].treeCode,
@@ -1874,7 +1808,6 @@ export async function saveCareLog() {
         description: document.getElementById('c-detail-description')?.value.trim()
       };
 
-      // Hợp nhất ảnh cũ và ảnh mới
       body.media_urls = await _uploadCareMediaFiles(
         selectedPlants[0].id,
         selectedPlants[0].treeCode,
@@ -1884,7 +1817,6 @@ export async function saveCareLog() {
     }
 
     if (window._activeEditLogId) {
-      // CHẾ ĐỘ CHỈNH SỬA (EDIT MODE) - chỉ chỉnh sửa 1 log duy nhất
       const plantId = selectedPlants[0].id;
       const editTimeStr = new Date().toLocaleString('vi-VN');
       const originalLog = getLogsCache().find(l => l.id === window._activeEditLogId);
@@ -1902,7 +1834,6 @@ export async function saveCareLog() {
       await api(`/plants/${plantId}/logs/${window._activeEditLogId}`, { method: 'PUT', body: JSON.stringify(body) });
       toast('Đã cập nhật nhật ký thành công!');
     } else {
-      // CHẾ ĐỘ GHI MỚI (CREATE MODE) - hỗ trợ lưu cho nhiều cây cùng lúc
       const supplyId = document.getElementById('c-detail-supply-id')?.value;
       const amount = parseFloat(document.getElementById('c-detail-amount')?.value) || 1;
       const unit = document.getElementById('c-detail-unit')?.value || 'kg';
@@ -1914,7 +1845,6 @@ export async function saveCareLog() {
         usageQty = amount / 1000;
       }
 
-      // Offline check: nếu đang mất mạng, lưu thẳng vào IndexedDB
       if (!navigator.onLine) {
         if (typeof window.saveOfflineCareLog === 'function') {
           const offlinePayload = {
@@ -1947,7 +1877,6 @@ export async function saveCareLog() {
             ? (reqBody.details.batch_total_cost - baseTreeCost * (totalSelectedCount - 1))
             : baseTreeCost;
         }
-        // Gửi POST tạo nhật ký cho cây này (Backend tự động chuẩn hóa liều lượng, hạch toán supply_usages & trừ kho)
         lastSavedResult = await api(`/plants/${plant.id}/logs`, { method: 'POST', body: JSON.stringify(reqBody) });
       }
 
@@ -1978,9 +1907,9 @@ export async function saveCareLog() {
     if (typeof window.loadBiAnalyticsDashboard === 'function') window.loadBiAnalyticsDashboard();
 
   } catch (err) {
-    const isNetworkErr = !navigator.onLine || 
-      String(err.message || '').toLowerCase().includes('fetch') || 
-      String(err.message || '').toLowerCase().includes('network') || 
+    const isNetworkErr = !navigator.onLine ||
+      String(err.message || '').toLowerCase().includes('fetch') ||
+      String(err.message || '').toLowerCase().includes('network') ||
       String(err.message || '').toLowerCase().includes('offline');
 
     if (isNetworkErr && typeof window.saveOfflineCareLog === 'function' && !window._activeEditLogId) {
@@ -2011,7 +1940,6 @@ export async function saveCareLog() {
   }
 }
 
-// ── Voice-to-Text (Ghi âm giọng nói) ─────────────────────────
 let _careRecognition = null;
 let _isCareRecording = false;
 let _careVoiceTimeout = null;
@@ -2060,7 +1988,6 @@ export function stopVoiceInput(silent = false) {
 }
 
 export function startVoiceInput() {
-  // If currently recording, clicking the button triggers STOP immediately
   if (_isCareRecording) {
     stopVoiceInput();
     return;
@@ -2110,7 +2037,6 @@ export function startVoiceInput() {
 
       toast('🎙️ Đang nghe... Bác hãy đọc nội dung nhật ký. Khi nói xong nhấn nút "Dừng ghi âm"!', 'info');
 
-      // Auto-stop safety timer (45 seconds continuous dictation)
       if (_careVoiceTimeout) clearTimeout(_careVoiceTimeout);
       _careVoiceTimeout = setTimeout(() => {
         if (_isCareRecording) {
@@ -2145,7 +2071,7 @@ export function startVoiceInput() {
     recognition.onerror = (event) => {
       console.warn('Speech recognition error:', event.error);
       if (event.error === 'no-speech') {
-        return; // Don't terminate on brief silence in continuous mode
+        return;
       }
       stopVoiceInput(true);
       if (event.error === 'not-allowed') {
@@ -2181,5 +2107,3 @@ window.onCareSupplySelected = onCareSupplySelected;
 window.updatePesticideNotice = updatePesticideNotice;
 window.stopVoiceInput = stopVoiceInput;
 window.startVoiceInput = startVoiceInput;
-
-

@@ -16,18 +16,15 @@ describe('Suite 13: AI Training Studio, Knowledge Base RAG & High-Grade Security
     const mig006 = fs.readFileSync(mig006Path, 'utf8');
     const init = fs.readFileSync(initPath, 'utf8');
 
-    // Tables
     expect(mig006.includes('CREATE TABLE IF NOT EXISTS ai_knowledge_articles')).toBe(true);
     expect(mig006.includes('CREATE TABLE IF NOT EXISTS ai_training_qa')).toBe(true);
     expect(mig006.includes('CREATE TABLE IF NOT EXISTS ai_training_logs')).toBe(true);
     expect(mig006.includes('CREATE TABLE IF NOT EXISTS ai_unanswered_queries')).toBe(true);
 
-    // Initial Seed Data
     expect(mig006.includes('Khoảng Cách 10 ~ 15 Ngày Giữa Thuốc BVTV Hóa Học & Chế Phẩm Vi Sinh')).toBe(true);
     expect(mig006.includes('Phytophthora')).toBe(true);
     expect(mig006.includes('Trichoderma')).toBe(true);
 
-    // init.js consistency
     expect(init.includes('ai_knowledge_articles')).toBe(true);
     expect(init.includes('ai_training_qa')).toBe(true);
     expect(init.includes('ai_training_logs')).toBe(true);
@@ -38,7 +35,6 @@ describe('Suite 13: AI Training Studio, Knowledge Base RAG & High-Grade Security
     expect(routeContent.includes('botProtectionMiddleware')).toBe(true);
     expect(routeContent.includes('hp_security_trap')).toBe(true);
 
-    // Test pure logic of honeypot
     function mockBotCheck(body) {
       const { hp_security_trap, website_hidden_check } = body || {};
       if (hp_security_trap || website_hidden_check) {
@@ -47,12 +43,10 @@ describe('Suite 13: AI Training Studio, Knowledge Base RAG & High-Grade Security
       return { blocked: false, status: 200 };
     }
 
-    // Normal user submit (honeypot empty) -> allowed
     const humanReq = mockBotCheck({ title: 'Kỹ thuật bón phân', hp_security_trap: '' });
     expect(humanReq.blocked).toBe(false);
     expect(humanReq.status).toBe(200);
 
-    // Automated bot submit (auto-fills all inputs including hidden honeypot) -> blocked
     const botReq = mockBotCheck({ title: 'Spam article', hp_security_trap: 'http://spam-link.ru' });
     expect(botReq.blocked).toBe(true);
     expect(botReq.status).toBe(403);
@@ -135,14 +129,12 @@ describe('Suite 13: AI Training Studio, Knowledge Base RAG & High-Grade Security
       return { matchedQA, matchedArticles };
     }
 
-    // Query 1: Exact match question about TBVTV & Vi sinh
     const res1 = matchRAG('vừa xịt thuốc nấm tưới vi sinh được không');
     expect(res1.matchedQA !== null).toBe(true);
     expect(res1.matchedQA.expected_answer).toContain('BẮT BUỘC cách 10 đến 15 ngày');
     expect(res1.matchedArticles.length).toBeGreaterThan(0);
     expect(res1.matchedArticles[0].art.id).toBe(101);
 
-    // Query 2: Disease inquiry about xì mủ
     const res2 = matchRAG('cây sầu riêng bị xì mủ thân đọt non');
     expect(res2.matchedQA).toBe(null);
     expect(res2.matchedArticles.length).toBeGreaterThan(0);
@@ -183,7 +175,8 @@ describe('Suite 13: AI Training Studio, Knowledge Base RAG & High-Grade Security
     expect(trainingRouteContent.includes('router.use(auth);')).toBe(true);
     expect(trainingRouteContent.includes('router.use(admin);')).toBe(true);
 
-    const aiRouteContent = fs.readFileSync(aiRoutePath, 'utf8');
+    const aiEnginePath = path.join(__dirname, '../../services/beMamAgentEngine.js');
+    const aiRouteContent = fs.readFileSync(aiRoutePath, 'utf8') + '\n' + fs.readFileSync(aiEnginePath, 'utf8');
     expect(aiRouteContent.includes('ai_training_qa')).toBe(true);
     expect(aiRouteContent.includes('ai_knowledge_articles')).toBe(true);
   });
@@ -204,4 +197,3 @@ describe('Suite 13: AI Training Studio, Knowledge Base RAG & High-Grade Security
   });
 
 });
-

@@ -3,7 +3,6 @@ const router = express.Router();
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
 
-// Helper function to log audit events into data_audit_logs
 async function logAuditAction(userId, userName, actionType, targetType, recordId, title, oldData = {}, newData = {}, note = '') {
   try {
     await pool.query(
@@ -16,7 +15,6 @@ async function logAuditAction(userId, userName, actionType, targetType, recordId
   }
 }
 
-// GET /api/history — Lấy nhật ký biến động (Chỉnh sửa & Xóa dữ liệu)
 router.get('/', auth, async (req, res) => {
   try {
     const { action_type, target_type, search } = req.query;
@@ -64,21 +62,18 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-// DELETE /api/history/:id — Bảo vệ Append-Only theo chuẩn ISO (không cho phép xóa nhật ký kiểm toán)
 router.delete('/:id', auth, async (req, res) => {
   return res.status(403).json({
     error: 'Nhật ký kiểm toán được bảo vệ bất biến (Append-Only) theo tiêu chuẩn ISO, không thể xóa dấu vết lịch sử.'
   });
 });
 
-// DELETE /api/history — Bảo vệ Append-Only theo chuẩn ISO
 router.delete('/', auth, async (req, res) => {
   return res.status(403).json({
     error: 'Nhật ký kiểm toán được bảo vệ bất biến (Append-Only) theo tiêu chuẩn ISO, không thể dọn dẹp hoặc xóa dấu vết lịch sử.'
   });
 });
 
-// POST /api/history/:id/restore — Khôi phục bản ghi bị xóa mềm
 router.post('/:id/restore', auth, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
@@ -134,7 +129,6 @@ router.post('/:id/restore', auth, async (req, res) => {
   }
 });
 
-// DELETE /api/history/:id/purge — Xóa vĩnh viễn dữ liệu bị xóa mềm khỏi CSDL (Admin only)
 router.delete('/:id/purge', auth, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {

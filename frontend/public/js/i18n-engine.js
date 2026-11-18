@@ -1,14 +1,3 @@
-/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/* ═══════════════════════════════════════════════════════════════════════════
-   Universal Export Multi-Language (i18n) & Multi-Currency Engine (VI | EN | ZH)
-   Features:
-   - Full-DOM TextNode TreeWalker + Real-Time MutationObserver (0ms Instant Translation)
-   - Colon/Bracket-Tolerant Normalization + Multi-Segment Compound Translator
-   - Attribute & Option Translation (placeholder, title, aria-label, select <option>)
-   - Translates User Portal (incl. ERP Plant Profile Modal), Admin Portal,
-     Public QR/NFC Traceability Portal, and Report Export Portal
-   - Automatic Inline Currency Conversion (VNĐ / ₫ -> USD $ / CNY ¥)
-   ═══════════════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
 
@@ -222,9 +211,7 @@
     }
   };
 
-  // Exact Phrase Dictionary covering User Portal, ERP Modal (Hình 1), Public Portal (Hình 2), Admin Portal & Report
   const EXACT_PHRASE_MAP = {
-    // ── Core Navigation & Common Chrome ──
     'Hệ thống quản lý cây trồng': { en: 'Enterprise Crop Management ERP', zh: '数字化果园与作物管理系统' },
     'Chức năng': { en: 'Navigation', zh: '系统功能导航' },
     'Trang chủ': { en: 'Dashboard', zh: '首页看板' },
@@ -271,7 +258,6 @@
     'Tất cả vật tư': { en: 'All Supplies', zh: '全部农资' },
     'Tất cả cây trồng': { en: 'All Trees', zh: '全部果树' },
 
-    // ── Notification Center ──
     'Trung Tâm Thông Báo': { en: 'Notification Center', zh: '消息通知中心' },
     'Đã đọc hết': { en: 'Mark all read', zh: '全部标为已读' },
     'Chưa đọc': { en: 'Unread', zh: '未读' },
@@ -281,7 +267,6 @@
     'Còi Báo Động': { en: 'Alert Siren', zh: '警报铃声' },
     'Bật Thông Báo Đẩy Màn Hình': { en: 'Enable Push Notifications', zh: '开启桌面推送通知' },
 
-    // ── Hình 1: ERP Plant Profile Modal ──
     'Khỏe mạnh': { en: 'Healthy', zh: '健康良好' },
     'Cần chăm sóc': { en: 'Needs Attention', zh: '需关注护理' },
     'Cần chú ý': { en: 'Needs Attention', zh: '需重点关注' },
@@ -354,14 +339,12 @@
     'Hồ sơ nông hộ ERP nội bộ · Bảo toàn GPS 100%': { en: 'Internal Farmer ERP Dossier · 100% Locked GPS Integrity', zh: '内部庄园 ERP 档案 · 100% GPS 坐标完整性保护' },
     'Đóng hồ sơ': { en: 'Close Dossier', zh: '关闭档案' },
 
-    // ── Filter Bars (Hình 1 & Hình 2) ──
     'Hạng mục canh tác': { en: 'Cultivation Category', zh: '农事类别' },
     'Từ ngày': { en: 'From Date', zh: '开始日期' },
     'Đến ngày': { en: 'To Date', zh: '结束日期' },
     'Vật tư sử dụng': { en: 'Supply / Material', zh: '使用农资' },
     'Tìm kiếm từ khóa': { en: 'Keyword Search', zh: '关键词搜索' },
 
-    // ── Log Card Labels, Roles, Notes & Special Fields (Hình 1 & Hình 2) ──
     'Kiểm toán quả': { en: 'Fruit Audit', zh: '结果审计盘点' },
     'KIỂM TOÁN QUẢ': { en: 'FRUIT AUDIT', zh: '结果审计盘点' },
     'Tưới nước': { en: 'Irrigation', zh: '灌溉浇水' },
@@ -431,7 +414,6 @@
     'Tự động': { en: 'Automated', zh: '自动控制' },
     'Béc bù áp IoT': { en: 'IoT Pressure-Compensated Emitter', zh: 'IoT 压力补偿滴头' },
 
-    // ── Hình 2: Public Plant Traceability Portal (/plant.html) ──
     'Sổ Nông Số Hóa': { en: 'Digital Farm Book', zh: '数字化果园台账' },
     'Cổng Thông Tin Truy Xuất Nguồn Gốc Cây Trồng Chuẩn VietGAP / ERP': {
       en: 'GlobalG.A.P. & VietGAP Crop Traceability Portal',
@@ -527,7 +509,6 @@
       zh: '新宝西贡农业科技有限公司 – TBSG AGTECH'
     },
 
-    // ── Report Portal (/report.html) ──
     'Sổ Nông Tân Bảo Agtech — Báo cáo lịch trình canh tác': {
       en: 'Tan Bao AgTech Farm Book — Cultivation Schedule Report',
       zh: '新宝农业科技数字农事本 — 农事栽培历程报告'
@@ -549,7 +530,6 @@
       zh: '由新宝农业科技 (Tanbao AgTech) 数字化农业生态系统自动生成'
     },
 
-    // ── User & Admin Portal Key Views & Tables ──
     'Dashboard': { en: 'Dashboard', zh: '管理仪表盘' },
     'Tổng quan': { en: 'Overview', zh: '系统总览' },
     'Tổng quan & Vận hành': { en: 'Overview & Operations', zh: '总览与日常运维' },
@@ -602,7 +582,6 @@
     'Không gian GIS': { en: 'GIS Workspace', zh: 'GIS 空间工作台' }
   };
 
-  // Core agronomic glossary for fallback segment-by-segment cleanup when compound phrases are encountered
   const SEGMENT_GLOSSARY = {
     en: [
       ['Kiểm toán quả', 'Fruit Audit'],
@@ -683,7 +662,6 @@
     LOWER_PHRASE_MAP[k.toLowerCase()] = EXACT_PHRASE_MAP[k];
   });
 
-  // Helper: map Vietnamese fruit stage & irrigation methods cleanly
   const STAGE_MAP = {
     en: { 'Đậu quả': 'Fruit Set', 'Quả non': 'Young Fruit', 'Quả chín': 'Ripe Fruit', 'Đậu trái': 'Fruit Set' },
     zh: { 'Đậu quả': '坐果期', 'Quả non': '幼果期', 'Quả chín': '成熟期', 'Đậu trái': '坐果期' }
@@ -693,7 +671,6 @@
     return (STAGE_MAP[lang] && STAGE_MAP[lang][stage]) ? STAGE_MAP[lang][stage] : stage;
   }
 
-  // Dynamic Pattern Replacers for structured sentences, counts, ages, logs & Fruit Audit comparisons
   const DYNAMIC_PATTERNS = {
     en: [
       [/^Hồ Sơ Cây Trồng\s*#\s*(.+)$/i, 'Tree Dossier #$1'],
@@ -919,7 +896,6 @@
     return sign + Math.round(absVnd).toLocaleString('vi-VN') + ' ₫';
   }
 
-  // Convert inline Vietnamese currency strings like "3.407.600 VNĐ" or "-3.407.600 VNĐ" or "0 VNĐ"
   function convertInlineVndString(str) {
     if (!str || currentCurrency === 'VND') return str;
     return String(str).replace(/([+-]?\s*\d[\d.]*)\s*(?:VNĐ|VND|₫|\bđ)\b/g, function (match, numPart) {
@@ -941,7 +917,6 @@
       return LOWER_PHRASE_MAP[lowerKey][lang];
     }
 
-    // Punctuation-tolerant core lookup (handles trailing ':' or leading '· ' or '[...]')
     const bulletColon = trimmed.match(/^([·•]\s*)?(.+?)(\s*:)?$/);
     if (bulletColon) {
       const lead = bulletColon[1] || '';
@@ -962,7 +937,6 @@
       if (innerMapped !== inner) return `[${innerMapped}]`;
     }
 
-    // Regex pattern rules
     let candidate = trimmed;
     const rules = DYNAMIC_PATTERNS[lang] || [];
     for (let i = 0; i < rules.length; i++) {
@@ -981,21 +955,18 @@
     let translated = trimmed;
 
     if (lang !== 'vi') {
-      // 1. Direct / punctuation-tolerant / regex match on full trimmed string
       translated = _lookupSingleChunk(trimmed, lang);
 
-      // 2. Compound segment decomposition for ' · ' / ' • ' / ' | ' separated lines
       if (translated === trimmed || hasVietnameseDiacritics(translated)) {
         const parts = translated.split(/(\s*(?:·|•|\|)\s*)/);
         if (parts.length > 1) {
           translated = parts.map((seg, idx) => {
-            if (idx % 2 === 1) return seg; // separator
+            if (idx % 2 === 1) return seg;
             return _lookupSingleChunk(seg.trim(), lang);
           }).join('');
         }
       }
 
-      // 3. Final safe glossary pass if Vietnamese terms remain embedded in dynamic strings
       if (hasVietnameseDiacritics(translated)) {
         const glossary = SEGMENT_GLOSSARY[lang] || [];
         for (let i = 0; i < glossary.length; i++) {
@@ -1007,7 +978,6 @@
       }
     }
 
-    // 4. Inline currency conversion when currency !== VND
     if (currentCurrency !== 'VND' && /(?:VNĐ|VND|₫|\d+\s*đ\b)/.test(translated)) {
       translated = convertInlineVndString(translated);
     }
@@ -1061,7 +1031,6 @@
       textNode._lastApplied = nextVal;
     }
 
-    // Translate <option> elements (display text only, preserving option.value for filters)
     document.querySelectorAll('select option').forEach(opt => {
       if (opt._origViText === undefined || opt.textContent !== opt._lastAppliedText) {
         opt._origViText = opt.textContent;
@@ -1075,7 +1044,6 @@
       opt._lastAppliedText = nextOptText;
     });
 
-    // Translate placeholders across input & textarea
     document.querySelectorAll('input[placeholder], textarea[placeholder]').forEach(inp => {
       const curPh = inp.getAttribute('placeholder') || '';
       if (inp._origPhVi === undefined || curPh !== inp._lastAppliedPh) {
@@ -1099,7 +1067,6 @@
       inp._lastAppliedPh = nextPh;
     });
 
-    // Translate [title] tooltips (excluding language/currency buttons)
     document.querySelectorAll('[title]').forEach(el => {
       if (el.hasAttribute('data-lang-btn') || el.hasAttribute('data-currency-btn')) return;
       const curTitle = el.getAttribute('title') || '';
@@ -1123,7 +1090,6 @@
         document.documentElement.setAttribute('lang', currentLang);
       }
 
-      // 1. Update all elements with [data-i18n]
       const nodes = document.querySelectorAll('[data-i18n]');
       nodes.forEach(el => {
         if (!el._origViI18n) el._origViI18n = el.textContent;
@@ -1136,7 +1102,6 @@
         }
       });
 
-      // 2. Update active state on language switcher buttons
       const langBtns = document.querySelectorAll('[data-lang-btn]');
       langBtns.forEach(btn => {
         const code = btn.getAttribute('data-lang-btn');
@@ -1147,7 +1112,6 @@
         btn.style.fontWeight = isActive ? '800' : '700';
       });
 
-      // 3. Update active state on currency switcher buttons
       const currBtns = document.querySelectorAll('[data-currency-btn]');
       currBtns.forEach(btn => {
         const code = btn.getAttribute('data-currency-btn');
@@ -1158,7 +1122,6 @@
         btn.style.fontWeight = isActive ? '800' : '700';
       });
 
-      // 4. Full-DOM TextNode, Option, Attribute & Currency Translation across all pages
       translateAllDomTextNodes();
     } finally {
       isApplyingDom = false;
@@ -1210,7 +1173,6 @@
     } catch (_) {}
   }
 
-  // Real-time debounced MutationObserver so dynamically rendered modals/timelines/tables auto-translate
   let mutationTimer = null;
   function setupMutationObserver() {
     if (!document.body || typeof MutationObserver === 'undefined') return;

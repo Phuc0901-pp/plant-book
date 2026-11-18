@@ -1,25 +1,9 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/* ═══════════════════════════════════════════════════════════════
-   Plant Book – User Portal
-   modules/reminders.js — Care reminders, disease alerts, quick care
-   ═══════════════════════════════════════════════════════════════ */
-
 import { api }                from '../core/api.js';
 import { esc, toast, todayString } from '../core/utils.js';
 import { getPlantsCache }     from './plants.js';
 import { getLogsCache }       from './logs.js';
 import { buildMediaThumbnailsHtml } from './media.js';
 
-// ── Render ────────────────────────────────────────────────────
-
-/**
- * Xây dựng và hiển thị khung nhắc nhở:
- *   1. Cảnh báo đỏ cho cây bệnh (kèm tên bệnh, mức độ, ảnh/video)
- *   2. Thông báo cây chưa tưới hôm nay
- *   3. Thông báo cây chưa bón phân quá 7 ngày
- *
- * @param {Array} plants — danh sách cây trồng từ API
- */
 export function renderUserReminders(plants) {
   const container = document.getElementById('reminder-container');
   const countEl   = document.getElementById('reminder-count');
@@ -41,8 +25,6 @@ export function renderUserReminders(plants) {
   let reminderCount = 0;
   let html          = '';
 
-  // ── 1. Cảnh báo Cây Bệnh ────────────────────────────────────
-  // Lấy danh sách cây có health_status = 'Bệnh' hoặc có nhật ký bệnh cây gần nhất
   const sickPlantIds = new Set();
   plants.forEach(p => {
     if (p.health_status === 'Bệnh') sickPlantIds.add(p.id);
@@ -78,7 +60,6 @@ export function renderUserReminders(plants) {
     });
   }
 
-  // ── 2. Tưới nước ────────────────────────────────────────────
   if (unwatered.length > 0) {
     reminderCount++;
     const isAll     = unwatered.length === plants.length;
@@ -93,7 +74,6 @@ export function renderUserReminders(plants) {
       </div>`;
   }
 
-  // ── 3. Bón phân ─────────────────────────────────────────────
   if (unfertilized.length > 0) {
     reminderCount++;
     const isAll     = unfertilized.length === plants.length;
@@ -117,12 +97,6 @@ export function renderUserReminders(plants) {
   }
 }
 
-// ── Quick Care ─────────────────────────────────────────────────
-
-/**
- * Ghi nhanh nhật ký tưới nước cho toàn bộ cây chưa tưới hôm nay.
- * @param {string} logType — 'Tưới nước'
- */
 export async function quickCareAll(logType) {
   if (!confirm('Bạn có chắc chắn muốn ghi nhận ĐÃ TƯỚI NƯỚC nhanh cho tất cả cây chưa tưới?')) return;
 
@@ -149,13 +123,7 @@ export async function quickCareAll(logType) {
   }
 }
 
-/**
- * Ghi nhanh nhật ký chăm sóc cho một cây đơn lẻ với thông tin mặc định.
- * @param {number} plantId
- * @param {string} logType — 'Tưới nước' | 'Bón phân'
- */
 export async function quickCare(plantId, logType) {
-  // Lấy config từ window để tránh circular import
   const configs = window._allConfigsCache || {};
   let details   = {};
 

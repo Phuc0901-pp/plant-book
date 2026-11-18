@@ -1,10 +1,6 @@
--- Migration: 013_be_mam_agent_encyclopedia_seed.sql
--- Description: ISO/IEC 42001 Agronomic Encyclopedia & Few-Shot Q&A Seed for Be Mam Hybrid Autonomous Agent v2.0
-
 -- +migrate Up
 DO $$
 BEGIN
-  -- 1. Seed Encyclopedia Knowledge Articles (Idempotent by Title)
   INSERT INTO ai_knowledge_articles (category, title, topic_keywords, content, priority, is_active)
   SELECT 'Kỹ thuật Canh tác',
          'Quy Trình Làm Bông, Rước Mắt Cua, Sổ Nhụy & Chống Rụng Trái Non Sầu Riêng',
@@ -57,7 +53,6 @@ BEGIN
     SELECT 1 FROM ai_knowledge_articles WHERE title = 'Cẩm Nang Định Danh NFC (/sub), Ghi Nhật Ký Thuê Nhân Công & Truy Xuất VietGAP'
   );
 
-  -- 2. Seed Additional Practical Q&A Pairs
   INSERT INTO ai_training_qa (category, sample_questions, expected_answer, keywords, is_active)
   SELECT 'Kỹ thuật Canh tác',
          'sầu riêng bị sượng cơm cháy múi làm sao khắc phục

@@ -1,6 +1,5 @@
       <div class="page-section" id="page-myplants">
-        
-        <!-- ── 1. MASTER HUB: CHỌN TRANG TRẠI (TRANG CHÍNH) ── -->
+
         <div id="farm-master-view">
           <div class="royal-page-header">
             <div style="position:relative; z-index:1;">
@@ -21,15 +20,11 @@
             </div>
           </div>
 
-          <!-- Khối Trang trại sở hữu & Khối Tạo mới -->
           <div id="user-farms-grid" class="user-farms-grid-container">
-            <!-- Rendered dynamically by JS -->
           </div>
         </div>
 
-        <!-- ── 2. DETAIL VIEW: BẢN ĐỒ & CHI TIẾT TRANG TRẠI ĐÃ CHỌN (TRANG ẨN) ── -->
         <div id="farm-detail-view" style="display:none;">
-          <!-- Sub-header bar with Back Button (Executive Royal AgTech) -->
           <div class="royal-page-header farm-detail-header-card">
             <div class="farm-detail-header-top">
               <button onclick="closeFarmDetailView()" class="royal-pill-btn farm-btn-back">
@@ -72,7 +67,6 @@
             </div>
           </div>
 
-          <!-- ── Farmer NFC Status & Quick Action Strip ── -->
           <div id="farmer-nfc-stats-strip" class="farmer-nfc-card">
             <div class="farmer-nfc-header-row">
               <div class="farmer-nfc-title">
@@ -82,7 +76,7 @@
                  Tổng nắm giữ: <strong id="farmer-nfc-total" style="font-size:13.5px; color:#047857;">0</strong> thẻ
               </div>
             </div>
-            
+
             <div class="farmer-nfc-badges-grid">
               <div class="badge-nfc-pill badge-nfc-assigned">
                  Đã kết nối cây: <strong id="farmer-nfc-assigned" style="font-size:13.5px; color:#0284c7;">0</strong> thẻ
@@ -102,7 +96,6 @@
             </div>
           </div>
 
-          <!-- ── SUB-TAB NAVIGATION BAR (Bản đồ & Cây trồng vs Thiết bị IoT & Thời tiết DEMO) ── -->
           <div class="farm-subtabs-nav" style="display:flex; gap:12px; margin-bottom:20px; border-bottom:2px solid #e2e8f0; padding-bottom:2px; flex-wrap:wrap;">
             <button id="farm-subtab-btn-map" class="farm-subtab-btn active" onclick="switchFarmSubtab('map')" style="padding:10px 20px; border:none; background:transparent; border-bottom:3px solid #059669; font-weight:800; color:#059669; font-size:14px; cursor:pointer; display:inline-flex; align-items:center; gap:8px;">
               <i data-lucide="map" class="lucide-sm"></i> Bản đồ & Cây trồng
@@ -112,9 +105,7 @@
             </button>
           </div>
 
-          <!-- TAB PANE 1: MAP & PLANT TABLE -->
           <div id="farm-subtab-pane-map">
-            <!-- Banner Khởi tạo Trang trại bằng GPS nếu chưa có trang trại -->
             <div id="no-farm-notice" style="display:none; background:#ffffff; border:2px dashed #059669; border-radius:16px; padding:24px; text-align:center; margin-bottom:24px; box-shadow:0 10px 30px rgba(5,150,105,0.08);">
               <div style="width:60px; height:60px; border-radius:50%; background:#ecfdf5; color:#059669; font-size:28px; display:inline-flex; align-items:center; justify-content:center; margin-bottom:12px; box-shadow:0 4px 12px rgba(5,150,105,0.2);">
                 <i data-lucide="crosshair" class="lucide-sm"></i>
@@ -130,12 +121,10 @@
               </div>
             </div>
 
-            <!-- Bản đồ Trang trại -->
             <div class="card" style="margin-bottom: 24px;">
               <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                   <h3 style="margin: 0;"><i data-lucide="map" class="lucide-sm" style="color:var(--green)"></i> Bản đồ Vệ tinh &amp; Ranh giới đất</h3>
-                  <!-- Satellite Switcher Controls (Google Satellite & Mapbox) -->
                   <div class="gis-satellite-switcher" style="display: inline-flex; gap: 4px; background: rgba(15,23,42,0.88); backdrop-filter: blur(8px); padding: 3px 6px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
                     <button type="button" class="sat-switch-btn active" id="btn-user-sat-google" onclick="switchUserSatelliteSource('google')" title="Ảnh vệ tinh Google Satellite thực tế, độ nét cao (Mặc định)">
                       <i data-lucide="satellite" class="lucide-xs" style="color: #60a5fa;"></i> Google Satellite
@@ -154,7 +143,6 @@
               </div>
             </div>
 
-            <!-- Danh sách Cây trồng Đầy đủ -->
             <div class="card">
               <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                 <h3><i data-lucide="sprout" class="lucide-sm" style="color:var(--green)"></i> Danh sách Cây trồng trong trang trại</h3>
@@ -168,7 +156,6 @@
                   <span style="font-size:11px; color:var(--gray-400)">Tổng số: <strong id="user-plant-count-full">0</strong> cây</span>
                 </div>
               </div>
-              <!-- Thanh tìm kiếm danh sách cây trồng & Bộ lọc Phân đoạn Lô cây -->
               <div class="search-bar" style="display:flex; gap:10px; margin-bottom: 8px; padding: 12px 16px 0; flex-wrap:wrap;">
                 <input type="text" id="user-plant-search" placeholder=" Tìm theo mã cây, giống, loại, vị trí..." oninput="filterUserPlants()" style="flex:2; min-width:160px; padding:8px 12px; border:1px solid var(--gray-200); border-radius:8px; font-size:13px; outline:none; background:#fff;">
                 <select id="user-plant-filter-farm" onchange="filterUserPlants()" style="flex:1; min-width:140px; padding:8px 12px; border:1px solid var(--gray-200); border-radius:8px; font-size:13px; background:#fff; outline:none; cursor:pointer;">
@@ -179,7 +166,6 @@
                 </button>
               </div>
 
-              <!-- ── Pill Filter Lọc Nhanh Phân Đoạn Lô Cây (0-20, 20-40, 40-60, 60-80) ── -->
               <div id="plant-range-pill-filter" style="display:flex; gap:6px; padding:6px 16px 10px; overflow-x:auto; align-items:center; flex-wrap:nowrap; -webkit-overflow-scrolling:touch;">
                 <span style="font-size:11px; font-weight:800; color:#047857; text-transform:uppercase; letter-spacing:0.4px; white-space:nowrap; margin-right:4px;">
                   <i data-lucide="layers" class="lucide-sm"></i> Lô Cây:
@@ -221,21 +207,17 @@
                   </tbody>
                 </table>
               </div>
-              <!-- Thanh phân trang 10 bản ghi / trang -->
               <div id="user-plants-pagination" style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; border-top:1px solid var(--gray-100); flex-wrap:wrap; gap:10px; background:#ffffff;">
                 <div id="user-plants-pagination-info" style="font-size:12.5px; color:#64748b; font-weight:600;">
                   Hiển thị 0 cây
                 </div>
                 <div id="user-plants-pagination-btns" style="display:flex; gap:6px; align-items:center;">
-                  <!-- Dynamic pagination buttons -->
                 </div>
               </div>
             </div>
-          </div><!-- end farm-subtab-pane-map -->
+          </div>
 
-          <!-- TAB PANE 2: DEMO IOT SENSORS & 6-DAY WEATHER FORECAST -->
           <div id="farm-subtab-pane-iot" style="display:none;">
-            <!-- Header Banner -->
             <div style="background:linear-gradient(135deg, #0f172a, #1e293b); color:#ffffff; border-radius:16px; padding:20px 24px; margin-bottom:20px; box-shadow:0 8px 24px rgba(15,23,42,0.15); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
               <div>
                 <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
@@ -254,10 +236,8 @@
               </button>
             </div>
 
-            <!-- SECTION 1: 3 MÔI TRƯỜNG CẢM BIẾN (KHÔNG KHÍ, ĐẤT ĐA TẦNG, NƯỚC) -->
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px; margin-bottom:24px;">
 
-              <!-- CARD 1: MÔI TRƯỜNG KHÔNG KHÍ -->
               <div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; padding:20px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid #f1f5f9;">
                   <h4 style="margin:0; font-size:15px; font-weight:800; color:#0369a1; display:flex; align-items:center; gap:8px;">
@@ -305,7 +285,6 @@
                 </div>
               </div>
 
-              <!-- CARD 2: MÔI TRƯỜNG ĐẤT ĐA TẦNG (10cm, 20cm, 30cm) -->
               <div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; padding:20px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid #f1f5f9; flex-wrap:wrap; gap:8px;">
                   <h4 style="margin:0; font-size:15px; font-weight:800; color:#b45309; display:flex; align-items:center; gap:8px;">
@@ -314,7 +293,6 @@
                   <span class="badge" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a; font-size:10.5px; font-weight:800;">Multilayer 7-in-1</span>
                 </div>
 
-                <!-- Depth selector tabs -->
                 <div style="display:flex; gap:6px; margin-bottom:12px;">
                   <button id="soil-depth-btn-10cm" onclick="selectSoilDepth('10cm')" style="flex:1; padding:6px 10px; border:1px solid #fde68a; background:#fff; color:#854d0e; font-size:11.5px; font-weight:700; border-radius:8px; cursor:pointer;">
                     Tầng 10 cm
@@ -366,7 +344,6 @@
                 </div>
               </div>
 
-              <!-- CARD 3: MÔI TRƯỜNG NƯỚC TƯỚI -->
               <div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; padding:20px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid #f1f5f9;">
                   <h4 style="margin:0; font-size:15px; font-weight:800; color:#047857; display:flex; align-items:center; gap:8px;">
@@ -404,7 +381,6 @@
 
             </div>
 
-            <!-- SECTION 2: DỰ BÁO THỜI TIẾT 7 NGÀY & 24 KHUNG GIỜ CHI TIẾT (OPEN-METEO LIVE) -->
             <div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; padding:20px; box-shadow:0 4px 16px rgba(0,0,0,0.03); display:flex; flex-direction:column; gap:16px;">
               <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:12px; border-bottom:1px solid #f1f5f9; flex-wrap:wrap; gap:10px;">
                 <div>
@@ -418,12 +394,9 @@
                 </span>
               </div>
 
-              <!-- 7 Days Weather Grid Cards (4 on top, 3 on bottom) -->
               <div id="iot-weather-forecast-grid" class="weather-forecast-grid-4-3">
-                <!-- JS dynamic render 7 days weather -->
               </div>
 
-              <!-- 24-HOUR HOURLY SECTION FOR USER PORTAL -->
               <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; padding:16px; margin-top:4px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
                   <div>
@@ -432,13 +405,10 @@
                     </h4>
                     <span id="user-iot-hourly-title" style="font-size:11.5px; color:#64748b; font-weight:600;">Dự báo liên tục từ giờ kế tiếp</span>
                   </div>
-                  <!-- Day filter pills for User Portal -->
                   <div id="user-iot-hourly-day-pills" style="display:flex; gap:6px; overflow-x:auto; max-width:100%; padding-bottom:2px;" class="scroll-pills">
-                    <!-- Dynamic rendered pills -->
                   </div>
                 </div>
 
-                <!-- Scrollable 24-Hour Cards Track -->
                 <div id="user-iot-24h-hourly-track" style="display:flex; gap:10px; overflow-x:auto; padding:4px 2px 10px; scroll-behavior:smooth;">
                   <div style="padding:16px; text-align:center; color:#64748b; font-size:12px; width:100%;">
                     <i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải 24 khung giờ dự báo...
@@ -447,10 +417,7 @@
               </div>
 
             </div>
-          </div><!-- end farm-subtab-pane-iot -->
-        </div><!-- end farm-detail-view -->
+          </div>
+        </div>
 
       </div>
-
-
-      <!-- ── LỊCH SỬ (Toàn bộ hoạt động canh tác) ── -->

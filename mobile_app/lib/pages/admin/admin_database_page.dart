@@ -93,7 +93,6 @@ class _AdminDatabasePageState extends State<AdminDatabasePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Redis Cache Card
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(

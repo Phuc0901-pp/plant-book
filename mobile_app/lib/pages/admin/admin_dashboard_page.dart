@@ -198,17 +198,14 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // 1. Role Transition Banner & Farm Context Switcher
                     _buildRoleTransitionBanner(),
                     const SizedBox(height: 16),
 
-                    // 2. Operational Value Chain Flowchart (Chuỗi quy trình 5 bước)
                     _buildSectionHeader('QUY TRÌNH VẬN HÀNH CHUỖI GIÁ TRỊ', 'Sơ đồ luồng 5 bước khép kín từ Nông trại đến Xuất khẩu'),
                     const SizedBox(height: 10),
                     _buildValueChainFlowchart(),
                     const SizedBox(height: 20),
 
-                    // 3. Core KPIs Dashboard (Microsoft Fluent Metrics)
                     _buildSectionHeader('TỔNG QUAN HỆ THỐNG AGTECH', 'Chỉ số cốt lõi và trạng thái vận hành thời gian thực'),
                     const SizedBox(height: 10),
                     _buildCoreKpiRow(),
@@ -216,19 +213,16 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                     _buildSecondaryKpiRow(),
                     const SizedBox(height: 20),
 
-                    // 4. Crop Breakdown Section
                     _buildSectionHeader('CƠ CẤU & PHÂN BỔ LOẠI CÂY TRỒNG', 'Chạm vào loại cây để lọc danh mục quản lý chuyên sâu'),
                     const SizedBox(height: 10),
                     _buildCropBreakdownSection(),
                     const SizedBox(height: 20),
 
-                    // 5. 2-Column Microsoft Fluent Admin Grid
                     _buildSectionHeader('DANH MỤC ĐIỀU HÀNH TẬP TRUNG', 'Trung tâm chỉ huy & quản trị 9 phân hệ chức năng'),
                     const SizedBox(height: 12),
                     _buildFluentAdminGrid(),
                     const SizedBox(height: 24),
 
-                    // 6. Footer Branding
                     _buildFooter(),
                     const SizedBox(height: 16),
                   ],
@@ -405,7 +399,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
-  // --- Interactive 5-Stage Value Chain Operational Process Flowchart ---
   Widget _buildValueChainFlowchart() {
     final steps = [
       {
@@ -577,7 +570,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   Widget _buildCoreKpiRow() {
     return Row(
       children: [
-        // KPI 1: Chủng loại cây
         Expanded(
           child: _buildFluentMetricCard(
             title: 'Chủng loại cây',
@@ -593,7 +585,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           ),
         ),
         const SizedBox(width: 8),
-        // KPI 2: Trang trại
         Expanded(
           child: _buildFluentMetricCard(
             title: 'Trang trại GIS',
@@ -609,7 +600,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           ),
         ),
         const SizedBox(width: 8),
-        // KPI 3: Nông hộ
         Expanded(
           child: _buildFluentMetricCard(
             title: 'Nông hộ',
@@ -895,7 +885,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
-  // --- 2-Column Microsoft Fluent Admin Grid ---
   Widget _buildFluentAdminGrid() {
     final modules = [
       {
@@ -1102,4 +1091,3 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 }
-

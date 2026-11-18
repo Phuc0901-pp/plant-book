@@ -1,25 +1,9 @@
 -- +migrate Up
--- ============================================================================
--- Migration: 009_enterprise_iso_hardening.sql
--- Purpose:   Enterprise Security (RLS & RESTRICT), Cryptographic Integrity
---            (SHA-256 Hash-Chain, NFC Anti-Replay, Append-Only Audit),
---            ISO Compliance (ISO 6709, ISO 4217, ISO/IEC 15459 W3C DID, ISO 8601),
---            and Query Performance (35 FK Covering Indexes, Deduplication).
--- Scope:     100% Non-Breaking Change (Excludes Standard 4 Multi-Tier Sync).
--- Idempotent: Yes (Safe to re-run).
--- ============================================================================
 
--- Ensure pgcrypto is available in extensions schema
 CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
 
--- ============================================================================
--- MODULE 1 (EPIC SEC): SECURITY, RLS POLICIES & REFERENTIAL INTEGRITY
--- ============================================================================
-
--- DB-SEC-01: Revoke public/anon/authenticated execution on SECURITY DEFINER DDL trigger fn
 REVOKE ALL ON FUNCTION public.rls_auto_enable() FROM PUBLIC, anon, authenticated;
 
--- Helper: Map Supabase Auth JWT email -> public.users.id (integer) safely
 CREATE OR REPLACE FUNCTION public.current_app_user_id()
 RETURNS integer
 LANGUAGE sql
@@ -36,8 +20,6 @@ $$;
 REVOKE ALL ON FUNCTION public.current_app_user_id() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.current_app_user_id() TO authenticated, service_role;
 
--- DB-SEC-02: Enterprise RLS Policies across all 29 tables in public
--- 1) Service role full access on all 29 tables (ensures Node.js Backend & Sync never break)
 DO $$
 DECLARE
   v_table text;
@@ -62,7 +44,6 @@ BEGIN
   END LOOP;
 END $$;
 
--- 2) Public QR/NFC Traceability Read-Only Policies (anon + authenticated)
 DROP POLICY IF EXISTS public_qr_read_plants ON public.plants;
 CREATE POLICY public_qr_read_plants ON public.plants
   FOR SELECT TO anon, authenticated
@@ -88,7 +69,6 @@ CREATE POLICY public_read_app_versions ON public.app_versions
   FOR SELECT TO anon, authenticated
   USING (COALESCE(is_active, false) = true);
 
--- 3) Authenticated Multi-Tenant Ownership Policies for business tables
 DROP POLICY IF EXISTS auth_own_users ON public.users;
 CREATE POLICY auth_own_users ON public.users
   FOR SELECT TO authenticated
@@ -206,7 +186,6 @@ CREATE POLICY auth_read_system_configs ON public.system_configs
   FOR SELECT TO authenticated
   USING (true);
 
--- DB-SEC-03: Convert 5 critical historical/financial FKs from CASCADE -> RESTRICT
 ALTER TABLE public.plant_logs DROP CONSTRAINT IF EXISTS plant_logs_plant_id_fkey;
 ALTER TABLE public.plant_logs
   ADD CONSTRAINT plant_logs_plant_id_fkey
@@ -232,7 +211,6 @@ ALTER TABLE public.nfc_security_audit_logs
   ADD CONSTRAINT nfc_security_audit_logs_farm_id_fkey
   FOREIGN KEY (farm_id) REFERENCES public.farms(id) ON DELETE RESTRICT;
 
--- DB-SEC-04: Cryptographic helpers for NFC Lock Passwords (pgcrypto bcrypt)
 CREATE OR REPLACE FUNCTION public.hash_nfc_lock_password(p_raw_password text)
 RETURNS text
 LANGUAGE sql
@@ -258,12 +236,6 @@ REVOKE ALL ON FUNCTION public.verify_nfc_lock_password(text, text) FROM PUBLIC, 
 GRANT EXECUTE ON FUNCTION public.hash_nfc_lock_password(text) TO service_role;
 GRANT EXECUTE ON FUNCTION public.verify_nfc_lock_password(text, text) TO authenticated, service_role;
 
-
--- ============================================================================
--- MODULE 2 (EPIC AUTH): CRYPTOGRAPHIC AUTHENTICITY & IMMUTABILITY
--- ============================================================================
-
--- DB-AUTH-01: SHA-256 Hash-Chain Enforcement Trigger on plant_logs
 CREATE OR REPLACE FUNCTION public.trg_fn_plant_logs_hash_chain()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -314,7 +286,6 @@ CREATE TRIGGER trg_plant_logs_hash_chain
   FOR EACH ROW
   EXECUTE FUNCTION public.trg_fn_plant_logs_hash_chain();
 
--- DB-AUTH-02: Backfill SHA-256 Hash-Chain for all legacy NULL rows in plant_logs
 DO $$
 DECLARE
   r RECORD;
@@ -361,7 +332,6 @@ BEGIN
   END LOOP;
 END $$;
 
--- DB-AUTH-03: NFC Anti-Replay Counter Trigger & Initial CHUID/HMAC Backfill
 CREATE OR REPLACE FUNCTION public.trg_fn_nfc_anti_replay()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -408,7 +378,6 @@ SET
   )
 WHERE chuid_hash IS NULL OR hmac_signature IS NULL;
 
--- DB-AUTH-04: Append-Only Enforcement on Audit Tables
 CREATE OR REPLACE FUNCTION public.prevent_audit_mutation()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -438,13 +407,6 @@ CREATE TRIGGER trg_nfc_security_audit_logs_immutable
   FOR EACH ROW
   EXECUTE FUNCTION public.prevent_audit_mutation();
 
-
--- ============================================================================
--- MODULE 3 (EPIC ISO): INTERNATIONAL STANDARDS COMPLIANCE (ISO 6709, 4217, 15459, 8601)
--- ============================================================================
-
--- DB-ISO-01: ISO 6709 / ISO 19115 WGS84 Coordinate Validation
--- Step 1: Audit and sanitize the 14 out-of-range plant coordinates before adding CHECK
 INSERT INTO public.data_audit_logs (user_id, user_name, action_type, target_type, record_id, title, old_data, new_data, note)
 SELECT
   NULL,
@@ -481,7 +443,6 @@ ALTER TABLE public.farms DROP CONSTRAINT IF EXISTS chk_farms_wgs84_lng;
 ALTER TABLE public.farms
   ADD CONSTRAINT chk_farms_wgs84_lng CHECK (longitude IS NULL OR (longitude >= -180 AND longitude <= 180));
 
--- DB-ISO-02: ISO 4217 Currency Code & Non-Negative Financial/Quantity Constraints
 ALTER TABLE public.supplies ADD COLUMN IF NOT EXISTS currency_code char(3) NOT NULL DEFAULT 'VND';
 ALTER TABLE public.supply_usages ADD COLUMN IF NOT EXISTS currency_code char(3) NOT NULL DEFAULT 'VND';
 ALTER TABLE public.fixed_assets ADD COLUMN IF NOT EXISTS currency_code char(3) NOT NULL DEFAULT 'VND';
@@ -512,7 +473,6 @@ ALTER TABLE public.fixed_assets DROP CONSTRAINT IF EXISTS chk_fixed_assets_non_n
 ALTER TABLE public.fixed_assets ADD CONSTRAINT chk_fixed_assets_non_negative
   CHECK (cost >= 0 AND life > 0);
 
--- DB-ISO-03: ISO/IEC 15459 & W3C DID + ISO 8601 Dynamic Plant Age
 ALTER TABLE public.farms DROP CONSTRAINT IF EXISTS chk_farms_w3c_did;
 ALTER TABLE public.farms ADD CONSTRAINT chk_farms_w3c_did
   CHECK (global_did IS NULL OR global_did ~ '^did:[a-z0-9]+:');
@@ -567,12 +527,6 @@ AS $$
   END;
 $$;
 
-
--- ============================================================================
--- MODULE 4 (EPIC PERF): QUERY PERFORMANCE & INDEX OPTIMIZATION
--- ============================================================================
-
--- DB-PERF-01: Create 35 Covering Indexes for Unindexed Foreign Keys (Linter 0001)
 CREATE INDEX IF NOT EXISTS idx_ai_knowledge_articles_created_by ON public.ai_knowledge_articles (created_by);
 CREATE INDEX IF NOT EXISTS idx_ai_training_logs_admin_id ON public.ai_training_logs (admin_id);
 CREATE INDEX IF NOT EXISTS idx_ai_training_qa_created_by ON public.ai_training_qa (created_by);
@@ -609,7 +563,6 @@ CREATE INDEX IF NOT EXISTS idx_user_notifications_user_id ON public.user_notific
 CREATE INDEX IF NOT EXISTS idx_users_farm_id ON public.users (farm_id);
 CREATE INDEX IF NOT EXISTS idx_users_parent_user_id ON public.users (parent_user_id);
 
--- DB-PERF-02: Drop 3 Duplicate Indexes (Linter 0009)
 DROP INDEX IF EXISTS public.idx_farm_plots_unique;
 DROP INDEX IF EXISTS public.idx_nfc_tags_inventory_uid_uniq;
 DROP INDEX IF EXISTS public.idx_plants_gps;

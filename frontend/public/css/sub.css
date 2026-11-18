@@ -1,50 +1,44 @@
-/* ==========================================================================
-   Plant Book AgTech - Smart NFC Onboarding Gateway (/sub)
-   Theme: Microsoft ERP Enterprise Light Mode / Fluent AgTech Design System
-   ========================================================================== */
-
 :root {
-  /* Microsoft Fluent / Light Enterprise ERP Colors */
   --bg-canvas: #f8fafc;
   --bg-card: #ffffff;
   --bg-card-subtle: #f8fafc;
   --bg-card-hover: #ffffff;
-  
+
   --border-card: #e2e8f0;
   --border-card-hover: #cbd5e1;
   --border-focus: #059669;
-  
-  --text-primary: #0f172a;       /* Slate 900 - high contrast text */
-  --text-secondary: #334155;     /* Slate 700 - body text */
-  --text-muted: #64748b;         /* Slate 500 - captions */
+
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
   --text-inverse: #ffffff;
-  
-  --primary-emerald: #059669;    /* Emerald 600 - Microsoft Agri theme */
+
+  --primary-emerald: #059669;
   --primary-emerald-dark: #047857;
   --primary-emerald-light: #10b981;
-  --primary-emerald-bg: #ecfdf5; /* Emerald 50 */
+  --primary-emerald-bg: #ecfdf5;
   --primary-emerald-border: #a7f3d0;
-  
-  --accent-amber: #d97706;       /* Amber 600 */
+
+  --accent-amber: #d97706;
   --accent-amber-bg: #fef3c7;
   --accent-amber-border: #fde68a;
-  
-  --accent-blue: #0284c7;        /* Sky 600 */
+
+  --accent-blue: #0284c7;
   --accent-blue-bg: #e0f2fe;
-  
+
   --error-red: #dc2626;
   --error-bg: #fef2f2;
   --error-border: #fecaca;
-  
+
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 10px 28px -4px rgba(0, 0, 0, 0.05);
   --shadow-hover: 0 8px 24px -4px rgba(5, 150, 105, 0.15);
-  
+
   --radius-lg: 16px;
   --radius-md: 10px;
   --radius-sm: 6px;
   --radius-pill: 9999px;
-  
+
   --font-sans: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
@@ -69,12 +63,10 @@ body {
   overflow-x: hidden;
 }
 
-/* Lucide Icon Sizing Helpers */
 .lucide-xs { width: 15px; height: 15px; display: inline-block; vertical-align: -2px; }
 .lucide-sm { width: 17px; height: 17px; display: inline-block; vertical-align: -3px; }
 .lucide-md { width: 20px; height: 20px; display: inline-block; vertical-align: -4px; }
 
-/* Subtle Background Ambient Orbs */
 .bg-glow-orb {
   position: fixed;
   width: 420px;
@@ -88,7 +80,6 @@ body {
 .orb-1 { top: -100px; left: -100px; background: #dcfce7; }
 .orb-2 { bottom: -100px; right: -100px; background: #e0f2fe; }
 
-/* Main App Container */
 .app-container {
   width: 100%;
   max-width: 580px;
@@ -98,7 +89,6 @@ body {
   padding-bottom: 40px;
 }
 
-/* Header */
 .gateway-header {
   text-align: center;
   margin-top: 4px;
@@ -157,7 +147,6 @@ body {
   font-weight: 500;
 }
 
-/* Dual Navigation Hub Grid */
 .gateway-nav-links-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -254,7 +243,6 @@ body {
   color: var(--primary-emerald);
 }
 
-/* Enterprise Footer Card */
 .enterprise-footer-card {
   display: flex;
   align-items: center;
@@ -310,7 +298,6 @@ body {
   text-decoration: underline;
 }
 
-/* NFC Detection Pill */
 .nfc-badge-pill {
   display: inline-flex;
   align-items: center;
@@ -338,12 +325,11 @@ body {
   box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.25);
   animation: blink 2s infinite;
 }
-.pulse-dot.warning { 
-  background: var(--accent-amber); 
+.pulse-dot.warning {
+  background: var(--accent-amber);
   box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.25);
 }
 
-/* 4-Step Progress Wizard */
 .stepper-wizard {
   display: flex;
   align-items: center;
@@ -418,7 +404,6 @@ body {
   background: var(--primary-emerald);
 }
 
-/* Active Farm & User Summary Banner */
 .farm-summary-bar {
   display: flex;
   align-items: center;
@@ -488,7 +473,6 @@ body {
   border-color: #94a3b8;
 }
 
-/* Views / Steps Animation */
 .view-step {
   display: none;
   animation: fadeIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -497,7 +481,6 @@ body {
   display: block;
 }
 
-/* Enterprise Glassmorphism / Fluent Cards */
 .glass-card {
   background: #ffffff;
   border: 1px solid var(--border-card);
@@ -508,7 +491,6 @@ body {
   transition: all 0.25s ease;
 }
 
-/* Action Choice Cards */
 .option-card {
   display: flex;
   align-items: center;
@@ -577,7 +559,6 @@ body {
   color: var(--primary-emerald);
 }
 
-/* Forms & Inputs */
 .form-group {
   margin-bottom: 16px;
 }
@@ -624,7 +605,6 @@ body {
   gap: 12px;
 }
 
-/* Farm Setup Section in Register */
 .form-section-wrap {
   border-top: 1px dashed #cbd5e1;
   margin: 18px 0 16px 0;
@@ -645,7 +625,6 @@ body {
   color: var(--primary-emerald);
 }
 
-/* Clean ERP Farm GPS Box (Replaces old dark gray box) */
 .farm-gps-box {
   background: #f8fafc;
   border: 1px solid #cbd5e1;
@@ -683,7 +662,6 @@ body {
   line-height: 1.4;
 }
 
-/* Past Disease Chips Component */
 .past-diseases-container {
   background: #f8fafc;
   border: 1px solid var(--border-card);
@@ -742,7 +720,6 @@ body {
   font-weight: 700;
 }
 
-/* Photo Upload Box */
 .photo-upload-box {
   background: #f8fafc;
   border: 2px dashed #cbd5e1;
@@ -787,7 +764,6 @@ body {
   text-align: left;
 }
 
-/* Buttons */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -842,7 +818,6 @@ body {
   width: auto;
 }
 
-/* Navigation & Back buttons */
 .nav-header-row {
   display: flex;
   align-items: center;
@@ -879,7 +854,6 @@ body {
   border: 1px solid var(--primary-emerald-border);
 }
 
-/* High Precision GPS Box (Light Theme) */
 .gps-precision-card {
   background: #f8fafc;
   border: 1.5px solid #a7f3d0;
@@ -970,7 +944,6 @@ body {
   margin-top: 6px;
 }
 
-/* NFC Touch Phone Graphic */
 .nfc-touch-illustration {
   width: 140px;
   height: 140px;
@@ -989,7 +962,6 @@ body {
   color: var(--primary-emerald);
 }
 
-/* Tree Selector Grid */
 .tree-select-list {
   max-height: 220px;
   overflow-y: auto;
@@ -1011,7 +983,6 @@ body {
   background: var(--primary-emerald-bg);
 }
 
-/* Keyframe Animations */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
@@ -1030,7 +1001,6 @@ body {
   50% { transform: scale(1.06); filter: drop-shadow(0 0 12px rgba(5, 150, 105, 0.4)); }
 }
 
-/* Mobile Responsiveness */
 @media (max-width: 480px) {
   body { padding: 12px 10px; }
   .glass-card { padding: 18px; border-radius: 14px; }
@@ -1040,7 +1010,6 @@ body {
   .form-row { grid-template-columns: 1fr; }
 }
 
-/* ================= PASSPORT DECLARATION CARD & STRICT ALIGNMENT ================= */
 .passport-declaration-card {
   background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
   border: 1.5px solid #86efac;

@@ -1,28 +1,14 @@
-/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/* ═══════════════════════════════════════════════════════════════
-   Plant Book – User Portal
-   modules/map.js — Mapbox GIS map for farms & plants
-   ═══════════════════════════════════════════════════════════════ */
-
 import { API } from '../core/api.js';
 import { esc, sanitizeCoordinates, healthBadge, getCropImageSrc } from '../core/utils.js';
 
-/** Instance Mapbox map hiện tại */
 export let userMap = null;
 
-/** Danh sách marker cây trồng trên bản đồ */
 export let userMarkers = [];
 
-/** Cờ đánh dấu đã tải token Mapbox */
 let mapboxTokenFetched = false;
 
-/** Nguồn ảnh vệ tinh hiện tại (google mặc định / mapbox) */
 export let currentUserSatelliteSource = 'google';
 
-/**
- * Chuyển đổi linh hoạt giữa ảnh vệ tinh Google Satellite và Mapbox
- * @param {string} source - 'google' | 'mapbox'
- */
 export function switchUserSatelliteSource(source) {
   currentUserSatelliteSource = source;
 
@@ -51,7 +37,6 @@ export function switchUserSatelliteSource(source) {
 }
 window.switchUserSatelliteSource = switchUserSatelliteSource;
 
-// Helper cắt gọn mã cây trồng hiển thị trên icon marker bản đồ (VD: KH001-001 -> 1, KH001-058 -> 58)
 export function getShortTreeCode(treeCode, plantId) {
   const code = String(treeCode || plantId || '').trim();
   if (!code) return '';
@@ -64,10 +49,6 @@ export function getShortTreeCode(treeCode, plantId) {
 
 const DEFAULT_MAPBOX_TOKEN = typeof atob === 'function' ? atob('cGsuZXlKMUlqb2ljR2gxWTIxbGIyMWxieUlzSW1FaU9pSmpiWEYwT1RSNk9HTXdNbkk1TW5OelptZHVNekoxY210cUluMC5JWC1vWndJc1BVRXcxRzEwZVJfSnNR') : '';
 
-/**
- * Tải Mapbox access token từ server với cơ chế dự phòng an toàn (Failover).
- * Tự động chuyển sang fallback token nếu backend đang khởi động (Cold Start 502) hoặc offline.
- */
 export async function ensureUserMapboxToken() {
   if (mapboxTokenFetched && mapboxgl.accessToken) return;
   try {
@@ -87,17 +68,10 @@ export async function ensureUserMapboxToken() {
   mapboxTokenFetched = true;
 }
 
-/**
- * Khởi tạo bản đồ Mapbox cho cổng nông hộ.
- * Vẽ polygon trang trại và marker cây trồng.
- * @param {Array} farms   — danh sách trang trại
- * @param {Array} plants  — danh sách cây trồng (có latitude/longitude)
- */
 export function initUserMap(farms, plants) {
   const container = document.getElementById('user-map');
   if (!container) return;
 
-  // Huỷ map cũ nếu có
   if (userMap) {
     try { userMap.remove(); } catch (_) {}
     userMap = null;
@@ -120,25 +94,22 @@ export function initUserMap(farms, plants) {
   userMap = map;
   window.userMap = map;
 
-  // Suppress non-fatal Mapbox sprite/image/tile load errors in console
   map.on('error', (e) => {
     if (e && e.error) {
       const msg = String(e.error.message || e.error).toLowerCase();
       if (msg.includes('image') || msg.includes('send') || msg.includes('ajax') || msg.includes('sprite') || msg.includes('svg')) {
-        return; // Silently ignore non-fatal sprite or ajax image errors
+        return;
       }
       console.warn('Mapbox non-fatal:', e.error.message || e);
     }
   });
 
-  // Force resize trigger on window resize / screen rotate to prevent canvas layout clipping
   window.addEventListener('resize', () => {
     if (userMap) {
       try { userMap.resize(); } catch (_) {}
     }
   });
 
-  // Ẩn nhãn ở zoom thấp (chỉ hiện chấm tròn)
   map.on('zoom', () => {
     mapDiv.classList.toggle('low-zoom', map.getZoom() < 16.5);
   });
@@ -148,7 +119,6 @@ export function initUserMap(farms, plants) {
   map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
 
   map.on('load', () => {
-    // ── Khởi tạo nguồn ảnh vệ tinh Google Satellite (Độ nét cao & cập nhật thực tế) ──
     try {
       if (!map.getSource('google-satellite-src')) {
         map.addSource('google-satellite-src', {
@@ -178,7 +148,6 @@ export function initUserMap(farms, plants) {
     const bounds    = new mapboxgl.LngLatBounds();
     let   hasBounds = false;
 
-    // ── Vẽ Trang trại (Polygon) ──────────────────────────
     farms.forEach(farm => {
       const validCoords = sanitizeCoordinates(farm.polygon_coordinates);
       if (!validCoords || validCoords.length === 0) return;
@@ -187,7 +156,6 @@ export function initUserMap(farms, plants) {
       const layerId   = `user-farm-layer-${farm.id}`;
       const outlineId = `user-farm-outline-${farm.id}`;
 
-      // Đóng polygon nếu cần
       const poly = [...validCoords];
       if (poly.length > 0 && (poly[0][0] !== poly[poly.length - 1][0] || poly[0][1] !== poly[poly.length - 1][1])) {
         poly.push(poly[0]);
@@ -212,7 +180,6 @@ export function initUserMap(farms, plants) {
           paint: { 'line-color': '#10b981', 'line-width': 2 } });
       }
 
-      // Render Farm GPS Marker
       const ptLng = validCoords[0][0];
       const ptLat = validCoords[0][1];
       if (ptLng && ptLat) {
@@ -231,21 +198,15 @@ export function initUserMap(farms, plants) {
       }
     });
 
-    // ── Vẽ Cây trồng (Marker chấm tròn màu) ─────────────
     updateUserMapMarkers(plants, !hasBounds);
 
     if (hasBounds) {
       map.fitBounds(bounds, { padding: 40, maxZoom: 19.5, duration: 1000 });
     }
 
-    // ── Không hiển thị lớp đường đồng mức trên tài khoản User ──
-    // (Bản đồ tài khoản User giữ nguyên trải nghiệm mượt mà, tối giản)
   });
 }
 
-/**
- * Tạo nội dung HTML cho thẻ thông tin cây trồng trên bản đồ GIS
- */
 export function buildPlantPopupHtml(plant, lat, lng) {
   const pLat = parseFloat(lat) || 0;
   const pLng = parseFloat(lng) || 0;
@@ -304,21 +265,12 @@ export function buildPlantPopupHtml(plant, lat, lng) {
     </div>`;
 }
 
-/**
- * Cập nhật động toàn bộ marker cây trồng trên bản đồ GIS người dùng
- * Hỗ trợ Dual-Engine:
- * - < 250 cây: Render DOM Marker số cây trực quan
- * - >= 250 cây: Tự động kích hoạt GPU Vector Cluster Layer (chuẩn Mapbox GL WebGL 60fps)
- * @param {Array} plants — Danh sách cây trồng
- * @param {boolean} flyToBounds — Có tự động fit/fly tới các marker hay không
- */
 export function updateUserMapMarkers(plants, flyToBounds = false) {
   const targetMap = userMap || window.userMap;
   if (!targetMap) return;
 
   const targetPlants = Array.isArray(plants) ? plants : (window._allPlantsCache || []);
 
-  // Xóa toàn bộ marker DOM cũ
   if (Array.isArray(userMarkers)) {
     userMarkers.forEach(m => {
       try { if (m && m.marker) m.marker.remove(); } catch (_) {}
@@ -336,7 +288,6 @@ export function updateUserMapMarkers(plants, flyToBounds = false) {
     let lng = parseFloat(plant.longitude);
     if (isNaN(lat) || isNaN(lng)) return;
 
-    // Chuẩn hóa hoán đổi tọa độ nếu bị đảo ngược
     if (lat > 50 && lng < 50) { const tmp = lat; lat = lng; lng = tmp; }
     if ((lat < -90 || lat > 90) && (lng >= -90 && lng <= 90)) { const tmp = lat; lat = lng; lng = tmp; }
     if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
@@ -351,7 +302,6 @@ export function updateUserMapMarkers(plants, flyToBounds = false) {
   const countLayerId = 'user-plants-gpu-cluster-count';
   const unclusteredLayerId = 'user-plants-gpu-unclustered';
 
-  // ── CHẾ ĐỘ 1: DỮ LIỆU LỚN (>= 250 CÂY) -> GPU CLUSTER VECTOR LAYER (60 FPS) ──
   if (validPlants.length >= 250) {
     const geojsonData = {
       type: 'FeatureCollection',
@@ -453,7 +403,6 @@ export function updateUserMapMarkers(plants, flyToBounds = false) {
         }
       });
 
-      // Zoom mượt khi click vào cụm cây (Cluster)
       targetMap.on('click', clusterLayerId, (e) => {
         const features = targetMap.queryRenderedFeatures(e.point, { layers: [clusterLayerId] });
         if (!features.length) return;
@@ -468,7 +417,6 @@ export function updateUserMapMarkers(plants, flyToBounds = false) {
         });
       });
 
-      // Mở Popup khi click vào từng cây đơn lẻ
       targetMap.on('click', unclusteredLayerId, (e) => {
         if (!e.features || !e.features.length) return;
         const f = e.features[0];
@@ -495,7 +443,6 @@ export function updateUserMapMarkers(plants, flyToBounds = false) {
       targetMap.on('mouseleave', unclusteredLayerId, () => { targetMap.getCanvas().style.cursor = ''; });
     }
   } else {
-    // ── CHẾ ĐỘ 2: DỮ LIỆU GỌN (< 250 CÂY) -> RENDER DOM MARKER CÓ SỐ THỨ TỰ ──
     if (targetMap.getSource(srcId)) {
       targetMap.getSource(srcId).setData({ type: 'FeatureCollection', features: [] });
     }
@@ -561,17 +508,11 @@ export function updateUserMapMarkers(plants, flyToBounds = false) {
 window.updateUserMapMarkers = updateUserMapMarkers;
 window.renderUserMapMarkers = updateUserMapMarkers;
 
-/**
- * Điều hướng người dùng sang xem Hồ sơ cây trồng nội bộ (không thay đổi hoặc ghi đè GPS)
- * @param {number|string} plantId
- */
 export function viewInternalPlantProfile(plantId) {
-  // Đóng tất cả map popup
   document.querySelectorAll('.mapboxgl-popup').forEach(p => {
     try { p.remove(); } catch (_) {}
   });
 
-  // Mở ngay Modal Hồ sơ cây trồng nội bộ ERP (bảo toàn GPS 100%, không ghi đè tọa độ)
   if (typeof window.openPlantProfileModal === 'function') {
     window.openPlantProfileModal(plantId);
     return;
@@ -585,17 +526,14 @@ export function viewInternalPlantProfile(plantId) {
     return;
   }
 
-  // Đảm bảo mở chi tiết trang trại tương ứng
   if (targetPlant.farm_id && window.openFarmDetailView) {
     window.openFarmDetailView(targetPlant.farm_id, true);
   }
 
-  // Chuyển sang tab Trang trại nếu đang ở tab khác
   if (typeof window.showPage === 'function') {
     window.showPage('myplants');
   }
 
-  // Điền bộ lọc tìm kiếm cây
   const searchInput = document.getElementById('user-plant-search');
   if (searchInput) {
     searchInput.value = targetPlant.tree_code || targetPlant.id;
@@ -604,7 +542,6 @@ export function viewInternalPlantProfile(plantId) {
     }
   }
 
-  // Cuộn mượt đến hàng dữ liệu của cây trong bảng và nhấp nháy làm nổi bật
   setTimeout(() => {
     const row = document.getElementById(`plant-row-${plantId}`);
     if (row) {
@@ -627,12 +564,6 @@ export function viewInternalPlantProfile(plantId) {
 }
 window.viewInternalPlantProfile = viewInternalPlantProfile;
 
-/**
- * Thêm đường đồng mức siêu dày 1m (1-Meter High-Density Contour Lines)
- * DÀNH RIÊNG CHO RANH GIỚI NÔNG TRẠI (Zero Lag, Tối ưu tối đa hiệu năng).
- * @param {mapboxgl.Map} map - Mapbox map instance
- * @param {Object} options - { defaultVisible: true, showControl: true, farmCoords: Array }
- */
 export function addContourLinesToMap(map, options = {}) {
   if (!map) return;
   const defaultVisible = options.defaultVisible !== false;
@@ -640,7 +571,6 @@ export function addContourLinesToMap(map, options = {}) {
 
   const initContours = () => {
     try {
-      // 1. Thêm nguồn Terrain DEM cho 3D địa hình
       if (!map.getSource('mapbox-dem')) {
         map.addSource('mapbox-dem', {
           type: 'raster-dem',
@@ -675,7 +605,6 @@ export function addContourLinesToMap(map, options = {}) {
         return ['interpolate', ['linear'], ['get', 'ele'], ...rampStops];
       };
 
-      // Helper tìm Bounding Box ranh giới nông trại
       const getFarmBoundingBox = () => {
         let lats = [];
         let lngs = [];
@@ -702,7 +631,7 @@ export function addContourLinesToMap(map, options = {}) {
 
         if (lngs.length === 0 && map.getStyle()) {
           const styleLayers = map.getStyle().layers || [];
-          const farmLayers = styleLayers.filter(l => 
+          const farmLayers = styleLayers.filter(l =>
             l.id.includes('farm') || l.id.includes('polygon') || (l.type === 'fill' && !l.id.includes('mapbox'))
           );
 
@@ -730,7 +659,7 @@ export function addContourLinesToMap(map, options = {}) {
           const maxLng = Math.max(...lngs);
           const minLat = Math.min(...lats);
           const maxLat = Math.max(...lats);
-          
+
           const marginLng = (maxLng - minLng) * 0.08 || 0.0008;
           const marginLat = (maxLat - minLat) * 0.08 || 0.0008;
 
@@ -742,7 +671,6 @@ export function addContourLinesToMap(map, options = {}) {
           };
         }
 
-        // Chỉ dùng mapBounds làm fallback khi zoom >= 14
         if (map.getZoom() >= 14) {
           const mapBounds = map.getBounds();
           if (mapBounds) {
@@ -758,7 +686,6 @@ export function addContourLinesToMap(map, options = {}) {
         return null;
       };
 
-      // 2-Pass 3x3 Gaussian Spatial Grid Smoothing Filter
       const smoothGrid = (rawGrid, passes = 2) => {
         const ny = rawGrid.length;
         const nx = rawGrid[0].length;
@@ -790,7 +717,6 @@ export function addContourLinesToMap(map, options = {}) {
         return current;
       };
 
-      // 4. Hàm Sinh Đường Đồng Mức Mật Độ Biến Thiên Năng Động Theo Zoom
       const updateDense1mContours = () => {
         try {
           const bbox = getFarmBoundingBox();
@@ -801,11 +727,8 @@ export function addContourLinesToMap(map, options = {}) {
             return;
           }
 
-          // Khoảng cách đường đồng mức cố định 1m (Bình độ cái % 5 === 0, Bình độ con 1m còn lại)
           const interval = 1.0;
 
-          // Chỉ lấy mẫu DEM khi zoom đủ cao để có tile độ phân giải cao và ổn định
-          // Nếu zoom < 13, giữ nguyên dữ liệu cũ tránh sai số datum khi zoom out
           const currentZoom = map.getZoom();
           if (currentZoom < 13 && map.getSource('dense-1m-contours')) return;
 
@@ -840,10 +763,8 @@ export function addContourLinesToMap(map, options = {}) {
 
           if (!hasTerrainData || minEle === Infinity || maxEle === -Infinity) return;
 
-          // Lọc mịn lưới DEM bằng Gaussian Blur 3 pass để loại bỏ hoàn toàn nhiễu và lặp đường
           const grid = smoothGrid(rawGrid, 3);
 
-          // Dữ liệu cao độ THỰC tế 100% từ Mapbox DEM (so với mực nước biển ASL)
           const eleOffset = 0;
           const displayMin = Math.round(minEle);
           const displayMax = Math.round(maxEle);
@@ -935,7 +856,6 @@ export function addContourLinesToMap(map, options = {}) {
               data: geoData
             });
 
-            // ─── Bình độ cái (% 5 === 0): Nét đậm 7px | Bình độ con: Nét 2.5px ───
             const isMajor = ['==', ['%', ['to-number', ['get', 'ele']], 5], 0];
 
             map.addLayer({
@@ -959,7 +879,6 @@ export function addContourLinesToMap(map, options = {}) {
               }
             });
 
-            // ─── Nhãn số cao độ: Nhét trực tiếp vào tất cả các đường đồng mức (có nhãn cho cả 2 loại) ───
             map.addLayer({
               id: 'dense-1m-contour-labels',
               type: 'symbol',
@@ -992,7 +911,6 @@ export function addContourLinesToMap(map, options = {}) {
         }
       };
 
-      // Cập nhật Bảng Chú Giải Cao Độ Dạng Thanh Dải Màu Sang Trọng (Hiển thị khoảng cách mét)
       const updateLegendWidget = (minEle, maxEle, interval) => {
         const legendContainer = map.getContainer().querySelector('.elevation-legend-widget-container');
         if (!legendContainer) return;
@@ -1025,7 +943,7 @@ export function addContourLinesToMap(map, options = {}) {
                 width: 12px;
                 height: 140px;
                 border-radius: 6px;
-                background: linear-gradient(to top, 
+                background: linear-gradient(to top,
                   #000080, #0000cd, #0000ff, #0066ff, #0099ff,
                   #00c8ff, #00f0ff, #00ffc8, #00ff99, #00ff33,
                   #66ff00, #a6ff00, #ccff00, #ffff00, #ffcc00,
@@ -1055,7 +973,6 @@ export function addContourLinesToMap(map, options = {}) {
       setTimeout(updateDense1mContours, 600);
       setTimeout(updateDense1mContours, 1500);
 
-      // 5. Nút Bật/Tắt đường đồng mức & Nút Xuất Bản Vẽ A4 Nằm Ngang
       if (showControl && !map._contourControlAdded) {
         map._contourControlAdded = true;
 
@@ -1064,7 +981,7 @@ export function addContourLinesToMap(map, options = {}) {
             this._map = m;
             this._container = document.createElement('div');
             this._container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group';
-            
+
             const btnContour = document.createElement('button');
             btnContour.className = 'mapboxgl-ctrl-icon mapbox-ctrl-contour-btn';
             btnContour.type = 'button';
@@ -1140,7 +1057,6 @@ export function addContourLinesToMap(map, options = {}) {
 
         map.addControl(new ContourToggleControl(), 'top-right');
 
-        // 6. Thêm Bảng Chú Giải Cao Độ Widget Container
         const mapContainer = map.getContainer();
         if (mapContainer && !mapContainer.querySelector('.elevation-legend-widget-container')) {
           const legendContainer = document.createElement('div');
@@ -1168,13 +1084,6 @@ export function addContourLinesToMap(map, options = {}) {
   }
 }
 
-/**
- * Mở modal xuất bản vẽ trang trại A4 Nằm Ngang (A4 Landscape PDF Drawing)
- * bao gồm:
- * 1. Khung thông tin: Tên trang trại, Khách hàng, Ngày xuất, Tỉ lệ, Người thực hiện
- * 2. Bản đồ trang trại + đường đồng mức (interval 1m)
- * 3. Kích thước trang trại: chiều dài các cạnh, chu vi, diện tích
- */
 export function openFarmA4ExportModal(map) {
   if (!map) return;
 
@@ -1221,7 +1130,7 @@ export function openFarmA4ExportModal(map) {
 
   if (farmCoords.length === 0 && map.getStyle()) {
     const styleLayers = map.getStyle().layers || [];
-    const farmLayers = styleLayers.filter(l => 
+    const farmLayers = styleLayers.filter(l =>
       l.id.includes('farm') || l.id.includes('polygon') || (l.type === 'fill' && !l.id.includes('mapbox'))
     );
     farmLayers.forEach(layer => {
@@ -1237,7 +1146,6 @@ export function openFarmA4ExportModal(map) {
     });
   }
 
-  // Thuật toán lật trang trại thẳng đứng
   const getMajorAxisBearing = (coords) => {
     if (!coords || coords.length < 2) return 0;
     let maxDistSq = 0;
@@ -1327,7 +1235,6 @@ export function openFarmA4ExportModal(map) {
     const scaleX = mapCanvas.width / (mapCanvas.clientWidth || 1);
     const scaleY = mapCanvas.height / (mapCanvas.clientHeight || 1);
 
-    // Draw edge labels
     if (uniquePts.length >= 2) {
       for (let i = 0; i < uniquePts.length; i++) {
         const p1 = uniquePts[i];
@@ -1370,7 +1277,6 @@ export function openFarmA4ExportModal(map) {
       }
     }
 
-    // Draw vertex badges
     if (uniquePts.length > 0) {
       uniquePts.forEach((pt, idx) => {
         const vLabel = getVertexLabel(idx);
@@ -1785,4 +1691,3 @@ export function openFarmA4ExportModal(map) {
     }
   };
 }
-

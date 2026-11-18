@@ -1,4 +1,3 @@
-﻿<!-- ════════════ USER MODAL ════════════ -->
 <div class="modal-overlay" id="user-modal" style="display:none" onclick="if(event.target===this)closeUserModal()">
   <div class="modal" style="max-width: 480px;">
     <div class="modal-header">
@@ -8,12 +7,12 @@
     <div class="modal-body">
       <form id="f-user-form" onsubmit="return false;">
       <input type="hidden" id="f-user-id">
-      
+
       <div class="field">
         <label>Họ và tên *</label>
         <input type="text" id="f-user-name" placeholder="VD: Nguyễn Văn A, Trần Thị B...">
       </div>
-      
+
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
         <div class="field" style="flex:1; min-width:180px;">
           <label><i data-lucide="phone" class="lucide-sm" style="color:var(--green)"></i> Số điện thoại</label>
@@ -32,7 +31,7 @@
         <label><i data-lucide="map-pin" class="lucide-sm" style="color:var(--green)"></i> Địa chỉ</label>
         <input type="text" id="f-user-address" placeholder="VD: Xã Ea Ktur, Huyện Cư Kuin, Đắk Lắk...">
       </div>
-      
+
       <div class="field">
         <label id="f-user-pass-label">Mật khẩu *</label>
         <input type="password" id="f-user-pass" placeholder="••••••••" autocomplete="new-password">
@@ -40,7 +39,7 @@
           Để trống nếu không muốn thay đổi mật khẩu
         </small>
       </div>
-      
+
       <div class="field">
         <label>Vai trò *</label>
         <select id="f-user-role" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
@@ -59,7 +58,6 @@
         </small>
       </div>
 
-      <!-- Cấu hình Phân quyền xem dữ liệu riêng cá nhân -->
       <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:12px; padding:14px; margin-top:14px;">
         <div style="font-size:12px; font-weight:700; color:#0f172a; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
           <i data-lucide="user-cog" class="lucide-sm" style="color:var(--green)"></i> Cấu hình Quyền xem dữ liệu cho Nông hộ này:
@@ -71,18 +69,15 @@
             <option value="all"> Xem toàn bộ cây trồng trong trang trại</option>
             <option value="assigned"> Chỉ xem cây trồng do cá nhân phụ trách</option>
           </select>
-          
-          <!-- Danh sách cây trồng gán thủ công cho Nông hộ này -->
+
           <div id="assigned-plants-picker-container" style="display:none; margin-top:8px; background:#fff; border:1.5px solid #bbf7d0; border-radius:8px; padding:10px;">
             <label style="font-size:11px; font-weight:700; color:#047857; margin-bottom:6px; display:block;">
                Tích chọn danh sách cây giao riêng cho Nông hộ này:
             </label>
             <div id="assigned-plants-checkboxes" style="max-height:150px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; font-size:11.5px;">
-              <!-- Filled dynamically by JS -->
             </div>
           </div>
         </div>
-
 
         <div class="field" style="margin-bottom:10px;">
           <label style="font-size:11.5px; font-weight:600; color:#334155;">Chỉ được xem Lịch sử & Nhật ký từ ngày</label>
@@ -102,7 +97,6 @@
       </div>
       </form>
     </div>
-
 
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeUserModal()">Hủy</button>

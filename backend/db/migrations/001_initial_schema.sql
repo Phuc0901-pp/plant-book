@@ -1,6 +1,3 @@
-﻿-- Migration: 001_initial_schema.sql
--- Description: Core tables (users, farms, plant_schemas, plants, plant_media, plant_logs, system_configs)
-
 -- +migrate Up
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
@@ -93,4 +90,3 @@ CREATE TABLE IF NOT EXISTS system_configs (
 );
 
 -- +migrate Down
--- DROP TABLE IF EXISTS plant_logs, plant_media, plants, plant_schemas, farms, users, system_configs CASCADE;

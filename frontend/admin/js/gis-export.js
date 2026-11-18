@@ -1,4 +1,3 @@
-// Modular Admin GIS Contour Lines, A4 Export & Live API Dataset Modals
 function addContourLinesToMap(map, options = {}) {
   if (!map) return;
   const defaultVisible = options.defaultVisible !== false;
@@ -6,7 +5,6 @@ function addContourLinesToMap(map, options = {}) {
 
   const initContours = () => {
     try {
-      // 1. Thêm nguồn Terrain DEM cho 3D địa hình
       if (!map.getSource('mapbox-dem')) {
         map.addSource('mapbox-dem', {
           type: 'raster-dem',
@@ -50,7 +48,6 @@ function addContourLinesToMap(map, options = {}) {
         return ['interpolate', ['linear'], ['get', 'ele'], ...rampStops];
       };
 
-      // Helper tìm Bounding Box ranh giới nông trại
       const getFarmBoundingBox = () => {
         let lats = [];
         let lngs = [];
@@ -74,7 +71,7 @@ function addContourLinesToMap(map, options = {}) {
 
         if (lngs.length === 0 && map.getStyle()) {
           const styleLayers = map.getStyle().layers || [];
-          const farmLayers = styleLayers.filter(l => 
+          const farmLayers = styleLayers.filter(l =>
             l.id.includes('farm') || l.id.includes('polygon') || (l.type === 'fill' && !l.id.includes('mapbox'))
           );
 
@@ -110,7 +107,7 @@ function addContourLinesToMap(map, options = {}) {
           const maxLng = Math.max(...lngs);
           const minLat = Math.min(...lats);
           const maxLat = Math.max(...lats);
-          
+
           const marginLng = (maxLng - minLng) * 0.08 || 0.0008;
           const marginLat = (maxLat - minLat) * 0.08 || 0.0008;
 
@@ -122,7 +119,6 @@ function addContourLinesToMap(map, options = {}) {
           };
         }
 
-        // Chỉ dùng mapBounds làm fallback khi người dùng đang zoom sâu vào xem địa hình (zoom >= 14)
         if (map.getZoom() >= 14) {
           const mapBounds = map.getBounds();
           if (mapBounds) {
@@ -138,7 +134,6 @@ function addContourLinesToMap(map, options = {}) {
         return null;
       };
 
-      // 2-Pass 3x3 Gaussian Spatial Grid Smoothing Filter
       const smoothGrid = (rawGrid, passes = 2) => {
         const ny = rawGrid.length;
         const nx = rawGrid[0].length;
@@ -170,7 +165,6 @@ function addContourLinesToMap(map, options = {}) {
         return current;
       };
 
-      // 4. Hàm Sinh Đường Đồng Mức Mật Độ Biến Thiên Năng Động Theo Zoom
       const updateDense1mContours = () => {
         try {
           const bbox = getFarmBoundingBox();
@@ -181,11 +175,8 @@ function addContourLinesToMap(map, options = {}) {
             return;
           }
 
-          // Khoảng cách đường đồng mức cố định 1m (Bình độ cái % 5 === 0, Bình độ con 1m còn lại)
           const interval = 1.0;
 
-          // Chỉ lấy mẫu DEM khi zoom đủ cao để có dữ liệu tile độ phân giải cao và ổn định
-          // Nếu zoom quá thấp (< 13), giữ nguyên dữ liệu cũ để tránh sai số datum
           const currentZoom = map.getZoom();
           if (currentZoom < 13 && map.getSource('dense-1m-contours')) return;
 
@@ -220,10 +211,8 @@ function addContourLinesToMap(map, options = {}) {
 
           if (!hasTerrainData || minEle === Infinity || maxEle === -Infinity) return;
 
-          // Lọc mịn lưới DEM bằng Gaussian Blur 3 pass để loại bỏ hoàn toàn nhiễu và lặp đường
           const grid = smoothGrid(rawGrid, 3);
 
-          // Dữ liệu cao độ THỰC tế 100% từ Mapbox DEM (so với mực nước biển ASL)
           const eleOffset = 0;
           const displayMin = Math.round(minEle);
           const displayMax = Math.round(maxEle);
@@ -315,7 +304,6 @@ function addContourLinesToMap(map, options = {}) {
               data: geoData
             });
 
-            // ─── Bình độ cái (% 5 === 0): Nét đậm 7px | Bình độ con: Nét 2.5px ───
             const isMajor = ['==', ['%', ['round', ['to-number', ['get', 'ele']]], 5], 0];
 
             map.addLayer({
@@ -329,7 +317,6 @@ function addContourLinesToMap(map, options = {}) {
               },
               paint: {
                 'line-color': dynamicRamp,
-                // Bình độ cái (bội số 5m): đậm 7px | Bình độ con: 2.5px
                 'line-width': [
                   'interpolate', ['exponential', 1.5], ['zoom'],
                   12, ['case', isMajor, 3.5, 1.5],
@@ -340,7 +327,6 @@ function addContourLinesToMap(map, options = {}) {
               }
             });
 
-            // ─── Nhãn số cao độ hiển thị 100% trên BÌNH ĐỘ MẸ (% 5 === 0) ───
             map.addLayer({
               id: 'dense-1m-contour-labels-major',
               type: 'symbol',
@@ -367,7 +353,6 @@ function addContourLinesToMap(map, options = {}) {
               }
             });
 
-            // ─── Nhãn số cao độ phụ cho các đường đồng mức con ───
             map.addLayer({
               id: 'dense-1m-contour-labels',
               type: 'symbol',
@@ -400,7 +385,6 @@ function addContourLinesToMap(map, options = {}) {
         }
       };
 
-      // Cập nhật Bảng Chú Giải Cao Độ Dạng Thanh Dải Màu Sang Trọng (Hiển thị khoảng cách mét)
       const updateLegendWidget = (minEle, maxEle, interval) => {
         const legendContainer = map.getContainer().querySelector('.elevation-legend-widget-container');
         if (!legendContainer) return;
@@ -433,7 +417,7 @@ function addContourLinesToMap(map, options = {}) {
                 width: 12px;
                 height: 140px;
                 border-radius: 6px;
-                background: linear-gradient(to top, 
+                background: linear-gradient(to top,
                   #000080, #0000cd, #0000ff, #0066ff, #0099ff,
                   #00c8ff, #00f0ff, #00ffc8, #00ff99, #00ff33,
                   #66ff00, #a6ff00, #ccff00, #ffff00, #ffcc00,
@@ -463,7 +447,6 @@ function addContourLinesToMap(map, options = {}) {
       setTimeout(updateDense1mContours, 600);
       setTimeout(updateDense1mContours, 1500);
 
-      // 5. Nút Bật/Tắt đường đồng mức, Nút Phủ Bản Vẽ CAD & Nút Xuất Bản Vẽ A4 Nằm Ngang
       if (showControl && !map._contourControlAdded) {
         map._contourControlAdded = true;
 
@@ -472,7 +455,7 @@ function addContourLinesToMap(map, options = {}) {
             this._map = m;
             this._container = document.createElement('div');
             this._container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group';
-            
+
             const btnContour = document.createElement('button');
             btnContour.className = 'mapboxgl-ctrl-icon mapbox-ctrl-contour-btn';
             btnContour.type = 'button';
@@ -568,7 +551,6 @@ function addContourLinesToMap(map, options = {}) {
 
         map.addControl(new ContourToggleControl(), 'top-right');
 
-        // 6. Thêm Bảng Chú Giải Cao Độ Widget Container
         const mapContainer = map.getContainer();
         if (mapContainer && !mapContainer.querySelector('.elevation-legend-widget-container')) {
           const legendContainer = document.createElement('div');
@@ -609,7 +591,6 @@ async function openAdminFarmA4ExportModal(map) {
     });
   };
 
-  // 1. Lấy nông trại chính xác từ DB
   let selectedFarm = null;
   if (typeof activeFarmId !== 'undefined' && activeFarmId && Array.isArray(currentFarms)) {
     selectedFarm = currentFarms.find(f => f.id === activeFarmId || f.id == activeFarmId);
@@ -631,7 +612,7 @@ async function openAdminFarmA4ExportModal(map) {
 
   if (farmCoords.length === 0 && map.getStyle()) {
     const styleLayers = map.getStyle().layers || [];
-    const farmLayers = styleLayers.filter(l => 
+    const farmLayers = styleLayers.filter(l =>
       l.id.includes('farm') || l.id.includes('polygon') || (l.type === 'fill' && !l.id.includes('mapbox'))
     );
     farmLayers.forEach(layer => {
@@ -647,7 +628,6 @@ async function openAdminFarmA4ExportModal(map) {
     });
   }
 
-  // 2. Thuật toán lật trang trại lại THẲNG ĐỨNG (Upright Major Axis Orientation)
   const getMajorAxisBearing = (coords) => {
     if (!coords || coords.length < 2) return 0;
     let maxDistSq = 0;
@@ -719,7 +699,6 @@ async function openAdminFarmA4ExportModal(map) {
     }
   }
 
-  // 1. Chuẩn bị GeoJSON Vertex Points (Mốc A, B, C, D...) & Edge Labels (AB: 42.5m, BC: 10.1m...)
   const vertexFeatures = uniquePts.map((pt, idx) => {
     const vLabel = getVertexLabel(idx);
     lastVertexLabel = vLabel;
@@ -820,7 +799,6 @@ async function openAdminFarmA4ExportModal(map) {
     console.warn('Lỗi vẽ layer tạm thời A4:', e);
   }
 
-  // 1. Chụp ảnh Bản đồ tổng thể (Full Farm Map - Chuẩn Hình 2)
   map.triggerRepaint();
   await new Promise(resolve => setTimeout(resolve, 350));
 
@@ -831,7 +809,6 @@ async function openAdminFarmA4ExportModal(map) {
     console.warn('Cảnh báo chụp ảnh bản đồ:', err);
   }
 
-  // 2. Chụp ảnh Chi tiết phóng đại cận cảnh (Close-Up Detail View - Chuẩn Hình 3 cho Vòng mặt cắt A-A)
   let cutoutImageDataUrl = mapImageDataUrl;
   if (uniquePts && uniquePts.length > 0) {
     try {
@@ -848,7 +825,6 @@ async function openAdminFarmA4ExportModal(map) {
     } catch (_) {}
   }
 
-  // Dọn dẹp các layer WebGL tạm thời sau khi đã chụp ảnh xong
   try {
     if (map.getLayer(tempTextLayerId)) map.removeLayer(tempTextLayerId);
     if (map.getLayer(tempCircleLayerId)) map.removeLayer(tempCircleLayerId);
@@ -866,7 +842,6 @@ async function openAdminFarmA4ExportModal(map) {
     });
   } catch (_) {}
 
-  // ── 3. Tính chiều dài các cạnh ranh giới & thông số ──
   let edgeRowsHtml = '';
   let perimeter = 0;
 
@@ -1068,11 +1043,11 @@ async function openAdminFarmA4ExportModal(map) {
         <!-- Sub-Header Row: Farm name & Owner name -->
         <div style="display:flex; justify-content:flex-start; gap:50px; font-size:11.5px; font-weight:700; margin-top:5px; padding:3px 8px; background:#f8fafc; border-radius:4px; border:1px solid #e2e8f0;">
           <div style="display:flex; align-items:center; gap:6px;">
-            <i data-lucide="home" class="lucide-sm" style="color:#15803d;"></i> Tên trang trại: 
+            <i data-lucide="home" class="lucide-sm" style="color:#15803d;"></i> Tên trang trại:
             <input type="text" id="a4-input-farm-name" class="a4-edit-field" value="${esc(farmName)}" style="font-size:11.5px; font-weight:800; color:#15803d; width:220px;">
           </div>
           <div style="display:flex; align-items:center; gap:6px;">
-            <i data-lucide="user-check" class="lucide-sm" style="color:#2563eb;"></i> Khách hàng: 
+            <i data-lucide="user-check" class="lucide-sm" style="color:#2563eb;"></i> Khách hàng:
             <input type="text" id="a4-input-owner-name" class="a4-edit-field" value="${esc(ownerName)}" style="font-size:11.5px; font-weight:800; color:#15803d; width:220px;">
           </div>
         </div>
@@ -1259,7 +1234,6 @@ async function openAdminFarmA4ExportModal(map) {
   let a4Map = null;
   let a4CutoutMap = null;
 
-  // ─── THIẾT LẬP CÁC TÍNH NĂNG TƯƠNG TÁC BẢN VẼ LIVE MAPBOX VECTOR & CUTOUT TOGGLE ───
   const initA4InteractiveTools = () => {
     const mapFrameEl = document.getElementById('a4-map-frame');
     const cutoutEl = document.getElementById('a4-cutout-circle');
@@ -1272,7 +1246,6 @@ async function openAdminFarmA4ExportModal(map) {
 
     if (!mapFrameEl) return;
 
-    // ── 1. Khởi tạo Live Mapbox GL Map Canvas bên trong A4 Paper (Vector Native HD) ──
     try {
       a4Map = new mapboxgl.Map({
         container: 'a4-live-map-viewport',
@@ -1283,14 +1256,12 @@ async function openAdminFarmA4ExportModal(map) {
       });
 
       a4Map.on('load', () => {
-        // 1.1 Fit bounds ranh giới vườn
         if (uniquePts && uniquePts.length >= 3) {
           const bounds = new mapboxgl.LngLatBounds();
           uniquePts.forEach(pt => bounds.extend(pt));
           a4Map.fitBounds(bounds, { padding: 45, animate: false });
         }
 
-        // 1.2 Vẽ ranh giới trang trại (Fill + Line Vector nét căng)
         if (farmCoords && farmCoords.length >= 3) {
           const polyCoords = [...farmCoords];
           if (polyCoords[0][0] !== polyCoords[polyCoords.length - 1][0] || polyCoords[0][1] !== polyCoords[polyCoords.length - 1][1]) {
@@ -1323,12 +1294,10 @@ async function openAdminFarmA4ExportModal(map) {
           });
         }
 
-        // 1.3 Vẽ đường đồng mức 1m độ nét cao
         if (typeof addContourLinesToMap === 'function') {
           addContourLinesToMap(a4Map, { defaultVisible: true, showControl: false, farmCoords });
         }
 
-        // 1.4 Vẽ các Mốc Đỉnh A, B, C, D... bằng Marker SVG/HTML
         uniquePts.forEach((pt, idx) => {
           const vLabel = getVertexLabel(idx);
           const el = document.createElement('div');
@@ -1354,7 +1323,6 @@ async function openAdminFarmA4ExportModal(map) {
           new mapboxgl.Marker({ element: el, anchor: 'center' }).setLngLat(pt).addTo(a4Map);
         });
 
-        // 1.5 Vẽ nhãn chiều dài cạnh AB, BC, CD...
         for (let i = 0; i < uniquePts.length; i++) {
           const p1 = uniquePts[i];
           const p2 = uniquePts[(i + 1) % uniquePts.length];
@@ -1394,7 +1362,6 @@ async function openAdminFarmA4ExportModal(map) {
       console.warn('Lỗi khởi tạo live A4 Mapbox map:', e);
     }
 
-    // ── 2. Khởi tạo Cutout Mini Map bên trong Vòng Tròn A-A (Vector HD) ──
     const cutoutMapContainer = document.getElementById('a4-cutout-map-container');
     if (cutoutMapContainer && uniquePts.length > 0) {
       try {
@@ -1447,7 +1414,6 @@ async function openAdminFarmA4ExportModal(map) {
       } catch (_) {}
     }
 
-    // ── 3. Điều khiển Zoom In/Out/Reset trên Bản Đồ Live Native ──
     const btnMainZoomIn = document.getElementById('btn-a4-main-zoom-in');
     const btnMainZoomOut = document.getElementById('btn-a4-main-zoom-out');
     const btnMainZoomReset = document.getElementById('btn-a4-main-zoom-reset');
@@ -1475,7 +1441,6 @@ async function openAdminFarmA4ExportModal(map) {
       };
     }
 
-    // ── 4. TÍNH NĂNG BẬT / TẮT KHUNG CHI TIẾT A-A (Khối hình 4) ──
     let isCutoutVisible = true;
 
     const setCutoutVisible = (visible) => {
@@ -1510,7 +1475,6 @@ async function openAdminFarmA4ExportModal(map) {
       };
     }
 
-    // ── 5. Hàm bổ trợ kéo thả di chuyển vị trí phần tử (Universal Draggable) ──
     const makeDraggable = (el, handleEl) => {
       let isDragging = false;
       let startX = 0, startY = 0;
@@ -1593,7 +1557,6 @@ async function openAdminFarmA4ExportModal(map) {
       makeDraggable(cutoutEl, cutoutFrameHandle);
     }
 
-    // ── 6. Tính năng Chấm Điểm & Gõ Text Tương Tác ──
     let pointCount = 0;
 
     const addNewPoint = (initialText) => {
@@ -1636,7 +1599,6 @@ async function openAdminFarmA4ExportModal(map) {
 
       makeDraggable(ptEl);
 
-      // Thêm dòng tương ứng vào Bảng Chú Giải ở góc dưới bên phải
       let legRow = null;
       if (legendTable) {
         legRow = document.createElement('tr');
@@ -1650,7 +1612,6 @@ async function openAdminFarmA4ExportModal(map) {
         `;
         legendTable.appendChild(legRow);
 
-        // Đồng bộ chữ nhập giữa bản đồ và bảng chú giải
         const ptInput = ptEl.querySelector('.pt-label-input');
         const legValInput = legRow.querySelector('.leg-val-input');
         if (ptInput && legValInput) {
@@ -1659,7 +1620,6 @@ async function openAdminFarmA4ExportModal(map) {
         }
       }
 
-      // Xử lý sự kiện xóa điểm
       const delBtn = ptEl.querySelector('.pt-del-btn');
       if (delBtn) {
         delBtn.onclick = (e) => {
@@ -1702,7 +1662,6 @@ async function openAdminFarmA4ExportModal(map) {
       input.setAttribute('value', input.value);
     });
 
-    // Render static crisp snapshot with vertex markers, edge badges, contours & custom points
     try {
       if (a4Map) {
         const mapCanvas = a4Map.getCanvas();
@@ -1711,14 +1670,11 @@ async function openAdminFarmA4ExportModal(map) {
         compositeCanvas.height = mapCanvas.height;
         const ctx = compositeCanvas.getContext('2d');
 
-        // 1. Draw base WebGL map canvas
         ctx.drawImage(mapCanvas, 0, 0);
 
-        // 2. Compute pixel scaling factors
         const scaleX = mapCanvas.width / (mapCanvas.clientWidth || 1);
         const scaleY = mapCanvas.height / (mapCanvas.clientHeight || 1);
 
-        // 3. Draw edge measurement pill badges (DA, CD, AB...)
         if (uniquePts && uniquePts.length >= 2) {
           for (let i = 0; i < uniquePts.length; i++) {
             const p1 = uniquePts[i];
@@ -1765,7 +1721,6 @@ async function openAdminFarmA4ExportModal(map) {
           }
         }
 
-        // 4. Draw Vertex Mốc Ranh Giới Đỉnh (A, B, C, D...)
         if (uniquePts && uniquePts.length > 0) {
           uniquePts.forEach((pt, idx) => {
             const vLabel = getVertexLabel(idx);
@@ -1797,7 +1752,6 @@ async function openAdminFarmA4ExportModal(map) {
           });
         }
 
-        // 5. Draw Custom Interactive Points (Vị trí 1, 2, 3...)
         const customNodes = document.querySelectorAll('.a4-custom-point-node');
         if (customNodes && customNodes.length > 0) {
           const frameRect = document.getElementById('a4-map-frame').getBoundingClientRect();
@@ -1855,7 +1809,6 @@ async function openAdminFarmA4ExportModal(map) {
         printImg.style.display = 'block';
       }
 
-      // Also snapshot cutout map if active
       if (a4CutoutMap) {
         const cutoutCanvas = a4CutoutMap.getCanvas();
         const cutoutComposite = document.createElement('canvas');
@@ -1985,12 +1938,6 @@ async function openAdminFarmA4ExportModal(map) {
   };
 }
 
-
-
-/* ═══════════════════════════════════════════════════════════
-   PLANT HOVER TOOLTIP — Sidebar GIS
-   ═══════════════════════════════════════════════════════════ */
-
 (function() {
   let tooltipEl = null;
   let tooltipTimeout = null;
@@ -2091,7 +2038,6 @@ async function openAdminFarmA4ExportModal(map) {
     }
   });
 })();
-
 
 function syncFarmApiStatusUI(farm) {
   if (!farm) return;
@@ -2437,5 +2383,3 @@ async function openLiveApiGuidelineModal(farmId, preloadedRes) {
   }
 }
 window.openLiveApiGuidelineModal = openLiveApiGuidelineModal;
-
-

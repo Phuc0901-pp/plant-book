@@ -1,4 +1,3 @@
-/* Modular Farmer Portal ERP Plant Profile Modal & Growth Photo Gallery */
 import { esc, healthBadge, toast, getCropImageSrc, isGrowthMedia, isDiseaseMedia, formatDate } from '../core/utils.js';
 import { api } from '../core/api.js';
 import { getPlantsCache, getFarmsCache } from './plants.js';
@@ -9,13 +8,11 @@ export async function openPlantProfileModal(plantId) {
   const modal = document.getElementById('internal-plant-profile-modal');
   if (!modal) return;
 
-  // 1. Retrieve plant data from memory cache first for instant zero-lag rendering
   let plant = (getPlantsCache() || []).find(p => String(p.id) === String(plantId));
   if (!plant && window._allPlantsCache) {
     plant = window._allPlantsCache.find(p => String(p.id) === String(plantId));
   }
 
-  // 2. Fetch full plant details from API if needed
   try {
     const res = await api(`/plants/${plantId}`);
     if (res && res.id) {
@@ -33,10 +30,8 @@ export async function openPlantProfileModal(plantId) {
 
   _currentErpPlant = plant;
 
-  // 3. Reset active tab to Tab 1 (Overview)
   switchErpProfileTab('overview');
 
-  // 4. Fill Header & Badges
   const titleEl = document.getElementById('erp-plant-modal-title');
   if (titleEl) titleEl.textContent = `Hồ Sơ Cây Trồng #${plant.tree_code || plant.id}`;
 
@@ -67,12 +62,10 @@ export async function openPlantProfileModal(plantId) {
     subtitleEl.textContent = `Trang trại: ${farmName} · Lô: ${plotStr} · Giống: ${varietyStr}`;
   }
 
-  // Separate Growth Stage Media from Disease / Diagnosis Media
   const allMedia = Array.isArray(plant.media) ? plant.media : [];
   const growthMedia = allMedia.filter(isGrowthMedia);
   const diseaseMedia = allMedia.filter(isDiseaseMedia);
 
-  // Smart Crop Asset Fallback & Real Growth Photo Resolver
   const hasRealGrowthPhoto = growthMedia.length > 0 && growthMedia[0].url && !growthMedia[0].url.includes('photo-1587293852726-70cdb56c2866');
   const cropImgSrc = hasRealGrowthPhoto ? esc(growthMedia[0].url) : getCropImageSrc(plant.plant_type, plant.plant_variety);
 
@@ -107,10 +100,8 @@ export async function openPlantProfileModal(plantId) {
     }
   }
 
-  // Render Growth Photo Gallery & Timeline (ONLY growth photos)
   _renderGrowthPhotoGallery(growthMedia, plant);
 
-  // 5. Fill Executive Quick Stats Bar
   const ageVal = plant.plant_age || (plant.planting_date ? calculatePlantAge(plant.planting_date) : '—');
   const statAgeEl = document.getElementById('erp-stat-plant-age');
   if (statAgeEl) {
@@ -134,7 +125,6 @@ export async function openPlantProfileModal(plantId) {
     statNfcEl.textContent = nfcVal ? nfcVal : 'Chưa gán thẻ';
   }
 
-  // 6. Fill Tab 1: Detailed Agronomic Attributes & Locked Coordinates
   const dtTreeCode = document.getElementById('erp-plant-detail-treecode');
   if (dtTreeCode) dtTreeCode.textContent = plant.tree_code || plant.id;
 
@@ -153,7 +143,6 @@ export async function openPlantProfileModal(plantId) {
   const dtRow = document.getElementById('erp-plant-detail-row');
   if (dtRow) dtRow.textContent = plant.row_number ? `Hàng số ${plant.row_number}` : '—';
 
-  // Past Diseases Badges & Dedicated Disease Media Rendering
   const pastDiseases = plant.data?.past_diseases || plant.past_diseases || (plant.schema_data?.past_diseases);
   const diseasesContainer = document.getElementById('erp-plant-past-diseases-container');
   if (diseasesContainer) {
@@ -185,7 +174,6 @@ export async function openPlantProfileModal(plantId) {
       `).join('');
     }
 
-    // Dedicated Disease Media Showcase (Separate from Growth Timeline)
     let diseaseMediaHtml = '';
     if (diseaseMedia.length > 0) {
       diseaseMediaHtml = `
@@ -203,7 +191,7 @@ export async function openPlantProfileModal(plantId) {
               return `
                 <div style="flex-shrink: 0; width: 76px; text-align: center;">
                   <div style="width: 76px; height: 58px; border-radius: 8px; overflow: hidden; border: 1.5px solid #f87171; position: relative; background: #0f172a; cursor: pointer;" onclick="if(window.openLightbox) openLightbox('${esc(dm.url)}', '${isVid ? 'video' : 'image'}')">
-                    ${isVid 
+                    ${isVid
                       ? `<video src="${esc(dm.url)}" style="width:100%;height:100%;object-fit:cover;"></video><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);color:#fff;"><i data-lucide="play" class="lucide-xs"></i></span>`
                       : `<img src="${esc(dm.url)}" alt="${esc(captionStr)}" style="width:100%;height:100%;object-fit:cover;">`
                     }
@@ -222,7 +210,6 @@ export async function openPlantProfileModal(plantId) {
     diseasesContainer.innerHTML = diseaseBadgesHtml + diseaseMediaHtml;
   }
 
-  // Coordinates GPS Display (Strictly Read-Only, 0 mutation)
   const gpsEl = document.getElementById('erp-plant-gps-text');
   if (gpsEl) {
     const lat = parseFloat(plant.latitude);
@@ -234,16 +221,13 @@ export async function openPlantProfileModal(plantId) {
     }
   }
 
-  // NFC UID Display
   const nfcValEl = document.getElementById('erp-plant-nfc-val');
   if (nfcValEl) {
     nfcValEl.textContent = nfcVal ? nfcVal : 'Chưa gán thẻ RFID';
   }
 
-  // 7. Load Tab 2 (VietGAP Timeline) & Tab 3 (Cost Analysis)
   await _loadErpPlantLogsAndCosts(plant.id, plant);
 
-  // 8. Display modal
   modal.style.display = 'flex';
   if (window.lucide && typeof window.lucide.createIcons === 'function') {
     window.lucide.createIcons();
@@ -316,7 +300,6 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
   const costWaterEl = document.getElementById('erp-cost-water-amount');
   const materialsListEl = document.getElementById('erp-cost-materials-list');
 
-  // Harvest Economics DOM Elements
   const harvestRevEl = document.getElementById('erp-harvest-total-revenue');
   const harvestKgFruitsEl = document.getElementById('erp-harvest-total-kg-fruits');
   const harvestNetProfitEl = document.getElementById('erp-harvest-net-profit');
@@ -343,20 +326,16 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
     }
   }
 
-  // Ensure supplies cache is loaded for client-side cost enrichment
   if (!window._declaredSuppliesCache || !window._declaredSuppliesCache.length) {
     try {
       window._declaredSuppliesCache = await api('/supplies');
     } catch (e) {
-      // ignore
     }
   }
   const suppliesCache = window._declaredSuppliesCache || [];
 
   if (logsCountEl) logsCountEl.textContent = logs.length;
 
-  // Timeline renders cleanly after cost & comparison chain enrichment below
-  // Calculate Costs & Supplies Breakdown & Harvest Economics FIRST
   let totalCost = 0;
   let fertCost = 0;
   let pestCost = 0;
@@ -368,7 +347,6 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
   let totalHarvestKg = 0;
   const harvestList = [];
 
-  // Enriched logs container
   const enrichedLogs = logs.map(log => {
     let typeStr = String(log.log_type || '').toLowerCase();
     let details = log.details || {};
@@ -376,7 +354,6 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
       try { details = JSON.parse(details); } catch(e) { details = {}; }
     }
 
-    // Smart Dual-Defense: Ưu tiên tách riêng Kiểm toán quả khỏi nhận diện Thu hoạch
     const isFruitAudit = typeStr.includes('kiểm toán quả') || typeStr.includes('kiem toan qua') || Boolean(details.audit_stage || details.fruit_stage);
     if (isFruitAudit) {
       return {
@@ -396,14 +373,13 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
     }
 
     const isExplicitHarvest = typeStr.includes('thu hoạch') || typeStr.includes('harvest');
-    const isHarvestByDetails = parseFloat(details.fruit_count) > 0 || 
-                               parseFloat(details.price_per_tree) > 0 || 
+    const isHarvestByDetails = parseFloat(details.fruit_count) > 0 ||
+                               parseFloat(details.price_per_tree) > 0 ||
                                parseFloat(details.total_revenue) > 0 ||
                                parseFloat(details.avg_price_per_fruit) > 0 ||
                                (details.quality && !details.pesticide_name && !details.fertilizer_name) ||
                                (parseFloat(details.amount) >= 50 && (details.unit === 'kg' || details.unit === 'tấn' || details.unit === 'trái') && (log.equipment_used === 'Kéo' || !details.pesticide_name));
 
-    // A. NHẬT KÝ THU HOẠCH (HARVEST LOGS)
     if (isExplicitHarvest || isHarvestByDetails) {
       log.log_type = 'Thu hoạch';
       typeStr = 'thu hoạch';
@@ -439,13 +415,11 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
       };
     }
 
-    // B. NHẬT KÝ CANH TÁC CÓ TIÊU HAO VẬT TƯ (CARE LOGS)
     let cost = parseFloat(log.cost || details.cost || details.total_cost || 0) || 0;
     let materialName = log.material_name || details.material_name || details.supply_name || details.fertilizer_name || details.pesticide_name;
     let quantity = log.quantity || details.quantity || details.amount;
     let unit = log.unit || details.unit || '';
 
-    // Sanity check: nếu chi phí tưới nước > 50.000 VNĐ cho 1 cây, chuẩn hóa về giá thực tế (~30L x 15đ = 450đ - 1.500đ)
     if (typeStr.includes('tưới') || typeStr.includes('tuoi') || typeStr.includes('water')) {
       if (!materialName) materialName = 'Nước tưới gốc';
       if (!unit) unit = 'lít';
@@ -455,9 +429,8 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
       }
       if (!quantity) quantity = 30;
     } else if (typeStr.includes('thuốc') || typeStr.includes('thuoc') || typeStr.includes('pest') || typeStr.includes('sâu') || typeStr.includes('bệnh')) {
-      // Phun thuốc: nếu chưa có tên thuốc hoặc cost = 0, gán thuốc BVTV tiêu chuẩn
       if (!materialName || cost === 0) {
-        const pestSup = suppliesCache.find(s => 
+        const pestSup = suppliesCache.find(s =>
           (s.category && (s.category.includes('thuốc') || s.category.includes('Thuốc'))) ||
           (s.name && (s.name.toLowerCase().includes('thuốc') || s.name.toLowerCase().includes('sâu') || s.name.toLowerCase().includes('bệnh')))
         );
@@ -479,9 +452,8 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
         unit = `người${details.time_range ? ' · ' + details.time_range : ''}`;
       }
     } else if (typeStr.includes('phân') || typeStr.includes('phan') || typeStr.includes('fertil')) {
-      // Bón phân: nếu chưa có tên phân hoặc cost = 0, gán phân bón tiêu chuẩn
       if (!materialName || cost === 0) {
-        const fertSup = suppliesCache.find(s => 
+        const fertSup = suppliesCache.find(s =>
           (s.category && (s.category.includes('phân') || s.category.includes('Phân'))) ||
           (s.name && (s.name.toLowerCase().includes('phân') || s.name.toLowerCase().includes('npk') || s.name.toLowerCase().includes('hữu cơ')))
         );
@@ -525,7 +497,6 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
     };
   });
 
-  // Store enriched logs + audit comparison chain for filtering & full detail rendering
   _enrichErpAuditChain(enrichedLogs);
   window._currentErpEnrichedLogs = enrichedLogs;
   _populateErpSupplyFilter(enrichedLogs);
@@ -534,13 +505,11 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
   }
   _renderErpModalLogsList(enrichedLogs);
 
-  // Render Cost Breakdown in Tab 3
   if (costTotalEl) costTotalEl.textContent = `${totalCost.toLocaleString('vi-VN')} VNĐ`;
   if (costFertilizerEl) costFertilizerEl.textContent = `${fertCost.toLocaleString('vi-VN')} VNĐ`;
   if (costPesticideEl) costPesticideEl.textContent = `${pestCost.toLocaleString('vi-VN')} VNĐ`;
   if (costWaterEl) costWaterEl.textContent = `${waterCost.toLocaleString('vi-VN')} VNĐ`;
 
-  // Render Harvest Economics (Revenue, Net Profit, ROI)
   const netProfit = totalHarvestRev - totalCost;
   const roi = totalCost > 0 ? Math.round((netProfit / totalCost) * 100) : (totalHarvestRev > 0 ? 100 : 0);
 
@@ -569,7 +538,6 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
     harvestBadgeEl.textContent = `${harvestList.length} đợt thu hoạch`;
   }
 
-  // Update Header Metric 3 (Initial Yield / Actual Harvest)
   if (headerYieldEl) {
     if (totalHarvestKg > 0 || totalHarvestRev > 0) {
       headerYieldEl.textContent = `${totalHarvestKg.toLocaleString('vi-VN')} kg (${totalHarvestRev.toLocaleString('vi-VN')} đ)`;
@@ -581,7 +549,6 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
     }
   }
 
-  // Render Harvest History Table
   if (harvestHistoryListEl) {
     if (!harvestList.length) {
       harvestHistoryListEl.innerHTML = `
@@ -627,7 +594,6 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
     }
   }
 
-  // Render Materials Used Table (Tab 3) WITH TOTAL SUMMARY FOOTER
   if (materialsListEl) {
     if (!materialsUsed.length) {
       materialsListEl.innerHTML = '<span style="color:#64748b;">Chưa phát sinh chi phí vật tư phân bón / thuốc BVTV riêng biệt cho cây này.</span>';
@@ -1026,7 +992,6 @@ window.onErpProfileNfcClick = onErpProfileNfcClick;
 window.filterErpModalLogs = filterErpModalLogs;
 window.resetErpModalLogFilters = resetErpModalLogFilters;
 
-// ── Growth Stage Photo Timeline & Gallery Controller (Append-Only) ──
 function _getGrowthStageLucideIcon(stageStr) {
   const s = (stageStr || '').toLowerCase();
   if (s.includes('hoa') || s.includes('flower') || s.includes('mầm')) {
@@ -1077,7 +1042,6 @@ export function _renderGrowthPhotoGallery(mediaList, plant) {
 
   container.innerHTML = items.map((m, idx) => {
     const rawStage = m.caption || m.growth_stage || 'Cập nhật sinh trưởng';
-    // Remove any unicode emojis that might have been saved in DB
     const stage = rawStage.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim();
     const stageIcon = _getGrowthStageLucideIcon(stage);
     const dateStr = m.uploaded_at ? formatDate(m.uploaded_at) : (m.created_at ? formatDate(m.created_at) : 'Mới đây');
@@ -1086,7 +1050,7 @@ export function _renderGrowthPhotoGallery(mediaList, plant) {
     return `
       <div style="background: #ffffff; border: 1.5px solid ${isLatest ? '#10b981' : '#e2e8f0'}; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.04); display: flex; flex-direction: column; position: relative;">
         ${isLatest ? `<span style="position: absolute; top: 6px; left: 6px; z-index: 2; background: #059669; color: #fff; font-size: 9.5px; font-weight: 800; padding: 2px 6px; border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,0.2); display: inline-flex; align-items: center; gap: 3px;"><i data-lucide="sparkles" class="lucide-xs"></i> Mới nhất</span>` : ''}
-        
+
         <div style="height: 105px; width: 100%; overflow: hidden; position: relative; background: #f1f5f9; cursor: pointer;" onclick="if(window.openLightbox) openLightbox('${esc(m.url)}', 'image')">
           <img src="${esc(m.url)}" alt="${esc(stage)}" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.25s;" onmouseover="this.style.transform='scale(1.06)'" onmouseout="this.style.transform='scale(1)'">
           <button type="button" style="position: absolute; bottom: 6px; right: 6px; background: rgba(0,0,0,0.6); color: #fff; border: none; border-radius: 6px; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer;" title="Phóng to">
@@ -1127,7 +1091,7 @@ export function openErpUploadGrowthPhotoModal() {
   const previewWrap = document.getElementById('erp-growth-modal-preview-wrap');
   const placeholder = document.getElementById('erp-growth-modal-placeholder');
   const captionInp = document.getElementById('erp-growth-modal-caption');
-  
+
   if (fileInp) fileInp.value = '';
   if (previewWrap) previewWrap.style.display = 'none';
   if (placeholder) placeholder.style.display = 'block';
@@ -1205,13 +1169,11 @@ export async function submitErpGrowthPhoto() {
       throw new Error(res.error || 'Lỗi khi tải ảnh sinh trưởng.');
     }
 
-    // Update active plant in memory
     _currentErpPlant.cover_image = res.cover_image || (_currentErpPlant.cover_image);
     _currentErpPlant.media = res.all_media || (_currentErpPlant.media || []);
 
     const growthMedia = (_currentErpPlant.media || []).filter(isGrowthMedia);
 
-    // Refresh Profile Header & Tab Images
     const headerImgEl = document.getElementById('erp-plant-crop-header-img');
     const tabImgEl = document.getElementById('erp-plant-crop-tab-img');
     if (headerImgEl && res.cover_image) headerImgEl.src = res.cover_image;
@@ -1226,7 +1188,6 @@ export async function submitErpGrowthPhoto() {
       if (descEl) descEl.textContent = 'Ảnh chụp hiện trường sinh trưởng gần nhất của cây';
     }
 
-    // Re-render gallery with ONLY growth photos
     _renderGrowthPhotoGallery(growthMedia, _currentErpPlant);
 
     closeErpUploadGrowthPhotoModal();
@@ -1249,4 +1210,3 @@ window.closeErpUploadGrowthPhotoModal = closeErpUploadGrowthPhotoModal;
 window.onErpGrowthModalFileChange = onErpGrowthModalFileChange;
 window.onErpGrowthPhotoSelected = onErpGrowthModalFileChange;
 window.triggerErpGrowthPhotoUpload = openErpUploadGrowthPhotoModal;
-

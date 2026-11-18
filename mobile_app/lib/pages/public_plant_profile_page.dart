@@ -23,10 +23,10 @@ class PublicPlantProfilePage extends StatefulWidget {
 class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
   final ApiService _apiService = ApiService();
   late final WebViewController _webViewController;
-  
+
   bool _isLoading = true;
   String? _error;
-  
+
   Map<String, dynamic>? _plantData;
   List<dynamic> _logs = [];
   List<dynamic> _media = [];
@@ -63,7 +63,6 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
     final String health = _plantData!['health_status'] ?? 'Tốt';
     final String treeCode = _plantData!['tree_code'] ?? _plantData!['id']?.toString() ?? '';
 
-    // Format polygon coordinates
     String polyCoordsJson = '[]';
     if (_plantData!['farm_polygon'] != null && _plantData!['farm_polygon'].toString().isNotEmpty) {
       try {
@@ -82,7 +81,6 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
           polyCoordsJson = jsonEncode(flatCoords);
         }
       } catch (e) {
-        // Ignore
       }
     }
 
@@ -260,7 +258,7 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
     } else if (type.contains('ca cao') || type.contains('cacao')) {
       return 'assets/images/cacao.png';
     }
-    return 'assets/images/durian.png'; // Fallback crop icon
+    return 'assets/images/durian.png';
   }
 
   Future<void> _showQuickLogDialog(String activityType) async {
@@ -384,9 +382,9 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
         if (activityType == 'Bệnh cây') {
           await _apiService.updatePublicHealth(widget.slug, 'Bệnh');
         }
-        
+
         _loadPublicData();
-        
+
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -434,7 +432,7 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
     return Theme(
       data: AppTheme.lightTheme,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8FAFC), // Light background
+        backgroundColor: const Color(0xFFF8FAFC),
         appBar: AppBar(
           backgroundColor: Colors.white,
           foregroundColor: AppTheme.textMain,
@@ -463,27 +461,21 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // 1. Plant Image header card
                           _buildPlantHeaderWidget(),
                           const SizedBox(height: 16),
-                          
-                          // 2. Metadata details grid
+
                           _buildMetadataGrid(),
                           const SizedBox(height: 16),
 
-                          // 3. Map View widget (WebView Satellite Map)
                           _buildMapWidget(),
                           const SizedBox(height: 16),
-                          
-                          // 4. Quick Log Actions block
+
                           _buildQuickLogsBlock(),
                           const SizedBox(height: 16),
-                          
-                          // 5. Media Gallery block
+
                           _buildMediaGalleryBlock(),
                           const SizedBox(height: 16),
-                          
-                          // 6. Timeline Care Logs
+
                           _buildCareLogsTimelineBlock(),
                           const SizedBox(height: 32),
                         ],
@@ -556,15 +548,14 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
               ],
             ),
           ),
-          
+
           Text(
             '$type ($variety)',
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textMain),
           ),
           const SizedBox(height: 12),
-          
-          // Badge list row
+
           Wrap(
             spacing: 8,
             runSpacing: 6,
@@ -601,7 +592,7 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
     final farm = _plantData?['farm_name'] ?? '—';
     final totalLogs = _logs.length;
     final totalPics = _media.length;
-    
+
     const bloomDate = '25/06/2026';
 
     return GridView.count(
@@ -851,10 +842,10 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
                     final date = log['log_date']?.toString().substring(0, 10) ?? '';
                     final type = log['log_type'] ?? 'Khác';
                     final note = log['note'] ?? '';
-                    
+
                     final details = log['details'] as Map<String, dynamic>? ?? {};
                     final detailVal = _formatLogDetails(type, details);
-                    
+
                     final List<dynamic> mediaList = log['media_urls'] as List<dynamic>? ?? [];
                     final List<String> mediaUrls = mediaList.map((dynamic item) {
                       if (item is Map) {
@@ -862,7 +853,7 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
                       }
                       return item.toString();
                     }).where((url) => url.isNotEmpty).toList();
-                    
+
                     final historyList = log['edit_history'] as List<dynamic>? ?? [];
                     final parsedHistory = historyList
                         .map((dynamic item) => EditHistory.fromJson(item as Map<String, dynamic>))
@@ -875,7 +866,6 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
                     return IntrinsicHeight(
                       child: Row(
                         children: [
-                          // Timeline bar
                           Column(
                             children: [
                               Container(
@@ -895,8 +885,7 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
                             ],
                           ),
                           const SizedBox(width: 12),
-                          
-                          // Log content card
+
                           Expanded(
                             child: Container(
                               margin: const EdgeInsets.only(bottom: 12),
@@ -927,8 +916,7 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
                                     const SizedBox(height: 4),
                                     Text('• Ghi chú: $note', style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
                                   ],
-                                  
-                                  // Photos/Videos display
+
                                   if (mediaUrls.isNotEmpty) ...[
                                     const SizedBox(height: 8),
                                     SizedBox(
@@ -1001,8 +989,7 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
                                       ),
                                     ),
                                   ],
-                                  
-                                  // Edit history timeline
+
                                   if (parsedHistory.isNotEmpty) ...[
                                     const SizedBox(height: 8),
                                     AuditHistoryView(history: parsedHistory),
@@ -1024,7 +1011,7 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
   String _formatLogDetails(String logType, Map<String, dynamic> details) {
     if (details.isEmpty) return '';
     final List<String> parts = [];
-    
+
     if (logType == 'Tưới nước') {
       final method = details['method'];
       final amount = details['amount'];

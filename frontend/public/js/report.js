@@ -1,4 +1,3 @@
-    // Global State
     let plantData = null;
 
     const LEGACY_LABOR_ALIASES = ['Nhân công', 'Cắt lá', 'Cắt tỉa', 'Cắt cành', 'Tỉa cành/lá', 'Tỉa hoa', 'Tỉa quả', 'Tỉa quả/hoa', 'Thụ phấn', 'Làm cỏ'];
@@ -64,7 +63,6 @@
       return logs;
     }
 
-    // Helpers
     function esc(s) {
       if (s === undefined || s === null) return '';
       return String(s)
@@ -131,7 +129,6 @@
       return '';
     }
 
-    // Copy link function
     function copyReportLink() {
       const btn = document.getElementById('btn-copy-link');
       navigator.clipboard.writeText(window.location.href).then(() => {
@@ -139,7 +136,7 @@
         btn.innerHTML = '<i data-lucide="check" class="lucide-sm"></i> Đã sao chép!';
         btn.style.borderColor = 'var(--green-primary)';
         btn.style.color = 'var(--green-primary)';
-        
+
         setTimeout(() => {
           btn.innerHTML = originalContent;
           btn.style.borderColor = 'var(--border-gray)';
@@ -150,7 +147,6 @@
       });
     }
 
-    // Helper to resolve the plant slug or UID from any URL pattern
     function getReportTargetSlug() {
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('slug')) return urlParams.get('slug');
@@ -168,7 +164,6 @@
       return '';
     }
 
-    // CSV Export functionality for Report page
     function exportReportCsv() {
       if (!plantData) {
         alert("Dữ liệu báo cáo chưa sẵn sàng.");
@@ -221,8 +216,8 @@
 
       filteredLogs.forEach((log, index) => {
         const detailsText = getLogDetailsText(log).replace(/<[^>]*>/g, '');
-        const mediaUrls = (log.media_urls && Array.isArray(log.media_urls)) 
-          ? log.media_urls.map(m => m.url || m).join('; ') 
+        const mediaUrls = (log.media_urls && Array.isArray(log.media_urls))
+          ? log.media_urls.map(m => m.url || m).join('; ')
           : '';
 
         const row = [
@@ -258,20 +253,17 @@
     }
     window.exportReportCsv = exportReportCsv;
 
-    // Initialization
     async function initReport() {
       try {
         const slug = getReportTargetSlug();
         if (!slug) throw new Error("Mã định danh cây trồng trống.");
 
-        // Parse query params
         const urlParams = new URLSearchParams(window.location.search);
         const fromDate = urlParams.get('from');
         const toDate = urlParams.get('to');
         const categoriesParam = urlParams.get('categories');
         const checkedCats = categoriesParam ? categoriesParam.split(',') : [];
 
-        // Fetch Plant Data
         let res = await fetch(`/api/plants/public/${encodeURIComponent(slug)}`);
         if (!res.ok) {
           const pathParts = window.location.pathname.split('/').filter(p => p.length > 0);
@@ -287,40 +279,34 @@
         }
         plantData = await res.json();
 
-        // Render current extraction time
         const now = new Date();
         document.getElementById('report-time').textContent = `Trích xuất lúc: ${formatDate(now)} ${formatTime(now)}`;
 
-        // Populate Plant Specs
         document.getElementById('plant-id').textContent = `#${plantData.id}`;
         document.getElementById('plant-type').textContent = plantData.plant_type || '—';
         document.getElementById('plant-variety').textContent = plantData.plant_variety || '—';
         document.getElementById('plant-age').textContent = plantData.plant_age || '—';
         document.getElementById('plant-location').textContent = plantData.location || '—';
         document.getElementById('plant-farm').textContent = plantData.farm_name || '—';
-        
+
         const hasCoords = plantData.latitude && plantData.longitude;
-        document.getElementById('plant-gps').textContent = hasCoords 
-          ? `${plantData.latitude}, ${plantData.longitude}` 
+        document.getElementById('plant-gps').textContent = hasCoords
+          ? `${plantData.latitude}, ${plantData.longitude}`
           : '—';
 
-        // Filter and Sort Logs
         const logs = enrichReportLogsWithFruitAuditChain(plantData.logs || []);
         const filteredLogs = logs.filter(log => {
           const logDateStr = new Date(log.log_date).toISOString().split('T')[0];
           const isWithinDate = (!fromDate || logDateStr >= fromDate) && (!toDate || logDateStr <= toDate);
-          
-          // If no categories filter given, match all; otherwise check containment with backward-compatible labor aliases
+
           const isMatchedCat = matchesReportCategory(checkedCats, log.log_type);
           return isWithinDate && isMatchedCat;
         });
         filteredLogs.sort((a, b) => new Date(a.log_date) - new Date(b.log_date));
 
-        // Render Summary text
         const summaryText = `Thời gian báo cáo: từ <strong>${fromDate ? formatDate(fromDate) : 'ngày đầu số hóa'}</strong> đến <strong>${toDate ? formatDate(toDate) : 'hiện tại'}</strong>. Đã lọc <strong>${filteredLogs.length}</strong> nhật ký hoạt động.`;
         document.getElementById('report-summary').innerHTML = summaryText;
 
-        // Render Logs table
         const tableContainer = document.getElementById('table-container');
         if (filteredLogs.length === 0) {
           tableContainer.innerHTML = `<div class="no-data">Không có hoạt động canh tác nào khớp với khoảng thời gian và hạng mục đã chọn.</div>`;
@@ -337,7 +323,7 @@
               </thead>
               <tbody>
           `;
-          
+
           filteredLogs.forEach(l => {
             const detailsText = getLogDetailsText(l);
             const mediaUrls = (l.media_urls && Array.isArray(l.media_urls)) ? l.media_urls : [];
@@ -387,7 +373,7 @@
               </tr>
             `;
           });
-          
+
           tableHtml += `
               </tbody>
             </table>
@@ -395,11 +381,9 @@
           tableContainer.innerHTML = tableHtml;
         }
 
-        // Hide Loader, Show Content
         document.getElementById('loader').style.display = 'none';
         document.getElementById('report-content').style.display = 'block';
 
-        // Load map if coordinates or boundary polygon exist
         const hasBoundary = plantData.farm_boundary && plantData.farm_boundary.coordinates;
         if (hasCoords || hasBoundary) {
           document.getElementById('map-section').style.display = 'block';
@@ -415,7 +399,6 @@
       }
     }
 
-    // Mapbox Initialization
     async function initReportMap(hasCoords, hasBoundary) {
       const DEFAULT_MAPBOX_TOKEN = typeof atob === 'function' ? atob('cGsuZXlKMUlqb2ljR2gxWTIxbGIyMWxieUlzSW1FaU9pSmpiWEYwT1RSNk9HTXdNbkk1TW5OelptZHVNekoxY210cUluMC5JWC1vWndJc1BVRXcxRzEwZVJfSnNR') : '';
       let mapboxToken = DEFAULT_MAPBOX_TOKEN;
@@ -458,7 +441,6 @@
         const bounds = new mapboxgl.LngLatBounds();
         let hasBounds = false;
 
-        // Draw Farm Boundary Polygon
         if (hasBoundary && plantData.farm_boundary.coordinates[0]) {
           map.addSource('farm-boundary', {
             type: 'geojson',
@@ -495,7 +477,6 @@
           hasBounds = true;
         }
 
-        // Draw Plant Location Marker
         if (hasCoords) {
           const lat = parseFloat(plantData.latitude);
           const lng = parseFloat(plantData.longitude);
@@ -531,12 +512,6 @@
 
     window.onload = initReport;
 
-/**
- * Thêm đường đồng mức siêu dày mật độ 1m (1-Meter High-Density Contour Lines),
- * dải màu cao độ quang phổ (Elevation Spectrum Gradient) và Bảng chú giải cao độ.
- * @param {mapboxgl.Map} map - Mapbox map instance
- * @param {Object} options - { defaultVisible: true, showControl: true }
- */
 function addContourLinesToMap(map, options = {}) {
   if (!map) return;
   const defaultVisible = options.defaultVisible !== false;
@@ -544,7 +519,6 @@ function addContourLinesToMap(map, options = {}) {
 
   const initContours = () => {
     try {
-      // 1. Thêm nguồn Terrain DEM cho 3D địa hình
       if (!map.getSource('mapbox-dem')) {
         map.addSource('mapbox-dem', {
           type: 'raster-dem',
@@ -555,7 +529,6 @@ function addContourLinesToMap(map, options = {}) {
         map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
       }
 
-      // 2. Thêm nguồn Vector Đường Đồng Mức tiêu chuẩn Mapbox Terrain v2
       if (!map.getSource('mapbox-terrain-contours')) {
         map.addSource('mapbox-terrain-contours', {
           type: 'vector',
@@ -563,25 +536,23 @@ function addContourLinesToMap(map, options = {}) {
         });
       }
 
-      // Dải màu dốc cao độ quang phổ (Spectrum Elevation Color Ramp)
       const contourColorRamp = [
         'interpolate',
         ['linear'],
         ['get', 'ele'],
-        0,    '#1d4ed8', // 0m: Xanh dương đậm
-        100,  '#0284c7', // 100m: Xanh biển
-        300,  '#06b6d4', // 300m: Xanh lam sáng
-        450,  '#10b981', // 450m: Xanh lá cây
-        490,  '#22c55e', // 490m: Xanh lá mạ
-        500,  '#84cc16', // 500m: Xanh đọt chuối
-        504,  '#eab308', // 504m: Vàng tươi
-        508,  '#f97316', // 508m: Cam
-        512,  '#ef4444', // 512m: Đỏ tươi
-        800,  '#dc2626', // 800m: Đỏ sẫm
-        1500, '#991b1b'  // 1500m: Đỏ đậm
+        0,    '#1d4ed8',
+        100,  '#0284c7',
+        300,  '#06b6d4',
+        450,  '#10b981',
+        490,  '#22c55e',
+        500,  '#84cc16',
+        504,  '#eab308',
+        508,  '#f97316',
+        512,  '#ef4444',
+        800,  '#dc2626',
+        1500, '#991b1b'
       ];
 
-      // 3. Lớp Đường Đồng Mức Tiêu Chuẩn
       if (!map.getLayer('contour-lines')) {
         map.addLayer({
           id: 'contour-lines',
@@ -661,16 +632,11 @@ function addContourLinesToMap(map, options = {}) {
         ];
       }
 
-      // 4. Hàm Sinh Đường Đồng Mức Mật Độ Biến Thiên Năng Động Theo Zoom
       const updateDense1mContours = () => {
         try {
           const bbox = getFarmBoundingBox();
           if (!bbox) return;
 
-          // Công thức khoảng cách đường đồng mức theo yêu cầu:
-          // Kích cỡ xem nông trại hiện tại (Zoom ~16.0): 2.5m
-          // Mỗi lần Zoom in (+1 zoom): -0.5m
-          // Mỗi lần Zoom out (-1 zoom): +0.5m
           const currentZoom = map.getZoom();
           let interval = 2.5 - (currentZoom - 16.0) * 0.5;
           interval = Math.max(0.5, Math.min(10.0, interval));
@@ -849,7 +815,6 @@ function addContourLinesToMap(map, options = {}) {
         }
       };
 
-      // Cập nhật Bảng Chú Giải Cao Độ Dạng Thanh Dải Màu Sang Trọng (Hiển thị khoảng cách mét)
       const updateLegendWidget = (minEle, maxEle, interval) => {
         const legendContainer = map.getContainer().querySelector('.elevation-legend-widget-container');
         if (!legendContainer) return;
@@ -907,7 +872,6 @@ function addContourLinesToMap(map, options = {}) {
       setTimeout(updateDense1mContours, 600);
       setTimeout(updateDense1mContours, 1500);
 
-      // 5. Nút Bật/Tắt đường đồng mức
       if (showControl && !map._contourControlAdded) {
         map._contourControlAdded = true;
 
@@ -916,7 +880,7 @@ function addContourLinesToMap(map, options = {}) {
             this._map = m;
             this._container = document.createElement('div');
             this._container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group';
-            
+
             const btn = document.createElement('button');
             btn.className = 'mapboxgl-ctrl-icon mapbox-ctrl-contour-btn';
             btn.type = 'button';
@@ -966,7 +930,6 @@ function addContourLinesToMap(map, options = {}) {
 
         map.addControl(new ContourToggleControl(), 'top-right');
 
-        // 6. Thêm Bảng Chú Giải Cao Độ Widget Container
         const mapContainer = map.getContainer();
         if (mapContainer && !mapContainer.querySelector('.elevation-legend-widget-container')) {
           const legendContainer = document.createElement('div');
@@ -993,4 +956,3 @@ function addContourLinesToMap(map, options = {}) {
     map.once('load', initContours);
   }
 }
-

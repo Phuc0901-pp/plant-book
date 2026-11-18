@@ -2,12 +2,10 @@ const { describe, it, expect } = require('../test-framework');
 
 describe('Suite 2: Farms Management, GIS Spatial Algorithms & VietGAP PUC Code', () => {
 
-  // Algorithmic helper for Polygon Area (Shoelace Formula on Geodesic planar projection)
   function calculatePolygonArea(coords) {
     if (!Array.isArray(coords) || coords.length < 3) return 0;
-    
-    // Convert Lng/Lat to meters using Spherical Earth approximation
-    const R = 6378137; // Earth radius in meters
+
+    const R = 6378137;
     let area = 0;
     const len = coords.length;
 
@@ -25,7 +23,7 @@ describe('Suite 2: Farms Management, GIS Spatial Algorithms & VietGAP PUC Code',
   }
 
   function calculateSegmentLength(p1, p2) {
-    const R = 6371e3; // metres
+    const R = 6371e3;
     const phi1 = p1[1] * Math.PI / 180;
     const phi2 = p2[1] * Math.PI / 180;
     const deltaPhi = (p2[1] - p1[1]) * Math.PI / 180;
@@ -51,8 +49,8 @@ describe('Suite 2: Farms Management, GIS Spatial Algorithms & VietGAP PUC Code',
     expect(validPolygon.length).toBeGreaterThanOrEqual(3);
     validPolygon.forEach(pt => {
       expect(pt.length).toBe(2);
-      expect(typeof pt[0]).toBe('number'); // Lng
-      expect(typeof pt[1]).toBe('number'); // Lat
+      expect(typeof pt[0]).toBe('number');
+      expect(typeof pt[1]).toBe('number');
       expect(pt[0]).toBeGreaterThan(-180);
       expect(pt[0]).toBeLessThan(180);
       expect(pt[1]).toBeGreaterThan(-90);
@@ -61,7 +59,6 @@ describe('Suite 2: Farms Management, GIS Spatial Algorithms & VietGAP PUC Code',
   });
 
   it('2.2 Should compute farm area in square meters and convert accurately to hectares', () => {
-    // 100m x 100m approximate square bounding box
     const testFarmCoords = [
       [107.0000, 11.0000],
       [107.0010, 11.0000],
@@ -70,8 +67,8 @@ describe('Suite 2: Farms Management, GIS Spatial Algorithms & VietGAP PUC Code',
     ];
 
     const areaM2 = calculatePolygonArea(testFarmCoords);
-    expect(areaM2).toBeGreaterThan(10000); // approx > 1 hectare
-    
+    expect(areaM2).toBeGreaterThan(10000);
+
     const areaHa = areaM2 / 10000;
     expect(areaHa).toBeGreaterThan(1.0);
   });
@@ -82,13 +79,12 @@ describe('Suite 2: Farms Management, GIS Spatial Algorithms & VietGAP PUC Code',
 
     const distanceMeters = calculateSegmentLength(p1, p2);
     expect(distanceMeters).toBeGreaterThan(100);
-    expect(distanceMeters).toBeLessThan(120); // ~109m at latitude 11 deg
+    expect(distanceMeters).toBeLessThan(120);
   });
 
   it('2.4 Should validate and format VietGAP Production Unit Code (PUC Code)', () => {
     const validatePucCode = (code) => {
       if (!code) return false;
-      // VietGAP PUC format e.g. VN-DL-00124, VN-BP-0089, VN-TB-01
       const pucRegex = /^[A-Z]{2}-[A-Z]{2,4}-[0-9A-Za-z]+$/;
       return pucRegex.test(code.trim().toUpperCase());
     };
@@ -124,7 +120,6 @@ describe('Suite 2: Farms Management, GIS Spatial Algorithms & VietGAP PUC Code',
   });
 
   it('2.6 Should handle polygon vertex mutation (direct_select mode) and recalculate area accurately', () => {
-    // Original 4-vertex bounding polygon
     const originalPolygon = [
       [107.0000, 11.0000],
       [107.0010, 11.0000],
@@ -133,10 +128,9 @@ describe('Suite 2: Farms Management, GIS Spatial Algorithms & VietGAP PUC Code',
     ];
     const initialArea = calculatePolygonArea(originalPolygon);
 
-    // Simulate user dragging top-right vertex (index 2) outwards to expand farm boundary
     const mutatedPolygon = originalPolygon.map((pt, idx) => {
       if (idx === 2) {
-        return [107.0020, 11.0020]; // Dragged further north-east
+        return [107.0020, 11.0020];
       }
       return [...pt];
     });
@@ -156,7 +150,6 @@ describe('Suite 2: Farms Management, GIS Spatial Algorithms & VietGAP PUC Code',
       [107.1000, 11.5050]
     ];
 
-    // Helper to produce closed ring
     const ensureClosedRing = (coords) => {
       const ring = coords.map(p => [...p]);
       if (ring.length >= 3) {
@@ -188,4 +181,3 @@ describe('Suite 2: Farms Management, GIS Spatial Algorithms & VietGAP PUC Code',
   });
 
 });
-

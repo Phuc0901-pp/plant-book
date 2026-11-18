@@ -1,4 +1,3 @@
-﻿// Centralized Express Error Handler
 module.exports = function errorHandler(err, req, res, next) {
   console.error('🔥 Centralized API Error:', err);
 

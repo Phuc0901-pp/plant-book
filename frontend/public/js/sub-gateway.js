@@ -1,7 +1,3 @@
-/* Plant Book AgTech (c) 2026 TBSG AgTech. All Rights Reserved.
-   modules/sub-gateway.js — Master Controller for Smart NFC Gateway (/sub)
-   ======================================================================== */
-
 import { SubGpsEngine } from './sub-gps-engine.js';
 import { SubNfcBridge } from './sub-nfc-bridge.js';
 
@@ -122,12 +118,10 @@ class SubGatewayApp {
       this.state.encryptedUserId = urlEncId;
     }
 
-    // Check if initial tag_uid passed in URL
     if (this.state.tagUid) {
       this.updateActiveTagUid(this.state.tagUid);
     }
 
-    // Auto-start NFC listening if supported
     if (this.nfcBridge.isSupported()) {
       this.nfcBridge.scanTag(
         (data) => {
@@ -139,12 +133,10 @@ class SubGatewayApp {
       );
     }
 
-    // If URL contains trailing '?' or query parameters, clean it without page reload
     if (window.location.search) {
       window.history.replaceState({}, '', window.location.pathname);
     }
 
-    // Auto-advance if authenticated session exists (even if urlEncId was not initially in URL)
     if (this.state.token && this.state.user) {
       const encId = urlEncId || this.state.user.encrypted_user_id || this.state.encryptedUserId;
       if (encId) {
@@ -157,7 +149,6 @@ class SubGatewayApp {
         this.showView('view-farm-hub');
       });
     } else {
-      // Default: always show landing page so user can choose action
       this.showView('view-landing');
     }
 
@@ -168,19 +159,16 @@ class SubGatewayApp {
     const cleanUid = uid && String(uid).trim() ? String(uid).replace(/:/g, '').trim().toUpperCase() : '';
     this.state.tagUid = cleanUid;
 
-    // 1. Step 3 input
     const tagEl = document.getElementById('input-tag-uid');
     if (tagEl && tagEl.value !== cleanUid) {
       tagEl.value = cleanUid;
     }
 
-    // 2. Step 4 input
     const writeTagEl = document.getElementById('input-write-tag-uid');
     if (writeTagEl && writeTagEl.value !== cleanUid) {
       writeTagEl.value = cleanUid;
     }
 
-    // 3. Step 4 badge
     const badge = document.getElementById('badge-write-uid-status');
     if (badge) {
       if (cleanUid) {
@@ -194,7 +182,6 @@ class SubGatewayApp {
       }
     }
 
-    // 4. Update Public Plant URL if a plant is selected or created
     const plantObj = this.state.createdPlant?.plant || this.state.createdPlant || this.state.selectedPlant;
     if (plantObj && plantObj.id) {
       const plantId = plantObj.id;
@@ -299,9 +286,6 @@ class SubGatewayApp {
     }, 3200);
   }
 
-  /**
-   * Calculate plant age from planting date string (DD/MM/YYYY or YYYY-MM-DD)
-   */
   calculatePlantAge(dateStr) {
     if (!dateStr) return '';
     let plantingDate = null;
@@ -345,7 +329,6 @@ class SubGatewayApp {
   }
 
   bindEvents() {
-    // 1. Landing View Options
     document.getElementById('btn-opt-existing')?.addEventListener('click', () => {
       this.showView('view-login');
     });
@@ -355,12 +338,10 @@ class SubGatewayApp {
       this.autoCaptureFarmGps();
     });
 
-    // Quick Change Farm Button
     document.getElementById('btn-quick-change-farm')?.addEventListener('click', () => {
       this.showView('view-farm-hub');
     });
 
-    // Stepper navigation click bindings
     document.getElementById('step-node-1')?.addEventListener('click', () => {
       if (!this.state.token) {
         this.showView('view-landing');
@@ -395,7 +376,6 @@ class SubGatewayApp {
       }
     });
 
-    // Back / Logout buttons
     document.querySelectorAll('.btn-back-landing').forEach(btn => {
       btn.addEventListener('click', () => {
         if (btn.innerText.includes('Đăng xuất')) {
@@ -416,7 +396,6 @@ class SubGatewayApp {
       this.showView('view-farm-hub');
     });
 
-    // 2. Login Form & Triggers
     document.getElementById('form-login')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       await this.handleLogin();
@@ -446,7 +425,6 @@ class SubGatewayApp {
       this.autoCaptureFarmGps();
     });
 
-    // 3. Register & Farm Setup Form
     document.getElementById('form-register')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       await this.handleRegisterAndFarmSetup();
@@ -461,7 +439,6 @@ class SubGatewayApp {
       this.autoCaptureFarmGps();
     });
 
-    // 4. Farm Hub Actions
     document.getElementById('select-farm-hub')?.addEventListener('change', (e) => {
       this.state.selectedFarmId = parseInt(e.target.value);
       this.loadFarmPlantsList(this.state.selectedFarmId);
@@ -484,7 +461,6 @@ class SubGatewayApp {
       }
     });
 
-    // 5. Auto Calculate Plant Age on Planting Date Change
     document.getElementById('input-planting-date')?.addEventListener('change', (e) => {
       const calculated = this.calculatePlantAge(e.target.value);
       const ageInput = document.getElementById('input-plant-age');
@@ -493,7 +469,6 @@ class SubGatewayApp {
       }
     });
 
-    // 6. Interactive Disease Chips Toggle
     document.querySelectorAll('.disease-chip').forEach(chip => {
       chip.addEventListener('click', () => {
         const diseaseName = chip.dataset.disease;
@@ -509,7 +484,6 @@ class SubGatewayApp {
         }
 
         if (diseaseName.includes('Chưa từng')) {
-          // Healthy clicked: clear all others
           this.selectedDiseases.clear();
           document.querySelectorAll('.disease-chip').forEach(c => c.classList.remove('active'));
           chip.classList.add('active');
@@ -517,7 +491,6 @@ class SubGatewayApp {
           const inp = document.getElementById('input-other-disease');
           if (inp) inp.style.display = 'none';
         } else {
-          // Remove healthy chip if selecting a specific disease
           const healthyChip = document.querySelector('.disease-chip.healthy');
           if (healthyChip) {
             healthyChip.classList.remove('active');
@@ -535,7 +508,6 @@ class SubGatewayApp {
       });
     });
 
-    // 7. Photo Capture & Watermark
     const photoBox = document.getElementById('btn-trigger-photo');
     const photoInput = document.getElementById('input-plant-photo');
     photoBox?.addEventListener('click', (e) => {
@@ -551,7 +523,6 @@ class SubGatewayApp {
       }
     });
 
-    // 8. GPS Engine Lock & Manual Toggle
     document.getElementById('btn-lock-gps')?.addEventListener('click', () => {
       const manualLat = document.getElementById('manual-lat-input')?.value.trim();
       const manualLng = document.getElementById('manual-lng-input')?.value.trim();
@@ -588,7 +559,6 @@ class SubGatewayApp {
       }
     });
 
-    // 9. Plant Form Submit
     document.getElementById('form-plant-detail')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       await this.handleSavePlant();
@@ -599,7 +569,6 @@ class SubGatewayApp {
       await this.handleSavePlant();
     });
 
-    // 10. NFC Tag Input & Scan Actions
     document.getElementById('input-tag-uid')?.addEventListener('input', (e) => {
       this.updateActiveTagUid(e.target.value);
     });
@@ -663,7 +632,6 @@ class SubGatewayApp {
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, w, h);
 
-          // Draw Watermark
           const nowStr = new Date().toLocaleString('vi-VN');
           const gpsStr = this.state.gpsLocked ? `GPS: ${this.state.gpsLocked.latitude.toFixed(6)}, ${this.state.gpsLocked.longitude.toFixed(6)}` : 'GPS: TBSG VIRTUAL FIELD';
           const watermarkText = `TBSG AGTECH · ${nowStr} · ${gpsStr}`;
@@ -676,7 +644,6 @@ class SubGatewayApp {
 
           this.capturedPhotoBase64 = canvas.toDataURL('image/jpeg', 0.85);
 
-          // Update Preview UI
           document.getElementById('photo-upload-placeholder').style.display = 'none';
           const previewWrap = document.getElementById('wrap-photo-preview');
           const previewImg = document.getElementById('img-photo-preview');
@@ -696,8 +663,6 @@ class SubGatewayApp {
     }
   }
 
-  // --- API CALLS ---
-
   async handleLogin() {
     const email = document.getElementById('login-email')?.value.trim();
     const password = document.getElementById('login-password')?.value.trim();
@@ -716,7 +681,7 @@ class SubGatewayApp {
 
       const res = await fetch('/api/auth/login', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
@@ -741,7 +706,6 @@ class SubGatewayApp {
         this.showToast('Đăng nhập thành công!', 'success');
       }
 
-      // Xóa dấu ? trên URL nếu có
       if (window.location.search) {
         window.history.replaceState({}, '', window.location.pathname);
       }
@@ -918,17 +882,17 @@ class SubGatewayApp {
         const variety = p.plant_variety || p.plant_type || 'Cây trồng';
         const plot = p.plot_code || 'A1';
         const row = p.row_number || 1;
-        const nfcBadge = p.nfc_uid 
+        const nfcBadge = p.nfc_uid
           ? `<span style="display:inline-flex; align-items:center; gap:3px; background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px; font-weight:700; font-size:11px;"><i data-lucide="radio" style="width:11px; height:11px;"></i> ${p.nfc_uid}</span>`
           : `<span style="background:#f1f5f9; color:#64748b; padding:2px 6px; border-radius:4px; font-size:11px;">Chưa gắn thẻ</span>`;
-        const healthBadge = p.health_status === 'Kém' 
+        const healthBadge = p.health_status === 'Kém'
           ? `<span style="display:inline-flex; align-items:center; gap:3px; background:#fef2f2; color:#dc2626; padding:2px 6px; border-radius:4px; font-size:11px; font-weight:600;"><i data-lucide="alert-triangle" style="width:11px; height:11px;"></i> ${p.health_status}</span>`
           : `<span style="display:inline-flex; align-items:center; gap:3px; background:#ecfdf5; color:#059669; padding:2px 6px; border-radius:4px; font-size:11px; font-weight:600;"><i data-lucide="sprout" style="width:11px; height:11px;"></i> ${p.health_status || 'Tốt'}</span>`;
 
         return `
           <div class="tree-select-item" data-id="${p.id}" data-code="${treeCode}">
             <div>
-              <strong style="color:#059669; font-size:14px;">${treeCode}</strong> 
+              <strong style="color:#059669; font-size:14px;">${treeCode}</strong>
               <span style="color:#0f172a; font-weight:700;">· ${variety}</span>
               <div style="font-size:12px; color:#475569; margin-top:4px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
                 <span>Lô ${plot} · Hàng ${row}</span>
@@ -970,7 +934,6 @@ class SubGatewayApp {
     if (tagEl && this.state.tagUid) tagEl.value = this.state.tagUid;
     document.getElementById('plant-form-title').innerText = 'Khai Báo Cây Trồng Chi Tiết';
 
-    // Auto-fill Passport defaults from current farm
     const currentFarm = (this.state.farms || []).find(f => f.id === this.state.selectedFarmId) || (this.state.farms && this.state.farms[0]);
     if (currentFarm) {
       const pucInput = document.getElementById('input-passport-puc');
@@ -1078,7 +1041,6 @@ class SubGatewayApp {
     const health = document.getElementById('input-health-status')?.value;
     const growthStage = document.getElementById('input-growth-stage')?.value;
 
-    // Passport inputs
     const passportPuc = document.getElementById('input-passport-puc')?.value.trim();
     const passportStandard = document.getElementById('input-passport-standard')?.value;
     const passportCertNumber = document.getElementById('input-passport-cert-number')?.value.trim();
@@ -1086,7 +1048,6 @@ class SubGatewayApp {
     const passportSeedOrigin = document.getElementById('input-passport-seed-origin')?.value.trim();
     const passportBatchCode = document.getElementById('input-passport-batch-code')?.value.trim();
 
-    // Past diseases list
     const pastDiseases = Array.from(this.selectedDiseases);
     const otherDiseaseInput = document.getElementById('input-other-disease')?.value.trim();
     if (otherDiseaseInput && !pastDiseases.includes(otherDiseaseInput)) {
@@ -1187,10 +1148,9 @@ class SubGatewayApp {
       if (btn) btn.innerText = 'Đang chờ chạm thẻ...';
       this.showToast('Áp lưng điện thoại vào thẻ NFC để ghi dữ liệu...', 'info');
 
-      // Get target UID
-      let finalUid = document.getElementById('input-write-tag-uid')?.value.trim() 
-        || this.state.tagUid 
-        || this.nfcBridge.getLastScannedUid() 
+      let finalUid = document.getElementById('input-write-tag-uid')?.value.trim()
+        || this.state.tagUid
+        || this.nfcBridge.getLastScannedUid()
         || '';
       finalUid = finalUid ? finalUid.replace(/:/g, '').toUpperCase() : '';
 
@@ -1205,13 +1165,11 @@ class SubGatewayApp {
 
       await this.nfcBridge.writeTagUrl(url);
 
-      // In case tag was tapped and UID was captured during the touch
       if (!finalUid && this.nfcBridge.getLastScannedUid()) {
         finalUid = this.nfcBridge.getLastScannedUid();
         this.updateActiveTagUid(finalUid);
       }
 
-      // Verify and persist write to backend
       if (targetPlant && targetPlant.id && this.state.token) {
         const plantId = targetPlant.id;
         try {
@@ -1235,7 +1193,6 @@ class SubGatewayApp {
           console.warn('Verify-write error:', e);
         }
 
-        // Secondary guarantee: also call PUT /api/plants/:id/nfc
         if (finalUid) {
           try {
             await fetch(`/api/plants/${plantId}/nfc`, {
@@ -1272,7 +1229,6 @@ class SubGatewayApp {
   }
 }
 
-// Robust Lifecycle Initialization (Handles cases where DOMContentLoaded already fired before module evaluation)
 function initSubGatewayInstance() {
   if (!window.SubGateway) {
     try {

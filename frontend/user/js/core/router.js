@@ -1,13 +1,5 @@
-/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/* ═══════════════════════════════════════════════════════════════
-   Plant Book – User Portal
-   core/router.js — RESTful Hash Router with Obfuscated Security Hashing
-   URL Format: #/u/:userHash/:page (e.g., #/u/usr-5a96/farms/farm-5a9f)
-   ═══════════════════════════════════════════════════════════════ */
-
 const SALT = 0x5a9e;
 
-/** Encode numeric ID to obfuscated hash token (International Security Standard) */
 export function encodeId(prefix, numId) {
   if (!numId && numId !== 0) return '';
   const n = parseInt(numId) || 0;
@@ -16,7 +8,6 @@ export function encodeId(prefix, numId) {
   return `${prefix}-${hex}`;
 }
 
-/** Decode obfuscated hash token back to numeric ID */
 export function decodeId(hashStr) {
   if (!hashStr || typeof hashStr !== 'string') return null;
   const parts = hashStr.split('-');
@@ -48,7 +39,6 @@ export function getUserHash() {
 }
 window.getUserHash = getUserHash;
 
-/** Page titles mapping */
 export const PAGE_TITLES = {
   home:     'Trang chủ',
   myplants: 'Trang trại GIS',
@@ -59,7 +49,6 @@ export const PAGE_TITLES = {
   settings: 'Cài đặt',
 };
 
-/** Alias map for standard RESTful URL names */
 const PAGE_ALIASES = {
   dashboard: 'home',
   home: 'home',
@@ -80,7 +69,7 @@ export function syncUserUrl(params = {}) {
   const restPageName = matchedPage === 'myplants' ? 'farms' : matchedPage;
 
   const currentSearch = new URLSearchParams(window.location.search);
-  
+
   if ('tab' in params) {
     if (params.tab) currentSearch.set('tab', params.tab);
     else currentSearch.delete('tab');
@@ -112,32 +101,22 @@ export function syncUserUrl(params = {}) {
 }
 window.syncUserUrl = syncUserUrl;
 
-/**
- * Show page section & synchronize URL path & hash
- * @param {string} page 
- * @param {boolean} updateHash 
- */
 export function showPage(page, updateHash = true) {
   const targetPage = PAGE_ALIASES[page] || page;
-  
-  // Tắt tất cả sections
+
   document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
-  // Tắt nav items
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
 
-  // Bật section mục tiêu
   const section = document.getElementById(`page-${targetPage}`);
   if (section) section.classList.add('active');
 
-  // Instant Lucide icon hydration on page transitions
   if (typeof window.refreshIcons === 'function') {
     window.refreshIcons();
     setTimeout(window.refreshIcons, 40);
     setTimeout(window.refreshIcons, 250);
   }
 
-  // Đánh dấu nav active
   const navKey = targetPage === 'myplants' ? 'myplants' : targetPage;
   const navEl = document.querySelector(`[data-page="${navKey}"]`);
   if (navEl) navEl.classList.add('active');
@@ -145,18 +124,15 @@ export function showPage(page, updateHash = true) {
   const bottomNavEl = document.querySelector(`.bottom-nav-item[data-page="${navKey}"]`);
   if (bottomNavEl) bottomNavEl.classList.add('active');
 
-  // Cập nhật tiêu đề trang
   const titleEl = document.getElementById('page-title');
   if (titleEl) titleEl.textContent = PAGE_TITLES[targetPage] || targetPage;
 
   closeMobileSidebar();
 
-  // Synchronize RESTful path & hash in browser address bar (e.g. /usr-15/farms)
   if (updateHash) {
     syncUserUrl({ page: targetPage, tab: null, farm: null, modal: null, id: null });
   }
 
-  // Lazy load dữ liệu khi chuyển tab
   if (targetPage === 'home') {
     if (typeof window.loadUserDashboard === 'function') window.loadUserDashboard();
   }
@@ -195,7 +171,6 @@ export function showPage(page, updateHash = true) {
     if (typeof window.loadUserSettings === 'function') window.loadUserSettings();
   }
 
-  // Trigger universal smooth count-up animation on all numbers
   setTimeout(() => {
     if (typeof window.triggerPageCountUpAnimations === 'function') {
       window.triggerPageCountUpAnimations(targetPage);
@@ -204,13 +179,9 @@ export function showPage(page, updateHash = true) {
 }
 window.showPage = showPage;
 
-/**
- * Handle URL path & hash changes for initial page load routing
- * Example URLs: /usr-15/farms or #/u/usr-15/farms
- */
 export function handleRouteFromHash() {
   const userToken = localStorage.getItem('pb_token');
-  if (!userToken) return; // Do not execute routing if user is logged out!
+  if (!userToken) return;
 
   const pathname = window.location.pathname || '';
   const hash = window.location.hash || '';
@@ -239,7 +210,6 @@ export function handleRouteFromHash() {
   const targetPage = PAGE_ALIASES[restPage] || 'home';
   showPage(targetPage, false);
 
-  // If a specific farm hash is provided in URL
   if (targetPage === 'myplants' && farmHash) {
     const farmId = decodeId(farmHash);
     if (farmId && typeof window.openFarmDetailView === 'function') {
@@ -250,7 +220,6 @@ export function handleRouteFromHash() {
   }
 }
 
-// Attach Hash & Popstate change listeners for browser Back/Forward & Direct URL entry
 window.addEventListener('hashchange', handleRouteFromHash);
 window.addEventListener('popstate', handleRouteFromHash);
 window.addEventListener('DOMContentLoaded', () => {

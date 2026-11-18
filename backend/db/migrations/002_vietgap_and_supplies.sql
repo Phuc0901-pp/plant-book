@@ -1,6 +1,3 @@
-﻿-- Migration: 002_vietgap_and_supplies.sql
--- Description: VietGAP compliance, supplies management, supply_usages, and fixed assets
-
 -- +migrate Up
 CREATE TABLE IF NOT EXISTS supplies (
   id SERIAL PRIMARY KEY,
@@ -72,4 +69,3 @@ ALTER TABLE plant_logs ADD COLUMN IF NOT EXISTS equipment_used VARCHAR(255);
 ALTER TABLE plant_logs ADD COLUMN IF NOT EXISTS is_phi_violation BOOLEAN DEFAULT false;
 
 -- +migrate Down
--- DROP TABLE IF EXISTS supply_usages, supplies, fixed_assets CASCADE;

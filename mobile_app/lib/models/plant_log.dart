@@ -22,7 +22,6 @@ class EditHistory {
   }
 }
 
-/// Nhật ký Chăm sóc VietGAP / GlobalG.A.P. tích hợp Chuỗi Băm Bất Biến (ISO/IEC 27001 SHA-256 Hash-Chain)
 class PlantLog {
   final int id;
   final int plantId;
@@ -40,7 +39,6 @@ class PlantLog {
   final String? plantType;
   final String? treeCode;
 
-  // Chuẩn Sổ cái Bất biến SHA-256 (ISO/IEC 27001 & VietGAP v1.3.5)
   final String? prevLogHash;
   final String? recordHash;
   final bool isLocked;
@@ -76,11 +74,9 @@ class PlantLog {
     this.estimatedCost,
   });
 
-  /// Kiểm tra bản ghi đã được niêm phong mật mã học SHA-256 hay chưa.
   bool get isCryptographicallySealed =>
       recordHash != null && recordHash!.trim().length >= 16;
 
-  /// Chuỗi hiển thị rút gọn của mã băm `recordHash` (ví dụ: `8f1c9a2b...e4d1`).
   String get shortRecordHash {
     final String raw = (recordHash ?? '').trim();
     if (raw.isEmpty) return 'UNSEALED_LEGACY';
@@ -88,7 +84,6 @@ class PlantLog {
     return '${raw.substring(0, 8)}...${raw.substring(raw.length - 6)}';
   }
 
-  /// Chuỗi hiển thị rút gọn của `prevLogHash`.
   String get shortPrevHash {
     final String raw = (prevLogHash ?? '').trim();
     if (raw.isEmpty) return 'GENESIS';

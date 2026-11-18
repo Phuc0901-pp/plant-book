@@ -1,5 +1,4 @@
       <div class="page-section" id="page-logs">
-        <!-- Executive Royal AgTech Header Banner -->
         <div class="royal-page-header">
           <div style="position:relative; z-index:1;">
             <div style="font-size:11px; color:#059669; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; margin-bottom:4px; display:inline-flex; align-items:center; gap:6px; background:#ecfdf5; border:1px solid #a7f3d0; padding:2px 8px; border-radius:6px;">
@@ -23,14 +22,12 @@
           </div>
         </div>
 
-        <!-- Role Scope Banner -->
         <div id="logs-role-scope-banner" style="display:none; margin-bottom:16px; padding:12px 18px; border-radius:14px; background:#f0f9ff; border:1px solid #bae6fd; color:#0369a1; font-size:13px; align-items:center; justify-content:space-between; box-shadow:0 2px 8px rgba(2,132,199,0.06);"></div>
 
         <div class="card" style="border-radius:18px; border:1px solid #e2e8f0; box-shadow:0 4px 20px rgba(0,0,0,0.04); overflow:hidden;">
-          <!-- Thanh tìm kiếm, lọc và sắp xếp lịch sử -->
           <div class="search-bar" style="display:flex; gap:10px; padding: 14px 18px; border-bottom:1px solid #e2e8f0; flex-wrap: wrap; align-items: center; background:#f8fafc;">
             <input type="text" id="user-log-search" placeholder="Tìm mã cây, ghi chú, phân bón/thuốc..." oninput="filterUserLogs()" style="flex:2; min-width: 180px; padding:9px 14px; border:1.5px solid var(--gray-200); border-radius:10px; font-size:13px; outline:none; background:#ffffff;">
-            
+
             <select id="user-log-filter-farm" onchange="filterUserLogs()" style="flex:1; min-width: 140px; padding:9px 12px; border:1.5px solid var(--gray-200); border-radius:10px; font-size:13px; background:#fff; outline:none;">
               <option value="all">Tất cả trang trại</option>
             </select>
@@ -67,7 +64,6 @@
             </button>
           </div>
 
-          <!-- Thanh thao tác hàng loạt khi ở chế độ Chọn nhiều (Batch Selection Floating Bar) -->
           <div id="user-logs-batch-action-bar" style="display:none; background:linear-gradient(135deg, #0f172a, #1e293b); color:#ffffff; padding:12px 18px; margin:0 16px 14px; border-radius:12px; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; box-shadow:0 6px 20px rgba(0,0,0,0.15);">
             <div style="display:flex; align-items:center; gap:10px; font-size:13.5px; font-weight:700;">
               <i data-lucide="clipboard-check" class="lucide-sm" style="color:#10b981; font-size:16px;"></i>
@@ -86,22 +82,18 @@
             </div>
           </div>
 
-          <!-- Date-Grouped History Logs Container -->
           <div id="user-logs-grouped-container" style="padding:16px; display:flex; flex-direction:column; gap:18px;">
             <div class="empty-state" style="padding:40px; text-align:center;"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải nhật ký canh tác...</div>
           </div>
 
-          <!-- Thanh điều hướng phân trang (20 bản ghi / trang) -->
           <div id="user-logs-pagination" style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-top:1px solid #e2e8f0; background:#f8fafc; flex-wrap:wrap; gap:10px;">
           </div>
         </div>
       </div>
 
-      <!-- ════════════════ MODAL: XÓA DỮ LIỆU CANH TÁC CHỌN LỌC (SOFT DELETE) ════════════════ -->
       <div id="selective-log-delete-modal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeSelectiveDeleteModal()">
         <div class="modal" style="background:#ffffff; border-radius:20px; max-width:580px; width:100%; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); border:1px solid #e2e8f0; overflow:hidden; animation:modalFadeIn 0.25s ease;">
-          
-          <!-- Modal Header -->
+
           <div style="background:linear-gradient(135deg, #1e293b, #0f172a); color:#ffffff; padding:18px 24px; display:flex; justify-content:space-between; align-items:center;">
             <div style="display:flex; align-items:center; gap:12px;">
               <div style="width:40px; height:40px; border-radius:10px; background:rgba(220,38,38,0.2); border:1px solid rgba(220,38,38,0.4); display:flex; align-items:center; justify-content:center; font-size:18px; color:#f87171;">
@@ -117,10 +109,8 @@
             </button>
           </div>
 
-          <!-- Modal Body Form -->
           <div style="padding:22px 24px; display:flex; flex-direction:column; gap:16px; max-height:75vh; overflow-y:auto;">
-            
-            <!-- Filter 1: Trang trại & Cây trồng -->
+
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
               <div>
                 <label style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:6px;"><i data-lucide="map-pin" class="lucide-xs"></i> Trang trại:</label>
@@ -137,7 +127,6 @@
               </div>
             </div>
 
-            <!-- Filter 2: Loại hoạt động canh tác -->
             <div>
               <label style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:6px;"><i data-lucide="activity" class="lucide-xs"></i> Loại hoạt động canh tác:</label>
               <select id="modal-del-type" onchange="previewSelectiveDelete()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600; outline:none; background:#ffffff;">
@@ -152,10 +141,9 @@
               </select>
             </div>
 
-            <!-- Filter 3: Phạm vi thời gian canh tác -->
             <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:14px;">
               <label style="display:block; font-size:12px; font-weight:800; color:#1e293b; margin-bottom:10px;"><i data-lucide="calendar" class="lucide-xs"></i> Phạm vi ngày canh tác:</label>
-              
+
               <div style="display:flex; gap:16px; margin-bottom:12px; flex-wrap:wrap;">
                 <label style="display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; color:#334155; cursor:pointer;">
                   <input type="radio" name="modal_del_date_mode" value="single" checked onchange="onModalDelDateModeChange()"> Một ngày cụ thể
@@ -168,12 +156,10 @@
                 </label>
               </div>
 
-              <!-- Single Date Box -->
               <div id="modal-del-box-single" style="display:block;">
                 <input type="date" id="modal-del-date-single" onchange="previewSelectiveDelete()" style="width:100%; padding:8px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; font-weight:600; outline:none; background:#ffffff;">
               </div>
 
-              <!-- Range Date Box -->
               <div id="modal-del-box-range" style="display:none; grid-template-columns:1fr 1fr; gap:10px;">
                 <div>
                   <span style="font-size:11px; color:#64748b; font-weight:600; display:block; margin-bottom:4px;">Từ ngày:</span>
@@ -186,13 +172,11 @@
               </div>
             </div>
 
-            <!-- Filter 4: Từ khóa bổ sung (optional) -->
             <div>
               <label style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:6px;"><i data-lucide="search" class="lucide-xs"></i> Từ khóa chi tiết (Ghi chú, tên vật tư, hoạt chất...):</label>
               <input type="text" id="modal-del-keyword" placeholder="Để trống nếu muốn áp dụng toàn bộ..." oninput="previewSelectiveDelete()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; outline:none;">
             </div>
 
-            <!-- Live Preview Counter Box -->
             <div style="background:#fff1f2; border:1.5px solid #fecaca; border-radius:12px; padding:14px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
               <div>
                 <div style="font-size:11.5px; font-weight:800; color:#991b1b; text-transform:uppercase; letter-spacing:0.5px;">Kết quả đếm trước</div>
@@ -207,7 +191,6 @@
 
           </div>
 
-          <!-- Modal Footer Actions -->
           <div style="background:#f8fafc; border-top:1px solid #e2e8f0; padding:16px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
             <button type="button" class="btn btn-secondary" onclick="closeSelectiveDeleteModal()" style="padding:9px 18px; font-size:13px; font-weight:700; border-radius:10px;">
               Hủy bỏ
@@ -221,11 +204,9 @@
         </div>
       </div>
 
-      <!-- ════════════════ MODAL: XUẤT BÁO CÁO & SỔ NHẬT KÝ CANH TÁC VIETGAP / EXCEL ════════════════ -->
       <div id="user-export-logs-modal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeUserExportLogsModal()">
         <div class="modal" style="background:#ffffff; border-radius:20px; max-width:620px; width:100%; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); border:1px solid #e2e8f0; overflow:hidden; animation:modalFadeIn 0.25s ease;">
-          
-          <!-- Modal Header -->
+
           <div style="background:linear-gradient(135deg, #064e3b, #047857); color:#ffffff; padding:18px 24px; display:flex; justify-content:space-between; align-items:center;">
             <div style="display:flex; align-items:center; gap:12px;">
               <div style="width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.3); display:flex; align-items:center; justify-content:center; font-size:18px; color:#ffffff;">
@@ -241,10 +222,8 @@
             </button>
           </div>
 
-          <!-- Modal Body Form -->
           <div style="padding:22px 24px; display:flex; flex-direction:column; gap:16px; max-height:75vh; overflow-y:auto;">
-            
-            <!-- Filter 1: Trang trại & Cây trồng -->
+
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
               <div>
                 <label style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:6px;"><i data-lucide="map-pin" class="lucide-xs"></i> Trang trại:</label>
@@ -261,7 +240,6 @@
               </div>
             </div>
 
-            <!-- Filter 2: Phạm vi thời gian -->
             <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:14px;">
               <label style="display:block; font-size:12px; font-weight:800; color:#1e293b; margin-bottom:8px;"><i data-lucide="calendar" class="lucide-xs"></i> Khoảng thời gian xuất báo cáo:</label>
               <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
@@ -276,7 +254,6 @@
               </div>
             </div>
 
-            <!-- Filter 3: Hạng mục canh tác -->
             <div>
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                 <label style="font-size:12px; font-weight:800; color:#1e293b; display:flex; align-items:center; gap:6px;">
@@ -289,13 +266,11 @@
               </div>
 
               <div id="modal-export-categories-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:8px;">
-                <!-- Filled dynamically -->
               </div>
             </div>
 
           </div>
 
-          <!-- Modal Footer Actions -->
           <div style="background:#f8fafc; border-top:1px solid #e2e8f0; padding:16px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
             <button type="button" class="btn btn-secondary" onclick="closeUserExportLogsModal()" style="padding:9px 18px; font-size:13px; font-weight:700; border-radius:10px;">
               Hủy bỏ
@@ -314,5 +289,3 @@
 
         </div>
       </div>
-
-      <!-- ── Cài đặt ── -->

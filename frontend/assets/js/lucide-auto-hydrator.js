@@ -1,16 +1,9 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/* ═══════════════════════════════════════════════════════════════
-   Plant Book Enterprise AgTech — Universal Lucide Icon Auto-Hydrator
-   Automatically watches DOM mutations & guarantees instant icon hydration
-   across initial load, deep routing, page switching, tab transitions & modals.
-   ═══════════════════════════════════════════════════════════════ */
 (function(window, document) {
   'use strict';
 
   if (window.__LucideHydratorInitialized) return;
   window.__LucideHydratorInitialized = true;
 
-  // Universal +4px Icon System Styles Injector
   function injectIconStyles() {
     if (typeof document === 'undefined' || document.getElementById('lucide-plus4px-styles')) return;
     var style = document.createElement('style');
@@ -36,9 +29,6 @@
   var scheduledTimer = null;
   var isHydrating = false;
 
-  /**
-   * Safely invoke Lucide icon creation
-   */
   function doCreateIcons(targetEl) {
     if (!window.lucide || typeof window.lucide.createIcons !== 'function') return;
     try {
@@ -48,13 +38,9 @@
         window.lucide.createIcons();
       }
     } catch (err) {
-      // Ignore temporary DOM unmount race conditions
     }
   }
 
-  /**
-   * Debounced icon refresh scheduler to prevent layout thrashing
-   */
   function scheduleRefreshIcons(delay) {
     if (delay === undefined) delay = 16;
     if (scheduledTimer) clearTimeout(scheduledTimer);
@@ -66,9 +52,6 @@
     }, delay);
   }
 
-  /**
-   * Global refresh helper exposed to window
-   */
   window.refreshIcons = function(targetEl) {
     if (targetEl && targetEl.nodeType === 1) {
       doCreateIcons(targetEl);
@@ -79,9 +62,6 @@
 
   window.scheduleRefreshIcons = scheduleRefreshIcons;
 
-  /**
-   * MutationObserver to automatically detect unrendered icons
-   */
   var observer = null;
   function initObserver() {
     if (observer) return;
@@ -99,7 +79,6 @@
             for (var j = 0; j < m.addedNodes.length; j++) {
               var node = m.addedNodes[j];
               if (node.nodeType === 1) {
-                // Ignore SVG created by Lucide itself
                 if (node.tagName === 'svg' || (node.classList && node.classList.contains('lucide'))) {
                   continue;
                 }
@@ -140,7 +119,6 @@
     }
   }
 
-  // Bind early DOM and window lifecycle events
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
       initObserver();
@@ -156,7 +134,6 @@
     scheduleRefreshIcons(0);
   });
 
-  // Multi-pass safety hydration for CDN scripts
   [0, 30, 80, 200, 500, 1000, 2000].forEach(function(d) {
     setTimeout(function() {
       scheduleRefreshIcons(0);

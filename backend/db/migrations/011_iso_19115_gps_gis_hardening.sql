@@ -1,5 +1,4 @@
 -- +migrate Up
--- Migration 011: ISO 19111 / ISO 19115 / ISO 19157 / SQL-MM Spatial (PostGIS) Hardening
 CREATE EXTENSION IF NOT EXISTS postgis;
 
 ALTER TABLE public.plants
@@ -34,7 +33,6 @@ BEGIN
   END IF;
 END $$;
 
--- Functional PostGIS GIST Spatial Index (EPSG:4326) for high-speed spatial queries & ST_AsMVT
 CREATE INDEX IF NOT EXISTS idx_plants_postgis_gist
   ON public.plants
   USING GIST (ST_SetSRID(ST_MakePoint(longitude::double precision, latitude::double precision), 4326))

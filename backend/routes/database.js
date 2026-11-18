@@ -6,10 +6,9 @@ const admin = require('../middleware/admin');
 const { delCacheByPattern } = require('../config/redis');
 const { resolveSslConfig, isPrivateHost, extractHost, maskConnectionString } = require('../config/dbSsl');
 
-// Allowed public tables to inspect and manage
 const ALLOWED_TABLES = [
-  'users', 'farms', 'plants', 'nfc_inventory', 'farm_iot_sensors', 'supplies', 
-  'plant_logs', 'costs', 'user_notifications', 'data_audit_logs', 
+  'users', 'farms', 'plants', 'nfc_inventory', 'farm_iot_sensors', 'supplies',
+  'plant_logs', 'costs', 'user_notifications', 'data_audit_logs',
   'devices', 'crop_schemas', 'user_activities'
 ];
 
@@ -20,9 +19,6 @@ function sanitizeTableName(name) {
   return name;
 }
 
-/**
- * GET /api/database/infrastructure — Telemetry giám sát hạ tầng CSDL & Máy chủ NAS
- */
 router.get('/infrastructure', auth, admin, async (req, res) => {
   try {
     const rawUrl = process.env.DATABASE_URL || process.env.DATABASE_WRITE_URL || '';
@@ -30,7 +26,6 @@ router.get('/infrastructure', auth, admin, async (req, res) => {
     const isNas = isPrivateHost(host);
     const ssl = Boolean(resolveSslConfig(rawUrl));
 
-    // Lấy phiên bản PostgreSQL & dung lượng DB
     let pgVersion = 'Unknown';
     let dbSize = 0;
     let postgisVersion = null;
@@ -72,14 +67,11 @@ router.get('/infrastructure', auth, admin, async (req, res) => {
   }
 });
 
-/**
- * GET /api/database/check — Admin Database Schema & Field Telemetry Inspector
- */
 router.get('/check', auth, admin, async (req, res) => {
   try {
     const tablesRes = await pool.query(`
-      SELECT table_name 
-      FROM information_schema.tables 
+      SELECT table_name
+      FROM information_schema.tables
       WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
       ORDER BY table_name ASC
     `);
@@ -91,10 +83,10 @@ router.get('/check', auth, admin, async (req, res) => {
       if (!ALLOWED_TABLES.includes(tableName)) continue;
 
       const colsRes = await pool.query(`
-        SELECT 
-          column_name, 
-          data_type, 
-          is_nullable, 
+        SELECT
+          column_name,
+          data_type,
+          is_nullable,
           column_default
         FROM information_schema.columns
         WHERE table_schema = 'public' AND table_name = $1
@@ -139,9 +131,6 @@ router.get('/check', auth, admin, async (req, res) => {
   }
 });
 
-/**
- * GET /api/database/tables/:tableName/records — Fetch records from specific table
- */
 router.get('/tables/:tableName/records', auth, admin, async (req, res) => {
   try {
     const tableName = sanitizeTableName(req.params.tableName);
@@ -170,9 +159,6 @@ router.get('/tables/:tableName/records', auth, admin, async (req, res) => {
   }
 });
 
-/**
- * POST /api/database/tables/:tableName/records — Insert a record into specific table
- */
 router.post('/tables/:tableName/records', auth, admin, async (req, res) => {
   try {
     const tableName = sanitizeTableName(req.params.tableName);
@@ -206,9 +192,6 @@ router.post('/tables/:tableName/records', auth, admin, async (req, res) => {
   }
 });
 
-/**
- * PUT /api/database/tables/:tableName/records/:id — Update a record in specific table
- */
 router.put('/tables/:tableName/records/:id', auth, admin, async (req, res) => {
   try {
     const tableName = sanitizeTableName(req.params.tableName);
@@ -245,9 +228,6 @@ router.put('/tables/:tableName/records/:id', auth, admin, async (req, res) => {
   }
 });
 
-/**
- * DELETE /api/database/tables/:tableName/records/:id — Delete a record from specific table
- */
 router.delete('/tables/:tableName/records/:id', auth, admin, async (req, res) => {
   try {
     const tableName = sanitizeTableName(req.params.tableName);

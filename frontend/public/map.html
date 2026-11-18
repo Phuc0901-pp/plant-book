@@ -12,19 +12,18 @@
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
   <script src="/assets/js/enterprise-security-guard.js"></script>
 
-  <!-- Google Fonts: Be Vietnam Pro (Enterprise Vietnamese Standard) & JetBrains Mono (Codes/UID) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300;1,400;1,500;1,600;1,700;1,800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
   <style>
-    body {
+body {
       margin: 0;
       padding: 0;
       background: #f8fafc;
       font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     }
     #map { position: absolute; top: 0; bottom: 0; width: 100%; height: 100%; font-family: inherit; }
-    
+
     .target-marker {
       width: 22px;
       height: 22px;
@@ -49,7 +48,7 @@
       background-color: #F59E0B;
       box-shadow: 0 0 0 5px rgba(245, 158, 11, 0.35);
     }
-    
+
     @keyframes pulse {
       0% { transform: scale(0.92); box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.3); }
       100% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
@@ -57,19 +56,17 @@
     .mapboxgl-ctrl-logo, .mapboxgl-ctrl-attrib {
       display: none !important;
     }
-  </style>
+</style>
 </head>
 <body>
   <div id="map"></div>
   <script>
-    // Extract slug from URL /plant/:slug/map
-    const pathSegments = window.location.pathname.split('/');
+const pathSegments = window.location.pathname.split('/');
     const slugIndex = pathSegments.indexOf('plant') + 1;
     const slug = pathSegments[slugIndex];
 
     async function initMap() {
       try {
-        // Fetch mapbox token with fallback
         const DEFAULT_MAPBOX_TOKEN = typeof atob === 'function' ? atob('cGsuZXlKMUlqb2ljR2gxWTIxbGIyMWxieUlzSW1FaU9pSmpiWEYwT1RSNk9HTXdNbkk1TW5OelptZHVNekoxY210cUluMC5JWC1vWndJc1BVRXcxRzEwZVJfSnNR') : '';
         let mapboxToken = DEFAULT_MAPBOX_TOKEN;
         try {
@@ -79,10 +76,9 @@
             if (tokenData && tokenData.token) mapboxToken = tokenData.token;
           }
         } catch (_) {}
-        
+
         mapboxgl.accessToken = mapboxToken;
 
-        // Fetch plant details
         const plantRes = await fetch('/api/plants/public/' + slug);
         if (!plantRes.ok) throw new Error("Failed to load plant info");
         const plantData = await plantRes.json();
@@ -94,7 +90,7 @@
 
         const map = new mapboxgl.Map({
           container: 'map',
-          style: 'mapbox://styles/mapbox/satellite-streets-v12', // Satellite streets
+          style: 'mapbox://styles/mapbox/satellite-streets-v12',
           center: (lng && lat) ? [lng, lat] : [108.2, 12.0],
           zoom: 17.5,
           maxZoom: 22,
@@ -114,7 +110,6 @@
         map.addControl(new mapboxgl.NavigationControl({ showCompass: true }), 'top-right');
         map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
 
-        // Location tracker
         const geolocate = new mapboxgl.GeolocateControl({
           positionOptions: {
             enableHighAccuracy: true
@@ -130,14 +125,13 @@
             try { geolocate.trigger(); } catch (e) {}
           }, 800);
 
-          // Draw farm polygon coordinates
           let poly = [];
           if (plantData.farm_polygon) {
             try {
               const parsed = typeof plantData.farm_polygon === 'string'
                 ? JSON.parse(plantData.farm_polygon)
                 : plantData.farm_polygon;
-              
+
               if (parsed && parsed.length > 0) {
                 if (Array.isArray(parsed[0]) && Array.isArray(parsed[0][0])) {
                   poly = [...parsed[0]];
@@ -189,7 +183,6 @@
             });
           }
 
-          // Add plant marker
           if (lng && lat) {
             const el = document.createElement('div');
             el.className = 'target-marker';
@@ -287,7 +280,7 @@
                 const maxLng = Math.max(...lngs);
                 const minLat = Math.min(...lats);
                 const maxLat = Math.max(...lats);
-                
+
                 const marginLng = (maxLng - minLng) * 0.05 || 0.0005;
                 const marginLat = (maxLat - minLat) * 0.05 || 0.0005;
 
@@ -302,7 +295,6 @@
               return null;
             };
 
-            // 2-Pass 3x3 Gaussian Spatial Grid Smoothing Filter
             const smoothGrid = (rawGrid, passes = 2) => {
               const ny = rawGrid.length;
               const nx = rawGrid[0].length;
@@ -334,17 +326,13 @@
               return current;
             };
 
-            // 4. Hàm Sinh Đường Đồng Mức Mật Độ Biến Thiên Năng Động Theo Zoom
             const updateDense1mContours = () => {
               try {
                 const bbox = getFarmBoundingBox();
                 if (!bbox) return;
 
-                // Khoảng cách đường đồng mức cố định 1m (Bình độ cái % 5 === 0, Bình độ con 1m còn lại)
                 const interval = 1.0;
 
-                // Chỉ lấy mẫu DEM khi zoom đủ cao để có tile độ phân giải cao và ổn định
-                // Nếu zoom < 13, giữ nguyên dữ liệu cũ tránh sai số datum khi zoom out
                 const currentZoom = map.getZoom();
                 if (currentZoom < 13 && map.getSource('dense-1m-contours')) return;
 
@@ -379,10 +367,8 @@
 
                 if (!hasTerrainData || minEle === Infinity || maxEle === -Infinity) return;
 
-                // Lọc mịn lưới DEM bằng Gaussian Blur 3 pass để loại bỏ hoàn toàn nhiễu và lặp đường
                 const grid = smoothGrid(rawGrid, 3);
 
-                // Dữ liệu cao độ THỰC tế 100% từ Mapbox DEM (so với mực nước biển ASL)
                 const eleOffset = 0;
                 const displayMin = Math.round(minEle);
                 const displayMax = Math.round(maxEle);
@@ -474,7 +460,6 @@
                     data: geoData
                   });
 
-                  // ─── Bình độ cái (% 5 === 0): Nét đậm 7px | Bình độ con: Nét 2.5px ───
                   const isMajor = ['==', ['%', ['to-number', ['get', 'ele']], 5], 0];
 
                   map.addLayer({
@@ -498,7 +483,6 @@
                     }
                   });
 
-                  // ─── Nhãn số cao độ: Nhét trực tiếp vào tất cả các đường đồng mức (có nhãn cho cả 2 loại) ───
                   map.addLayer({
                     id: 'dense-1m-contour-labels',
                     type: 'symbol',
@@ -563,7 +547,7 @@
                       width: 12px;
                       height: 140px;
                       border-radius: 6px;
-                      background: linear-gradient(to top, 
+                      background: linear-gradient(to top,
                         #000080, #0000cd, #0000ff, #0066ff, #0099ff,
                         #00c8ff, #00f0ff, #00ffc8, #00ff99, #00ff33,
                         #66ff00, #a6ff00, #ccff00, #ffff00, #ffcc00,
@@ -601,7 +585,7 @@
                   this._map = m;
                   this._container = document.createElement('div');
                   this._container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group';
-                  
+
                   const btnContour = document.createElement('button');
                   btnContour.className = 'mapboxgl-ctrl-icon mapbox-ctrl-contour-btn';
                   btnContour.type = 'button';
@@ -738,7 +722,7 @@
 
         if (map.getStyle()) {
           const styleLayers = map.getStyle().layers || [];
-          const farmLayers = styleLayers.filter(l => 
+          const farmLayers = styleLayers.filter(l =>
             l.id.includes('farm') || l.id.includes('polygon') || (l.type === 'fill' && !l.id.includes('mapbox'))
           );
           farmLayers.forEach(layer => {
@@ -754,7 +738,6 @@
           });
         }
 
-        // Lật trang trại lại THẲNG ĐỨNG
         const getMajorAxisBearing = (coords) => {
           if (!coords || coords.length < 2) return 0;
           let maxDistSq = 0;
@@ -844,7 +827,6 @@
           const scaleX = mapCanvas.width / (mapCanvas.clientWidth || 1);
           const scaleY = mapCanvas.height / (mapCanvas.clientHeight || 1);
 
-          // Draw edge labels
           if (uniquePts.length >= 2) {
             for (let i = 0; i < uniquePts.length; i++) {
               const p1 = uniquePts[i];
@@ -887,7 +869,6 @@
             }
           }
 
-          // Draw vertex badges
           if (uniquePts.length > 0) {
             uniquePts.forEach((pt, idx) => {
               const vLabel = getVertexLabel(idx);
@@ -1327,6 +1308,6 @@
       }
 
     initMap();
-  </script>
+</script>
 </body>
 </html>

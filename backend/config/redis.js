@@ -1,8 +1,3 @@
-/* ═══════════════════════════════════════════════════════════════
-   Plant Book – Backend
-   config/redis.js — Dual-Support Redis Caching (Upstash REST + ioredis TCP + In-Memory Fallback)
-   ═══════════════════════════════════════════════════════════════ */
-
 const Redis = require('ioredis');
 
 let redisClient = null;
@@ -47,9 +42,6 @@ if (REDIS_URL) {
   console.log('ℹ️ [REDIS] Running with high-performance In-Memory Caching.');
 }
 
-/**
- * Upstash REST helper
- */
 async function upstashFetch(commandArray) {
   if (!isUpstashConfigured) return null;
   try {
@@ -75,12 +67,7 @@ async function upstashFetch(commandArray) {
   return null;
 }
 
-/**
- * Cache Get Helper (Redis TCP primary -> Upstash REST -> In-Memory fallback)
- * @param {string} key 
- */
 async function getCache(key) {
-  // 1. Try ioredis TCP if connected
   try {
     if (isRedisConnected && redisClient) {
       const val = await redisClient.get(key);
@@ -88,7 +75,6 @@ async function getCache(key) {
     }
   } catch (_) {}
 
-  // 2. Try Upstash REST API if configured
   if (isUpstashConfigured) {
     try {
       const res = await upstashFetch(['GET', key]);
@@ -96,7 +82,6 @@ async function getCache(key) {
     } catch (_) {}
   }
 
-  // 3. Fallback to in-memory Map
   if (inMemoryCache.has(key)) {
     const item = inMemoryCache.get(key);
     if (item.expireAt && Date.now() > item.expireAt) {
@@ -108,16 +93,9 @@ async function getCache(key) {
   return null;
 }
 
-/**
- * Cache Set Helper (Redis TCP primary -> Upstash REST -> In-Memory fallback)
- * @param {string} key 
- * @param {any} value 
- * @param {number} ttlSeconds Default 300s (5 mins)
- */
 async function setCache(key, value, ttlSeconds = 300) {
   const jsonStr = JSON.stringify(value);
 
-  // 1. Try ioredis TCP if connected
   try {
     if (isRedisConnected && redisClient) {
       await redisClient.set(key, jsonStr, 'EX', ttlSeconds);
@@ -125,14 +103,12 @@ async function setCache(key, value, ttlSeconds = 300) {
     }
   } catch (_) {}
 
-  // 2. Try Upstash REST API if configured
   if (isUpstashConfigured) {
     try {
       await upstashFetch(['SET', key, jsonStr, 'EX', ttlSeconds.toString()]);
     } catch (_) {}
   }
 
-  // 3. Fallback to in-memory Map
   if (inMemoryCache.size > 1000) {
     const firstKey = inMemoryCache.keys().next().value;
     inMemoryCache.delete(firstKey);
@@ -143,10 +119,6 @@ async function setCache(key, value, ttlSeconds = 300) {
   });
 }
 
-/**
- * Cache Delete Helper
- * @param {string} key 
- */
 async function delCache(key) {
   try {
     if (isRedisConnected && redisClient) {
@@ -163,10 +135,6 @@ async function delCache(key) {
   inMemoryCache.delete(key);
 }
 
-/**
- * Cache Delete Pattern Helper
- * @param {string} patternPrefix e.g. 'farms_'
- */
 async function delCacheByPattern(patternPrefix) {
   for (const k of inMemoryCache.keys()) {
     if (k.startsWith(patternPrefix)) {

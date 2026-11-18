@@ -23,9 +23,9 @@ class WelcomeBanner extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [
-            Color(0xFFE6F4EA), // Mint pastel
+            Color(0xFFE6F4EA),
             Color(0xFFF0FDF4),
-            Color(0xFFFEF9C3), // Warm butter sunshine
+            Color(0xFFFEF9C3),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -37,13 +37,11 @@ class WelcomeBanner extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Left: Friendly Greeting & Live Chibi Weather Pill
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Top Weather Pill & Account Badge
                 Row(
                   children: [
                     Container(
@@ -95,7 +93,6 @@ class WelcomeBanner extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
 
-                // Main Greeting Text
                 Text(
                   'Xin chào, $userName 👋',
                   style: const TextStyle(
@@ -121,7 +118,6 @@ class WelcomeBanner extends StatelessWidget {
 
           const SizedBox(width: 12),
 
-          // Right: Official Mascot Bé Mầm (Tapping opens AI Chat)
           Tooltip(
             message: 'Bấm để trò chuyện với Bé Mầm AI',
             child: BeMamMascotWidget(

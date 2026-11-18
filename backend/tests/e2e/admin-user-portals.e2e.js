@@ -1,7 +1,3 @@
-/**
- * PlantBook AgTech — Admin (/) & Farmer (/user/) Portals Live E2E Suite
- */
-
 const { chromium } = require('playwright-core');
 const fs = require('fs');
 

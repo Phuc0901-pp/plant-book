@@ -1,9 +1,5 @@
-/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/* ════════════════════════════════════════════════════════
-   Plant Book Admin — users.js (User/Farmer Management)
-   ════════════════════════════════════════════════════════ */
 let allUsers = [];
-let currentFilterGroup = 'all'; // 'all', 'admin', 'pro', 'normal'
+let currentFilterGroup = 'all';
 let currentPage = 1;
 let currentUsersWindowStart = 1;
 const USERS_PAGE_SIZE = 10;
@@ -27,7 +23,6 @@ async function loadUsers(silent = false) {
     ]);
     allUsers = users || [];
 
-    // Populate Farm Filter Dropdown
     const farmSelect = document.getElementById('user-filter-farm');
     if (farmSelect) {
       const curVal = farmSelect.value;
@@ -104,7 +99,6 @@ function filterUsers() {
 
   let filtered = allUsers;
 
-  // 1. Group / Tier Filter
   if (currentFilterGroup === 'admin') {
     filtered = filtered.filter(u => u.role === 'admin');
   } else if (currentFilterGroup === 'pro') {
@@ -113,7 +107,6 @@ function filterUsers() {
     filtered = filtered.filter(u => u.role !== 'admin' && u.account_tier !== 'pro');
   }
 
-  // 2. Role / Hierarchy Filter (Enterprise IAM RBAC)
   if (roleFilter !== 'all') {
     if (roleFilter === 'admin') {
       filtered = filtered.filter(u => u.role === 'admin');
@@ -124,12 +117,10 @@ function filterUsers() {
     }
   }
 
-  // 3. Farm Filter
   if (farmFilter !== 'all') {
     filtered = filtered.filter(u => u.farm_id == farmFilter);
   }
 
-  // 4. Search Filter
   if (q) {
     filtered = filtered.filter(u =>
       (u.full_name || '').toLowerCase().includes(q) ||
@@ -146,10 +137,7 @@ function filterUsers() {
   renderUsersTable(filtered);
 }
 
-// Sắp xếp danh sách người dùng theo cấu trúc cây phân cấp (Enterprise IAM Hierarchy Tree)
-// Super Admin -> Chủ Nông Hộ (Roots) -> Nhân Sự Dưới Quyền (Children) -> Tài khoản độc lập
 function buildUserHierarchyTree(users) {
-  // Tạo bản đồ tra cứu nhanh & khử trùng lặp người dùng
   const userMap = new Map();
   users.forEach(u => {
     if (!userMap.has(u.id)) {
@@ -160,7 +148,6 @@ function buildUserHierarchyTree(users) {
   const rootNodes = [];
   const processedIds = new Set();
 
-  // Nhận diện Root Nodes (Admins hoặc Nông Hộ Chủ Quản không có parent)
   userMap.forEach(u => {
     if (!u.parent_user_id || !userMap.has(u.parent_user_id)) {
       if (!processedIds.has(u.id)) {
@@ -170,7 +157,6 @@ function buildUserHierarchyTree(users) {
     }
   });
 
-  // Gắn con vào node cha (tránh gắn trùng lặp)
   userMap.forEach(u => {
     if (u.parent_user_id && userMap.has(u.parent_user_id)) {
       const parent = userMap.get(u.parent_user_id);
@@ -181,7 +167,6 @@ function buildUserHierarchyTree(users) {
     }
   });
 
-  // Làm phẳng (flatten) cây để phục vụ phân trang nhưng giữ trật tự phả hệ cha đứng trước con
   const flattened = [];
   function traverse(node, depth = 0, parentObj = null) {
     flattened.push({
@@ -195,7 +180,6 @@ function buildUserHierarchyTree(users) {
     }
   }
 
-  // Sắp xếp Roots: Admin trước -> Chủ nông hộ có nhân sự -> Chủ nông hộ đơn lẻ
   rootNodes.sort((a, b) => {
     if (a.role === 'admin' && b.role !== 'admin') return -1;
     if (a.role !== 'admin' && b.role === 'admin') return 1;
@@ -221,10 +205,8 @@ function renderUsersTable(users) {
     return;
   }
 
-  // Tổ chức lại danh sách theo cấu trúc cây IAM (đã khử trùng lặp)
   const hierarchicalUsers = buildUserHierarchyTree(users);
 
-  // Pagination Logic (10 items / page)
   const totalItems = hierarchicalUsers.length;
   const totalPages = Math.ceil(totalItems / USERS_PAGE_SIZE);
   if (currentPage > totalPages) currentPage = totalPages;
@@ -237,10 +219,9 @@ function renderUsersTable(users) {
   tbody.innerHTML = pageUsers.map(u => {
     const isSelf = currentUser && currentUser.id === u.id;
     const selfBadge = isSelf ? ' <span style="font-size: 10px; background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 4px; font-weight: 700; margin-left: 4px;">Bạn</span>' : '';
-    
+
     const publicId = u.public_id || (typeof generateIsoPublicId === 'function' ? generateIsoPublicId(u.role, u.id) : (u.role === 'admin' ? `adm-${u.id}` : `usr-${u.id}`));
 
-    // Badge Phân cấp Vai trò Doanh nghiệp Quốc tế (Enterprise IAM Sub-role Badges với màu sắc đặc trưng)
     let roleBadge = '';
     const subRole = u.sub_role || 'farm_owner';
     const assignedPlantsCount = u.assigned_plants_count || (Array.isArray(u.assigned_plant_ids) ? u.assigned_plant_ids.length : 0);
@@ -281,7 +262,6 @@ function renderUsersTable(users) {
         </div>
       `;
     } else {
-      // Chủ nông hộ (Farm Owner / Account Master)
       const childCount = (hierarchicalUsers.filter(x => x.parent_user_id === u.id)).length;
       roleBadge = `
         <div style="display:flex; flex-direction:column; gap:3px;">
@@ -293,7 +273,6 @@ function renderUsersTable(users) {
       `;
     }
 
-    // Gói cước: Admin là Bất tử / Vĩnh viễn
     let tierBadge = '';
     if (u.role === 'admin') {
       tierBadge = `<span class="badge" style="background:#f5f3ff; color:#6d28d9; border:1.5px solid #ddd6fe; padding:4px 12px; border-radius:20px; font-size:11px; font-weight:800; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="infinity" class="lucide-xs" style="color:#7c3aed;"></i> Bất tử (Vĩnh viễn)</span>`;
@@ -317,7 +296,6 @@ function renderUsersTable(users) {
       tierBadge = `<span class="badge" style="background:#f8fafc; color:#64748b; border:1px solid #cbd5e1; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700;"><i data-lucide="shield" class="lucide-xs"></i> Standard</span>`;
     }
 
-    // Trang trại: Admin gắn ALL, người dùng quản lý nhiều trang trại hiển thị danh sách tinh gọn không lặp hàng
     let farmBadge = '';
     if (u.role === 'admin') {
       farmBadge = `<span class="badge" style="background:#f1f5f9; color:#475569; border:1.5px solid #cbd5e1; padding:4px 12px; border-radius:12px; font-size:11.5px; font-weight:800; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="globe" class="lucide-xs" style="color:#059669;"></i> ALL</span>`;
@@ -349,7 +327,6 @@ function renderUsersTable(users) {
 
     const initialLetter = (u.full_name || 'U').charAt(0).toUpperCase();
 
-    // Hiển thị cây phân cấp (Lineage Tree visualization)
     const isChild = Boolean(u._depth && u._depth > 0);
     const parentName = u.parent_user_name || (u._parentObj ? u._parentObj.full_name : '');
     const treeConnectorHtml = isChild ? `
@@ -363,7 +340,7 @@ function renderUsersTable(users) {
     const avatarColor = isChild ? '#475569' : (u.role === 'admin' ? '#b91c1c' : '#059669');
     const avatarBorder = isChild ? '1.5px solid #cbd5e1' : (u.role === 'admin' ? '1.5px solid #fca5a5' : '1.5px solid #a7f3d0');
 
-    const deleteBtn = isSelf 
+    const deleteBtn = isSelf
       ? `<button class="btn btn-secondary btn-sm" disabled style="opacity:0.4; cursor:not-allowed; padding:4px 8px; font-size:11px;" title="Bạn không thể tự xóa tài khoản của mình"><i data-lucide="trash-2" class="lucide-sm"></i></button>`
       : `<button class="btn btn-sm" onclick="deleteUser(${u.id})" style="background:#fef2f2; border:1px solid #fca5a5; border-radius:6px; color:#dc2626; padding:4px 8px; font-size:11px; cursor:pointer;" title="Xóa tài khoản"><i data-lucide="trash-2" class="lucide-sm"></i></button>`;
 
@@ -410,7 +387,6 @@ function renderUsersTable(users) {
     `;
   }).join('');
 
-  // Render Pagination Bar
   if (pagInfo) {
     pagInfo.textContent = `Hiển thị ${startIdx + 1} - ${endIdx} trong tổng số ${totalItems} người dùng (Trang ${currentPage}/${totalPages})`;
   }
@@ -447,7 +423,6 @@ function changeUsersPage(page) {
   if (page > totalPages) page = totalPages;
   if (page === currentPage) return;
 
-  // Scale up window logic: Trước 1 2 3 Sau -> Bấm 3 tăng dần Trước 3 4 5 Sau
   if (page >= currentUsersWindowStart + 2 && page < totalPages) {
     currentUsersWindowStart = page;
   } else if (page < currentUsersWindowStart) {
@@ -472,7 +447,6 @@ function changeUsersPage(page) {
   }
 }
 
-
 async function openUserModal(userId = null, syncUrl = true) {
   const modal = document.getElementById('user-modal');
   const title = document.getElementById('user-modal-title');
@@ -480,12 +454,11 @@ async function openUserModal(userId = null, syncUrl = true) {
   const passHelp = document.getElementById('f-user-pass-help');
   const passInput = document.getElementById('f-user-pass');
   const farmSelect = document.getElementById('f-user-farm-id');
-  
+
   if (syncUrl && typeof window.syncAdminUrl === 'function') {
     window.syncAdminUrl({ modal: 'user', id: userId || null });
   }
-  
-  // Clear fields
+
   document.getElementById('f-user-id').value = '';
   document.getElementById('f-user-name').value = '';
   if (document.getElementById('f-user-phone')) document.getElementById('f-user-phone').value = '';
@@ -494,7 +467,6 @@ async function openUserModal(userId = null, syncUrl = true) {
   document.getElementById('f-user-role').value = 'user';
   passInput.value = '';
 
-  // Populate initialized farms dropdown
   try {
     const farms = await api('/farms');
     if (farmSelect) {
@@ -506,7 +478,6 @@ async function openUserModal(userId = null, syncUrl = true) {
   }
 
   if (userId) {
-    // Edit mode
     const u = allUsers.find(x => x.id === userId);
     if (!u) return;
 
@@ -518,7 +489,7 @@ async function openUserModal(userId = null, syncUrl = true) {
     if (document.getElementById('f-user-address')) document.getElementById('f-user-address').value = u.address || '';
     document.getElementById('f-user-role').value = u.role || 'user';
     if (farmSelect) farmSelect.value = u.farm_id || '';
-    
+
     if (document.getElementById('f-user-plants-scope')) document.getElementById('f-user-plants-scope').value = u.view_plants_scope || 'all';
     if (document.getElementById('f-user-history-date')) document.getElementById('f-user-history-date').value = u.view_history_from_date ? u.view_history_from_date.split('T')[0] : '';
     if (document.getElementById('f-user-shared-history')) document.getElementById('f-user-shared-history').checked = u.allow_shared_history !== false;
@@ -530,7 +501,6 @@ async function openUserModal(userId = null, syncUrl = true) {
     passHelp.style.display = 'block';
     passInput.placeholder = 'Để trống nếu giữ nguyên';
   } else {
-    // Create mode
     title.innerHTML = '<i data-lucide="user-plus" class="lucide-sm" style="color:var(--green)"></i> Thêm người dùng mới';
     passLabel.textContent = 'Mật khẩu *';
     passHelp.style.display = 'none';
@@ -540,7 +510,7 @@ async function openUserModal(userId = null, syncUrl = true) {
     if (document.getElementById('f-user-history-date')) document.getElementById('f-user-history-date').value = '';
     if (document.getElementById('f-user-shared-history')) document.getElementById('f-user-shared-history').checked = true;
     if (document.getElementById('f-user-view-supplies')) document.getElementById('f-user-view-supplies').checked = true;
-    
+
     toggleAssignedPlantsPicker(null);
   }
 
@@ -553,7 +523,7 @@ async function toggleAssignedPlantsPicker(userObj = null) {
   const scope = document.getElementById('f-user-plants-scope')?.value;
   const container = document.getElementById('assigned-plants-picker-container');
   const checkboxesEl = document.getElementById('assigned-plants-checkboxes');
-  
+
   if (!container || !checkboxesEl) return;
 
   if (scope !== 'assigned') {
@@ -683,12 +653,12 @@ async function saveUser() {
   btn.innerHTML = '<span class="spinner"></span> Đang lưu...';
   btn.disabled = true;
 
-  const payload = { 
-    full_name, 
+  const payload = {
+    full_name,
     phone: phone || null,
     email: email || null,
     address: address || null,
-    role, 
+    role,
     farm_id: farm_id ? parseInt(farm_id) : null,
     view_plants_scope,
     view_history_from_date,
@@ -697,21 +667,18 @@ async function saveUser() {
     assigned_plant_ids
   };
 
-
   if (password) {
     payload.password = password;
   }
 
   try {
     if (id) {
-      // Update
       await api(`/users/${id}`, {
         method: 'PUT',
         body: JSON.stringify(payload)
       });
       toast('Cập nhật & gán trang trại thành công!');
     } else {
-      // Create
       await api('/users', {
         method: 'POST',
         body: JSON.stringify(payload)
@@ -737,16 +704,13 @@ async function deleteUser(id) {
     return;
   }
 
-  // 1. Trigger smooth slide-out CSS animation on table row
   const row = document.querySelector(`tr[data-user-id="${id}"]`) || document.querySelector(`tr[data-pending-user-id="${id}"]`);
   if (row) {
     row.classList.add('row-deleting');
   }
 
-  // Preserve previous state for clean rollback if API fails
   const prevUsers = [...allUsers];
 
-  // 2. Optimistically remove from state and update counters after animation finishes
   setTimeout(() => {
     allUsers = allUsers.filter(x => x.id !== id);
     updateUserCounters();
@@ -757,11 +721,9 @@ async function deleteUser(id) {
     await api(`/users/${id}`, { method: 'DELETE' });
     toast('Đã xóa người dùng thành công.');
     window._plantFiltersLoaded = false;
-    // Silent background sync
     loadUsers(true);
   } catch (err) {
     toast('Lỗi xóa người dùng: ' + err.message, 'error');
-    // Rollback optimistic removal
     if (row) row.classList.remove('row-deleting');
     allUsers = prevUsers;
     updateUserCounters();
@@ -769,7 +731,6 @@ async function deleteUser(id) {
   }
 }
 
-// Simple HTML escaping to prevent XSS
 function escapeHtml(str) {
   if (!str) return '';
   return str
@@ -786,13 +747,13 @@ function formatRelativeTime(dateString) {
   const now = new Date();
   const diffMs = now - date;
   const diffMins = Math.floor(diffMs / (60 * 1000));
-  
+
   if (diffMins < 1) return 'Vừa mới hoạt động';
   if (diffMins < 60) return `${diffMins} phút trước`;
-  
+
   const diffHours = Math.floor(diffMins / 60);
   if (diffHours < 24) return `${diffHours} giờ trước`;
-  
+
   return date.toLocaleString('vi-VN', {
     day: '2-digit', month: '2-digit', year: 'numeric',
     hour: '2-digit', minute: '2-digit'
@@ -841,8 +802,8 @@ function filterUserStatuses() {
     renderUserStatusTable(allUsers);
     return;
   }
-  const filtered = allUsers.filter(u => 
-    (u.full_name || '').toLowerCase().includes(q) || 
+  const filtered = allUsers.filter(u =>
+    (u.full_name || '').toLowerCase().includes(q) ||
     (u.email || '').toLowerCase().includes(q)
   );
   renderUserStatusTable(filtered);
@@ -852,30 +813,30 @@ async function openUserActivityModal(userId, userName) {
   const modal = document.getElementById('user-activity-modal');
   const titleName = document.getElementById('activity-modal-username');
   const timeline = document.getElementById('user-activity-timeline');
-  
+
   if (!modal || !timeline) return;
-  
+
   titleName.textContent = userName;
   timeline.innerHTML = '<div class="empty-state"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải lịch sử hoạt động...</div>';
   modal.style.display = 'flex';
-  
+
   try {
     const activities = await api(`/users/${userId}/activities`);
     if (activities.length === 0) {
       timeline.innerHTML = '<div class="empty-state"><i data-lucide="history" class="lucide-sm"></i> Không có lịch sử hoạt động nào gần đây.</div>';
       return;
     }
-    
+
     timeline.innerHTML = activities.map(act => {
       let iconClass = 'info';
       if (act.activity_type === 'Đăng nhập') iconClass = 'login';
       if (act.activity_type === 'Đăng xuất') iconClass = 'logout';
-      
+
       const timeStr = new Date(act.created_at).toLocaleString('vi-VN', {
         day: '2-digit', month: '2-digit', year: 'numeric',
         hour: '2-digit', minute: '2-digit', second: '2-digit'
       });
-      
+
       return `
         <div class="timeline-item ${iconClass}">
           <div class="timeline-marker"></div>
@@ -922,7 +883,7 @@ async function loadResetRequests() {
 
     tbody.innerHTML = requests.map(r => {
       const isPending = r.status === 'pending';
-      const statusBadge = isPending 
+      const statusBadge = isPending
         ? '<span class="badge" style="background:#fffbeb; color:#b45309; border:1px solid #fef3c7;">Đang chờ duyệt</span>'
         : r.status === 'approved'
           ? '<span class="badge" style="background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0;">Đã phê duyệt</span>'
@@ -1041,7 +1002,6 @@ async function loadPendingFarmerUsers() {
       const areaStr = u.farm_area ? ` - ${u.farm_area} ha` : '';
       const cropInfo = u.plant_type ? `${u.plant_type} (${u.plant_variety || 'Giống địa phương'} - ${u.plant_age || 1} năm)${areaStr}` : 'Chưa khai báo';
 
-
       return `
         <tr data-pending-user-id="${u.id}">
           <td><strong>${escapeHtml(u.full_name)}</strong><br><span style="font-size:12px; color:var(--text-muted);">${escapeHtml(u.phone)}</span></td>
@@ -1083,7 +1043,6 @@ async function approveFarmerUser(userId) {
   }
 }
 
-// ── Tier Management Modal Handlers ─────────────────────────────────
 function onTierOptionChange(tier) {
   const durSec = document.getElementById('pro-duration-section');
   if (durSec) {
@@ -1174,7 +1133,6 @@ async function submitUserTierUpdate() {
   }
 }
 
-
 function switchUserTab(tab) {
   const tabs = ['manage', 'pending', 'status', 'resets', 'admin-profile'];
   tabs.forEach(t => {
@@ -1215,7 +1173,6 @@ async function loadAdminProfileData() {
         elCreated.textContent = me.created_at ? new Date(me.created_at).toLocaleDateString('vi-VN') : 'Mặc định hệ thống';
       }
 
-      // Populate form
       const inpName = document.getElementById('adm-input-fullname');
       if (inpName) inpName.value = me.full_name || me.name || '';
 
@@ -1324,7 +1281,3 @@ window.onTierOptionChange = onTierOptionChange;
 
 window.setUserFilterGroup = setUserFilterGroup;
 window.changeUsersPage = changeUsersPage;
-
-
-
-

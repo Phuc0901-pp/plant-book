@@ -1,6 +1,3 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-// ── Auth ─────────────────────────────────────────────────
-
 function resetAdminLoginBtnState() {
   const btn = document.getElementById('login-btn');
   if (btn) {
@@ -28,7 +25,6 @@ async function doLogin() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Đăng nhập thất bại');
 
-    /* Phân luồng theo role */
     if (data.user.role !== 'admin') {
       localStorage.setItem('pb_token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
@@ -57,7 +53,6 @@ document.getElementById('login-pass').addEventListener('keydown', e => {
   if (e.key === 'Enter') doLogin();
 });
 
-// ── Password Visibility Toggle ─────────────────────────────────
 function togglePasswordVisibility() {
   const passInput = document.getElementById('login-pass');
   const icon = document.getElementById('toggle-pass-icon');
@@ -68,7 +63,6 @@ function togglePasswordVisibility() {
   if (window.lucide) lucide.createIcons({ targets: [icon.parentElement || icon] });
 }
 
-// ── Forgot Password Modal Handlers ─────────────────────────────
 function openForgotPasswordModal() {
   const modal = document.getElementById('forgot-modal');
   const errEl = document.getElementById('forgot-error');
@@ -142,7 +136,6 @@ async function logout() {
 
   resetAdminLoginBtnState();
 
-  // Clear inputs
   const emailInput = document.getElementById('login-email');
   const passInput  = document.getElementById('login-pass');
   if (emailInput) emailInput.value = '';
@@ -151,7 +144,6 @@ async function logout() {
   const errEl = document.getElementById('login-error');
   if (errEl) errEl.style.display = 'none';
 
-  // Scrub URL to /admin
   window.history.replaceState({}, document.title, '/admin');
 
   document.getElementById('app').style.display = 'none';
@@ -196,7 +188,6 @@ async function showApp() {
   }
 }
 
-// Check existing token on load – guard: chỉ admin mới được ở /admin
 window.addEventListener('load', async () => {
   resetAdminLoginBtnState();
   if (!token) {
@@ -208,7 +199,6 @@ window.addEventListener('load', async () => {
   try {
     const me = await api('/auth/me');
     if (me.role !== 'admin') {
-      /* Token hợp lệ nhưng không phải admin → redirect /user */
       window.location.replace('/user');
       return;
     }
@@ -217,7 +207,6 @@ window.addEventListener('load', async () => {
   } catch { logout(); }
 });
 
-// ── 3-Step Farmer Registration Wizard ──────────────────────────
 let currentRegStep = 1;
 
 function openRegisterModal() {
@@ -227,7 +216,6 @@ function openRegisterModal() {
   const errEl = document.getElementById('reg-error');
   if (errEl) errEl.style.display = 'none';
 
-  // Clear inputs
   if (document.getElementById('reg-phone')) document.getElementById('reg-phone').value = '';
   if (document.getElementById('reg-pass')) document.getElementById('reg-pass').value = '';
   if (document.getElementById('reg-pass-confirm')) document.getElementById('reg-pass-confirm').value = '';
@@ -262,7 +250,6 @@ function updateRegStepUI() {
   const titleEl = document.getElementById('reg-modal-title');
   if (titleEl) titleEl.innerHTML = `<i data-lucide="user-plus" class="lucide-sm" style="color:var(--green)"></i> Đăng ký tài khoản Nông hộ (Bước ${currentRegStep}/3)`;
 
-  // Dots
   const dot1 = document.getElementById('step-dot-1');
   const dot2 = document.getElementById('step-dot-2');
   const dot3 = document.getElementById('step-dot-3');
@@ -280,7 +267,6 @@ function updateRegStepUI() {
     dot3.style.color = currentRegStep >= 3 ? 'white' : '#64748b';
   }
 
-  // Buttons
   const prevBtn = document.getElementById('reg-prev-btn');
   const nextBtn = document.getElementById('reg-next-btn');
 
@@ -291,7 +277,6 @@ function updateRegStepUI() {
       : 'Tiếp theo <i data-lucide="arrow-right" class="lucide-sm"></i>';
   }
 
-  // Reset body scroll position
   const modalBody = document.querySelector('#register-modal .modal-body');
   if (modalBody) modalBody.scrollTop = 0;
 
@@ -326,7 +311,6 @@ async function nextRegStep() {
       return;
     }
 
-    // Pre-check if phone exists on server
     if (nextBtn) { nextBtn.innerHTML = '<span class="spinner"></span> Đang kiểm tra...'; nextBtn.disabled = true; }
     try {
       const checkRes = await fetch(`${API}/auth/check-phone?phone=${encodeURIComponent(phone)}`);
@@ -350,7 +334,6 @@ async function nextRegStep() {
 
   if (currentRegStep === 2) {
     currentRegStep = 3;
-    // Populate review step
     const phone = document.getElementById('reg-phone')?.value.trim();
     const name = document.getElementById('reg-name')?.value.trim() || `Nông hộ ${phone}`;
     const plantType = document.getElementById('reg-plant-type')?.value.trim() || 'Chưa khai báo';
@@ -419,7 +402,6 @@ async function submitRegister() {
 
     alert(data.message);
     closeRegisterModal();
-    // Fill login phone for fast login
     const loginEmailInput = document.getElementById('login-email');
     if (loginEmailInput) loginEmailInput.value = phone;
 
@@ -433,5 +415,3 @@ async function submitRegister() {
   }
 }
 window.submitRegister = submitRegister;
-
-

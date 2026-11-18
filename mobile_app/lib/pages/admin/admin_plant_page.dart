@@ -89,7 +89,6 @@ class _AdminPlantPageState extends State<AdminPlantPage> {
               Expanded(
                 child: TabBarView(
                   children: [
-                    // Tab 1: General
                     Padding(
                       padding: const EdgeInsets.only(top: 16),
                       child: Column(
@@ -102,11 +101,8 @@ class _AdminPlantPageState extends State<AdminPlantPage> {
                         ],
                       ),
                     ),
-                    // Tab 2: Extra Attributes
                     const Center(child: Text('Thuộc tính JSON động (NPK, EC, pH)', style: TextStyle(color: AppTheme.textMuted))),
-                    // Tab 3: Media Gallery
                     const Center(child: Text('Thư viện Ảnh/Video canh tác', style: TextStyle(color: AppTheme.textMuted))),
-                    // Tab 4: Farming Logs
                     const Center(child: Text('Lịch sử Tưới nước, Bón phân, Phun thuốc', style: TextStyle(color: AppTheme.textMuted))),
                   ],
                 ),
@@ -145,7 +141,6 @@ class _AdminPlantPageState extends State<AdminPlantPage> {
       ),
       body: Column(
         children: [
-          // Search box
           Container(
             color: Colors.white,
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),

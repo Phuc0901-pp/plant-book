@@ -17,7 +17,6 @@ class Supply {
   final double totalSpent;
   final double totalUsedQty;
 
-  // Chuẩn mở rộng VietGAP / GlobalG.A.P. v1.3.5
   final String? targetPests;
   final int? phiDays;
   final String? fertilizerType;

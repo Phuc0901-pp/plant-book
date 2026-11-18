@@ -9,9 +9,9 @@ import '../core/theme/fluent_icons.dart';
 
 class LogEditDialog extends StatefulWidget {
   final List<int> plantIds;
-  final PlantLog? log; // null means ADD, not null means EDIT
+  final PlantLog? log;
   final String? farmName;
-  final String? initialType; // e.g. 'Nhân công', 'Bón phân'
+  final String? initialType;
   final List<PlantLog>? existingLogs;
   final VoidCallback? onLogSaved;
 
@@ -33,7 +33,6 @@ class _LogEditDialogState extends State<LogEditDialog> {
   final _formKey = GlobalKey<FormState>();
   final _noteController = TextEditingController();
 
-  // Custom detail controllers
   final _amountController = TextEditingController();
   final _manualNameController = TextEditingController();
   final _executorController = TextEditingController(text: 'Nông hộ / Kỹ thuật viên');
@@ -42,13 +41,12 @@ class _LogEditDialogState extends State<LogEditDialog> {
   final _diseaseDescController = TextEditingController();
   final _auditReasonController = TextEditingController();
 
-  // Dedicated Labor (Nhân công) Controllers - Defaults to BLANK text as requested!
   final _laborWorkContentController = TextEditingController(text: '');
   final _laborWorkerCountController = TextEditingController(text: '');
   final _laborCostController = TextEditingController(text: '');
   final _laborStartTimeController = TextEditingController(text: '');
   final _laborEndTimeController = TextEditingController(text: '');
-  String _laborCostMode = 'total'; // 'total' (Cả đoàn) or 'per_person' (1 người)
+  String _laborCostMode = 'total';
 
   late String _selectedType;
   late DateTime _selectedDate;
@@ -451,7 +449,6 @@ class _LogEditDialogState extends State<LogEditDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Drag Handle for Fluent Bottom Sheet
             Center(
               child: Container(
                 margin: const EdgeInsets.only(top: 10, bottom: 8),
@@ -464,7 +461,6 @@ class _LogEditDialogState extends State<LogEditDialog> {
               ),
             ),
 
-            // Header Bar
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: Row(
@@ -522,7 +518,6 @@ class _LogEditDialogState extends State<LogEditDialog> {
 
             const Divider(height: 1, thickness: 0.8, color: AppTheme.fluentBorder),
 
-            // Scrollable Form
             Flexible(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -531,7 +526,6 @@ class _LogEditDialogState extends State<LogEditDialog> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Category Selector (Horizontal Pastel Pills with Lucide Icons)
                       const Text(
                         'HOẠT ĐỘNG CANH TÁC *',
                         style: TextStyle(
@@ -628,7 +622,6 @@ class _LogEditDialogState extends State<LogEditDialog> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Date & Executor Row
                       Row(
                         children: [
                           Expanded(
@@ -704,7 +697,6 @@ class _LogEditDialogState extends State<LogEditDialog> {
                       ),
                       const SizedBox(height: 16),
 
-                      // ==================== SPECIFIC SECTION: NHÂN CÔNG ====================
                       if (_selectedType == 'Nhân công') ...[
                         _buildLaborSection(),
                       ] else if (_selectedType == 'Tưới nước') ...[
@@ -721,7 +713,6 @@ class _LogEditDialogState extends State<LogEditDialog> {
 
                       const SizedBox(height: 16),
 
-                      // Notes & Voice Dictation Section
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -771,7 +762,6 @@ class _LogEditDialogState extends State<LogEditDialog> {
                       ),
                       const SizedBox(height: 22),
 
-                      // Submit Save Button
                       ElevatedButton(
                         onPressed: _isSaving ? null : _handleSave,
                         style: ElevatedButton.styleFrom(
@@ -809,12 +799,11 @@ class _LogEditDialogState extends State<LogEditDialog> {
     );
   }
 
-  // ==================== LABOR (NHÂN CÔNG) WIDGETS ====================
   Widget _buildLaborSection() {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAF5FF), // Subtle Lavender Pastel
+        color: const Color(0xFFFAF5FF),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFFE9D5FF), width: 0.8),
       ),
@@ -838,7 +827,6 @@ class _LogEditDialogState extends State<LogEditDialog> {
           ),
           const SizedBox(height: 12),
 
-          // 1. Work Content Input (Empty default!)
           const Text(
             'Nội dung công việc thuê nhân công làm gì *',
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.fluentTextMain),
@@ -859,7 +847,6 @@ class _LogEditDialogState extends State<LogEditDialog> {
           ),
           const SizedBox(height: 8),
 
-          // 6 Quick Suggestion Chips
           Wrap(
             spacing: 6,
             runSpacing: 6,
@@ -895,11 +882,9 @@ class _LogEditDialogState extends State<LogEditDialog> {
           ),
           const SizedBox(height: 14),
 
-          // 2. Worker Count & Cost on the SAME HORIZONTAL ROW
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Worker Count (Empty default!)
               Expanded(
                 flex: 4,
                 child: Column(
@@ -925,7 +910,6 @@ class _LogEditDialogState extends State<LogEditDialog> {
               ),
               const SizedBox(width: 10),
 
-              // Labor Cost & Mode Selector (Empty default!)
               Expanded(
                 flex: 6,
                 child: Column(
@@ -938,7 +922,6 @@ class _LogEditDialogState extends State<LogEditDialog> {
                           'Chi phí thuê (đ)',
                           style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.fluentTextMain),
                         ),
-                        // Mode Switcher (Cả đoàn / 1 người)
                         Row(
                           children: [
                             _buildLaborModePill('total', 'Cả đoàn'),
@@ -966,7 +949,6 @@ class _LogEditDialogState extends State<LogEditDialog> {
           ),
           const SizedBox(height: 14),
 
-          // 3. Time Range (Start Time -> End Time)
           Row(
             children: [
               Expanded(
@@ -1016,7 +998,6 @@ class _LogEditDialogState extends State<LogEditDialog> {
           ),
           const SizedBox(height: 12),
 
-          // 4. Live Calculation & Tree Cost Allocation Preview Card
           _buildLaborCostPreviewCard(),
         ],
       ),
@@ -1095,7 +1076,6 @@ class _LogEditDialogState extends State<LogEditDialog> {
     );
   }
 
-  // ==================== OTHER CARE SECTIONS ====================
   Widget _buildWateringSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

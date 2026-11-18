@@ -16,7 +16,6 @@ class _AiChatPageState extends State<AiChatPage> {
   final List<Map<String, dynamic>> _messages = [];
   bool _isLoading = false;
 
-  // Voice speech-to-text
   late stt.SpeechToText _speech;
   bool _isListening = false;
 
@@ -34,7 +33,6 @@ class _AiChatPageState extends State<AiChatPage> {
     super.initState();
     _speech = stt.SpeechToText();
 
-    // Initial greeting from Bé Mầm
     _messages.add({
       'role': 'assistant',
       'text': '🌱 **Chào Bác! Em là Bé Mầm - Trợ lý Nông nghiệp Thông minh.**\n\nBác cần tư vấn kỹ thuật canh tác sầu riêng, tra cứu liều lượng phân thuốc, quy trình VietGAP hay kiểm tra chi phí vườn hôm nay ạ? ✨',
@@ -178,7 +176,6 @@ class _AiChatPageState extends State<AiChatPage> {
       body: SafeArea(
         child: Column(
           children: [
-            // Quick suggestions carousel
             Container(
               height: 44,
               margin: const EdgeInsets.symmetric(vertical: 6),
@@ -201,7 +198,6 @@ class _AiChatPageState extends State<AiChatPage> {
 
             const Divider(height: 1, color: AppTheme.grayBorder),
 
-            // Chat Messages List
             Expanded(
               child: ListView.builder(
                 controller: _scrollController,
@@ -279,7 +275,6 @@ class _AiChatPageState extends State<AiChatPage> {
               ),
             ),
 
-            // Typing indicator
             if (_isLoading)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -300,7 +295,6 @@ class _AiChatPageState extends State<AiChatPage> {
                 ),
               ),
 
-            // Input Bar
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: const BoxDecoration(
@@ -309,7 +303,6 @@ class _AiChatPageState extends State<AiChatPage> {
               ),
               child: Row(
                 children: [
-                  // Voice Mic Button
                   IconButton(
                     icon: Icon(
                       _isListening ? Icons.mic : Icons.mic_none,
@@ -319,7 +312,6 @@ class _AiChatPageState extends State<AiChatPage> {
                     onPressed: _toggleListening,
                   ),
 
-                  // Text input
                   Expanded(
                     child: TextField(
                       controller: _controller,
@@ -343,7 +335,6 @@ class _AiChatPageState extends State<AiChatPage> {
 
                   const SizedBox(width: 6),
 
-                  // Send button
                   Container(
                     decoration: const BoxDecoration(
                       color: AppTheme.green,

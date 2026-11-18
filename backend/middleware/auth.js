@@ -10,12 +10,11 @@ async function authMiddleware(req, res, next) {
   const token = authHeader.split(' ')[1];
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
-    // Fetch latest user details (farm_id, role, sub_role, permissions) from DB
+
     const userRes = await pool.query(
-      `SELECT id, email, role, sub_role, parent_user_id, full_name, farm_id, 
-              view_plants_scope, view_history_from_date, allow_shared_history, allow_view_supplies, allow_view_finance 
-       FROM users WHERE id=$1`, 
+      `SELECT id, email, role, sub_role, parent_user_id, full_name, farm_id,
+              view_plants_scope, view_history_from_date, allow_shared_history, allow_view_supplies, allow_view_finance
+       FROM users WHERE id=$1`,
       [decoded.id]
     );
     if (userRes.rows.length === 0) {
@@ -41,8 +40,6 @@ async function authMiddleware(req, res, next) {
       allow_view_finance: isRestrictedFinanceRole ? (u.allow_view_finance === true) : (u.allow_view_finance !== false)
     };
 
-
-    // Update user active status in the background (non-blocking)
     pool.query(
       'UPDATE users SET last_active_at = NOW(), is_online = true WHERE id = $1',
       [u.id]
@@ -53,6 +50,5 @@ async function authMiddleware(req, res, next) {
     return res.status(401).json({ error: 'Token không hợp lệ hoặc đã hết hạn.' });
   }
 }
-
 
 module.exports = authMiddleware;

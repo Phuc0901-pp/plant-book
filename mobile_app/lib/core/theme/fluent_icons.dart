@@ -1,11 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
-// ============================================================================
-// MICROSOFT FLUENT 2 & LUCIDE ICONOGRAPHY FOR PLANT BOOK MOBILE
-// ============================================================================
-
-/// Lucide icon identifiers for type-safe rendering
 enum LucideIconName {
   search,
   scan,
@@ -45,7 +40,6 @@ enum LucideIconName {
   heartHandshake,
 }
 
-/// Lucide-styled vector icon renderer with 1.8px round-cap strokes
 class LucideIcon extends StatelessWidget {
   final LucideIconName name;
   final double size;
@@ -101,7 +95,7 @@ class _LucidePainter extends CustomPainter {
       ..color = color
       ..style = PaintingStyle.fill;
 
-    final s = size.width / 24.0; // scale factor based on 24x24 Lucide canvas
+    final s = size.width / 24.0;
 
     switch (name) {
       case LucideIconName.search:
@@ -110,7 +104,6 @@ class _LucidePainter extends CustomPainter {
         break;
 
       case LucideIconName.scan:
-        // 4 corner brackets
         canvas.drawLine(Offset(3 * s, 7 * s), Offset(3 * s, 3 * s), paint);
         canvas.drawLine(Offset(3 * s, 3 * s), Offset(7 * s, 3 * s), paint);
         canvas.drawLine(Offset(17 * s, 3 * s), Offset(21 * s, 3 * s), paint);
@@ -119,7 +112,6 @@ class _LucidePainter extends CustomPainter {
         canvas.drawLine(Offset(3 * s, 21 * s), Offset(7 * s, 21 * s), paint);
         canvas.drawLine(Offset(17 * s, 21 * s), Offset(21 * s, 21 * s), paint);
         canvas.drawLine(Offset(21 * s, 21 * s), Offset(21 * s, 17 * s), paint);
-        // center line
         canvas.drawLine(Offset(7 * s, 12 * s), Offset(17 * s, 12 * s), paint);
         break;
 
@@ -153,7 +145,6 @@ class _LucidePainter extends CustomPainter {
         break;
 
       case LucideIconName.sparkles:
-        // Main 4-point star
         final star1 = Path()
           ..moveTo(12 * s, 3 * s)
           ..quadraticBezierTo(12 * s, 12 * s, 21 * s, 12 * s)
@@ -161,7 +152,6 @@ class _LucidePainter extends CustomPainter {
           ..quadraticBezierTo(12 * s, 12 * s, 3 * s, 12 * s)
           ..quadraticBezierTo(12 * s, 12 * s, 12 * s, 3 * s);
         canvas.drawPath(star1, paint);
-        // Tiny accent star
         canvas.drawCircle(Offset(19 * s, 5 * s), 1.2 * s, fillPaint);
         break;
 
@@ -183,14 +173,12 @@ class _LucidePainter extends CustomPainter {
         break;
 
       case LucideIconName.users:
-        // Primary user head & shoulder
         canvas.drawCircle(Offset(9 * s, 7 * s), 3.5 * s, paint);
         final p1 = Path()
           ..moveTo(2 * s, 20 * s)
           ..quadraticBezierTo(2 * s, 14 * s, 9 * s, 14 * s)
           ..quadraticBezierTo(16 * s, 14 * s, 16 * s, 20 * s);
         canvas.drawPath(p1, paint);
-        // Second user outline
         final p2 = Path()
           ..moveTo(16 * s, 11 * s)
           ..arcToPoint(Offset(17 * s, 5 * s), radius: Radius.circular(3.5 * s), clockwise: true);
@@ -250,13 +238,11 @@ class _LucidePainter extends CustomPainter {
 
       case LucideIconName.sprout:
         canvas.drawLine(Offset(12 * s, 10 * s), Offset(12 * s, 21 * s), paint);
-        // Right leaf
         final rightLeaf = Path()
           ..moveTo(12 * s, 14 * s)
           ..quadraticBezierTo(20 * s, 14 * s, 20 * s, 8 * s)
           ..quadraticBezierTo(13 * s, 8 * s, 12 * s, 14 * s);
         canvas.drawPath(rightLeaf, paint);
-        // Left leaf
         final leftLeaf = Path()
           ..moveTo(12 * s, 12 * s)
           ..quadraticBezierTo(4 * s, 12 * s, 4 * s, 6 * s)
@@ -341,7 +327,6 @@ class _LucidePainter extends CustomPainter {
           ..arcToPoint(Offset(6 * s, 15 * s), radius: Radius.circular(3 * s))
           ..close();
         canvas.drawPath(cloud, paint);
-        // Sun peeking
         canvas.drawArc(
           Rect.fromCircle(center: Offset(15 * s, 7 * s), radius: 3.5 * s),
           -math.pi * 0.8,
@@ -503,11 +488,6 @@ class _LucidePainter extends CustomPainter {
   }
 }
 
-// ============================================================================
-// CUTE PROFESSIONAL CHIBI WEATHER WIDGETS (MẶT TRỜI, MÂY MƯA, GIỌT SƯƠNG)
-// ============================================================================
-
-/// Cute Chibi Weather Icon Type
 enum ChibiWeatherType {
   sun,
   rain,
@@ -611,7 +591,6 @@ class _ChibiWeatherPainter extends CustomPainter {
     final cy = h * 0.5;
     final r = w * 0.32;
 
-    // Soft animated rays
     final rayPaint = Paint()
       ..color = const Color(0xFFFDE047).withOpacity(0.65)
       ..style = PaintingStyle.stroke
@@ -628,7 +607,6 @@ class _ChibiWeatherPainter extends CustomPainter {
       canvas.drawLine(Offset(x1, y1), Offset(x2, y2), rayPaint);
     }
 
-    // Warm Sun Body Gradient
     final sunGrad = const RadialGradient(
       colors: [Color(0xFFFEF08A), Color(0xFFFBBF24), Color(0xFFF59E0B)],
       stops: [0.2, 0.7, 1.0],
@@ -637,7 +615,6 @@ class _ChibiWeatherPainter extends CustomPainter {
     final sunPaint = Paint()..shader = sunGrad;
     canvas.drawCircle(Offset(cx, cy), r, sunPaint);
 
-    // Glowing white top highlight
     final highlightPaint = Paint()
       ..color = Colors.white.withOpacity(0.55)
       ..style = PaintingStyle.fill;
@@ -646,7 +623,6 @@ class _ChibiWeatherPainter extends CustomPainter {
       highlightPaint,
     );
 
-    // Cute Blushing Cheeks (Pink kawaii)
     final blushPaint = Paint()
       ..color = const Color(0xFFFB7185).withOpacity(0.6)
       ..style = PaintingStyle.fill;
@@ -659,18 +635,15 @@ class _ChibiWeatherPainter extends CustomPainter {
       blushPaint,
     );
 
-    // Cute Kawaii Eyes (Blinking twinkle)
     final eyePaint = Paint()
       ..color = const Color(0xFF78350F)
       ..style = PaintingStyle.fill;
     canvas.drawCircle(Offset(cx - r * 0.28, cy - r * 0.05), 2.8, eyePaint);
     canvas.drawCircle(Offset(cx + r * 0.28, cy - r * 0.05), 2.8, eyePaint);
-    // Eye twinkle dots
     final twinklePaint = Paint()..color = Colors.white;
     canvas.drawCircle(Offset(cx - r * 0.28 + 0.8, cy - r * 0.05 - 0.8), 1.0, twinklePaint);
     canvas.drawCircle(Offset(cx + r * 0.28 + 0.8, cy - r * 0.05 - 0.8), 1.0, twinklePaint);
 
-    // Cute Happy Smile Curve
     final smilePaint = Paint()
       ..color = const Color(0xFF78350F)
       ..style = PaintingStyle.stroke
@@ -684,7 +657,6 @@ class _ChibiWeatherPainter extends CustomPainter {
   }
 
   void _drawChibiRain(Canvas canvas, double w, double h) {
-    // Cute puffy blue cloud
     final cx = w * 0.5;
     final cy = h * 0.42;
 
@@ -696,26 +668,22 @@ class _ChibiWeatherPainter extends CustomPainter {
 
     final cloudPaint = Paint()..shader = cloudGrad;
 
-    // Draw multi-circle cloud
     final cloudPath = Path()
       ..addOval(Rect.fromCenter(center: Offset(cx, cy + 4), width: w * 0.72, height: h * 0.38))
       ..addOval(Rect.fromCenter(center: Offset(cx - 12, cy - 3), width: w * 0.42, height: h * 0.38))
       ..addOval(Rect.fromCenter(center: Offset(cx + 10, cy - 6), width: w * 0.48, height: h * 0.42));
     canvas.drawPath(cloudPath, cloudPaint);
 
-    // Blush
     final blush = Paint()..color = const Color(0xFFF472B6).withOpacity(0.55);
     canvas.drawOval(Rect.fromCenter(center: Offset(cx - 13, cy + 7), width: 7, height: 4), blush);
     canvas.drawOval(Rect.fromCenter(center: Offset(cx + 13, cy + 7), width: 7, height: 4), blush);
 
-    // Eyes
     final eyePaint = Paint()..color = const Color(0xFF0369A1);
     canvas.drawCircle(Offset(cx - 7, cy + 3), 2.4, eyePaint);
     canvas.drawCircle(Offset(cx + 7, cy + 3), 2.4, eyePaint);
     canvas.drawCircle(Offset(cx - 6.2, cy + 2.2), 0.8, Paint()..color = Colors.white);
     canvas.drawCircle(Offset(cx + 7.8, cy + 2.2), 0.8, Paint()..color = Colors.white);
 
-    // Sweet smile
     final smile = Paint()
       ..color = const Color(0xFF0369A1)
       ..style = PaintingStyle.stroke
@@ -726,7 +694,6 @@ class _ChibiWeatherPainter extends CustomPainter {
       ..quadraticBezierTo(cx, cy + 10.5, cx + 4, cy + 6.5);
     canvas.drawPath(p, smile);
 
-    // Falling raindrops
     final dropPaint = Paint()
       ..color = const Color(0xFF38BDF8)
       ..style = PaintingStyle.fill;
@@ -758,7 +725,6 @@ class _ChibiWeatherPainter extends CustomPainter {
     final cy = h * 0.5;
     final r = w * 0.32;
 
-    // Teardrop body
     final dropGrad = const LinearGradient(
       colors: [Color(0xFFBAE6FD), Color(0xFF38BDF8), Color(0xFF0284C7)],
       begin: Alignment.topCenter,
@@ -773,24 +739,20 @@ class _ChibiWeatherPainter extends CustomPainter {
 
     canvas.drawPath(dropPath, Paint()..shader = dropGrad);
 
-    // Glistening highlight
     canvas.drawOval(
       Rect.fromCenter(center: Offset(cx - r * 0.45, cy - r * 0.2), width: 6, height: 12),
       Paint()..color = Colors.white.withOpacity(0.6),
     );
 
-    // Cheeks
     final blush = Paint()..color = const Color(0xFFFB7185).withOpacity(0.5);
     canvas.drawOval(Rect.fromCenter(center: Offset(cx - r * 0.5, cy + r * 0.35), width: 8, height: 5), blush);
     canvas.drawOval(Rect.fromCenter(center: Offset(cx + r * 0.5, cy + r * 0.35), width: 8, height: 5), blush);
 
-    // Eyes
     canvas.drawCircle(Offset(cx - r * 0.25, cy + r * 0.15), 2.8, Paint()..color = const Color(0xFF0C4A6E));
     canvas.drawCircle(Offset(cx + r * 0.25, cy + r * 0.15), 2.8, Paint()..color = const Color(0xFF0C4A6E));
     canvas.drawCircle(Offset(cx - r * 0.25 + 0.8, cy + r * 0.15 - 0.8), 1.0, Paint()..color = Colors.white);
     canvas.drawCircle(Offset(cx + r * 0.25 + 0.8, cy + r * 0.15 - 0.8), 1.0, Paint()..color = Colors.white);
 
-    // Smile
     final smile = Paint()
       ..color = const Color(0xFF0C4A6E)
       ..style = PaintingStyle.stroke
@@ -824,7 +786,6 @@ class _ChibiWeatherPainter extends CustomPainter {
       ..arcToPoint(Offset(w * 0.82, cy + 16), radius: const Radius.circular(5));
     canvas.drawPath(p2, windPaint);
 
-    // Cute flying sprout leaf
     final leaf = Path()
       ..moveTo(cx + 8, cy - 14)
       ..quadraticBezierTo(cx + 20, cy - 14, cx + 20, cy - 22)
@@ -837,10 +798,6 @@ class _ChibiWeatherPainter extends CustomPainter {
     return oldDelegate.type != type || oldDelegate.animValue != animValue;
   }
 }
-
-// ============================================================================
-// OFFICIAL MASCOT: BÉ MẦM (FLUENT AI ASSISTANT AVATAR)
-// ============================================================================
 
 class BeMamMascotWidget extends StatefulWidget {
   final double size;
@@ -911,35 +868,30 @@ class _BeMamPainter extends CustomPainter {
     final cx = w * 0.5;
     final cy = h * 0.58;
 
-    // Ambient glow circle
     canvas.drawCircle(
       Offset(cx, cy),
       w * 0.42,
       Paint()..color = Colors.white.withOpacity(0.85),
     );
 
-    // Sprout Leaves on Head
     final stemPaint = Paint()
       ..color = const Color(0xFF059669)
       ..strokeWidth = 3.0 * (w / 80)
       ..strokeCap = StrokeCap.round;
     canvas.drawLine(Offset(cx, cy - h * 0.28), Offset(cx, cy - h * 0.18), stemPaint);
 
-    // Left Leaf
     final leftLeaf = Path()
       ..moveTo(cx, cy - h * 0.28)
       ..quadraticBezierTo(cx - w * 0.22, cy - h * 0.44, cx - w * 0.20, cy - h * 0.32)
       ..quadraticBezierTo(cx - w * 0.10, cy - h * 0.22, cx, cy - h * 0.28);
     canvas.drawPath(leftLeaf, Paint()..color = const Color(0xFF34D399));
 
-    // Right Leaf
     final rightLeaf = Path()
       ..moveTo(cx, cy - h * 0.28)
       ..quadraticBezierTo(cx + w * 0.22, cy - h * 0.46, cx + w * 0.22, cy - h * 0.34)
       ..quadraticBezierTo(cx + w * 0.10, cy - h * 0.22, cx, cy - h * 0.28);
     canvas.drawPath(rightLeaf, Paint()..color = const Color(0xFF10B981));
 
-    // Round Baby Body
     final bodyR = w * 0.30;
     final bodyPaint = Paint()
       ..color = const Color(0xFFA7F3D0)
@@ -952,7 +904,6 @@ class _BeMamPainter extends CustomPainter {
       ..strokeWidth = 2.4 * (w / 80);
     canvas.drawCircle(Offset(cx, cy), bodyR, strokePaint);
 
-    // Blush Cheeks
     final blush = Paint()..color = const Color(0xFFFB7185).withOpacity(0.55);
     canvas.drawOval(
       Rect.fromCenter(center: Offset(cx - bodyR * 0.55, cy + bodyR * 0.2), width: 9 * (w / 80), height: 5.5 * (w / 80)),
@@ -963,19 +914,16 @@ class _BeMamPainter extends CustomPainter {
       blush,
     );
 
-    // Big Kawaii Sparkling Eyes
     final eyePaint = Paint()..color = const Color(0xFF064E3B);
     final eyeL = Offset(cx - bodyR * 0.32, cy - bodyR * 0.05);
     final eyeR = Offset(cx + bodyR * 0.32, cy - bodyR * 0.05);
     canvas.drawCircle(eyeL, 3.2 * (w / 80), eyePaint);
     canvas.drawCircle(eyeR, 3.2 * (w / 80), eyePaint);
 
-    // Glistening white sparkles in eyes
     final twinkle = Paint()..color = Colors.white;
     canvas.drawCircle(Offset(eyeL.dx + 1.0, eyeL.dy - 1.0), 1.2 * (w / 80), twinkle);
     canvas.drawCircle(Offset(eyeR.dx + 1.0, eyeR.dy - 1.0), 1.2 * (w / 80), twinkle);
 
-    // Cute Happy Smile
     final smile = Paint()
       ..color = const Color(0xFF064E3B)
       ..style = PaintingStyle.stroke

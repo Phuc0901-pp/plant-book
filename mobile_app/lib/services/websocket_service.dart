@@ -19,7 +19,6 @@ class WebSocketService {
   String get wsUrl {
     final apiService = ApiService();
     final baseUrl = apiService.baseUrl;
-    // Replace http/https with ws/wss and remove /api suffix
     if (baseUrl.contains('https://')) {
       return baseUrl.replaceAll('https://', 'wss://').replaceAll('/api', '');
     } else {
@@ -34,12 +33,11 @@ class WebSocketService {
     try {
       final url = wsUrl;
       print('🔌 Connecting to WebSocket: $url');
-      
-      // Override HttpClient to trust self-signed/proxy certificates if needed
+
       _socket = await WebSocket.connect(url).timeout(const Duration(seconds: 15));
       _isConnecting = false;
       print('✅ WebSocket Connected!');
-      
+
       _reconnectTimer?.cancel();
 
       _socket!.listen(

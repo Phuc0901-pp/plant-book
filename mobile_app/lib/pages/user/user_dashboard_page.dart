@@ -46,9 +46,7 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
   @override
   void initState() {
     super.initState();
-    // 1. Cache-First: Hiển thị ngay lập tức trong 0ms từ bộ nhớ đệm an toàn AES-256
     _loadFromCacheFirst();
-    // 2. Revalidation: Kiểm tra và đồng bộ ngầm với máy chủ khi có mạng
     _loadDashboardData();
   }
 
@@ -76,7 +74,6 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
   }
 
   Future<void> _loadDashboardData() async {
-    // 1. Tự động kích hoạt đồng bộ toàn bộ hàng đợi ngoại tuyến nếu máy có kết nối
     _apiService.syncOfflineLogs();
 
     if (_farms.isEmpty && _plants.isEmpty) {
@@ -138,7 +135,6 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
 
     final userName = _userProfile?['full_name'] ?? _userProfile?['name'] ?? 'Nông hộ';
 
-    // Calculate real KPI metrics
     final totalPlants = _plants.length;
     final sickPlants = _plants.where((p) => p.healthStatus.toLowerCase().contains('bệnh') || p.healthStatus.toLowerCase().contains('chú ý')).length;
 
@@ -167,22 +163,18 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Microsoft Viva Welcome Banner with Chibi Weather & Mascot Bé Mầm
             WelcomeBanner(
               userName: userName,
               accountTier: _userProfile?['account_tier'] as String?,
             ),
             const SizedBox(height: 14),
 
-            // 2. Fluent Command / Search Bar
             _buildFluentSearchBar(),
             const SizedBox(height: 14),
 
-            // 3. Offline / Online Sync Status Pill
             _buildSyncStatusBanner(),
             const SizedBox(height: 18),
 
-            // 4. Section Header: Macro KPI Cards
             Row(
               children: const [
                 LucideIcon(LucideIconName.sprout, size: 16, color: AppTheme.fluentEmerald),
@@ -200,7 +192,6 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
             ),
             const SizedBox(height: 10),
 
-            // 5. Bento Grid 2x2 (Microsoft Fluent 2 Squircle Cards)
             Row(
               children: [
                 Expanded(
@@ -266,11 +257,9 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
             ),
             const SizedBox(height: 18),
 
-            // 6. Cute Chibi Weather & Agro-Advisory Card
             _buildWeatherAdvisoryCard(),
             const SizedBox(height: 20),
 
-            // 7. Quick Operation Hub (4 Large Pastel Squircle Buttons)
             Row(
               children: const [
                 LucideIcon(LucideIconName.sparkles, size: 16, color: AppTheme.fluentEmerald),
@@ -338,7 +327,6 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
             ),
             const SizedBox(height: 22),
 
-            // 8. Section: My Farms
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -402,7 +390,6 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
 
             const SizedBox(height: 18),
 
-            // 9. Section: Plants
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [

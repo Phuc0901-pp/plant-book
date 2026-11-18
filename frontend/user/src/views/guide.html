@@ -1,6 +1,5 @@
       <div class="page-section" id="page-wiki">
 
-        <!-- TẦNG 1: ERP EXECUTIVE COCKPIT BANNER (EXECUTIVE ROYAL AGTECH) -->
         <div class="royal-page-header">
           <div style="max-width:680px; position:relative; z-index:1;">
             <div style="font-size:11px; color:#059669; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; margin-bottom:4px; display:inline-flex; align-items:center; gap:6px; background:#ecfdf5; border:1px solid #a7f3d0; padding:2px 8px; border-radius:6px;">
@@ -14,7 +13,6 @@
             </p>
           </div>
 
-          <!-- Quick Search Bar -->
           <div style="min-width:260px; max-width:340px; flex:1; position:relative; z-index:1;">
             <div style="position:relative;">
               <i data-lucide="search" class="lucide-sm" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#64748b; font-size:13px;"></i>
@@ -23,7 +21,6 @@
           </div>
         </div>
 
-          <!-- ERP KPI Summary Metric Bar -->
           <div style="background:#f8fafc; border-top:1px solid #e2e8f0; padding:14px 24px; display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:16px;">
             <div style="display:flex; align-items:center; gap:12px;">
               <div style="width:38px; height:38px; border-radius:10px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:17px;">
@@ -66,7 +63,6 @@
             </div>
           </div>
 
-        <!-- TẦNG 2: ERP SEGMENTED SUB-TABS NAVIGATION -->
         <div class="wiki-subtabs-nav">
           <button class="wiki-subtab active" id="btn-wiki-sub-roles" onclick="switchWikiSubtab('roles')">
             <span class="wiki-subtab-badge" style="background:#059669; color:#fff;">01 · THEO VAI TRÒ</span>
@@ -117,10 +113,8 @@
           </button>
         </div>
 
-        <!-- ════════════════ SUB-TAB 0: HƯỚNG DẪN THEO VAI TRÒ (ROLE-ADAPTIVE SOP) ════════════════ -->
         <div id="wiki-subtab-roles" style="display:block;">
-          
-          <!-- Banner chuyển đổi Role nhanh -->
+
           <div style="background:linear-gradient(135deg, #091e15 0%, #164e3f 100%); color:#ffffff; border-radius:18px; padding:22px 24px; margin-bottom:24px; box-shadow:0 6px 22px rgba(6,78,59,0.18); position:relative; overflow:hidden;">
             <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
               <div style="max-width:650px;">
@@ -135,7 +129,6 @@
                 </p>
               </div>
 
-              <!-- Nút chọn Role -->
               <div style="display:flex; gap:8px; flex-wrap:wrap;">
                 <button type="button" class="guide-role-btn" id="btn-guide-role-owner" onclick="selectGuideRole('farm_owner')" style="padding:8px 14px; border-radius:10px; font-size:12.5px; font-weight:800; cursor:pointer; border:1.5px solid #10b981; background:#059669; color:#fff; display:inline-flex; align-items:center; gap:6px;">
                   <i data-lucide="crown" class="lucide-xs"></i> Chủ Vườn
@@ -153,7 +146,6 @@
             </div>
           </div>
 
-          <!-- PANE CHI TIẾT 1: CHỦ NÔNG TRẠI (FARM OWNER) -->
           <div id="guide-role-pane-owner" class="guide-role-pane" style="display:block;">
             <div style="background:#ffffff; border:1.5px solid #a7f3d0; border-radius:18px; padding:24px; margin-bottom:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
               <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:12px;">
@@ -197,7 +189,6 @@
                 </div>
               </div>
 
-              <!-- Task checklist for Owner -->
               <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:14px 18px;">
                 <div style="font-size:13px; font-weight:800; color:#065f46; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
                   <i data-lucide="check-square" class="lucide-xs"></i> CHECKLIST NHIỆM VỤ QUẢN TRỊ ĐỊNH KỲ:
@@ -211,7 +202,6 @@
             </div>
           </div>
 
-          <!-- PANE CHI TIẾT 2: QUẢN ĐỐC / KỸ SƯ NÔNG NGHIỆP (MANAGER) -->
           <div id="guide-role-pane-manager" class="guide-role-pane" style="display:none;">
             <div style="background:#ffffff; border:1.5px solid #bfdbfe; border-radius:18px; padding:24px; margin-bottom:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
               <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:12px;">
@@ -249,7 +239,6 @@
             </div>
           </div>
 
-          <!-- PANE CHI TIẾT 3: NHÂN CÔNG CHĂM SÓC THỰC ĐỊA (CARE WORKER) -->
           <div id="guide-role-pane-worker" class="guide-role-pane" style="display:none;">
             <div style="background:#ffffff; border:1.5px solid #bae6fd; border-radius:18px; padding:24px; margin-bottom:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
               <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:12px;">
@@ -287,7 +276,6 @@
             </div>
           </div>
 
-          <!-- PANE CHI TIẾT 4: KIỂM ĐỊNH VIÊN / THANH TRA VIETGAP (AUDITOR READONLY) -->
           <div id="guide-role-pane-auditor" class="guide-role-pane" style="display:none;">
             <div style="background:#ffffff; border:1.5px solid #fde68a; border-radius:18px; padding:24px; margin-bottom:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
               <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:12px;">
@@ -327,11 +315,9 @@
 
         </div>
 
-        <!-- ════════════════ SUB-TAB 1: MODULE CÔNG NGHỆ NÂNG CAO ════════════════ -->
         <div id="wiki-subtab-advanced" style="display:none;">
           <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:22px;">
-            
-            <!-- Module 1: Bản đồ GIS Vệ tinh & 3D Contour -->
+
             <div class="guide-searchable-card" onclick="openFeatureDetailModal('gis')" style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.25s ease; display:flex; flex-direction:column; position:relative;">
               <div style="height:175px; background:#e2e8f0; overflow:hidden; position:relative;">
                 <img src="/user/img/gis_contour_map.jpg" alt="Bản đồ GIS Vệ tinh & 3D Contour" style="width:100%; height:100%; object-fit:cover;">
@@ -358,7 +344,6 @@
               </div>
             </div>
 
-            <!-- Module 2: Thẻ Định danh NFC & Mã QR Cây -->
             <div class="guide-searchable-card" onclick="openFeatureDetailModal('nfc')" style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.25s ease; display:flex; flex-direction:column; position:relative;">
               <div style="height:175px; background:#f8fafc; overflow:hidden; position:relative; display:flex; align-items:center; justify-content:center; padding:10px;">
                 <img src="/user/img/nfc_tag.png" alt="Thẻ Định danh NFC TANBAO AgTech" style="max-height:100%; object-fit:contain; filter:drop-shadow(0 8px 16px rgba(0,0,0,0.15));">
@@ -385,7 +370,6 @@
               </div>
             </div>
 
-            <!-- Module 3: Tích hợp Thiết bị IoT & Cảm biến Tự động -->
             <div class="guide-searchable-card" onclick="openFeatureDetailModal('iot')" style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.25s ease; display:flex; flex-direction:column; position:relative;">
               <div style="height:175px; background:#e2e8f0; overflow:hidden; position:relative;">
                 <img src="/user/img/iot_sensors.jpg" alt="Tích hợp thiết bị IoT & Cảm biến" style="width:100%; height:100%; object-fit:cover;">
@@ -412,7 +396,6 @@
               </div>
             </div>
 
-            <!-- Module 4: Bộ Tiêu chuẩn VietGAP 100% & Quản lý Mã Lô -->
             <div class="guide-searchable-card" onclick="openFeatureDetailModal('vietgap')" style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.25s ease; display:flex; flex-direction:column; position:relative;">
               <div style="height:175px; background:linear-gradient(135deg, #064e3b, #047857); overflow:hidden; position:relative; display:flex; align-items:center; justify-content:center; color:#ffffff;">
                 <div style="text-align:center;">
@@ -439,7 +422,6 @@
               </div>
             </div>
 
-            <!-- Module 5: Nhập Giọng Nói AI (Voice-to-Text) -->
             <div class="guide-searchable-card" onclick="openFeatureDetailModal('voice')" style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.25s ease; display:flex; flex-direction:column; position:relative;">
               <div style="height:175px; background:linear-gradient(135deg, #1e3a8a, #3b82f6); overflow:hidden; position:relative; display:flex; align-items:center; justify-content:center; color:#ffffff;">
                 <div style="text-align:center;">
@@ -466,7 +448,6 @@
               </div>
             </div>
 
-            <!-- Module 6: Hạch toán Chi phí & Quản trị Tồn kho ERP -->
             <div class="guide-searchable-card" onclick="openFeatureDetailModal('cost')" style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.25s ease; display:flex; flex-direction:column; position:relative;">
               <div style="height:175px; background:linear-gradient(135deg, #7c2d12, #ea580c); overflow:hidden; position:relative; display:flex; align-items:center; justify-content:center; color:#ffffff;">
                 <div style="text-align:center;">
@@ -496,11 +477,8 @@
           </div>
         </div>
 
-
-        <!-- ════════════════ SUB-TAB 2: 11 QUY TRÌNH THAO TÁC CHUẨN (SOP & LIVE API GUIDELINE) ════════════════ -->
         <div id="wiki-subtab-guide" style="display:none;">
-          
-          <!-- Topic Filter Bar -->
+
           <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:10px; margin-bottom:20px; -webkit-overflow-scrolling:touch;">
             <button class="guide-filter-btn active" onclick="filterGuideTopics('all', this)" style="background:#059669; color:white; border:none; padding:8px 18px; border-radius:20px; font-size:12.5px; font-weight:800; cursor:pointer; white-space:nowrap; box-shadow:0 2px 8px rgba(5,150,105,0.2);">
               <i data-lucide="layers" class="lucide-sm"></i> Tất cả (11 quy trình)
@@ -521,7 +499,6 @@
 
           <div style="display:flex; flex-direction:column; gap:24px;" id="guide-cards-container">
 
-            <!-- HƯỚNG DẪN 1: KHỞI TẠO TRANG TRẠI & ĐỊNH VỊ GPS -->
             <div class="guide-card guide-searchable-card" data-guide-topic="setup" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
               <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
                 <h3 style="font-size:17px; color:#047857; margin:0; font-weight:800; display:flex; align-items:center; gap:10px;">
@@ -533,7 +510,6 @@
                 </span>
               </div>
 
-              <!-- Sơ đồ Lưu đồ Giải thuật Khởi tạo Trang trại GPS -->
               <div style="background:#f0fdf4; border:1.5px dashed #059669; border-radius:14px; padding:16px; margin-bottom:20px;">
                 <div style="font-size:12.5px; font-weight:800; color:#065f46; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
                   <i data-lucide="network" class="lucide-sm"></i> SƠ ĐỒ LƯU ĐỒ GIẢI THUẬT &amp; QUY TRÌNH THỰC HIỆN:
@@ -578,7 +554,6 @@
               </div>
             </div>
 
-            <!-- HƯỚNG DẪN 2: GHI NHẬT KÝ CANH TÁC & VOICE AI -->
             <div class="guide-card guide-searchable-card" data-guide-topic="care" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
               <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
                 <h3 style="font-size:17px; color:#047857; margin:0; font-weight:800; display:flex; align-items:center; gap:10px;">
@@ -590,7 +565,6 @@
                 </span>
               </div>
 
-              <!-- Sơ đồ Lưu đồ Giải thuật Ghi Nhật ký Voice AI -->
               <div style="background:#f0fdf4; border:1.5px dashed #059669; border-radius:14px; padding:16px; margin-bottom:20px;">
                 <div style="font-size:12.5px; font-weight:800; color:#065f46; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
                   <i data-lucide="network" class="lucide-sm"></i> SƠ ĐỒ LƯU ĐỒ GIẢI THUẬT &amp; QUY TRÌNH THỰC HIỆN:
@@ -635,7 +609,6 @@
               </div>
             </div>
 
-            <!-- HƯỚNG DẪN 3: QUẢN LÝ VẬT TƯ & PHÂN THUỐC VIETGAP -->
             <div class="guide-card guide-searchable-card" data-guide-topic="care" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
               <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
                 <h3 style="font-size:17px; color:#047857; margin:0; font-weight:800; display:flex; align-items:center; gap:10px;">
@@ -689,7 +662,6 @@
               </div>
             </div>
 
-            <!-- HƯỚNG DẪN 4: TRA CỨU LỊCH SỬ & XUẤT BÁO CÁO VIETGAP -->
             <div class="guide-card guide-searchable-card" data-guide-topic="vietgap" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
               <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
                 <h3 style="font-size:17px; color:#047857; margin:0; font-weight:800; display:flex; align-items:center; gap:10px;">
@@ -743,7 +715,6 @@
               </div>
             </div>
 
-            <!-- HƯỚNG DẪN 5: CÀI ĐẶT QUY TẮC NGƯỠNG & THÔNG BÁO TỰ ĐỘNG -->
             <div class="guide-card guide-searchable-card" data-guide-topic="iot" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
               <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
                 <h3 style="font-size:17px; color:#047857; margin:0; font-weight:800; display:flex; align-items:center; gap:10px;">
@@ -797,7 +768,6 @@
               </div>
             </div>
 
-            <!-- HƯỚNG DẪN 6: KHỞI TẠO & QUẢN LÝ DANH MỤC CÂY TRỒNG -->
             <div class="guide-card guide-searchable-card" data-guide-topic="setup" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
               <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
                 <h3 style="font-size:17px; color:#047857; margin:0; font-weight:800; display:flex; align-items:center; gap:10px;">
@@ -825,7 +795,6 @@
               </div>
             </div>
 
-            <!-- HƯỚNG DẪN 7: QUÉT THẺ NFC & MÃ QR THỰC ĐỊA -->
             <div class="guide-card guide-searchable-card" data-guide-topic="care" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
               <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
                 <h3 style="font-size:17px; color:#047857; margin:0; font-weight:800; display:flex; align-items:center; gap:10px;">
@@ -853,7 +822,6 @@
               </div>
             </div>
 
-            <!-- HƯỚNG DẪN 8: THU HOẠCH NÔNG SẢN & SINH MÃ LÔ VIETGAP -->
             <div class="guide-card guide-searchable-card" data-guide-topic="vietgap" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
               <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
                 <h3 style="font-size:17px; color:#047857; margin:0; font-weight:800; display:flex; align-items:center; gap:10px;">
@@ -881,7 +849,6 @@
               </div>
             </div>
 
-            <!-- HƯỚNG DẪN 9: SẮP XẾP & ĐÁNH SỐ CÂY THEO TỌA ĐỘ GPS -->
             <div class="guide-card guide-searchable-card" data-guide-topic="setup" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
               <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
                 <h3 style="font-size:17px; color:#047857; margin:0; font-weight:800; display:flex; align-items:center; gap:10px;">
@@ -909,7 +876,6 @@
               </div>
             </div>
 
-            <!-- HƯỚNG DẪN 10: KHAI THÁC TRẠM IOT & DỰ BÁO KHÍ TƯỢNG 6 NGÀY -->
             <div class="guide-card guide-searchable-card" data-guide-topic="iot" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
               <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
                 <h3 style="font-size:17px; color:#047857; margin:0; font-weight:800; display:flex; align-items:center; gap:10px;">
@@ -937,7 +903,6 @@
               </div>
             </div>
 
-            <!-- HƯỚNG DẪN 11: LIVE API CHUẨN QUỐC TẾ (GALLAGHER 8.30, ISO/IEC 27001 & TÍN CHỈ CARBON MRV) -->
             <div class="guide-card guide-searchable-card" data-guide-topic="iot" style="background:#ffffff; border:1.5px solid #a7f3d0; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(5,150,105,0.06);">
               <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
                 <h3 style="font-size:17px; color:#047857; margin:0; font-weight:800; display:flex; align-items:center; gap:10px;">
@@ -985,12 +950,9 @@
           </div>
         </div>
 
-
-        <!-- ════════════════ SUB-TAB 3: CẨM NANG TIÊU CHUẨN VIETGAP & KỸ THUẬT CANH TÁC ════════════════ -->
         <div id="wiki-subtab-vietgap" style="display:none;">
           <div style="display:flex; flex-direction:column; gap:20px;">
-            
-            <!-- Hero Warning Banner -->
+
             <div style="background:linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color:#ffffff; border-radius:16px; padding:24px; box-shadow:0 6px 20px rgba(15,23,42,0.15); border:1.5px solid #334155; position:relative; overflow:hidden;">
               <div style="position:absolute; right:-20px; top:-20px; font-size:140px; color:rgba(255,255,255,0.03); pointer-events:none;">
                 <i data-lucide="alert-triangle" class="lucide-sm"></i>
@@ -1013,7 +975,6 @@
               </div>
             </div>
 
-            <!-- Khối 1: Tại sao bắt buộc phải cách nhau 10 ~ 15 ngày? -->
             <div class="card" style="padding:22px; border-radius:16px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
               <h4 style="font-size:16px; font-weight:800; color:#0f172a; margin:0 0 14px 0; display:flex; align-items:center; gap:10px;">
                 <span style="background:#fef2f2; color:#dc2626; padding:6px 10px; border-radius:8px; font-size:13px;"><i data-lucide="help-circle" class="lucide-sm"></i></span>
@@ -1050,7 +1011,6 @@
               </div>
             </div>
 
-            <!-- Khối 2: Quy trình phối hợp 3 bước thực địa -->
             <div class="card" style="padding:22px; border-radius:16px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
               <h4 style="font-size:16px; font-weight:800; color:#0f172a; margin:0 0 16px 0; display:flex; align-items:center; gap:10px;">
                 <span style="background:#eff6ff; color:#2563eb; padding:6px 10px; border-radius:8px; font-size:13px;"><i data-lucide="refresh-cw" class="lucide-sm"></i></span>
@@ -1058,7 +1018,6 @@
               </h4>
 
               <div style="display:flex; flex-direction:column; gap:14px;">
-                <!-- Bước 1 -->
                 <div style="display:flex; align-items:flex-start; gap:14px; background:#fef2f2; border:1.5px solid #fecaca; border-radius:12px; padding:16px;">
                   <div style="background:#ef4444; color:#ffffff; font-weight:900; font-size:14px; padding:6px 14px; border-radius:8px; flex-shrink:0;">
                     BƯỚC 1
@@ -1073,7 +1032,6 @@
                   </div>
                 </div>
 
-                <!-- Bước 2 -->
                 <div style="display:flex; align-items:flex-start; gap:14px; background:#fffbeb; border:1.5px solid #fde68a; border-radius:12px; padding:16px;">
                   <div style="background:#f59e0b; color:#ffffff; font-weight:900; font-size:14px; padding:6px 14px; border-radius:8px; flex-shrink:0;">
                     BƯỚC 2
@@ -1088,7 +1046,6 @@
                   </div>
                 </div>
 
-                <!-- Bước 3 -->
                 <div style="display:flex; align-items:flex-start; gap:14px; background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:12px; padding:16px;">
                   <div style="background:#10b981; color:#ffffff; font-weight:900; font-size:14px; padding:6px 14px; border-radius:8px; flex-shrink:0;">
                     BƯỚC 3
@@ -1105,7 +1062,6 @@
               </div>
             </div>
 
-            <!-- Khối 3: 4 Điều "Cấm Kỵ" & Lưu Ý Quan Trọng -->
             <div class="card" style="padding:22px; border-radius:16px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
               <h4 style="font-size:16px; font-weight:800; color:#0f172a; margin:0 0 16px 0; display:flex; align-items:center; gap:10px;">
                 <span style="background:#fee2e2; color:#b91c1c; padding:6px 10px; border-radius:8px; font-size:13px;"><i data-lucide="ban" class="lucide-sm"></i></span>
@@ -1151,7 +1107,6 @@
               </div>
             </div>
 
-            <!-- Khối 4: Nguyên Tắc 4 Đúng Cốt Lõi -->
             <div class="card" style="padding:22px; border-radius:16px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
               <h4 style="font-size:16px; font-weight:800; color:#0f172a; margin:0 0 14px 0; display:flex; align-items:center; gap:10px;">
                 <span style="background:#ecfdf5; color:#059669; padding:6px 10px; border-radius:8px; font-size:13px;"><i data-lucide="check-check" class="lucide-sm"></i></span>
@@ -1184,4 +1139,4 @@
           </div>
         </div>
 
-      </div><!-- end page-wiki -->
+      </div>

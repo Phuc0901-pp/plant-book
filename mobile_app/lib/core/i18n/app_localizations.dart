@@ -1,10 +1,3 @@
-/// Plant Book AgTech (c) 2026 TBSG Agtech.
-/// Enterprise Multi-Language (i18n: VI | EN | ZH) & Executive BI Analytics Engine
-/// Supports:
-/// - Vietnamese (vi-VN / VND ₫)
-/// - English (en-US / USD $)
-/// - Chinese Simplified (zh-CN / CNY ¥) for Durian & Dragon Fruit Export Traceability (GACC)
-
 class AppLocalizations {
   static const List<String> supportedLocales = <String>['vi', 'en', 'zh'];
 
@@ -86,7 +79,6 @@ class AppLocalizations {
     return '${amountVnd.round()} ₫';
   }
 
-  /// Calculates Executive BI ROI (%) and Cost per Tree / Hectare
   static Map<String, double> computeExecutiveBiMetrics({
     required double npkCostVnd,
     required double pesticideCostVnd,

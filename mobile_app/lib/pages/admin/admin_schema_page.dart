@@ -53,7 +53,6 @@ class _AdminSchemaPageState extends State<AdminSchemaPage> with SingleTickerProv
       body: TabBarView(
         controller: _tabController,
         children: [
-          // Tab 1: Crop Schemas
           ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: _mockSchemas.length,
@@ -96,7 +95,6 @@ class _AdminSchemaPageState extends State<AdminSchemaPage> with SingleTickerProv
             },
           ),
 
-          // Tab 2: Agronomy Care Norms
           ListView(
             padding: const EdgeInsets.all(16),
             children: [

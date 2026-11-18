@@ -19,7 +19,6 @@ class PlantCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Health status badge color config (Fluent 2 Pastels)
     Color badgeBg;
     Color badgeText;
     String badgeLabel = plant.healthStatus;
@@ -56,7 +55,6 @@ class PlantCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Left: Plant Squircle Avatar
                 Container(
                   width: 44,
                   height: 44,
@@ -73,7 +71,6 @@ class PlantCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
 
-                // Center: Plant Info
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,7 +116,6 @@ class PlantCard extends StatelessWidget {
                               ],
                             ],
                           ),
-                          // Status Badge
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
@@ -178,7 +174,6 @@ class PlantCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
 
-                      // Bottom 1-Touch Action Bar
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [

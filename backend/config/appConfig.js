@@ -1,10 +1,3 @@
-/**
- * ===============================================================
- * Plant Book - Central Application Configuration Module
- * Single Source of Truth (SSOT) loaded from config/app.config.json
- * ===============================================================
- */
-
 const fs = require('fs');
 const path = require('path');
 
@@ -57,7 +50,6 @@ function loadRawConfig() {
 
 const APP_CONFIG = loadRawConfig();
 
-// Dynamic environment override for Staging / Dev / Production separation
 const envBaseUrl = process.env.BASE_URL || process.env.RENDER_EXTERNAL_URL;
 if (envBaseUrl) {
   const cleanBase = envBaseUrl.replace(/\/+$/, '');

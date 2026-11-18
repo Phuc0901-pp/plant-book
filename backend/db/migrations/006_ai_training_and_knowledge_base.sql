@@ -1,8 +1,4 @@
--- Migration: 006_ai_training_and_knowledge_base.sql
--- Description: Schema and seed data for AI Training Studio, Knowledge Articles, Q&A Pairs and Security Audit Trail
-
 -- +migrate Up
--- 1. Knowledge Base Articles Table
 CREATE TABLE IF NOT EXISTS ai_knowledge_articles (
   id SERIAL PRIMARY KEY,
   category VARCHAR(100) NOT NULL DEFAULT 'Kỹ thuật Canh tác',
@@ -16,7 +12,6 @@ CREATE TABLE IF NOT EXISTS ai_knowledge_articles (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 2. Training Q&A Pairs Table (Few-Shot Fine-Tuning)
 CREATE TABLE IF NOT EXISTS ai_training_qa (
   id SERIAL PRIMARY KEY,
   category VARCHAR(100) NOT NULL DEFAULT 'Hỏi Đáp Thường Gặp',
@@ -29,11 +24,10 @@ CREATE TABLE IF NOT EXISTS ai_training_qa (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. Security Audit Trail & Change Log for AI Training
 CREATE TABLE IF NOT EXISTS ai_training_logs (
   id SERIAL PRIMARY KEY,
-  action VARCHAR(50) NOT NULL, -- CREATE, UPDATE, DELETE, TEST_SIMULATE, RESTORE
-  target_type VARCHAR(50) NOT NULL, -- KNOWLEDGE_ARTICLE, TRAINING_QA, SYSTEM_PROMPT
+  action VARCHAR(50) NOT NULL,
+  target_type VARCHAR(50) NOT NULL,
   target_id INTEGER,
   details JSONB DEFAULT '{}',
   admin_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
@@ -41,25 +35,22 @@ CREATE TABLE IF NOT EXISTS ai_training_logs (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 4. User Feedback & Unanswered Queries Table
 CREATE TABLE IF NOT EXISTS ai_unanswered_queries (
   id SERIAL PRIMARY KEY,
   user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
   user_query TEXT NOT NULL,
   bot_response TEXT,
-  user_feedback VARCHAR(20) DEFAULT 'unanswered', -- like, dislike, unanswered
-  status VARCHAR(50) DEFAULT 'pending', -- pending, resolved, ignored
+  user_feedback VARCHAR(20) DEFAULT 'unanswered',
+  status VARCHAR(50) DEFAULT 'pending',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 5. Indexes for fast lookup & filtering
 CREATE INDEX IF NOT EXISTS idx_ai_knowledge_active ON ai_knowledge_articles(is_active, priority DESC);
 CREATE INDEX IF NOT EXISTS idx_ai_knowledge_category ON ai_knowledge_articles(category);
 CREATE INDEX IF NOT EXISTS idx_ai_training_qa_active ON ai_training_qa(is_active);
 CREATE INDEX IF NOT EXISTS idx_ai_training_logs_created ON ai_training_logs(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_ai_unanswered_status ON ai_unanswered_queries(status, created_at DESC);
 
--- 6. Seed High-Quality Knowledge Articles
 INSERT INTO ai_knowledge_articles (category, title, topic_keywords, content, priority, is_active)
 VALUES
 (
@@ -112,7 +103,6 @@ Lý do cốt lõi:
   true
 );
 
--- 7. Seed Initial Few-Shot Q&A Fine-Tuning Pairs
 INSERT INTO ai_training_qa (category, sample_questions, expected_answer, keywords, is_active)
 VALUES
 (

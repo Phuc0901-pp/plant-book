@@ -1,4 +1,3 @@
-/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 const express = require('express');
 const router = express.Router();
 const fs = require('fs');
@@ -6,20 +5,18 @@ const path = require('path');
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
 
-// Exchange rates for international export & investor reporting
 const CURRENCY_RATES = {
   VND: 1,
   USD: 25450,
   CNY: 3520
 };
 
-// Default farm-gate export prices (VND/kg) by crop type
 const CROP_EXPORT_PRICES_VND_PER_KG = {
-  durian: 85000,       // Sầu riêng Ri6 / Monthong xuất khẩu
-  dragon_fruit: 28000, // Thanh long xuất khẩu
-  pomelo: 35000,       // Bưởi da xanh
-  coffee: 115000,      // Cà phê nhân đặc sản
-  mango: 32000,        // Xoài xuất khẩu
+  durian: 85000,
+  dragon_fruit: 28000,
+  pomelo: 35000,
+  coffee: 115000,
+  mango: 32000,
   default: 75000
 };
 
@@ -64,9 +61,6 @@ function parseTreeAgeYears(plantAgeStr, plantingDate) {
   return 8;
 }
 
-/**
- * Allometric & Phenological Machine Learning Yield Predictor per Tree (kg/season)
- */
 function predictTreeSeasonYieldKg(plant) {
   const cropCat = detectCropCategory(plant.plant_type, plant.plant_variety);
   const ageYears = parseTreeAgeYears(plant.plant_age, plant.planting_date);
@@ -114,10 +108,6 @@ function predictTreeSeasonYieldKg(plant) {
   };
 }
 
-/**
- * RBAC Finance Guard: Resolves user permissions from DB & JWT
- * Blocks care_worker, auditor_readonly, or allow_view_finance === false
- */
 async function resolveUserFinanceContext(req) {
   const jwtUser = req.user || {};
   const userId = parseInt(jwtUser.id, 10) || null;
@@ -165,13 +155,6 @@ async function resolveUserFinanceContext(req) {
   };
 }
 
-/**
- * Classifies supply category / log type into the 4 Executive BI Cost Pillars:
- * 1. npk_fertilizer (Phân bón NPK & Hữu cơ)
- * 2. pesticide_bvtv (Thuốc BVTV & Sinh học)
- * 3. labor_nhan_cong (Nhân công canh tác)
- * 4. water_energy (Tiền nước & Điện tưới)
- */
 function classifyCostPillar(category, name, note) {
   const cat = String(category || '').trim();
   if (cat === 'Bón phân') return 'npk_fertilizer';
@@ -201,13 +184,9 @@ function convertCurrency(amountVnd) {
   };
 }
 
-/**
- * Core aggregator used by BI endpoints — 100% synchronized with /api/supplies/profit-overview
- */
 async function aggregateExecutiveBiData(ctx) {
   const { targetOwnerId, farmId, year } = ctx;
 
-  // 1. Load Farms in scope
   const farmsRes = await pool.query(
     `SELECT id, name, area, puc_code, vietgap_cert_number, user_id
      FROM farms
@@ -219,7 +198,6 @@ async function aggregateExecutiveBiData(ctx) {
   );
   const farms = farmsRes.rows;
 
-  // 2. Load Active Plants in scope
   const plantsRes = await pool.query(
     `SELECT p.id, p.tree_code, p.public_slug, p.plant_type, p.plant_variety,
             p.plant_age, p.planting_date, p.health_status, p.phi_status,
@@ -241,7 +219,6 @@ async function aggregateExecutiveBiData(ctx) {
   );
   const plants = plantsRes.rows;
 
-  // 3. Load Supply Usages in scope (exact same ownership resolution as /api/supplies/profit-overview)
   const suppliesRes = await pool.query(
     `SELECT su.id, su.usage_date, su.quantity, su.unit_price, su.total_cost,
             su.farm_id, su.plant_id, su.note,
@@ -275,7 +252,6 @@ async function aggregateExecutiveBiData(ctx) {
   );
   const supplyUsages = suppliesRes.rows;
 
-  // 4. Load Harvest & Cultivation Logs
   const logsRes = await pool.query(
     `SELECT pl.id, pl.plant_id, pl.log_date, pl.log_type, pl.note, pl.details, p.farm_id
      FROM plant_logs pl
@@ -300,7 +276,6 @@ async function aggregateExecutiveBiData(ctx) {
   );
   const logs = logsRes.rows;
 
-  // Calculate total trees & total area (hectares)
   const totalTrees = Math.max(1, plants.length);
   let totalAreaM2 = farms.reduce((acc, f) => acc + (parseFloat(f.area) || 0), 0);
   if (totalAreaM2 <= 0) {
@@ -308,7 +283,6 @@ async function aggregateExecutiveBiData(ctx) {
   }
   const totalAreaHa = Number((totalAreaM2 / 10000).toFixed(4));
 
-  // Aggregate 4 Cost Pillars from actual DB supply_usages
   const pillarsVnd = {
     npk_fertilizer: 0,
     pesticide_bvtv: 0,
@@ -329,7 +303,6 @@ async function aggregateExecutiveBiData(ctx) {
     pillarsUsageCount[pillar] += 1;
   });
 
-  // Aggregate Actual Harvest Revenue from plant_logs
   let actualHarvestRevenueVnd = 0;
   let actualHarvestKg = 0;
   let actualFruitCount = 0;
@@ -361,7 +334,6 @@ async function aggregateExecutiveBiData(ctx) {
   );
 
   let dataSource = 'LIVE_DATABASE_ACCOUNTING';
-  // Only fall back to agronomic standard baseline if the farm has ZERO recorded supply usages
   if (actualSupplySpentTotal <= 0 && supplyUsages.length === 0) {
     dataSource = 'AGRONOMIC_STANDARD_BASELINE';
     pillarsVnd.npk_fertilizer = totalTrees * 680000;
@@ -381,7 +353,6 @@ async function aggregateExecutiveBiData(ctx) {
   const costPerTreeVnd = Math.round(totalInvestmentVnd / totalTrees);
   const costPerHectareVnd = Math.round(totalInvestmentVnd / Math.max(0.1, totalAreaHa));
 
-  // Predictive Yield & Revenue per tree (Machine Learning / Allometric Engine)
   const treeForecasts = (plants.length > 0 ? plants : [{
     id: 1,
     tree_code: 'SR-RI6-001',
@@ -439,7 +410,6 @@ async function aggregateExecutiveBiData(ctx) {
   const avgPricePerKg = treeForecasts[0] ? treeForecasts[0].export_price_vnd_per_kg : 85000;
   const breakEvenYieldKg = Number((totalInvestmentVnd / avgPricePerKg).toFixed(1));
 
-  // Build 4 Pillars detailed breakdown
   const costPillars = [
     {
       key: 'npk_fertilizer',
@@ -528,9 +498,6 @@ async function aggregateExecutiveBiData(ctx) {
   };
 }
 
-// ============================================================================
-// 1. GET /api/analytics/bi-overview
-// ============================================================================
 router.get('/bi-overview', auth, async (req, res) => {
   try {
     const ctx = await resolveUserFinanceContext(req);
@@ -588,9 +555,6 @@ router.get('/bi-overview', auth, async (req, res) => {
   }
 });
 
-// ============================================================================
-// 2. GET /api/analytics/cost-breakdown
-// ============================================================================
 router.get('/cost-breakdown', auth, async (req, res) => {
   try {
     const ctx = await resolveUserFinanceContext(req);
@@ -656,9 +620,6 @@ router.get('/cost-breakdown', auth, async (req, res) => {
   }
 });
 
-// ============================================================================
-// 3. GET /api/analytics/plot-comparison
-// ============================================================================
 router.get('/plot-comparison', auth, async (req, res) => {
   try {
     const ctx = await resolveUserFinanceContext(req);
@@ -730,9 +691,6 @@ router.get('/plot-comparison', auth, async (req, res) => {
   }
 });
 
-// ============================================================================
-// 4. GET /api/analytics/predictive-yield
-// ============================================================================
 router.get('/predictive-yield', auth, async (req, res) => {
   try {
     const ctx = await resolveUserFinanceContext(req);
@@ -799,9 +757,6 @@ router.get('/predictive-yield', auth, async (req, res) => {
   }
 });
 
-// ============================================================================
-// 5. GET /api/analytics/i18n/:lang
-// ============================================================================
 router.get('/i18n/:lang', async (req, res) => {
   try {
     const rawLang = String(req.params.lang || 'vi').toLowerCase().trim();

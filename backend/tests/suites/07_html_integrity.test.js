@@ -19,22 +19,20 @@ describe('Suite 7: HTML Template Compilation, Tag Balance & Critical DOM IDs Ver
     const adminStats = fs.statSync(adminHtmlPath);
     const userStats = fs.statSync(userHtmlPath);
 
-    expect(adminStats.size).toBeGreaterThan(100000); // > 100KB
-    expect(userStats.size).toBeGreaterThan(100000); // > 100KB
+    expect(adminStats.size).toBeGreaterThan(100000);
+    expect(userStats.size).toBeGreaterThan(100000);
   });
 
   it('7.2 Should verify HTML tag balance (div, form, section, select) in admin/index.html', () => {
     const content = fs.readFileSync(adminHtmlPath, 'utf8');
 
-    // Count open and closing divs
     const openDivs = (content.match(/<div[\s>]/gi) || []).length;
     const closeDivs = (content.match(/<\/div>/gi) || []).length;
     const diff = openDivs - closeDivs;
 
     expect(openDivs).toBeGreaterThan(100);
-    expect(diff).toBe(0); // Perfect div balance!
+    expect(diff).toBe(0);
 
-    // Check forms
     const openForms = (content.match(/<form[\s>]/gi) || []).length;
     const closeForms = (content.match(/<\/form>/gi) || []).length;
     expect(openForms).toBe(closeForms);
@@ -43,15 +41,13 @@ describe('Suite 7: HTML Template Compilation, Tag Balance & Critical DOM IDs Ver
   it('7.3 Should verify HTML tag balance (div, form, section, select) in user/index.html', () => {
     const content = fs.readFileSync(userHtmlPath, 'utf8');
 
-    // Count open and closing divs
     const openDivs = (content.match(/<div[\s>]/gi) || []).length;
     const closeDivs = (content.match(/<\/div>/gi) || []).length;
     const diff = openDivs - closeDivs;
 
     expect(openDivs).toBeGreaterThan(100);
-    expect(diff).toBe(0); // Perfect div balance!
+    expect(diff).toBe(0);
 
-    // Check forms
     const openForms = (content.match(/<form[\s>]/gi) || []).length;
     const closeForms = (content.match(/<\/form>/gi) || []).length;
     expect(openForms).toBe(closeForms);
@@ -59,7 +55,7 @@ describe('Suite 7: HTML Template Compilation, Tag Balance & Critical DOM IDs Ver
 
   it('7.4 Should verify presence of critical Admin Portal DOM element IDs', () => {
     const content = fs.readFileSync(adminHtmlPath, 'utf8');
-    
+
     const requiredAdminIds = [
       'login-page',
       'gis-map',
@@ -86,7 +82,7 @@ describe('Suite 7: HTML Template Compilation, Tag Balance & Critical DOM IDs Ver
 
   it('7.5 Should verify presence of critical User Portal DOM element IDs (VietGAP & Care)', () => {
     const content = fs.readFileSync(userHtmlPath, 'utf8');
-    
+
     const requiredUserIds = [
       'login-page',
       'c-log-type',
@@ -159,7 +155,6 @@ describe('Suite 7: HTML Template Compilation, Tag Balance & Critical DOM IDs Ver
       expect(hasId).toBe(true);
     });
 
-    // Verify farmer modal does NOT contain data entry controls
     expect(content.includes('id="nfc-inv-quick-input"')).toBe(false);
     expect(content.includes('id="btn-toggle-continuous-nfc"')).toBe(false);
   });
@@ -174,7 +169,6 @@ describe('Suite 7: HTML Template Compilation, Tag Balance & Critical DOM IDs Ver
     const subHtml = fs.readFileSync(subHtmlPath, 'utf8');
     const subJs = fs.readFileSync(subJsPath, 'utf8');
 
-    // Required interactive elements
     const requiredIds = [
       'btn-opt-existing',
       'btn-opt-new',
@@ -190,7 +184,6 @@ describe('Suite 7: HTML Template Compilation, Tag Balance & Critical DOM IDs Ver
       expect(subHtml.includes(`id="${id}"`)).toBe(true);
     });
 
-    // Verify click fallback and robust DOM ready lifecycle (no race condition)
     expect(subHtml.includes('switchSubView')).toBe(true);
     expect(subJs.includes("document.readyState === 'loading'")).toBe(true);
     expect(subJs.includes('SubGatewayApp')).toBe(true);
@@ -204,13 +197,11 @@ describe('Suite 7: HTML Template Compilation, Tag Balance & Critical DOM IDs Ver
     const subHtml = fs.readFileSync(subHtmlPath, 'utf8');
     const subJs = fs.readFileSync(subJsPath, 'utf8');
 
-    // Forms must have action="javascript:void(0);" to avoid ? reload
     expect(subHtml.includes('action="javascript:void(0);"') || subHtml.includes("action='javascript:void(0);'")).toBe(true);
     expect(subHtml.includes('handleSubLoginSubmit')).toBe(true);
     expect(subHtml.includes('handleSubRegisterSubmit')).toBe(true);
     expect(subHtml.includes('handleSubPlantSubmit')).toBe(true);
 
-    // subJs must clean query search parameter and advance session to view-farm-hub
     expect(subJs.includes('window.location.search')).toBe(true);
     expect(subJs.includes('btn-submit-login')).toBe(true);
     expect(subJs.includes('btn-submit-register')).toBe(true);

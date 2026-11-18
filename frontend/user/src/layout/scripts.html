@@ -1,15 +1,13 @@
-<!-- Scripts (ES Modules) -->
 <script src="/assets/js/lucide-auto-hydrator.js?v={{APP_VERSION}}"></script>
 <script src="/assets/js/chibi-iso-icons.js?v={{APP_VERSION}}"></script>
 <script src="/js/i18n-engine.js?v={{APP_VERSION}}"></script>
 <script src="/js/bi-analytics-widget.js?v={{APP_VERSION}}"></script>
 <script>
-  window.refreshIcons = window.refreshIcons || function() {
+window.refreshIcons = window.refreshIcons || function() {
     if (window.lucide && typeof window.lucide.createIcons === 'function') {
       window.lucide.createIcons();
     }
   };
-  // Inline fallbacks to ensure login buttons work immediately even before ES module evaluation
   window.doLogin = window.doLogin || async function() {
     const email = document.getElementById('login-email')?.value.trim();
     const pass  = document.getElementById('login-pass')?.value;
@@ -86,12 +84,9 @@
     if (modal) modal.style.display = 'none';
   };
 </script>
-<!-- Tesseract.js for Real-Time Client-Side Agricultural Packaging OCR -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-<!-- auth.js phải load trước để xử lý token check khi tải trang -->
 <script type="module" src="/user/js/auth.js?v={{APP_VERSION}}"></script>
 
-<!-- app.js là entry point: import tất cả module và expose lên window -->
 <script type="module" src="/user/js/app.js?v={{APP_VERSION}}"></script>
 </body>
 </html>

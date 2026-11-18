@@ -336,8 +336,6 @@ class _DashboardPageState extends State<DashboardPage> {
         ],
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      // Chỉ hiển thị nút nổi SpeedDial tại Tab 0 (Tổng quan).
-      // Các Tab con (Nhật ký, Kho vật tư) tự quản lý nút bấm riêng biệt, tránh triệt để lỗi chồng chéo 2 nút.
       floatingActionButton: _currentIndex == 0
           ? Column(
               mainAxisSize: MainAxisSize.min,

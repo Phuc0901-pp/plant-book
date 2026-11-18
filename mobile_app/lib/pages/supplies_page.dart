@@ -33,9 +33,7 @@ class _SuppliesPageState extends State<SuppliesPage> {
   @override
   void initState() {
     super.initState();
-    // 1. Cache-First: Đọc tức thì trong 0ms từ Hive AES-256
     _loadFromCacheFirst();
-    // 2. Revalidation: Đồng bộ ngầm với máy chủ khi có mạng
     _loadSupplies();
     _loadAnalyticsAndUsages();
   }
@@ -201,7 +199,6 @@ class _SuppliesPageState extends State<SuppliesPage> {
       ),
       body: Column(
         children: [
-          // Filter Chips Header
           Container(
             color: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -224,7 +221,6 @@ class _SuppliesPageState extends State<SuppliesPage> {
           ),
           const Divider(height: 1),
 
-          // Main Content
           Expanded(
             child: _isLoading
                 ? const Center(
@@ -342,7 +338,6 @@ class _SuppliesPageState extends State<SuppliesPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Total Expenditure Card (Gradient Header)
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
@@ -392,14 +387,12 @@ class _SuppliesPageState extends State<SuppliesPage> {
             ),
             const SizedBox(height: 20),
 
-            // Cost by category title
             const Text(
               'Chi phí theo hạng mục',
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textMain),
             ),
             const SizedBox(height: 10),
 
-            // Grid of Categories Cost
             GridView.count(
               crossAxisCount: 2,
               shrinkWrap: true,
@@ -416,7 +409,6 @@ class _SuppliesPageState extends State<SuppliesPage> {
             ),
             const SizedBox(height: 24),
 
-            // Recent usages title
             const Text(
               'Nhật ký tiêu hao vật tư gần đây',
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textMain),
@@ -626,7 +618,6 @@ class _SuppliesPageState extends State<SuppliesPage> {
           children: [
             Row(
               children: [
-                // Product Thumbnail Image
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: sp.imageUrl != null && sp.imageUrl!.isNotEmpty
@@ -981,7 +972,6 @@ class _SupplyFormDialogState extends State<SupplyFormDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Header with AgTech Dark Emerald Gradient
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
             decoration: const BoxDecoration(
@@ -1042,7 +1032,6 @@ class _SupplyFormDialogState extends State<SupplyFormDialog> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Hạng mục gốc
                     DropdownButtonFormField<String>(
                       value: _category,
                       decoration: InputDecoration(
@@ -1070,7 +1059,6 @@ class _SupplyFormDialogState extends State<SupplyFormDialog> {
                     ),
                     const SizedBox(height: 14),
 
-                    // Tên vật tư (chỉ hiện khi không phải Tiền nước / Nhân công)
                     if (_category != 'Tiền nước' && _category != 'Nhân công') ...[
                       TextFormField(
                         controller: _nameController,
@@ -1088,7 +1076,6 @@ class _SupplyFormDialogState extends State<SupplyFormDialog> {
                       const SizedBox(height: 14),
                     ],
 
-                    // Photo Upload Card (only for Bón phân / Phun thuốc)
                     if (_category == 'Bón phân' || _category == 'Phun thuốc') ...[
                       const Text(
                         'Hình ảnh bao bì / sản phẩm',
@@ -1169,7 +1156,6 @@ class _SupplyFormDialogState extends State<SupplyFormDialog> {
                       const SizedBox(height: 14),
                     ],
 
-                    // Khối lượng & Đơn vị (chỉ hiện khi không phải Tiền nước / Nhân công)
                     if (_category != 'Tiền nước' && _category != 'Nhân công') ...[
                       Row(
                         children: [
@@ -1224,7 +1210,6 @@ class _SupplyFormDialogState extends State<SupplyFormDialog> {
                       const SizedBox(height: 14),
                     ],
 
-                    // Đơn giá / Tổng giá mua
                     TextFormField(
                       controller: _packagePriceController,
                       keyboardType: TextInputType.number,
@@ -1248,7 +1233,6 @@ class _SupplyFormDialogState extends State<SupplyFormDialog> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Breakdown Calculator Box (chỉ hiện khi không phải Tiền nước / Nhân công)
                     if (_category != 'Tiền nước' && _category != 'Nhân công') ...[
                       Container(
                         padding: const EdgeInsets.all(14),
@@ -1328,7 +1312,6 @@ class _SupplyFormDialogState extends State<SupplyFormDialog> {
                       const SizedBox(height: 14),
                     ],
 
-                    // Ghi chú thêm
                     TextFormField(
                       controller: _noteController,
                       maxLines: 2,
@@ -1348,7 +1331,6 @@ class _SupplyFormDialogState extends State<SupplyFormDialog> {
             ),
           ),
 
-          // Footer Action Buttons
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             color: const Color(0xFFF8FAFC),

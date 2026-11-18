@@ -1,10 +1,6 @@
 import 'api_service.dart';
 import 'cache_service.dart';
 
-/// Dịch vụ Đồng bộ Ngoại tuyến Nguyên tử 2 Pha (Atomic 2-Phase Offline Batch Sync Engine)
-/// Khớp 100% với kiến trúc Web App `v1.3.5` và Backend `POST /api/plants/offline-batch-sync`:
-/// - **Pha 1**: Thử đồng bộ nguyên tử toàn bộ lô (`care_logs` + `field_mutations`) qua `POST /api/plants/offline-batch-sync` được bảo vệ bởi khóa Mutex `withFarmHashChainLock` và chuỗi băm `sealPlantLogHashChain`.
-/// - **Pha 2 (Fallback)**: Nếu mạng chập chờn hoặc máy chủ yêu cầu tách lẻ, tự động chuyển sang đồng bộ từng bản ghi và bảo toàn 100% các bản ghi chưa đẩy được (Zero Data Loss).
 class OfflineSyncService {
   static final OfflineSyncService _instance = OfflineSyncService._internal();
   factory OfflineSyncService() => _instance;
@@ -16,7 +12,6 @@ class OfflineSyncService {
   bool _isSyncing = false;
   bool get isSyncing => _isSyncing;
 
-  /// Tải toàn bộ dữ liệu từ Server về Local AES-256 Hive Storage để sẵn sàng làm việc ngoại tuyến.
   Future<Map<String, dynamic>> downloadAllForOffline() async {
     try {
       final farmsRes = await _apiService.fetchFarms();
@@ -46,7 +41,6 @@ class OfflineSyncService {
     }
   }
 
-  /// Đẩy toàn bộ hàng đợi ghi nhận ngoại tuyến (`pending_logs` + `pending_field_mutations`) lên Server.
   Future<Map<String, dynamic>> syncPendingQueue({
     Function(int current, int total)? onProgress,
   }) async {
@@ -81,7 +75,6 @@ class OfflineSyncService {
         onProgress(1, totalTasks);
       }
 
-      // PHA 1: Đồng bộ Nguyên tử 2 Pha qua POST /api/plants/offline-batch-sync
       final List<Map<String, dynamic>> batchCareLogs = pendingLogs
           .map((Map<String, dynamic> item) {
             final Map<String, dynamic> details = item['details'] is Map
@@ -136,7 +129,6 @@ class OfflineSyncService {
           onProgress(totalTasks, totalTasks);
         }
       } else {
-        // PHA 2 (FALLBACK): Đồng bộ từng bản ghi và giữ nguyên bản ghi lỗi
         final List<Map<String, dynamic>> remainingLogs =
             <Map<String, dynamic>>[];
         int step = 0;
@@ -202,7 +194,6 @@ class OfflineSyncService {
         await _cacheService.replacePendingFieldMutations(remainingMutations);
       }
 
-      // Làm mới danh sách nhật ký và cây trồng từ Server sau khi đồng bộ
       try {
         await _apiService.fetchRecentLogs(days: 90);
         await _apiService.fetchPlants();
@@ -223,7 +214,6 @@ class OfflineSyncService {
     };
   }
 
-  /// Ghi nhật ký ngoại tuyến 1-chạm (kèm đóng dấu SHA-256 Client Integrity Envelope).
   Future<void> recordOfflineLog({
     required int plantId,
     required String logType,
@@ -248,7 +238,6 @@ class OfflineSyncService {
     );
   }
 
-  /// Ghi nhận cập nhật thực địa ngoại tuyến (Tọa độ GPS, UID NFC, Tình trạng sức khỏe).
   Future<void> recordOfflineFieldMutation({
     required int plantId,
     String? treeCode,

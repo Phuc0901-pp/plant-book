@@ -1,9 +1,3 @@
-/**
- * backend/services/weatherService.js
- * Comprehensive Open-Meteo Weather Service, WMO Interpretation Engine & Agro-Advisory System
- */
-
-// WMO Weather Interpretation Codes (WW)
 const WMO_WEATHER_MAP = {
   0: { code: 0, label: 'Trời nắng trong xanh', icon: 'fa-solid fa-sun', color: '#fbbf24', bg: 'rgba(251,191,36,0.15)', category: 'clear' },
   1: { code: 1, label: 'Trời quang, ít mây', icon: 'fa-solid fa-cloud-sun', color: '#38bdf8', bg: 'rgba(56,189,248,0.15)', category: 'partly_cloudy' },
@@ -36,9 +30,6 @@ const DEFAULT_WMO = {
 
 const WIND_DIRECTIONS = ['Bắc', 'Đông Bắc', 'Đông', 'Đông Nam', 'Nam', 'Tây Nam', 'Tây', 'Tây Bắc'];
 
-/**
- * Convert degree angles (0 - 360) to Vietnamese compass directions
- */
 function getWindDirection(deg) {
   if (deg === undefined || deg === null || isNaN(deg)) return 'Gió nhẹ';
   const normalized = ((deg % 360) + 360) % 360;
@@ -46,16 +37,10 @@ function getWindDirection(deg) {
   return WIND_DIRECTIONS[index];
 }
 
-/**
- * Get WMO Weather code metadata
- */
 function getWmoWeatherInfo(code) {
   return WMO_WEATHER_MAP[code] || DEFAULT_WMO;
 }
 
-/**
- * Build Open-Meteo REST API forecast URL
- */
 function buildOpenMeteoUrl(lat, lng) {
   const latitude = parseFloat(lat) || 10.2415;
   const longitude = parseFloat(lng) || 106.3752;
@@ -79,9 +64,6 @@ function buildOpenMeteoUrl(lat, lng) {
   return `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=${currentParams}&daily=${dailyParams}&timezone=auto`;
 }
 
-/**
- * Generate Smart Agricultural Action Recommendation based on real-time weather metrics
- */
 function getAgriRecommendation(metrics = {}) {
   const rainProb = metrics.rainProb ?? 0;
   const temp = metrics.temp ?? 30;
@@ -96,7 +78,7 @@ function getAgriRecommendation(metrics = {}) {
       actionAdvice: 'Tạm hoãn bón phân / phun thuốc bảo vệ thực vật'
     };
   }
-  
+
   if (temp >= 34) {
     return {
       type: 'warning',
@@ -132,9 +114,6 @@ function getAgriRecommendation(metrics = {}) {
   };
 }
 
-/**
- * Parse raw Open-Meteo API JSON response into standardized format
- */
 function parseMeteoResponse(data = {}, locationName = 'Vườn mẫu Tân Bảo Agtech') {
   const current = data.current || {};
   const daily = data.daily || {};
@@ -145,18 +124,18 @@ function parseMeteoResponse(data = {}, locationName = 'Vườn mẫu Tân Bảo 
   const windSpeed = Math.round(current.wind_speed_10m ?? 12);
   const windDirectionDeg = current.wind_direction_10m ?? 90;
   const windDir = getWindDirection(windDirectionDeg);
-  
+
   const uvNum = current.uv_index !== undefined ? Number(current.uv_index) : 4.5;
   const uv = isNaN(uvNum) ? '4.5' : uvNum.toFixed(1);
-  
-  const rainProb = daily.precipitation_probability_max?.[0] !== undefined 
-    ? Number(daily.precipitation_probability_max[0]) 
+
+  const rainProb = daily.precipitation_probability_max?.[0] !== undefined
+    ? Number(daily.precipitation_probability_max[0])
     : 15;
-  const tempMax = daily.temperature_2m_max?.[0] !== undefined 
-    ? Math.round(daily.temperature_2m_max[0]) 
+  const tempMax = daily.temperature_2m_max?.[0] !== undefined
+    ? Math.round(daily.temperature_2m_max[0])
     : temp + 3;
-  const tempMin = daily.temperature_2m_min?.[0] !== undefined 
-    ? Math.round(daily.temperature_2m_min[0]) 
+  const tempMin = daily.temperature_2m_min?.[0] !== undefined
+    ? Math.round(daily.temperature_2m_min[0])
     : temp - 4;
 
   const weatherCode = current.weather_code ?? 0;
@@ -188,14 +167,10 @@ function parseMeteoResponse(data = {}, locationName = 'Vườn mẫu Tân Bảo 
   };
 }
 
-/**
- * Generate a realistic Agronomic Baseline Fallback when Open-Meteo is 503 or offline
- */
 function getFallbackWeather(lat, lng, locationName = 'Vùng Nông nghiệp Trọng điểm (Bến Tre)') {
   const now = new Date();
   const hour = now.getHours();
 
-  // Realistic diurnal temperature cycle in Southern Vietnam (25°C at dawn to 33°C at noon)
   let estimatedTemp = 28;
   if (hour >= 6 && hour <= 10) estimatedTemp = 28 + (hour - 6) * 1.2;
   else if (hour > 10 && hour <= 15) estimatedTemp = 32.5;
@@ -203,7 +178,7 @@ function getFallbackWeather(lat, lng, locationName = 'Vùng Nông nghiệp Trọ
   else estimatedTemp = 26;
 
   const roundedTemp = Math.round(estimatedTemp);
-  const wmo = getWmoWeatherInfo(1); // Trời quang, ít mây
+  const wmo = getWmoWeatherInfo(1);
 
   return {
     success: true,

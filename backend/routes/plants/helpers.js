@@ -1,4 +1,3 @@
-// Shared helpers, locks, sanitization, and NFC reconciliation for Plant routes
 const express = require('express');
 const router = express.Router();
 const pool = require('../../config/db');
@@ -17,7 +16,6 @@ const checkTier = require('../../middleware/checkTier');
 const crypto = require('crypto');
 const { normalizeGpsPayload } = require('../../utils/geoIsoValidator');
 
-// ISO/IEC 27001 Cryptographic SHA-256 Hash-Chain Sealer for Cultivation Logs (Per-Farm Serialized Lock)
 const _farmHashChainLocks = new Map();
 async function withFarmHashChainLock(farmKey, fn) {
   const prevPromise = _farmHashChainLocks.get(farmKey) || Promise.resolve();
@@ -105,14 +103,13 @@ function sanitizeLogRowForUser(log, user) {
   };
 }
 
-// Helper to strictly verify that the user is logged in AND belongs to the same farm or is Admin/Owner
 async function verifyPlantAccess(req, plantId) {
   const authHeader = req.headers['authorization'];
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return { 
-      ok: false, 
-      status: 401, 
-      error: 'Vui lòng đăng nhập tài khoản thuộc trang trại này để thực hiện thao tác.' 
+    return {
+      ok: false,
+      status: 401,
+      error: 'Vui lòng đăng nhập tài khoản thuộc trang trại này để thực hiện thao tác.'
     };
   }
   const token = authHeader.split(' ')[1];
@@ -136,12 +133,10 @@ async function verifyPlantAccess(req, plantId) {
     }
     const plant = plantRes.rows[0];
 
-    // 1. Admin has universal access
     if (user.role === 'admin') {
       return { ok: true, user, plant };
     }
 
-    // 2. Check if user is in the SAME farm or assigned/owner/creator
     const isSameFarm = user.farm_id && plant.farm_id && (Number(user.farm_id) === Number(plant.farm_id));
     const isAssigned = plant.assigned_to_user_id && (Number(user.id) === Number(plant.assigned_to_user_id));
     const isCreator = plant.created_by && (Number(user.id) === Number(plant.created_by));
@@ -161,7 +156,6 @@ async function verifyPlantAccess(req, plantId) {
   }
 }
 
-// Helper function chuẩn hóa liều lượng nhật ký về đơn vị cơ sở của vật tư (VD: gram -> kg, ml -> lít, lít -> m3)
 function convertLogAmountToBaseSupplyQty(rawAmount, rawUnit, supplyUnit, logType) {
   const amt = parseFloat(rawAmount) || 0;
   if (amt <= 0) return 0;
@@ -169,7 +163,6 @@ function convertLogAmountToBaseSupplyQty(rawAmount, rawUnit, supplyUnit, logType
   const rUnit = (rawUnit || '').toLowerCase().trim();
   const sUnit = (supplyUnit || 'kg').toLowerCase().trim();
 
-  // 1. Base supply unit là kg / kilogram
   if (sUnit === 'kg' || sUnit === 'kilogram' || sUnit === 'ký' || sUnit === 'ky') {
     if (rUnit === 'gam' || rUnit === 'g' || rUnit === 'gram' || rUnit === 'gr') {
       return amt / 1000;
@@ -186,7 +179,6 @@ function convertLogAmountToBaseSupplyQty(rawAmount, rawUnit, supplyUnit, logType
     return amt;
   }
 
-  // 2. Base supply unit là lít / lit / l
   if (sUnit === 'lít' || sUnit === 'lit' || sUnit === 'l') {
     if (rUnit === 'ml' || rUnit === 'cc' || rUnit === 'mililit') {
       return amt / 1000;
@@ -197,7 +189,6 @@ function convertLogAmountToBaseSupplyQty(rawAmount, rawUnit, supplyUnit, logType
     return amt;
   }
 
-  // 3. Base supply unit là m³ / m3 / khối
   if (sUnit === 'm3' || sUnit === 'm³' || sUnit === 'khối') {
     if (rUnit === 'lít' || rUnit === 'lit' || rUnit === 'l' || logType === 'Tưới nước') {
       return amt / 1000;
@@ -208,7 +199,6 @@ function convertLogAmountToBaseSupplyQty(rawAmount, rawUnit, supplyUnit, logType
     return amt;
   }
 
-  // 4. Base supply unit là gam / g
   if (sUnit === 'gam' || sUnit === 'g' || sUnit === 'gram') {
     if (rUnit === 'kg' || rUnit === 'kilogram' || rUnit === 'ký') {
       return amt * 1000;
@@ -216,7 +206,6 @@ function convertLogAmountToBaseSupplyQty(rawAmount, rawUnit, supplyUnit, logType
     return amt;
   }
 
-  // 5. Base supply unit là ml
   if (sUnit === 'ml') {
     if (rUnit === 'lít' || rUnit === 'lit' || rUnit === 'l') {
       return amt * 1000;
@@ -239,7 +228,7 @@ const path = require('path');
 const storage = multer.memoryStorage();
 const upload = multer({
   storage,
-  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB
+  limits: { fileSize: 100 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowed = /jpeg|jpg|png|gif|webp|mp4|mov|avi|mkv/;
     const ext = path.extname(file.originalname).toLowerCase().slice(1);
@@ -265,8 +254,6 @@ function generatePublicPlantUrl(farmId, plantId, nfcUid, host, proto) {
   }
   return `${baseUrl}/${fId}/${pId}`;
 }
-
-// ─── Admin routes (require auth) ─────────────────────────────────
 
 function formatStandardNfcUid(rawUid) {
   if (!rawUid || typeof rawUid !== 'string') return null;
@@ -389,7 +376,6 @@ async function reconcileFarmNfcInventory(dbClient, farmId) {
   const fId = parseInt(farmId, 10);
   try {
     await ensureNfcInventoryColumns(dbClient);
-    // 1. Đồng bộ các thẻ đã có trong kho nhưng lệch plant_id / farm_id / status so với bảng plants
     await dbClient.query(
       `UPDATE nfc_tags_inventory n
        SET farm_id = p.farm_id,
@@ -411,7 +397,6 @@ async function reconcileFarmNfcInventory(dbClient, farmId) {
       [fId]
     );
 
-    // 2. Tự động nạp bổ sung các thẻ đã gắn vào cây trong bảng plants nhưng chưa có trong nfc_tags_inventory
     await dbClient.query(
       `INSERT INTO nfc_tags_inventory (nfc_uid, farm_id, plant_id, status, tagged_at, last_scanned_lat, last_scanned_lng, created_by)
        SELECT DISTINCT ON (UPPER(TRIM(p.nfc_uid)))
@@ -444,7 +429,6 @@ async function reconcileFarmNfcInventory(dbClient, farmId) {
       [fId]
     );
 
-    // 3. Giải phóng các thẻ đang mang trạng thái 'assigned' nhưng cây đã bị xóa hoặc đã gỡ thẻ
     await dbClient.query(
       `UPDATE nfc_tags_inventory n
        SET status = 'unassigned',
@@ -468,7 +452,6 @@ async function reconcileFarmNfcInventory(dbClient, farmId) {
     console.warn('reconcileFarmNfcInventory warning:', err.message);
   }
 }
-
 
 const LEGACY_LABOR_LOG_TYPES = [
   'Nhân công', 'Cắt lá', 'Cắt tỉa', 'Cắt cành', 'Tỉa cành/lá',
@@ -510,14 +493,9 @@ function buildAuditDeltaLabel(deltaCount, deltaPct) {
   return 'Giữ nguyên số quả (0%)';
 }
 
-/**
- * Chuẩn hóa hạng mục canh tác mới về bộ hạng mục SSOT quốc tế (bao gồm Kiểm toán quả),
- * bảo toàn nhãn thao tác cũ vào details.work_content khi thuộc nhóm Nhân công.
- */
 function normalizeCareLogType(rawLogType, parsedDetails = {}) {
   const effectiveLogType = rawLogType || 'Nhật ký chăm sóc';
   const lower = String(effectiveLogType).toLowerCase();
-  // Kiểm toán quả phải kiểm tra TRƯỚC Thu hoạch vì cùng có trường fruit_count
   if (
     lower.includes('kiểm toán quả') ||
     lower.includes('kiem toan qua') ||
@@ -548,10 +526,6 @@ function normalizeCareLogType(rawLogType, parsedDetails = {}) {
   return effectiveLogType;
 }
 
-/**
- * Tự động truy vấn bản ghi Kiểm toán quả liền trước trên cùng cây để đối chiếu
- * tăng/giảm số quả cho cả Kiểm toán quả (chuyển giao / trùng giai đoạn) và Thu hoạch.
- */
 async function enrichFruitAuditAndHarvestDetails(dbPool, { plantId, logDate, logType, details = {}, excludeLogId = null }) {
   if (!dbPool || !plantId || (logType !== 'Kiểm toán quả' && logType !== 'Thu hoạch')) {
     return details;
@@ -679,14 +653,12 @@ function buildLogFilterQuery(req, bodyOrQuery) {
   const params = [];
   let idx = 1;
 
-  // Authorization check for non-admin
   if (req.user && req.user.role !== 'admin') {
     baseQuery += ` AND (pl.created_by = $${idx} OR f.user_id = $${idx} OR f.id = (SELECT farm_id FROM users WHERE id = $${idx}) OR p.assigned_to_user_id = $${idx}) `;
     params.push(req.user.id);
     idx++;
   }
 
-  // 1. Array of specific IDs (log_ids)
   if (Array.isArray(bodyOrQuery.log_ids) && bodyOrQuery.log_ids.length > 0) {
     const ids = bodyOrQuery.log_ids.map(Number).filter(n => !isNaN(n) && n > 0);
     if (ids.length > 0) {
@@ -696,14 +668,12 @@ function buildLogFilterQuery(req, bodyOrQuery) {
     }
   }
 
-  // 2. Farm filter
   if (bodyOrQuery.farm_id && bodyOrQuery.farm_id !== 'all') {
     baseQuery += ` AND (p.farm_id = $${idx} OR (pl.plant_id IS NULL AND f.id = $${idx})) `;
     params.push(Number(bodyOrQuery.farm_id));
     idx++;
   }
 
-  // 3. Plant filter
   if (bodyOrQuery.plant_id && bodyOrQuery.plant_id !== 'all') {
     if (!isNaN(Number(bodyOrQuery.plant_id))) {
       baseQuery += ` AND (pl.plant_id = $${idx} OR p.tree_code = $${idx}::text) `;
@@ -716,7 +686,6 @@ function buildLogFilterQuery(req, bodyOrQuery) {
     }
   }
 
-  // 4. Log Type filter (hỗ trợ tương thích ngược cho hạng mục Nhân công)
   if (bodyOrQuery.log_type && bodyOrQuery.log_type !== 'all') {
     const cleanLogType = String(bodyOrQuery.log_type).trim();
     if (cleanLogType === 'Nhân công') {
@@ -729,7 +698,6 @@ function buildLogFilterQuery(req, bodyOrQuery) {
     idx++;
   }
 
-  // 5. Date filter
   if (bodyOrQuery.date_mode === 'single' && bodyOrQuery.date) {
     baseQuery += ` AND pl.log_date = $${idx}::date `;
     params.push(bodyOrQuery.date);
@@ -751,11 +719,10 @@ function buildLogFilterQuery(req, bodyOrQuery) {
     idx++;
   }
 
-  // 6. Keyword search
   if (bodyOrQuery.keyword && String(bodyOrQuery.keyword).trim()) {
     baseQuery += ` AND (
-      p.tree_code ILIKE $${idx} 
-      OR pl.note ILIKE $${idx} 
+      p.tree_code ILIKE $${idx}
+      OR pl.note ILIKE $${idx}
       OR pl.log_type ILIKE $${idx}
       OR f.name ILIKE $${idx}
       OR CAST(pl.details AS TEXT) ILIKE $${idx}
@@ -767,8 +734,6 @@ function buildLogFilterQuery(req, bodyOrQuery) {
   return { baseQuery, params };
 }
 
-// POST /api/plants/logs/batch-delete/preview — Đếm trước số lượng bản ghi thỏa mãn điều kiện lọc
-
 function isFullNfcUid(uid) {
   if (!uid || typeof uid !== 'string') return false;
   const clean = decodeURIComponent(uid).trim();
@@ -776,8 +741,6 @@ function isFullNfcUid(uid) {
   if (/^[0-9A-Fa-f]{8,20}$/.test(clean) && !isNaN(Number('0x' + clean))) return true;
   return false;
 }
-
-// Update plant health status (Requires login from the same farm or Admin)
 
 const queueService = require('../../services/queueService');
 

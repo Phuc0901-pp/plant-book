@@ -65,10 +65,10 @@ describe('Suite 8: Durian Ri6 20-Year (2004 - 2026) Sample Agronomic Dataset & V
     const totalRevenue = historicalYieldRecords.reduce((acc, r) => acc + r.revenue, 0);
     const totalProfit = historicalYieldRecords.reduce((acc, r) => acc + r.profit, 0);
 
-    expect(totalYieldKg).toBe(6033); // 6.033 tons cumulative
+    expect(totalYieldKg).toBe(6033);
     expect(totalFruits).toBe(2011);
-    expect(totalRevenue).toBe(398277000); // 398.277 Million VND
-    expect(totalProfit > 360000000).toBe(true); // > 360 Million VND profit
+    expect(totalRevenue).toBe(398277000);
+    expect(totalProfit > 360000000).toBe(true);
   });
 
   it('8.4 Should validate 10 standard Durian Ri6 supplies, unit prices & active ingredients', () => {
@@ -104,8 +104,7 @@ describe('Suite 8: Durian Ri6 20-Year (2004 - 2026) Sample Agronomic Dataset & V
   });
 
   it('8.6 Should validate VietGAP agronomic timeline logs and full supply usages cost synchronization', () => {
-    // 22-year agronomic model: ~500-600 logs and ~250-300 supply usages per tree
-    const years = 2026 - 2004 + 1; // 22 years
+    const years = 2026 - 2004 + 1;
     expect(years).toBe(23);
 
     const mockTreeUsageSummary = {
@@ -124,7 +123,7 @@ describe('Suite 8: Durian Ri6 20-Year (2004 - 2026) Sample Agronomic Dataset & V
     expect(mockTreeUsageSummary.organic_fert_cost > 4000000).toBe(true);
     expect(mockTreeUsageSummary.labor_cost > 9000000).toBe(true);
     const totalConsumableInvestment = mockTreeUsageSummary.water_cost + mockTreeUsageSummary.organic_fert_cost + mockTreeUsageSummary.npk_fert_cost + mockTreeUsageSummary.labor_cost;
-    expect(totalConsumableInvestment > 15000000).toBe(true); // > 15 Million VND total investment recorded
+    expect(totalConsumableInvestment > 15000000).toBe(true);
   });
 
   it('8.7 Should validate multi-tree sample dataset for Durian trees #1, #2, #3, #4, #5 at farm LK', () => {
@@ -138,19 +137,15 @@ describe('Suite 8: Durian Ri6 20-Year (2004 - 2026) Sample Agronomic Dataset & V
 
     expect(durianTreesConfig.length).toBe(5);
 
-    // Verify all 5 tree codes are unique
     const uniqueCodes = new Set(durianTreesConfig.map(t => t.tree_code));
     expect(uniqueCodes.size).toBe(5);
 
-    // Verify all 5 NFC UIDs are unique
     const uniqueNfcs = new Set(durianTreesConfig.map(t => t.nfc));
     expect(uniqueNfcs.size).toBe(5);
 
-    // Verify all 5 public slugs are unique
     const uniqueSlugs = new Set(durianTreesConfig.map(t => t.slug));
     expect(uniqueSlugs.size).toBe(5);
 
-    // Verify all 5 trees have synchronized planting date 2004-06-18
     durianTreesConfig.forEach(t => {
       expect(t.planted).toBe('2004-06-18');
       expect(t.lat >= 10.9405 && t.lat <= 10.9435).toBe(true);

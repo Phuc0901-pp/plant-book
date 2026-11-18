@@ -1,8 +1,3 @@
-/* ═══════════════════════════════════════════════════════════════
-   Plant Book – ISO 19111 / ISO 19115 / ISO 19157 / RFC 7946 Validator
-   Chuẩn hóa & kiểm định gói dữ liệu GPS / GIS trước khi ghi Database
-   ═══════════════════════════════════════════════════════════════ */
-
 const WGS84_SRID = 4326;
 const WGS84_CRS_URN = 'urn:ogc:def:crs:EPSG::4326';
 
@@ -12,12 +7,6 @@ function toFiniteNumber(val) {
   return Number.isFinite(num) ? num : NaN;
 }
 
-/**
- * Chuẩn hóa & kiểm định gói tọa độ GPS theo:
- * - ISO 19111 (Spatial Referencing by Coordinates — WGS 84 / EPSG:4326)
- * - ISO 19115 / ISO 19157 (Data Quality: accuracy, altitude, captured_at ISO 8601 UTC)
- * Hỗ trợ tương thích ngược cả payload phẳng và nested `body.gps`.
- */
 function normalizeGpsPayload(body = {}) {
   const src = body && typeof body === 'object' ? body : {};
   const gps = src.gps && typeof src.gps === 'object' ? src.gps : {};
@@ -91,9 +80,6 @@ function normalizeGpsPayload(body = {}) {
   };
 }
 
-/**
- * Kiểm định ranh giới nông trại theo GeoJSON RFC 7946 hoặc mảng tọa độ legacy.
- */
 function validateGeoJsonPolygon(input) {
   if (input === undefined || input === null || input === '') {
     return { valid: true, value: null };
@@ -108,7 +94,6 @@ function validateGeoJsonPolygon(input) {
     }
   }
 
-  // Case 1: GeoJSON Polygon (RFC 7946)
   if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
     if (parsed.type !== 'Polygon' || !Array.isArray(parsed.coordinates) || parsed.coordinates.length === 0) {
       return { valid: false, error: 'GeoJSON phải có type="Polygon" và coordinates hợp lệ theo RFC 7946.' };
@@ -134,7 +119,6 @@ function validateGeoJsonPolygon(input) {
     return { valid: true, format: 'geojson', value: parsed };
   }
 
-  // Case 2: Legacy coordinate array ([[lat, lng], ...] or [{lat, lng}, ...])
   if (Array.isArray(parsed)) {
     if (parsed.length === 0) {
       return { valid: true, format: 'legacy_empty', value: [] };

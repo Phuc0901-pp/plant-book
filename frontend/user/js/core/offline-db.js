@@ -1,9 +1,3 @@
-/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/* ═══════════════════════════════════════════════════════════════
-   Plant Book – User Portal
-   core/offline-db.js — Client-Side IndexedDB Offline Storage Engine
-   ═══════════════════════════════════════════════════════════════ */
-
 const DB_NAME = 'plantbook_offline_db';
 const DB_VERSION = 2;
 
@@ -23,19 +17,16 @@ export function openOfflineDb() {
     request.onupgradeneeded = (event) => {
       const db = event.target.result;
 
-      // 1. Store for pending offline care logs
       if (!db.objectStoreNames.contains('offline_care_logs')) {
         const logStore = db.createObjectStore('offline_care_logs', { keyPath: 'client_uuid' });
         logStore.createIndex('sync_status', 'sync_status', { unique: false });
         logStore.createIndex('created_at', 'created_at', { unique: false });
       }
 
-      // 2. Store for cached app metadata (plants list, supplies list, configs)
       if (!db.objectStoreNames.contains('cached_meta')) {
         db.createObjectStore('cached_meta', { keyPath: 'key' });
       }
 
-      // 3. Store for pending offline field mutations (GPS updates, NFC assignments, Location updates)
       if (!db.objectStoreNames.contains('offline_field_mutations')) {
         const mutStore = db.createObjectStore('offline_field_mutations', { keyPath: 'client_uuid' });
         mutStore.createIndex('sync_status', 'sync_status', { unique: false });
@@ -55,11 +46,6 @@ export function openOfflineDb() {
   });
 }
 
-/**
- * Save a care log locally into IndexedDB when offline
- * @param {Object} logPayload
- * @returns {Promise<string>} client_uuid
- */
 export async function saveOfflineCareLog(logPayload) {
   const db = await openOfflineDb();
   const clientUuid = logPayload.client_uuid || `offline_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
@@ -67,14 +53,13 @@ export async function saveOfflineCareLog(logPayload) {
   const record = {
     client_uuid: clientUuid,
     ...logPayload,
-    sync_status: 'pending', // 'pending' | 'syncing' | 'failed'
+    sync_status: 'pending',
     created_at_offline: Date.now(),
     sync_attempts: 0,
     last_error: null
   };
 
   if (!db) {
-    // Fallback to localStorage if IndexedDB is disabled
     try {
       const existing = JSON.parse(localStorage.getItem('pb_offline_logs') || '[]');
       existing.push(record);
@@ -95,10 +80,6 @@ export async function saveOfflineCareLog(logPayload) {
   });
 }
 
-/**
- * Get all pending offline care logs
- * @returns {Promise<Array>}
- */
 export async function getPendingOfflineCareLogs() {
   const db = await openOfflineDb();
   if (!db) {
@@ -122,10 +103,6 @@ export async function getPendingOfflineCareLogs() {
   });
 }
 
-/**
- * Delete a synced offline care log by client_uuid
- * @param {string} clientUuid
- */
 export async function deleteOfflineCareLog(clientUuid) {
   const db = await openOfflineDb();
   if (!db) {
@@ -146,11 +123,6 @@ export async function deleteOfflineCareLog(clientUuid) {
   });
 }
 
-/**
- * Save a field mutation (GPS update, NFC tag assignment, location update) locally when offline
- * @param {Object} mutationPayload - { mutation_type: 'gps_update'|'nfc_assign'|'location_update', plant_id, ... }
- * @returns {Promise<string>} client_uuid
- */
 export async function saveOfflineFieldMutation(mutationPayload) {
   const db = await openOfflineDb();
   const clientUuid = mutationPayload.client_uuid || `mut_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
@@ -183,10 +155,6 @@ export async function saveOfflineFieldMutation(mutationPayload) {
   });
 }
 
-/**
- * Get all pending offline field mutations
- * @returns {Promise<Array>}
- */
 export async function getPendingOfflineFieldMutations() {
   const db = await openOfflineDb();
   if (!db || !db.objectStoreNames.contains('offline_field_mutations')) {
@@ -209,10 +177,6 @@ export async function getPendingOfflineFieldMutations() {
   });
 }
 
-/**
- * Delete a synced offline field mutation by client_uuid
- * @param {string} clientUuid
- */
 export async function deleteOfflineFieldMutation(clientUuid) {
   const db = await openOfflineDb();
   if (!db || !db.objectStoreNames.contains('offline_field_mutations')) {
@@ -233,10 +197,6 @@ export async function deleteOfflineFieldMutation(clientUuid) {
   });
 }
 
-/**
- * Count total pending offline logs and field mutations
- * @returns {Promise<number>}
- */
 export async function countPendingOfflineLogs() {
   const [logs, mutations] = await Promise.all([
     getPendingOfflineCareLogs(),
@@ -245,11 +205,6 @@ export async function countPendingOfflineLogs() {
   return logs.length + mutations.length;
 }
 
-/**
- * Cache app metadata (e.g. plants, supplies, configs) into IndexedDB
- * @param {string} key
- * @param {any} data
- */
 export async function cacheAppData(key, data) {
   const db = await openOfflineDb();
   if (!db) {
@@ -268,11 +223,6 @@ export async function cacheAppData(key, data) {
   });
 }
 
-/**
- * Retrieve cached app metadata from IndexedDB
- * @param {string} key
- * @returns {Promise<any|null>}
- */
 export async function getCachedAppData(key) {
   const db = await openOfflineDb();
   if (!db) {
@@ -293,7 +243,6 @@ export async function getCachedAppData(key) {
   });
 }
 
-// Attach globally for accessibility across modular scripts
 window.openOfflineDb = openOfflineDb;
 window.saveOfflineCareLog = saveOfflineCareLog;
 window.getPendingOfflineCareLogs = getPendingOfflineCareLogs;

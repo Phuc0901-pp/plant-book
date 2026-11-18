@@ -1,9 +1,7 @@
       <div class="page-section active" id="page-home">
-        <!-- ── Welcome Banner: Executive Enterprise ERP Cockpit ── -->
         <div class="welcome-banner royal-agritech-banner executive-obsidian-banner">
           <div style="position:relative; z-index:1; display:flex; flex-direction:column; gap:14px; width:100%;">
-            
-            <!-- Top Row: Greetings, PRO Tier Badge & Live Digital Clock -->
+
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; border-bottom:1.5px solid #f1f5f9; padding-bottom:12px;">
               <div>
                 <div style="font-size:11.5px; color:#059669; margin-bottom:4px; font-weight:800; display:flex; align-items:center; gap:6px; letter-spacing:0.4px; text-transform:uppercase;">
@@ -22,10 +20,8 @@
                 </div>
               </div>
 
-              <!-- Live Digital Clock & GPS Refresh Button -->
               <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                
-                <!-- Live Clock Card -->
+
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:6px 14px; display:flex; align-items:center; gap:10px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
                   <div style="color:#059669; font-size:16px;">
                     <i data-lucide="clock" class="lucide-sm"></i>
@@ -41,7 +37,6 @@
                   </div>
                 </div>
 
-                <!-- GPS Weather Refresh Button -->
                 <button type="button" onclick="refreshDeviceWeather()" title="Quét lại tọa độ GPS thiết bị & cập nhật thời tiết" class="royal-pill-btn">
                   <i id="btn-refresh-weather" data-lucide="rotate-cw" class="lucide-sm" style="color:#059669;"></i>
                   <span>Làm mới</span>
@@ -50,7 +45,6 @@
               </div>
             </div>
 
-            <!-- Bottom Row: Real-Time GPS Weather Widget Content -->
             <div id="weather-widget-content" style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:12px 16px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
               <div style="display:flex; align-items:center; gap:10px; color:#64748b; font-size:13px; font-weight:700;">
                 <i data-lucide="loader-2" class="lucide-spin lucide-sm" style="color:#059669;"></i> <span id="weather-status-text">Đang kết nối</span>
@@ -60,15 +54,9 @@
           </div>
         </div>
 
-        <!-- Dashboard Layout Container -->
         <div class="user-dashboard-grid" style="display: flex; flex-direction: column; gap: 24px; width: 100%;">
 
-          <!-- ════════════════════════════════════════════════════════════════
-               TẦNG 1: EXECUTIVE FARMER & FARM MATRIX COCKPIT
-               Thông tin chung của nông hộ, quy mô trang trại, cơ cấu cây trồng
-               ════════════════════════════════════════════════════════════════ -->
           <div class="card" id="user-farm-cockpit-card" style="border-radius: 18px; border: 1.5px solid #e2e8f0; overflow: visible; position: relative; z-index: 40; box-shadow: 0 4px 20px rgba(0,0,0,0.04); background: #ffffff;">
-            <!-- Cockpit Header -->
             <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #ffffff; padding: 14px 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-top-left-radius: 17px; border-top-right-radius: 17px;">
               <div style="display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 800; letter-spacing: 0.3px;">
                 <i data-lucide="contact" class="lucide-sm" style="color: #10b981; font-size: 16px;"></i>
@@ -86,10 +74,8 @@
               </div>
             </div>
 
-            <!-- Cockpit Body Grid -->
             <div class="cockpit-grid" style="padding: 20px; background: #ffffff;">
-              
-              <!-- Cột 1: Thông tin chủ hộ & Liên hệ -->
+
               <div class="cockpit-col cockpit-col-1" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
                 <div>
                   <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">
@@ -116,7 +102,6 @@
                 </div>
               </div>
 
-              <!-- Cột 2: Quy mô vườn & Mã PUC VietGAP kèm Popover Danh Sách Trang Trại -->
               <div class="cockpit-col cockpit-col-2" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; position: relative;">
                 <div>
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
@@ -128,7 +113,6 @@
                     </span>
                   </div>
 
-                  <!-- Tương tác Rê chuột / Bấm xem danh sách trang trại -->
                   <div id="cockpit-farm-trigger" class="farm-interactive-trigger" title="Xem danh sách chi tiết các trang trại sở hữu">
                     <div style="display: flex; align-items: baseline; justify-content: space-between;">
                       <div style="display: flex; align-items: baseline; gap: 8px;">
@@ -152,7 +136,6 @@
                   </div>
                 </div>
 
-                <!-- Farm Popover Floating Dropdown -->
                 <div id="cockpit-farm-popover" class="farm-popover-dropdown" style="display: none;">
                   <div class="farm-popover-header">
                     <div style="display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 12.5px; color: #0f172a;">
@@ -161,12 +144,10 @@
                     <button type="button" id="btn-close-farm-popover" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 16px; line-height: 1; padding: 0 4px;" title="Đóng">&times;</button>
                   </div>
                   <div id="cockpit-farm-popover-list" class="farm-popover-list">
-                    <!-- Danh sách trang trại được render động từ JS -->
                   </div>
                 </div>
               </div>
 
-              <!-- Cột 3: Cơ cấu cây trồng chuẩn ERP & Nút mở GIS Map 1-Chạm -->
               <div class="cockpit-col cockpit-col-3" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
                 <div>
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
@@ -174,21 +155,15 @@
                       <i data-lucide="pie-chart" class="lucide-sm" style="color: #059669;"></i> Cơ Cấu Cây Trồng
                     </div>
                     <div id="cockpit-crop-total-badge" style="font-size: 11px; font-weight: 800; color: #059669; background: #d1fae5; padding: 2px 8px; border-radius: 12px;">
-                      <!-- 6 cây -->
                     </div>
                   </div>
 
-                  <!-- Thanh phân bổ đa sắc (Multi-segment Progress Bar) -->
                   <div id="cockpit-crop-progress-bar" class="crop-progress-bar" style="margin-bottom: 8px;">
-                    <!-- Segmented bars dynamically injected -->
                   </div>
 
-                  <!-- Ma trận thẻ giống cây thu gọn (Compact Matrix Chips) -->
                   <div id="cockpit-crop-chips-matrix" class="crop-chips-matrix" style="margin-bottom: 8px;">
-                    <!-- Chips dynamically injected -->
                   </div>
 
-                  <!-- Tình trạng sinh trưởng -->
                   <div id="cockpit-health-status-row" style="font-size: 12px; color: #16a34a; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 5px;">
                     <i data-lucide="check-circle-2" class="lucide-sm"></i> <span id="cockpit-health-status-text">100% Cây sinh trưởng tốt</span>
                   </div>
@@ -204,10 +179,6 @@
             </div>
           </div>
 
-          <!-- ════════════════════════════════════════════════════════════════
-               TẦNG 1.5: BẢNG ĐIỀU KHIỂN TÀI CHÍNH DOANH NGHIỆP (BI ANALYTICS) & DỰ BÁO HỌC MÁY
-               Phân tích Chi phí/Doanh thu theo Cây & Hecta (NPK, BVTV, Nhân công, Tiền nước), ROI & ML Forecast
-               ════════════════════════════════════════════════════════════════ -->
           <div class="card" id="executive-bi-analytics-root" style="border-radius: 18px; border: 1.5px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.04); background: #ffffff;">
             <div style="padding: 18px 22px; display: flex; align-items: center; gap: 10px; color: #64748b; font-size: 13px; font-weight: 700;">
               <i data-lucide="loader-2" class="lucide-spin lucide-sm" style="color: #059669;"></i>
@@ -215,10 +186,6 @@
             </div>
           </div>
 
-          <!-- ════════════════════════════════════════════════════════════════
-               TẦNG 2: TRUNG TÂM GIÁM SÁT CẢNH BÁO & RỦI RO PHÂN CẤP
-               Sắp xếp ưu tiên từ NẶNG (Đỏ) -> TRUNG BÌNH (Vàng) -> NHẸ (Xanh)
-               ════════════════════════════════════════════════════════════════ -->
           <div class="card smart-farm-monitoring-card" id="user-priority-alerts-card" style="border-radius: 18px; border: 1.5px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.04); background: #ffffff;">
             <div class="card-header smart-farm-monitoring-header" style="background: #ffffff; border-bottom: 1.5px solid #f1f5f9; padding: 16px 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
               <div style="display: flex; align-items: center; gap: 12px;">
@@ -237,16 +204,13 @@
                 </div>
               </div>
               <div id="alerts-count-badge" style="display: flex; align-items: center; gap: 8px;">
-                <!-- Filled dynamically -->
               </div>
             </div>
 
             <div id="alerts-list-container" style="padding: 18px 22px; display: flex; flex-direction: column; gap: 12px;">
-              <!-- Filled dynamically by renderPriorityAlertsCenter -->
             </div>
           </div>
-          
-          <!-- Tóm tắt Danh sách Cây trồng (Executive Enterprise ERP Table) -->
+
           <div class="card" id="user-plants-summary-card" style="border-radius: 18px; border: 1.5px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.04); background: #ffffff;">
             <div class="card-header" style="background: #ffffff; border-bottom: 1.5px solid #f1f5f9; padding: 16px 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
               <div style="display: flex; align-items: center; gap: 10px;">
@@ -295,7 +259,6 @@
             </div>
           </div>
 
-          <!-- Hoạt động canh tác gần đây -->
           <div class="card">
             <div class="card-header">
               <h3><i data-lucide="clipboard-list" class="lucide-sm" style="color:var(--green)"></i> Hoạt động canh tác gần đây (3 ngày qua)</h3>
@@ -324,6 +287,4 @@
             </div>
           </div>
         </div>
-      </div><!-- end page-home -->
-
-      <!-- ── TRANG TRẠI (Bản đồ & Danh sách đầy đủ cây) ── -->
+      </div>

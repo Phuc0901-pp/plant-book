@@ -1,5 +1,4 @@
 <style>
-/* ── Guaranteed Stable Modal Architecture for Supplies (No Auto-Dismissal) ── */
 #modal-supply {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -74,7 +73,6 @@
     <div class="modal-body supply-modal-body">
       <input type="hidden" id="sp-id">
 
-      <!-- AI Vision Packaging Scanner Banner -->
       <div style="background:linear-gradient(135deg, #0f172a, #1e293b); border-radius:14px; padding:14px 18px; color:#ffffff; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; box-shadow:0 4px 14px rgba(0,0,0,0.1);">
         <div>
           <div style="font-size:13.5px; font-weight:800; color:#ffffff; display:flex; align-items:center; gap:8px;">
@@ -91,18 +89,15 @@
         </div>
       </div>
 
-      <!-- Row 0: Trang trại sở hữu vật tư -->
       <div class="field" style="margin-bottom:14px; background:#f0fdf4; border:1.5px solid #86efac; border-radius:10px; padding:10px 12px;">
         <label class="form-label" style="color:#166534; font-weight:800; font-size:12px; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
           <i data-lucide="trees" class="lucide-sm" style="color:#15803d;"></i> Trang trại sở hữu vật tư <span class="req-star">*</span>
         </label>
         <select id="sp-farm-id" class="form-control-custom" style="background:#ffffff; font-weight:700; color:#0f172a;">
-          <!-- Loaded dynamically -->
         </select>
         <small style="color:#166534; font-size:11px; margin-top:3px; display:block;">Xác định vật tư thuộc quyền sở hữu &amp; hạch toán của trang trại nào</small>
       </div>
 
-      <!-- Row 1: Hạng mục & Đơn vị gói -->
       <div class="form-row-2">
 
         <div class="field" style="margin-bottom:0;">
@@ -132,7 +127,6 @@
         </div>
       </div>
 
-      <!-- ════ Khối Tiêu Chuẩn Nông Nghiệp: Phân Bón & Thành Phần Định Lượng ════ -->
       <div id="field-fertilizer-box" style="background:#f0fdf4; border:1.5px solid #86efac; border-radius:12px; padding:12px 14px; margin-top:12px; margin-bottom:16px;">
         <div style="font-size:12px; font-weight:800; color:#15803d; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
           <i data-lucide="sprout" class="lucide-sm" style="color:#16a34a;"></i> Tiêu Chuẩn Phân Bón: Chủng Loại &amp; Thành Phần Định Lượng
@@ -157,13 +151,11 @@
         <small style="color:#15803d; font-size:10.5px; margin-top:5px; display:block;">Hàm lượng các nguyên tố dinh dưỡng theo nhãn bao bì (Nghị định 84/2019/NĐ-CP)</small>
       </div>
 
-      <!-- Row 2: Tên vật tư -->
       <div class="field" id="field-name" style="margin-bottom:16px;">
         <label class="form-label"><i data-lucide="package-open" class="lucide-sm"></i> Tên vật tư / Dịch vụ <span class="req-star">*</span></label>
         <input type="text" id="sp-name" class="form-control-custom" placeholder="Ví dụ: Phân NPK Đầu Trâu 20-20-15+TE, Thuốc Anvil 5SC...">
       </div>
 
-      <!-- ════ VietGAP Compliance Specifications (Active Ingredients & Target Pests) ════ -->
       <div id="field-vietgap-box" style="background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:12px; padding:12px 14px; margin-bottom:16px;">
         <div style="font-size:12px; font-weight:800; color:#047857; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
           <i data-lucide="shield-check" class="lucide-sm" style="color:#059669;"></i> Tiêu chuẩn VietGAP: Hoạt Chất &amp; Đối Tượng Phòng Trừ
@@ -180,7 +172,6 @@
         </div>
       </div>
 
-      <!-- Row 3: Khối lượng 1 gói, Số lượng bao/chai & Tổng giá tiền -->
       <div class="form-row-2" id="row-package-qty-price" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px;">
         <div class="field" id="field-package-qty" style="margin-bottom:0;">
           <label class="form-label"><i data-lucide="scale" class="lucide-sm"></i> Khối lượng 1 gói <span class="req-star">*</span></label>
@@ -198,7 +189,6 @@
         </div>
       </div>
 
-      <!-- Live Auto Calculation Breakdown Card -->
       <div class="calc-breakdown-card" id="card-breakdown">
         <div class="calc-card-title">
           <i data-lucide="calculator" class="lucide-sm"></i> BẢNG TỰ ĐỘNG QUY ĐỔI ĐƠN GIÁ CHI TIẾT
@@ -215,7 +205,6 @@
         </div>
       </div>
 
-      <!-- Row 4: Hình ảnh bao bì / nhãn hiệu phân bón / thuốc BVTV -->
       <div class="field" id="field-image-upload" style="margin-bottom:16px;">
         <label class="form-label"><i data-lucide="camera" class="lucide-sm"></i> Hình ảnh bao bì / Nhãn hiệu sản phẩm (Tùy chọn)</label>
         <div class="sp-image-upload-card">
@@ -239,13 +228,11 @@
         </div>
       </div>
 
-      <!-- Hidden form values -->
       <input type="hidden" id="sp-unit" value="kg">
       <input type="hidden" id="sp-unit-price" value="0">
       <input type="hidden" id="sp-package-size" value="">
       <input type="hidden" id="sp-unit-price-small" value="0">
 
-      <!-- Row 5: Ghi chú -->
       <div class="field" style="margin-bottom:0;">
         <label class="form-label"><i data-lucide="sticky-note" class="lucide-sm"></i> Ghi chú / Thông tin thêm</label>
         <textarea id="sp-note" class="form-control-custom" rows="2" placeholder="Ví dụ: Phân bón đợt 1 cho sầu riêng; Đơn giá 5.000đ/m3 nước..."></textarea>
@@ -261,7 +248,6 @@
   </div>
 </div>
 
-<!-- ════════════ MODAL GHI NHẬN TIÊU HAO VẬT TƯ ════════════ -->
 <div class="modal-overlay" id="modal-supply-usage" style="display:none" onclick="if(event.target===this)closeRecordUsageModal()">
   <div class="modal" style="max-width:480px;">
     <div class="modal-header">
@@ -272,7 +258,6 @@
       <div class="field">
         <label>Chọn Vật tư / Dịch vụ *</label>
         <select id="su-supply-id" onchange="onSupplySelectionChange()" style="width:100%; padding:10px; border:1.5px solid var(--gray-200); border-radius:8px; font-weight:600; background:#fff;">
-          <!-- Loaded dynamically -->
         </select>
       </div>
 
@@ -293,11 +278,9 @@
       <div class="field">
         <label>Trang trại (Không bắt buộc)</label>
         <select id="su-farm-id" style="width:100%; padding:10px; border:1.5px solid var(--gray-200); border-radius:8px; background:#fff;">
-          <!-- Loaded dynamically -->
         </select>
       </div>
 
-      <!-- Preview calculated cost box -->
       <div style="background:var(--gray-50); border:1.5px dashed var(--gray-300); border-radius:10px; padding:12px; margin-top:8px;">
         <div style="font-size:12px; color:var(--text-muted);">Đơn giá áp dụng: <strong id="su-price-preview">0 VNĐ</strong></div>
         <div style="font-size:14px; font-weight:700; color:var(--green); margin-top:4px;">Tổng thành tiền: <span id="su-total-preview" style="font-size:16px;">0 VNĐ</span></div>
@@ -317,7 +300,6 @@
   </div>
 </div>
 
-<!-- ════════════ MODAL NHẬP THÊM HÀNG VÀO KHO (RESTOCK) ════════════ -->
 <div class="modal-overlay" id="modal-restock-supply" style="display:none" onclick="if(event.target===this)closeRestockModal()">
   <div class="modal" style="max-width:500px; border-radius:18px; overflow:hidden;">
     <div class="modal-header" style="background:linear-gradient(135deg, #064e3b 0%, #0f172a 100%); color:#ffffff; padding:16px 20px;">
@@ -336,17 +318,14 @@
     <div class="modal-body" style="padding:20px;">
       <input type="hidden" id="restock-supply-id">
 
-      <!-- Supply Selection Row for Restock -->
       <div class="field" id="wrap-restock-supply-select" style="margin-bottom:14px;">
         <label style="font-size:13px; font-weight:700; color:#334155; display:block; margin-bottom:6px;">
           <i data-lucide="package" class="lucide-sm" style="color:#059669;"></i> Chọn mặt hàng cần nhập kho <span style="color:#ef4444;">*</span>
         </label>
         <select id="restock-supply-select" onchange="openRestockModal(this.value)" style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; font-weight:700; outline:none; background:#fff; color:#0f172a;">
-          <!-- Loaded dynamically -->
         </select>
       </div>
 
-      <!-- Selected Supply Summary Card -->
       <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:12px 14px; margin-bottom:16px;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start;">
           <div>
@@ -361,17 +340,14 @@
         </div>
       </div>
 
-      <!-- Farm Selection for Restock -->
       <div class="field" style="margin-bottom:14px;">
         <label style="font-size:13px; font-weight:700; color:#334155; display:block; margin-bottom:6px;">
           <i data-lucide="trees" class="lucide-sm" style="color:#059669;"></i> Trang trại tiếp nhận lô hàng này <span style="color:#ef4444;">*</span>
         </label>
         <select id="restock-farm-id" style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; font-weight:700; outline:none; background:#fff; color:#0f172a;">
-          <!-- Loaded dynamically -->
         </select>
       </div>
 
-      <!-- Input: Added Quantity -->
       <div class="field" style="margin-bottom:14px;">
         <label style="font-size:13px; font-weight:700; color:#334155; display:block; margin-bottom:6px;">
           <i data-lucide="plus-circle" class="lucide-sm" style="color:#059669;"></i> Số lượng nhập thêm <span style="color:#ef4444;">*</span>
@@ -382,7 +358,6 @@
         </div>
       </div>
 
-      <!-- Input: New Package Price -->
       <div class="field" style="margin-bottom:14px;">
         <label style="font-size:13px; font-weight:700; color:#334155; display:block; margin-bottom:6px;">
           <i data-lucide="dollar-sign" class="lucide-sm" style="color:#0284c7;"></i> Đơn giá mua đợt này (VNĐ / bao/chai) <span style="font-size:11px; color:#64748b; font-weight:400;">(Tùy chọn)</span>
@@ -390,7 +365,6 @@
         <input type="number" id="restock-package-price" min="0" step="100" placeholder="VD: 850000" oninput="calculateRestockPreview()" style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13.5px; font-weight:700; color:#0f172a; outline:none;">
       </div>
 
-      <!-- Input: Batch No / Supplier -->
       <div class="field" style="margin-bottom:14px;">
         <label style="font-size:13px; font-weight:700; color:#334155; display:block; margin-bottom:6px;">
           <i data-lucide="scan" class="lucide-sm" style="color:#64748b;"></i> Số lô sản xuất / Nhà cung cấp
@@ -398,7 +372,6 @@
         <input type="text" id="restock-batch-no" placeholder="VD: Lô NPK-2026-09 / Đại lý Nông Dược Hưng Phát" style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; outline:none;">
       </div>
 
-      <!-- Preview Box -->
       <div style="background:#ecfdf5; border:1.5px dashed #10b981; border-radius:12px; padding:12px 14px; margin-bottom:14px;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <span style="font-size:12.5px; font-weight:700; color:#065f46;">Tồn kho mới sau khi nhập:</span>
@@ -410,7 +383,6 @@
         </div>
       </div>
 
-      <!-- Note -->
       <div class="field" style="margin-bottom:0;">
         <label style="font-size:13px; font-weight:700; color:#334155; display:block; margin-bottom:6px;">
           <i data-lucide="sticky-note" class="lucide-sm" style="color:#64748b;"></i> Ghi chú đợt nhập
@@ -428,7 +400,6 @@
   </div>
 </div>
 
-<!-- ════════════ MODAL SỔ THẺ KHO (STOCK LEDGER TIMELINE) ════════════ -->
 <div class="modal-overlay" id="modal-stock-ledger" style="display:none" onclick="if(event.target===this)closeStockLedgerModal()">
   <div class="modal" style="max-width:680px; max-height:90vh; display:flex; flex-direction:column; border-radius:18px; overflow:hidden;">
     <div class="modal-header" style="background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color:#ffffff; padding:16px 20px;">
@@ -444,7 +415,6 @@
       <button class="modal-close" onclick="closeStockLedgerModal()" aria-label="Đóng" title="Đóng"><i data-lucide="x"></i></button>
     </div>
 
-    <!-- Summary Stats Bar inside Ledger Modal -->
     <div style="background:#f8fafc; border-bottom:1px solid #e2e8f0; padding:12px 20px; display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
       <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:8px 12px; text-align:center;">
         <div style="font-size:10.5px; font-weight:800; color:#64748b; text-transform:uppercase;">Tồn kho hiện tại</div>
@@ -460,7 +430,6 @@
       </div>
     </div>
 
-    <!-- Ledger Timeline Body -->
     <div class="modal-body" style="padding:20px; overflow-y:auto; flex:1;">
       <div id="ledger-timeline-container" class="stock-timeline-wrap">
         <div style="text-align:center; padding:30px; color:#64748b;"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải dữ liệu thẻ kho</div>
@@ -473,5 +442,3 @@
     </div>
   </div>
 </div>
-
-<!-- Toast container -->

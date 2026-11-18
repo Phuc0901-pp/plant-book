@@ -1,14 +1,3 @@
-/**
- * ══════════════════════════════════════════════════════════════════════════
- * Suite 20: Enterprise Security, Cryptographic Authenticity & ISO Hardening
- * ══════════════════════════════════════════════════════════════════════════
- * Verifies Migration 009_enterprise_iso_hardening.sql across 4 Modules:
- * 1. Module SEC: RLS policies (29 tables), rls_auto_enable revoke, RESTRICT FKs, pgcrypto helpers
- * 2. Module AUTH: SHA-256 Hash-Chain trigger & backfill, NFC anti-replay, Append-Only audit triggers
- * 3. Module ISO: ISO 6709 (WGS84), ISO 4217 (currency_code), ISO/IEC 15459 (W3C DID), ISO 8601 age
- * 4. Module PERF: 35 FK covering indexes & duplicate index cleanup
- */
-
 const { describe, it, expect } = require('../test-framework');
 const fs = require('fs');
 const path = require('path');
@@ -32,7 +21,6 @@ describe('Suite 20: Migration 009 Enterprise ISO Hardening & Security Compliance
     expect(sql.includes('service_role_full_access')).toBe(true);
     expect(sql.includes('public_qr_read_plants')).toBe(true);
 
-    // 5 critical FKs converted to ON DELETE RESTRICT
     const restrictFks = [
       'plant_logs_plant_id_fkey',
       'supply_usages_user_id_fkey',

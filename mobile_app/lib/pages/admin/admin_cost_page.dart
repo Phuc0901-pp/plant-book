@@ -21,7 +21,6 @@ class _AdminCostPageState extends State<AdminCostPage> with SingleTickerProvider
   double _totalConsumable = 0;
   double _totalFixed = 0;
 
-  // Pagination parameters (10 items per page)
   static const int _itemsPerPage = 10;
   int _consumablesPage = 0;
   int _fixedAssetsPage = 0;
@@ -103,7 +102,6 @@ class _AdminCostPageState extends State<AdminCostPage> with SingleTickerProvider
           ? const LoadingIndicator(message: 'Đang tải dữ liệu chi phí & vật tư...')
           : Column(
               children: [
-                // KPI Header Card - Fluent UI
                 Container(
                   margin: const EdgeInsets.all(14),
                   padding: const EdgeInsets.all(14),
@@ -159,7 +157,6 @@ class _AdminCostPageState extends State<AdminCostPage> with SingleTickerProvider
                   ),
                 ),
 
-                // Search Box
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 14),
                   child: TextField(
@@ -200,7 +197,6 @@ class _AdminCostPageState extends State<AdminCostPage> with SingleTickerProvider
                 ),
                 const SizedBox(height: 10),
 
-                // Tab View List with 10 Items per Page
                 Expanded(
                   child: TabBarView(
                     controller: _tabController,
@@ -280,7 +276,6 @@ class _AdminCostPageState extends State<AdminCostPage> with SingleTickerProvider
           ),
         ),
 
-        // Pagination Controls Bar (10 items / page)
         _buildPaginationBar(
           currentPage: currentPage,
           totalPages: totalPages,
@@ -364,7 +359,6 @@ class _AdminCostPageState extends State<AdminCostPage> with SingleTickerProvider
           ),
         ),
 
-        // Pagination Controls Bar (10 items / page)
         _buildPaginationBar(
           currentPage: currentPage,
           totalPages: totalPages,
@@ -400,7 +394,6 @@ class _AdminCostPageState extends State<AdminCostPage> with SingleTickerProvider
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Previous button
           OutlinedButton.icon(
             onPressed: onPrev,
             icon: const Icon(Icons.chevron_left_rounded, size: 18),
@@ -412,7 +405,6 @@ class _AdminCostPageState extends State<AdminCostPage> with SingleTickerProvider
             ),
           ),
 
-          // Page indicator
           Column(
             children: [
               Text(
@@ -427,7 +419,6 @@ class _AdminCostPageState extends State<AdminCostPage> with SingleTickerProvider
             ],
           ),
 
-          // Next button
           OutlinedButton.icon(
             onPressed: onNext,
             icon: const Icon(Icons.chevron_right_rounded, size: 18),

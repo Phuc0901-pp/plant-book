@@ -33,7 +33,6 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
 
   late final WebViewController _webViewController;
 
-  // Interactive map state variables
   double _centerLng = 108.0;
   double _centerLat = 12.0;
   double _mapZoom = 17.5;
@@ -60,14 +59,12 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
               ).then((_) => _loadFarmData());
             }
           } catch (e) {
-            // Ignore
           }
         },
       );
 
     _loadFarmData();
 
-    // Listen to real-time events to reload farm data
     _wsSubscription = WebSocketService().stream.listen((event) {
       final ev = event['event'];
       if (ev == 'plants_updated' || ev == 'new_care_log') {
@@ -89,7 +86,6 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
     double sumLng = 0;
     int count = 0;
 
-    // Check polygon coordinates
     if (widget.farm.polygonCoordinates != null && widget.farm.polygonCoordinates!.isNotEmpty) {
       try {
         final List<dynamic> coords = jsonDecode(widget.farm.polygonCoordinates!);
@@ -113,7 +109,6 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
       } catch (_) {}
     }
 
-    // Check plant coordinates
     for (var plant in _farmPlants) {
       if (plant.latitude != null && plant.longitude != null && plant.latitude != 0 && plant.longitude != 0) {
         sumLat += plant.latitude!;
@@ -131,8 +126,7 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
 
   Future<void> _updateMapHtml() async {
     if (_farmPlants.isEmpty && widget.farm.polygonCoordinates == null) return;
-    
-    // Format polygon coordinates for javascript array
+
     String polyCoordsJson = '[]';
     if (widget.farm.polygonCoordinates != null && widget.farm.polygonCoordinates!.isNotEmpty) {
       try {
@@ -151,11 +145,9 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
           polyCoordsJson = jsonEncode(flatCoords);
         }
       } catch (e) {
-        // Ignore
       }
     }
 
-    // Format plants list for javascript
     final List<Map<String, dynamic>> plantsList = _farmPlants.map((p) => {
       'id': p.id,
       'tree_code': p.treeCode ?? p.id.toString(),
@@ -304,10 +296,8 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
     try {
       final plants = await _apiService.fetchPlants();
       setState(() {
-        // Filter plants belonging to this farm
         _farmPlants = plants.where((p) => p.farmId == widget.farm.id).toList();
-        
-        // Sort: Bệnh (Sick) -> Cần chú ý (Warning) -> Tốt (Healthy), then A-Z (1-n)
+
         _farmPlants.sort((a, b) {
           int getHealthRank(String health) {
             if (health == 'Bệnh') return 0;
@@ -324,15 +314,13 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
           return aCode.toLowerCase().compareTo(bCode.toLowerCase());
         });
 
-        // Initialize map center
         if (!_hasCalculatedCenter) {
           _calculateInitialCenter();
         }
 
         _isLoading = false;
       });
-      
-      // Load/Update HTML in WebView
+
       _updateMapHtml();
     } catch (e) {
       setState(() {
@@ -465,10 +453,8 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Map View Container
                       _buildGisMapBlock(),
-                      
-                      // Farm Metadata
+
                       Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
@@ -489,15 +475,13 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
                           ],
                         ),
                       ),
-                      
+
                       const Divider(height: 1, color: AppTheme.grayBorder),
-                      
-                      // Quick actions block
+
                       _buildQuickCareActions(),
-                      
+
                       const Divider(height: 1, color: AppTheme.grayBorder),
-                      
-                      // Plants List inside Farm
+
                       _buildFarmPlantsList(),
                     ],
                   ),
@@ -553,7 +537,6 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
         borderRadius: BorderRadius.circular(16),
         child: Stack(
           children: [
-            // Mapbox GL JS WebView
             Positioned.fill(
               child: WebViewWidget(
                 controller: _webViewController,
@@ -564,8 +547,7 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
                 },
               ),
             ),
-            
-            // Map controls overlay (calling Web Mercator map API methods directly via JS)
+
             Positioned(
               top: 12,
               right: 12,
@@ -585,8 +567,7 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
                 ],
               ),
             ),
-            
-            // Map legend overlay
+
             Positioned(
               bottom: 12,
               left: 12,
@@ -727,7 +708,7 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
                   itemCount: _farmPlants.length,
                   itemBuilder: (context, index) {
                     final plant = _farmPlants[index];
-                    
+
                     Color statusColor;
                     if (plant.healthStatus == 'Tốt') {
                       statusColor = AppTheme.green;
@@ -761,7 +742,7 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(builder: (context) => PlantDetailPage(plant: plant)),
-                          ).then((_) => _loadFarmData()); // Reload when returning
+                          ).then((_) => _loadFarmData());
                         },
                       ),
                     );
@@ -772,5 +753,3 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
     );
   }
 }
-
-

@@ -12,10 +12,6 @@ const {
   buildLogFilterQuery, isFullNfcUid, normalizeCareLogType, enrichFruitAuditAndHarvestDetails
 } = require('./helpers');
 
-/**
- * Scrub confidential pricing/formula fields from a single public plant_logs row
- * while preserving operator/equipment/batch traceability fields.
- */
 function scrubPublicPlantLogRow(log) {
   let safeDetails = {};
   if (log && log.details) {
@@ -121,21 +117,20 @@ router.get('/farms/:farmId/public-portal', async (req, res) => {
     const assignedCount = plantsRes.rows.filter(p => p.nfc_uid && p.nfc_uid.trim().length > 0).length;
     const unassignedCount = totalPlants - assignedCount;
 
-    // Fetch farm supplies inventory and investment costs
     let supplies = [];
     let totalInvestment = 0;
     try {
       const suppliesRes = await pool.query(`
-        SELECT s.id, s.name, s.category, s.package_size, s.package_qty, s.package_price, 
-               s.unit_price, s.unit, s.stock_quantity, s.image_url, s.active_ingredient, 
+        SELECT s.id, s.name, s.category, s.package_size, s.package_qty, s.package_price,
+               s.unit_price, s.unit, s.stock_quantity, s.image_url, s.active_ingredient,
                s.target_pests, s.phi_days, s.note,
                COALESCE(SUM(su.total_cost), 0) as total_spent,
                COALESCE(SUM(su.quantity), 0) as total_used_qty
         FROM supplies s
         LEFT JOIN supply_usages su ON su.supply_id = s.id AND su.farm_id = $1
         WHERE (
-          s.farm_id = $1 
-          OR s.user_id = $2 
+          s.farm_id = $1
+          OR s.user_id = $2
           OR s.user_id IN (SELECT id FROM users WHERE farm_id = $1)
           OR s.id IN (SELECT supply_id FROM supply_usages WHERE farm_id = $1)
         )
@@ -167,7 +162,6 @@ router.get('/farms/:farmId/public-portal', async (req, res) => {
   }
 });
 
-// ─── Public Tag State Lookup by Farm & NFC UID: /public-by-farm-uid/:farmId/:nfcUid ───
 router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
   try {
     const farmId = parseInt(req.params.farmId);
@@ -179,7 +173,6 @@ router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
       return res.status(400).json({ error: 'Nông trại hoặc mã thẻ NFC không hợp lệ.' });
     }
 
-    // 1. Verify Farm exists
     const farmCheck = await pool.query(
       'SELECT id, name, address, puc_code, vietgap_cert_number, vietgap_cert_org, polygon_coordinates, user_id FROM farms WHERE id = $1 AND (is_deleted IS NOT TRUE)',
       [farmId]
@@ -189,9 +182,8 @@ router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
     }
     const farm = farmCheck.rows[0];
 
-    // 2. Check if a plant is assigned this NFC UID (any format, prioritizing current farm)
     const plantQuery = await pool.query(
-      `SELECT p.*, 
+      `SELECT p.*,
               p.latitude,
               p.longitude,
               p.gps_accuracy,
@@ -199,18 +191,18 @@ router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
               f.name as farm_name, f.address as farm_address, f.puc_code, f.vietgap_cert_number, f.vietgap_cert_org,
               f.polygon_coordinates as farm_polygon, f.user_id as farm_owner_user_id,
               u.full_name as owner_name, u.phone as owner_phone, u.email as owner_email
-       FROM plants p 
+       FROM plants p
        LEFT JOIN plant_schemas ps ON ps.id = p.schema_id
        LEFT JOIN farms f ON f.id = p.farm_id
        LEFT JOIN users u ON u.id = f.user_id
        WHERE (
          p.nfc_uid IS NOT NULL AND p.nfc_uid != '' AND (
-           UPPER(p.nfc_uid) = UPPER($1) 
+           UPPER(p.nfc_uid) = UPPER($1)
            OR UPPER(replace(replace(p.nfc_uid, ':', ''), '-', '')) = $2
            OR UPPER(regexp_replace(p.nfc_uid, '[^A-Za-z0-9]', '', 'g')) = $2
            OR UPPER(p.nfc_uid) = UPPER($3)
          )
-       ) 
+       )
        AND (p.deleted_at IS NULL)
        ORDER BY (CASE WHEN p.farm_id = $4 THEN 1 ELSE 2 END) ASC, p.id DESC
        LIMIT 1`,
@@ -247,7 +239,6 @@ router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
         } catch(e) {}
       }
 
-      // Fetch supply usages, total care costs, and available farm supplies
       let supplyUsages = [];
       let totalCareCost = 0;
       let farmSupplies = [];
@@ -291,7 +282,6 @@ router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
         } catch (_) {}
       }
 
-      // Enrich operator_name & equipment_used from logs if needed
       if (logs && logs.rows) {
         supplyUsages.forEach(u => {
           if (!u.operator_name || u.operator_name === 'Chủ trang trại') {
@@ -310,13 +300,13 @@ router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
 
       try {
         const farmSuppliesRes = await pool.query(`
-          SELECT s.id, s.name, s.category, s.package_size, s.package_qty, s.package_price, 
-                 s.unit_price, s.unit, s.stock_quantity, s.image_url, s.active_ingredient, 
+          SELECT s.id, s.name, s.category, s.package_size, s.package_qty, s.package_price,
+                 s.unit_price, s.unit, s.stock_quantity, s.image_url, s.active_ingredient,
                  s.target_pests, s.phi_days, s.note
           FROM supplies s
           WHERE (
             ($2::int IS NOT NULL AND (
-              s.farm_id = $2 
+              s.farm_id = $2
               OR (s.user_id = $1 AND s.farm_id IS NULL AND $1 != 1)
               OR s.id IN (SELECT supply_id FROM supply_usages WHERE plant_id = $3)
             ))
@@ -337,10 +327,10 @@ router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
         in_inventory: true,
         farm_id: farmId,
         nfc_uid: cleanUid,
-        plant: { 
-          ...row, 
-          media: media.rows, 
-          logs: scrubbedLogs, 
+        plant: {
+          ...row,
+          media: media.rows,
+          logs: scrubbedLogs,
           farm_boundary,
           supply_usages: supplyUsages,
           total_cost: totalCareCost,
@@ -349,16 +339,14 @@ router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
       });
     }
 
-    // 3. Not assigned to any plant in this farm -> check inventory status
     const invCheck = await pool.query(
-      `SELECT id, farm_id, status, plant_id 
-       FROM nfc_tags_inventory 
+      `SELECT id, farm_id, status, plant_id
+       FROM nfc_tags_inventory
        WHERE (UPPER(nfc_uid) = UPPER($1) OR UPPER(regexp_replace(COALESCE(nfc_uid, ''), '[^A-Za-z0-9]', '', 'g')) = $2)`,
       [cleanUid, cleanRawUid]
     );
 
     if (invCheck.rows.length === 0) {
-      // Uninventoried tag: allow seamless field binding for farm staff/admin
       return res.json({
         assigned: false,
         in_inventory: true,
@@ -396,7 +384,6 @@ router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
       });
     }
 
-    // Return unassigned valid inventory response for on-site binding
     return res.json({
       assigned: false,
       in_inventory: true,
@@ -411,26 +398,24 @@ router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
   }
 });
 
-// ─── Public routes ────────────────────────────────────────────────
 router.get('/public/:slug', async (req, res) => {
   try {
     const slugParam = req.params.slug.trim();
     const plant = await pool.query(
-      `SELECT p.*, 
+      `SELECT p.*,
               p.latitude,
               p.longitude,
               ps.name as schema_name, ps.fields as schema_fields,
               f.name as farm_name, f.address as farm_address, f.puc_code, f.vietgap_cert_number, f.vietgap_cert_org,
               f.polygon_coordinates as farm_polygon, f.user_id as farm_owner_user_id,
               u.full_name as owner_name, u.phone as owner_phone, u.email as owner_email
-       FROM plants p 
+       FROM plants p
        LEFT JOIN plant_schemas ps ON ps.id = p.schema_id
        LEFT JOIN farms f ON f.id = p.farm_id
        LEFT JOIN users u ON u.id = f.user_id
        WHERE (p.public_slug=$1 OR p.id::text=$1 OR UPPER(p.nfc_uid)=UPPER($1)) AND p.is_public=true`, [slugParam]
     );
     if (plant.rows.length === 0) {
-      // Check if this slugParam was an unassigned or revoked NFC tag in inventory
       const invRevoked = await pool.query(
         'SELECT nfc_uid, status, plant_id FROM nfc_tags_inventory WHERE UPPER(nfc_uid) = UPPER($1)',
         [slugParam]
@@ -448,10 +433,8 @@ router.get('/public/:slug', async (req, res) => {
     const media = await pool.query('SELECT * FROM plant_media WHERE plant_id=$1 ORDER BY uploaded_at DESC', [plant.rows[0].id]);
     const { logs, scrubbedLogs } = await fetchAndScrubPublicPlantLogs(pool, plant.rows[0].id);
 
-    // Build GeoJSON geometry for the farm boundary polygon
     const row = plant.rows[0];
 
-    // Tự động kiểm tra và hoán đổi tọa độ nếu latitude > 90 (bị lưu ngược)
     let plantLat = parseFloat(row.latitude);
     let plantLng = parseFloat(row.longitude);
     if (!isNaN(plantLat) && !isNaN(plantLng)) {
@@ -469,7 +452,6 @@ router.get('/public/:slug', async (req, res) => {
       try {
         let coords = typeof row.farm_polygon === 'string' ? JSON.parse(row.farm_polygon) : row.farm_polygon;
         if (Array.isArray(coords) && coords.length > 0) {
-          // Chuẩn hóa tọa độ [lng, lat] cho từng điểm polygon
           const sanitizeRing = (ring) => {
             return ring.map(pt => {
               if (Array.isArray(pt) && pt.length >= 2) {
@@ -484,17 +466,15 @@ router.get('/public/:slug', async (req, res) => {
             });
           };
 
-          // If coords is 2D [[lng, lat], ...], wrap it in an outer array to make it a valid GeoJSON Polygon coordinates array
           if (Array.isArray(coords[0]) && !Array.isArray(coords[0][0])) {
             farm_boundary = { type: 'Polygon', coordinates: [sanitizeRing(coords)] };
           } else {
             farm_boundary = { type: 'Polygon', coordinates: coords.map(r => Array.isArray(r) ? sanitizeRing(r) : r) };
           }
         }
-      } catch(e) { /* ignore parse errors */ }
+      } catch(e) {  }
     }
 
-    // Fetch supply usages, total care costs, and available farm supplies
     let supplyUsages = [];
     let totalCareCost = 0;
     let farmSupplies = [];
@@ -538,7 +518,6 @@ router.get('/public/:slug', async (req, res) => {
       } catch (_) {}
     }
 
-    // Enrich operator_name & equipment_used from logs if needed
     if (logs && logs.rows) {
       supplyUsages.forEach(u => {
         if (!u.operator_name || u.operator_name === 'Chủ trang trại') {
@@ -557,13 +536,13 @@ router.get('/public/:slug', async (req, res) => {
 
     try {
       const farmSuppliesRes = await pool.query(`
-        SELECT s.id, s.name, s.category, s.package_size, s.package_qty, s.package_price, 
-               s.unit_price, s.unit, s.stock_quantity, s.image_url, s.active_ingredient, 
+        SELECT s.id, s.name, s.category, s.package_size, s.package_qty, s.package_price,
+               s.unit_price, s.unit, s.stock_quantity, s.image_url, s.active_ingredient,
                s.target_pests, s.phi_days, s.note
         FROM supplies s
         WHERE (
           ($2::int IS NOT NULL AND (
-            s.farm_id = $2 
+            s.farm_id = $2
             OR (s.user_id = $1 AND s.farm_id IS NULL AND $1 != 1)
             OR s.id IN (SELECT supply_id FROM supply_usages WHERE plant_id = $3)
           ))
@@ -579,10 +558,10 @@ router.get('/public/:slug', async (req, res) => {
       console.warn('Lỗi tải danh mục vật tư kho (Public):', farmErr.message);
     }
 
-    res.json({ 
-      ...row, 
-      media: media.rows, 
-      logs: scrubbedLogs, 
+    res.json({
+      ...row,
+      media: media.rows,
+      logs: scrubbedLogs,
       farm_boundary,
       supply_usages: supplyUsages,
       total_cost: totalCareCost,
@@ -594,8 +573,6 @@ router.get('/public/:slug', async (req, res) => {
   }
 });
 
-// Helper: Validate Full NFC UID (at least 4 hex pairs separated by : or - OR continuous hex string of 8-20 chars)
-
 router.patch('/public/:slug/health', async (req, res) => {
   try {
     const { health_status } = req.body;
@@ -604,7 +581,6 @@ router.patch('/public/:slug/health', async (req, res) => {
     }
     const slugParam = req.params.slug.trim();
 
-    // 1. Find plant
     const plantFind = await pool.query(
       `SELECT id FROM plants WHERE (public_slug = $1 OR id::text = $1 OR UPPER(nfc_uid) = UPPER($1)) LIMIT 1`,
       [slugParam]
@@ -614,7 +590,6 @@ router.patch('/public/:slug/health', async (req, res) => {
     }
     const plantId = plantFind.rows[0].id;
 
-    // 2. Strict farm permission check
     const access = await verifyPlantAccess(req, plantId);
     if (!access.ok) {
       return res.status(access.status).json({ error: access.error });
@@ -631,7 +606,6 @@ router.patch('/public/:slug/health', async (req, res) => {
   }
 });
 
-// ─── Update plant GPS location publicly via Full NFC Tag Scan ─────────────
 router.all('/public/:slug/gps', async (req, res) => {
   if (req.method !== 'POST' && req.method !== 'PATCH') {
     return res.status(405).json({ error: 'Phương thức không được hỗ trợ.' });
@@ -642,10 +616,9 @@ router.all('/public/:slug/gps', async (req, res) => {
     const targetParam = req.params.slug ? req.params.slug.trim() : '';
     const activeNfcUid = nfc_uid || targetParam;
 
-    // Strict validation: Only allow automatic GPS update if opened via valid Full NFC UID
     if (!isFullNfcUid(activeNfcUid)) {
-      return res.status(400).json({ 
-        error: 'Chỉ cho phép tự động cập nhật vị trí GPS khi quét bằng thẻ NFC hợp lệ (Full NFC UID).' 
+      return res.status(400).json({
+        error: 'Chỉ cho phép tự động cập nhật vị trí GPS khi quét bằng thẻ NFC hợp lệ (Full NFC UID).'
       });
     }
 
@@ -655,7 +628,6 @@ router.all('/public/:slug/gps', async (req, res) => {
       return res.status(400).json({ error: 'Tọa độ GPS không hợp lệ.' });
     }
 
-    // Auto-swap if latitude and longitude were reversed
     if (Math.abs(lat) > 90 && Math.abs(lng) <= 90) {
       const tmp = lat;
       lat = lng;
@@ -666,10 +638,9 @@ router.all('/public/:slug/gps', async (req, res) => {
       return res.status(400).json({ error: 'Tọa độ GPS nằm ngoài phạm vi cho phép.' });
     }
 
-    // Find target plant by slug, ID, or NFC UID
     const plantRes = await pool.query(
-      `SELECT id, tree_code, plant_type, plant_variety, farm_id, nfc_uid, latitude, longitude 
-       FROM plants 
+      `SELECT id, tree_code, plant_type, plant_variety, farm_id, nfc_uid, latitude, longitude
+       FROM plants
        WHERE (id::text = $1 OR public_slug = $1 OR UPPER(nfc_uid) = UPPER($1) OR UPPER(nfc_uid) = UPPER($2))
        LIMIT 1`,
       [targetParam, activeNfcUid]
@@ -683,18 +654,16 @@ router.all('/public/:slug/gps', async (req, res) => {
     const cleanNfcUid = activeNfcUid || currentPlant.nfc_uid || '';
     const publicUrl = generatePublicPlantUrl(currentPlant.farm_id, currentPlant.id, cleanNfcUid);
 
-    // Update GPS coordinates and public_url in database
     const updateRes = await pool.query(
-      `UPDATE plants 
-       SET latitude = $1, longitude = $2, public_url = $3, updated_at = NOW() 
-       WHERE id = $4 
+      `UPDATE plants
+       SET latitude = $1, longitude = $2, public_url = $3, updated_at = NOW()
+       WHERE id = $4
        RETURNING id, tree_code, plant_type, plant_variety, farm_id, nfc_uid, latitude, longitude, public_url, updated_at`,
       [lat, lng, publicUrl, currentPlant.id]
     );
 
     const updated = updateRes.rows[0];
 
-    // Broadcast update via WebSocket to Admin & User portals
     if (global.broadcastWS) {
       global.broadcastWS('plants_updated', {
         plant_id: updated.id,
@@ -717,21 +686,18 @@ router.all('/public/:slug/gps', async (req, res) => {
   }
 });
 
-
-// Submit care log (Requires login from the same farm or Admin)
 router.post('/public/:slug/logs', upload.array('files', 12), async (req, res) => {
   try {
     const slugParam = req.params.slug.trim();
     const cleanRawUid = slugParam.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-    // Find plant ID by slug, ID, or NFC UID
     const plantResult = await pool.query(
-      `SELECT id, farm_id FROM plants 
+      `SELECT id, farm_id FROM plants
        WHERE (
-         public_slug = $1 
-         OR id::text = $1 
+         public_slug = $1
+         OR id::text = $1
          OR UPPER(nfc_uid) = UPPER($1)
          OR UPPER(regexp_replace(COALESCE(nfc_uid, ''), '[^A-Za-z0-9]', '', 'g')) = $2
-       ) 
+       )
        AND (deleted_at IS NULL)
        LIMIT 1`,
       [slugParam, cleanRawUid]
@@ -741,20 +707,17 @@ router.post('/public/:slug/logs', upload.array('files', 12), async (req, res) =>
     }
     const plantId = plantResult.rows[0].id;
 
-    // Strict farm authentication check
     const access = await verifyPlantAccess(req, plantId);
     if (!access.ok) {
       return res.status(access.status).json({ error: access.error });
     }
 
-    // Support both JSON body (no files) and multipart/form-data (with files)
     const log_type = req.body.log_type;
     const note = req.body.note || '';
     const log_date = req.body.log_date || new Date().toISOString().slice(0, 10);
     const operator_name = req.body.operator_name || (req.body.details && typeof req.body.details === 'object' ? req.body.details.operator_name : null) || access.user.full_name || access.user.email;
     const equipment_used = req.body.equipment_used || (req.body.details && typeof req.body.details === 'object' ? req.body.details.equipment_used : null) || null;
 
-    // details can be a JSON string (multipart) or object (json body)
     let details = {};
     if (req.body.details) {
       try {
@@ -765,7 +728,6 @@ router.post('/public/:slug/logs', upload.array('files', 12), async (req, res) =>
     if (operator_name && !details.operator_name) details.operator_name = operator_name;
     if (equipment_used && !details.equipment_used) details.equipment_used = equipment_used;
 
-    // Upload files to Supabase if any
     const uploadedMediaUrls = [];
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
@@ -774,7 +736,6 @@ router.post('/public/:slug/logs', upload.array('files', 12), async (req, res) =>
         const publicUrl = await uploadFile(objectName, file.buffer, file.mimetype);
         const mediaType = file.mimetype.startsWith('video') ? 'video' : 'image';
 
-        // Save to plant_media table (appears in plant gallery)
         await pool.query(
           'INSERT INTO plant_media (plant_id, object_name, url, media_type, caption) VALUES ($1,$2,$3,$4,$5)',
           [plantId, objectName, publicUrl, mediaType, `Bệnh cây - ${log_date}`]
@@ -784,7 +745,6 @@ router.post('/public/:slug/logs', upload.array('files', 12), async (req, res) =>
       }
     }
 
-    // Handle media_urls from JSON body (non-multipart requests)
     let existingMediaUrls = [];
     if (req.body.media_urls) {
       try {
@@ -803,7 +763,6 @@ router.post('/public/:slug/logs', upload.array('files', 12), async (req, res) =>
       details
     });
 
-    // PHI Quarantine & Pesticide Notice
     if (effectiveLogType === 'Phun thuốc') {
       let phiDays = parseInt(details.phi_days) || 0;
       const pesticideName = details.name || details.pesticide_name || note || 'Thuốc BVTV';
@@ -824,15 +783,14 @@ router.post('/public/:slug/logs', upload.array('files', 12), async (req, res) =>
         details.phi_until_date = phiUntilDateStr;
 
         await pool.query(
-          `UPDATE plants 
-           SET phi_until_date = $1, phi_status = 'quarantine', last_pesticide_date = $2, last_pesticide_name = $3, updated_at = NOW() 
+          `UPDATE plants
+           SET phi_until_date = $1, phi_status = 'quarantine', last_pesticide_date = $2, last_pesticide_name = $3, updated_at = NOW()
            WHERE id = $4`,
           [phiUntilDateStr, log_date, pesticideName, plantId]
         );
       }
     }
 
-    // Harvest batch code
     let generatedBatchCode = null;
     let farmPuc = access.plant?.puc_code || 'VN-TB';
     if (effectiveLogType === 'Thu hoạch') {
@@ -851,12 +809,10 @@ router.post('/public/:slug/logs', upload.array('files', 12), async (req, res) =>
     );
     await sealPlantLogHashChain(pool, result.rows[0]);
 
-    // Update health status if disease
     if (effectiveLogType === 'Bệnh cây') {
       await pool.query(`UPDATE plants SET health_status = 'Bệnh', updated_at = NOW() WHERE id = $1`, [plantId]);
     }
 
-    // Auto-record supply usage and stock deduction (bỏ qua Thu hoạch và Kiểm toán quả)
     if (effectiveLogType !== 'Thu hoạch' && effectiveLogType !== 'Kiểm toán quả') {
     try {
       let resolvedSupplyId = details.supply_id || null;
@@ -905,7 +861,6 @@ router.post('/public/:slug/logs', upload.array('files', 12), async (req, res) =>
   }
 });
 
-// ─── VietGAP / GlobalGAP Cultivation Log Report Export ────────────
 router.get('/:id(\\d+)/export-vietgap', async (req, res) => {
   try {
     const plantId = parseInt(req.params.id);
@@ -949,7 +904,6 @@ router.get('/:id(\\d+)/export-vietgap', async (req, res) => {
   }
 });
 
-// ─── QR Traceability Metadata API ───────────────────────────────
 router.get('/:id(\\d+)/qr-traceability', async (req, res) => {
   try {
     const plantId = parseInt(req.params.id);
@@ -981,7 +935,5 @@ router.get('/:id(\\d+)/qr-traceability', async (req, res) => {
     res.status(500).json({ error: 'Lỗi tạo QR: ' + err.message });
   }
 });
-
-// ─── Gallagher 8.30 FTCard.IssueLevel Anti-Cloning Re-issue Endpoint ──
 
 module.exports = router;

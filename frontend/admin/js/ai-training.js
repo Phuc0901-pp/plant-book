@@ -1,13 +1,3 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/**
- * frontend/admin/js/ai-training.js
- * Trung Tâm Huấn Luyện AI Bé Mầm (AI Training Studio) & Quản Lý Tri Thức Nông Nghiệp
- * - Phân trang 10 bản ghi / trang cho tất cả các bảng dữ liệu
- * - Trích xuất Real Client IP & Đánh dấu Proxy nội bộ
- * - Mã hóa / Ẩn danh hóa ID người dùng và Email quản trị
- * - Định dạng Chi tiết sự kiện bảo mật trực quan, loại bỏ JSON thô
- */
-
 (function() {
   let _knowledgeArticles = [];
   let _knowledgePage = 1;
@@ -38,9 +28,6 @@
     return localStorage.getItem('pb_token') || localStorage.getItem('token') || window.token || '';
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // 0. BỘ ĐIỀU KHIỂN PHÂN TRANG CHUẨN (10 BẢN GHI / TRANG)
-  // ─────────────────────────────────────────────────────────────
   function renderPaginationControls({ containerId, currentPage, totalItems, pageSize, onPageChangeFnName }) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -56,7 +43,6 @@
 
     let pageButtonsHtml = '';
 
-    // First & Prev Button
     pageButtonsHtml += `
       <button type="button" class="btn btn-outline" onclick="${onPageChangeFnName}(1)" ${currentPage === 1 ? 'disabled style="opacity:0.4; cursor:not-allowed; padding:5px 9px; font-size:12px;"' : 'style="padding:5px 9px; font-size:12px; cursor:pointer;"'} title="Trang đầu">
         <i data-lucide="chevrons-left" class="lucide-sm"></i>
@@ -66,7 +52,6 @@
       </button>
     `;
 
-    // Page Numbers (up to 5 buttons)
     let startPage = Math.max(1, currentPage - 2);
     let endPage = Math.min(totalPages, startPage + 4);
     if (endPage - startPage < 4) {
@@ -82,7 +67,6 @@
       `;
     }
 
-    // Next & Last Button
     pageButtonsHtml += `
       <button type="button" class="btn btn-outline" onclick="${onPageChangeFnName}(${currentPage + 1})" ${currentPage === totalPages ? 'disabled style="opacity:0.4; cursor:not-allowed; padding:5px 9px; font-size:12px;"' : 'style="padding:5px 9px; font-size:12px; cursor:pointer;"'} title="Trang sau">
         <i data-lucide="chevron-right" class="lucide-sm"></i>
@@ -102,9 +86,6 @@
     `;
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // 1. CHUYỂN SUB-TAB & KHỞI TẠO DỮ LIỆU
-  // ─────────────────────────────────────────────────────────────
   window.switchAiTrainingSubtab = function(subtabName) {
     _currentSubtab = subtabName;
     const subtabs = ['knowledge', 'qa', 'simulator', 'security'];
@@ -126,9 +107,6 @@
     loadAiKnowledgeList();
   };
 
-  // ─────────────────────────────────────────────────────────────
-  // 2. TẢI THỐNG KÊ (STATS & KPIS)
-  // ─────────────────────────────────────────────────────────────
   window.loadAiTrainingStats = async function() {
     try {
       const res = await fetch('/api/ai/training/stats', {
@@ -151,9 +129,6 @@
     }
   };
 
-  // ─────────────────────────────────────────────────────────────
-  // 3. KHO TRI THỨC QUY TRÌNH (KNOWLEDGE BASE)
-  // ─────────────────────────────────────────────────────────────
   window.onAiKnowledgeSearchChange = function() {
     clearTimeout(_searchDebounceTimer);
     _searchDebounceTimer = setTimeout(() => {
@@ -221,7 +196,7 @@
       const categoryBg = a.category === 'An toàn Sinh học' ? '#ecfdf5' :
         (a.category === 'Sâu bệnh hại' ? '#fef2f2' : (a.category === 'Phân bón & Dinh dưỡng' ? '#fffbeb' : '#eff6ff'));
 
-      const priorityBadge = a.priority >= 9 
+      const priorityBadge = a.priority >= 9
         ? `<span style="background:#fef2f2; color:#dc2626; font-weight:800; padding:2px 8px; border-radius:6px; font-size:11.5px;">⭐ ${a.priority}</span>`
         : `<span style="background:#f1f5f9; color:#475569; font-weight:700; padding:2px 8px; border-radius:6px; font-size:11.5px;">${a.priority}</span>`;
 
@@ -241,8 +216,8 @@
             ${escapeHtml(a.topic_keywords || '—')}
           </td>
           <td style="padding:12px 14px; text-align:center;">
-            ${a.is_active 
-              ? `<span style="color:#059669; font-weight:700; font-size:12px;"><i data-lucide="check-circle-2" class="lucide-sm"></i> Đang bật</span>` 
+            ${a.is_active
+              ? `<span style="color:#059669; font-weight:700; font-size:12px;"><i data-lucide="check-circle-2" class="lucide-sm"></i> Đang bật</span>`
               : `<span style="color:#94a3b8; font-weight:600; font-size:12px;"><i data-lucide="pause-circle" class="lucide-sm"></i> Tạm dừng</span>`}
           </td>
           <td style="padding:12px 14px; text-align:center;">
@@ -282,7 +257,7 @@
     const contentText = document.getElementById('ai-k-content');
     const hpTrap = document.getElementById('ai-k-hp-trap');
 
-    if (hpTrap) hpTrap.value = ''; // Luôn để trống honeypot
+    if (hpTrap) hpTrap.value = '';
 
     if (editId) {
       const art = _knowledgeArticles.find(x => x.id === editId);
@@ -335,7 +310,7 @@
       priority: priSelect ? parseInt(priSelect.value, 10) : 5,
       is_active: actCheck ? actCheck.checked : true,
       content: contentText ? contentText.value.trim() : '',
-      hp_security_trap: hpTrap ? hpTrap.value : '' // Honeypot
+      hp_security_trap: hpTrap ? hpTrap.value : ''
     };
 
     if (!payload.title || !payload.content) {
@@ -400,10 +375,6 @@
     }
   };
 
-
-  // ─────────────────────────────────────────────────────────────
-  // 4. HUẤN LUYỆN CẶP Q&A THỰC CHIẾN
-  // ─────────────────────────────────────────────────────────────
   window.onAiQaSearchChange = function() {
     clearTimeout(_searchDebounceTimer);
     _searchDebounceTimer = setTimeout(() => {
@@ -643,10 +614,6 @@
     }
   };
 
-
-  // ─────────────────────────────────────────────────────────────
-  // 5. PHÒNG THỬ NGHIỆM AI SANDBOX (SIMULATOR)
-  // ─────────────────────────────────────────────────────────────
   window.setAiTestPrompt = function(promptText) {
     const input = document.getElementById('ai-test-input');
     if (input) {
@@ -748,10 +715,6 @@
     }
   };
 
-
-  // ─────────────────────────────────────────────────────────────
-  // 6. NHẬT KÝ BẢO MẬT & AUDIT TRAIL
-  // ─────────────────────────────────────────────────────────────
   window.changeAiLogsPage = function(page) {
     const totalPages = Math.ceil(_securityLogs.length / _logsPageSize) || 1;
     if (page < 1) page = 1;
@@ -856,11 +819,11 @@
     const pageSlice = logs.slice(startIdx, startIdx + _logsPageSize);
 
     tbody.innerHTML = pageSlice.map(l => {
-      const actionBadge = l.action === 'CREATE' 
+      const actionBadge = l.action === 'CREATE'
         ? `<span style="background:#ecfdf5; color:#059669; font-weight:800; font-size:11px; padding:3px 8px; border-radius:6px;">TẠO MỚI</span>`
-        : (l.action === 'UPDATE' 
+        : (l.action === 'UPDATE'
           ? `<span style="background:#eff6ff; color:#0284c7; font-weight:800; font-size:11px; padding:3px 8px; border-radius:6px;">CẬP NHẬT</span>`
-          : (l.action === 'DELETE' 
+          : (l.action === 'DELETE'
             ? `<span style="background:#fef2f2; color:#dc2626; font-weight:800; font-size:11px; padding:3px 8px; border-radius:6px;">XÓA BỎ</span>`
             : `<span style="background:#fff1f2; color:#b91c1c; font-weight:900; font-size:11px; padding:3px 8px; border-radius:6px;"><i data-lucide="shield-alert" class="lucide-sm"></i> CHẶN BOT</span>`));
 

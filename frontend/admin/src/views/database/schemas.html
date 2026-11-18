@@ -1,6 +1,5 @@
 ﻿<div class="tab-pane" id="db-pane-schemas" style="display:none;">
 
-          <!-- TẦNG 1: EXECUTIVE KPI SUMMARY -->
           <div class="schema-kpi-grid" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; margin-bottom:20px;">
             <div class="card schema-kpi-card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
               <div style="width:44px; height:44px; border-radius:10px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">
@@ -33,7 +32,6 @@
             </div>
           </div>
 
-          <!-- TẦNG 2: CONTROL BAR & SUB-TABS -->
           <div class="card" style="margin-bottom:20px; overflow:hidden; border-radius:12px; border:1px solid #e2e8f0;">
             <div class="schema-tabs-container tabs" style="padding:0 20px; border-bottom:1px solid #e2e8f0; background:#f8fafc; display:flex; justify-content:space-between; align-items:center; flex-wrap:nowrap; overflow-x:auto; gap:12px;">
               <div style="display:flex; gap:10px; flex-shrink:0;">
@@ -45,7 +43,6 @@
                 </div>
               </div>
 
-              <!-- Top Action Button -->
               <div style="padding:8px 0; flex-shrink:0;" id="schema-top-actions">
                 <button class="btn btn-primary btn-sm" onclick="openSchemaModal()" style="background:#059669; border:none; border-radius:8px; padding:7px 14px; font-size:12px; font-weight:800; box-shadow:0 1px 2px rgba(5,150,105,0.2); cursor:pointer; white-space:nowrap;">
                   <i data-lucide="plus" class="lucide-sm"></i> + Tạo Loại Cây Mới
@@ -53,7 +50,6 @@
               </div>
             </div>
 
-            <!-- Sub-pane 1: Schema Catalog Table & Grid -->
             <div class="tab-pane active" id="pane-config-schema" style="padding:20px; display:block;">
               <div style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                 <div style="font-size:13px; color:#64748b;">
@@ -80,7 +76,6 @@
               </table>
             </div>
 
-            <!-- Sub-pane 2: Care SOP Procedures Configuration -->
             <div class="tab-pane" id="pane-config-care" style="padding:20px; display:none;">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
                 <div>
@@ -98,7 +93,6 @@
               </div>
 
               <div class="care-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">
-                <!-- Card 1: Tưới nước -->
                 <div class="care-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
                   <div class="care-card-header" style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
                     <i data-lucide="droplet" class="lucide-sm" style="color:#3b82f6; font-size:18px;"></i>
@@ -110,7 +104,6 @@
                   </div>
                 </div>
 
-                <!-- Card 2: Bón phân -->
                 <div class="care-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
                   <div class="care-card-header" style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
                     <i data-lucide="flask-conical" class="lucide-sm" style="color:#8b5cf6; font-size:18px;"></i>
@@ -122,7 +115,6 @@
                   </div>
                 </div>
 
-                <!-- Card 3: Phun thuốc -->
                 <div class="care-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
                   <div class="care-card-header" style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
                     <i data-lucide="shield-alert" class="lucide-sm" style="color:#ef4444; font-size:18px;"></i>
@@ -134,7 +126,6 @@
                   </div>
                 </div>
 
-                <!-- Card 4: Cắt cành / Cắt lá -->
                 <div class="care-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
                   <div class="care-card-header" style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
                     <i data-lucide="scissors" class="lucide-sm" style="color:#f59e0b; font-size:18px;"></i>
@@ -146,7 +137,6 @@
                   </div>
                 </div>
 
-                <!-- Card 5: Tỉa hoa -->
                 <div class="care-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
                   <div class="care-card-header" style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
                     <i data-lucide="sprout" class="lucide-sm" style="color:#10b981; font-size:18px;"></i>
@@ -162,5 +152,3 @@
 
           </div>
         </div>
-
-        <!-- ── TAB 4: VẬT TƯ & KHO (ENTERPRISE AGTECH ERP INVENTORY SUITE) ── -->

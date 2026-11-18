@@ -1,10 +1,7 @@
 -- +migrate Up
--- Migration 012: Enterprise Database Cleanup & Security Hardening
--- 1. Index for fast tombstone pruning
 CREATE INDEX IF NOT EXISTS idx_sync_tombstones_deleted_at
   ON public._sync_tombstones (deleted_at);
 
--- 2. Stored procedure for automated tombstone pruning (default 30 days retention)
 DROP FUNCTION IF EXISTS public.cleanup_old_sync_tombstones(integer);
 
 CREATE FUNCTION public.cleanup_old_sync_tombstones(p_retention_days INTEGER DEFAULT 30)
@@ -23,7 +20,6 @@ BEGIN
 END;
 $$;
 
--- 3. Safely revoke write permissions on spatial_ref_sys from anon/authenticated if permitted
 DO $$
 BEGIN
   REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON public.spatial_ref_sys FROM anon, authenticated;

@@ -11,9 +11,6 @@ const { delCacheByPattern } = require('../config/redis');
 const { encodeUserId, decodeUserId } = require('../utils/cryptoId');
 require('dotenv').config();
 
-/**
- * ISO/IEC 11558 & ISO 3309 Standard 8-Digit Obfuscation Hash Generator
- */
 function generateIsoPublicId(role, numId) {
   const prefix = role === 'admin' ? 'adm' : 'usr';
   const id = parseInt(numId) || 0;
@@ -21,10 +18,9 @@ function generateIsoPublicId(role, numId) {
   return `${prefix}-${val}`;
 }
 
-// Multer for avatar upload (memory storage)
 const avatarUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase().slice(1);
     if (/jpeg|jpg|png|webp|gif/.test(ext)) cb(null, true);
@@ -32,7 +28,6 @@ const avatarUpload = multer({
   }
 });
 
-// POST /api/auth/login (Supports Email or Phone number + Approval check)
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -41,7 +36,6 @@ router.post('/login', async (req, res) => {
     }
 
     const trimmed = email.trim();
-    // Allow login by email OR phone number
     const result = await pool.query(
       'SELECT * FROM users WHERE LOWER(email) = LOWER($1) OR phone = $1',
       [trimmed]
@@ -57,7 +51,6 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Thông tin tài khoản hoặc mật khẩu không đúng.' });
     }
 
-    // Check account approval status
     if (user.approved === false) {
       return res.status(403).json({
         error: 'Tài khoản của bạn đang chờ Quản trị viên phê duyệt. Chúng tôi sẽ mở khóa ngay khi duyệt xong!',
@@ -84,26 +77,22 @@ router.post('/login', async (req, res) => {
       { expiresIn: '30d' }
     );
 
-    // Update last_active_at and is_online
     await pool.query(
       'UPDATE users SET is_online = true, last_active_at = NOW() WHERE id = $1',
       [user.id]
     );
 
-    // Record login activity log
     await pool.query(
       `INSERT INTO user_activities (user_id, activity_type, description)
        VALUES ($1, 'Đăng nhập', 'Đăng nhập vào hệ thống thành công.')`,
       [user.id]
     );
 
-    // Broadcast user online status
     const broadcast = req.app.get('broadcast');
     if (broadcast) {
       broadcast('user_status_changed', { id: user.id, is_online: true, last_active_at: new Date() });
     }
 
-    // Query all farm IDs owned by or assigned to this user (or parent owner)
     let ownedFarmIds = [];
     let assignedPlantIds = [];
     try {
@@ -156,7 +145,6 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// POST /api/auth/register — 3-Step Farmer Registration (Pending Admin Approval)
 router.post('/register', async (req, res) => {
   try {
     const {
@@ -178,7 +166,6 @@ router.post('/register', async (req, res) => {
     const cleanPhone = phone.trim();
     const parsedArea = farm_area && parseFloat(farm_area) ? parseFloat(farm_area) : null;
 
-    // Check if phone already registered
     const existing = await pool.query(
       'SELECT id, approved FROM users WHERE phone = $1 OR LOWER(email) = LOWER($2)',
       [cleanPhone, `${cleanPhone}@farmer.tanbaocorp.vn`]
@@ -198,7 +185,6 @@ router.post('/register', async (req, res) => {
     const email = `${cleanPhone}@farmer.tanbaocorp.vn`;
     const name = full_name && full_name.trim() ? full_name.trim() : `Nông hộ ${cleanPhone}`;
 
-    // Insert user with approved = true (Auto-approved, default to 'normal' tier)
     const userRes = await pool.query(
       `INSERT INTO users (email, password_hash, full_name, role, phone, gender, dob, plant_type, plant_variety, plant_age, farm_area, approved, account_tier)
        VALUES ($1, $2, $3, 'user', $4, $5, $6, $7, $8, $9, $10, true, 'normal')
@@ -206,17 +192,14 @@ router.post('/register', async (req, res) => {
       [email, hash, name, cleanPhone, gender || null, dob || null, plant_type || null, plant_variety || null, plant_age || null, parsedArea]
     );
 
-
     const newUser = userRes.rows[0];
 
-    // Log registration activity
     await pool.query(
       `INSERT INTO user_activities (user_id, activity_type, description)
        VALUES ($1, 'Đăng ký tài khoản', 'Khách hàng hoàn tất đăng ký tài khoản nông hộ mới thành công.')`,
       [newUser.id]
     );
 
-    // Broadcast new registration notification to all online Admins
     const broadcast = req.app.get('broadcast');
     if (broadcast) {
       broadcast('user_registered', {
@@ -243,9 +226,6 @@ router.post('/register', async (req, res) => {
   }
 });
 
-
-
-// POST /api/auth/onboard-lead — Quick Lead Onboarding & Farm Setup via Smart NFC Gateway
 router.post('/onboard-lead', async (req, res) => {
   const client = await pool.connect();
   try {
@@ -274,7 +254,6 @@ router.post('/onboard-lead', async (req, res) => {
 
     await client.query('BEGIN');
 
-    // 1. Check if user already exists
     const existing = await client.query(
       'SELECT * FROM users WHERE phone = $1 OR LOWER(email) = LOWER($2)',
       [cleanPhone, email.toLowerCase()]
@@ -305,7 +284,6 @@ router.post('/onboard-lead', async (req, res) => {
       user = userRes.rows[0];
     }
 
-    // 2. Setup or retrieve primary farm
     let farm = null;
     const farmCheck = await client.query(
       `SELECT * FROM farms WHERE (user_id = $1 OR id = COALESCE($2, 0)) AND is_deleted IS NOT TRUE ORDER BY id ASC LIMIT 1`,
@@ -326,7 +304,6 @@ router.post('/onboard-lead', async (req, res) => {
       );
       farm = farmRes.rows[0];
 
-      // Create default plot A1
       try {
         await client.query(
           `INSERT INTO farm_plots (farm_id, plot_code, plot_name)
@@ -336,14 +313,12 @@ router.post('/onboard-lead', async (req, res) => {
         );
       } catch (_) {}
 
-      // Update user's primary farm_id
       await client.query('UPDATE users SET farm_id = $1 WHERE id = $2', [farm.id, user.id]);
       user.farm_id = farm.id;
     } else {
       farm = farmCheck.rows[0];
     }
 
-    // 3. Log lead onboarding activity
     await client.query(
       `INSERT INTO user_activities (user_id, activity_type, description)
        VALUES ($1, 'Smart NFC Lead Onboarding', $2)`,
@@ -352,12 +327,10 @@ router.post('/onboard-lead', async (req, res) => {
 
     await client.query('COMMIT');
 
-    // Invalidate Redis caches
     try {
       await delCacheByPattern('farms_');
     } catch (_) {}
 
-    // Generate JWT token
     const token = jwt.sign(
       {
         id: user.id,
@@ -370,7 +343,6 @@ router.post('/onboard-lead', async (req, res) => {
       { expiresIn: '30d' }
     );
 
-    // Broadcast event
     const broadcast = req.app.get('broadcast');
     if (broadcast) {
       broadcast('user_registered', {
@@ -416,7 +388,6 @@ router.post('/onboard-lead', async (req, res) => {
   }
 });
 
-// GET /api/auth/check-phone — Pre-check if phone number exists before registering
 router.get('/check-phone', async (req, res) => {
 
   try {
@@ -453,9 +424,6 @@ router.get('/check-phone', async (req, res) => {
   }
 });
 
-
-// POST /api/auth/logout
-
 router.post('/logout', require('../middleware/auth'), async (req, res) => {
   try {
     await pool.query(
@@ -467,7 +435,6 @@ router.post('/logout', require('../middleware/auth'), async (req, res) => {
        VALUES ($1, 'Đăng xuất', 'Người dùng chủ động đăng xuất khỏi hệ thống.')`,
       [req.user.id]
     );
-    // Broadcast user offline status
     const broadcast = req.app.get('broadcast');
     if (broadcast) {
       broadcast('user_status_changed', { id: req.user.id, is_online: false, last_active_at: new Date() });
@@ -480,7 +447,6 @@ router.post('/logout', require('../middleware/auth'), async (req, res) => {
   }
 });
 
-// GET /api/auth/me — Return full profile
 router.get('/me', require('../middleware/auth'), async (req, res) => {
   try {
     const result = await pool.query(
@@ -528,7 +494,6 @@ router.get('/me', require('../middleware/auth'), async (req, res) => {
   }
 });
 
-// GET /api/auth/verify-sub-token/:token — Safely check and decode encrypted user ID
 router.get('/verify-sub-token/:token', async (req, res) => {
   try {
     const { token } = req.params;
@@ -557,8 +522,6 @@ router.get('/verify-sub-token/:token', async (req, res) => {
   }
 });
 
-
-// PUT /api/auth/me — Update personal profile
 router.put('/me', require('../middleware/auth'), async (req, res) => {
   try {
     const { full_name, phone, city, country, gender } = req.body;
@@ -585,12 +548,10 @@ router.put('/me', require('../middleware/auth'), async (req, res) => {
   }
 });
 
-// POST /api/auth/avatar — Upload/replace user avatar to Supabase
 router.post('/avatar', require('../middleware/auth'), avatarUpload.single('avatar'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'Vui lòng chọn ảnh đại diện.' });
 
-    // Delete old avatar from Supabase if exists
     const existing = await pool.query('SELECT avatar_url FROM users WHERE id=$1', [req.user.id]);
     const oldUrl = existing.rows[0]?.avatar_url;
     if (oldUrl) {
@@ -598,7 +559,6 @@ router.post('/avatar', require('../middleware/auth'), avatarUpload.single('avata
       if (parts[1]) await deleteFile(parts[1]);
     }
 
-    // Upload new avatar
     const ext = path.extname(req.file.originalname).toLowerCase() || '.jpg';
     const objectName = `avatars/${req.user.id}_${uuidv4()}${ext}`;
     const publicUrl = await uploadFile(objectName, req.file.buffer, req.file.mimetype);
@@ -617,7 +577,6 @@ router.post('/avatar', require('../middleware/auth'), avatarUpload.single('avata
   }
 });
 
-// POST /api/auth/change-password
 router.post('/change-password', require('../middleware/auth'), async (req, res) => {
   try {
     const { oldPassword, newPassword } = req.body;
@@ -655,7 +614,6 @@ router.post('/change-password', require('../middleware/auth'), async (req, res) 
 const crypto = require('crypto');
 const { sendAdminResetNotification, sendCustomerNewPassword } = require('../services/emailService');
 
-// POST /api/auth/forgot-password — Gửi yêu cầu cấp lại mật khẩu
 router.post('/forgot-password', async (req, res) => {
   try {
     const { identity, note } = req.body;
@@ -664,7 +622,6 @@ router.post('/forgot-password', async (req, res) => {
     }
 
     const trimmed = identity.trim();
-    // Find user by email or phone
     const userRes = await pool.query(
       'SELECT id, email, full_name, phone, role FROM users WHERE LOWER(email) = LOWER($1) OR phone = $1',
       [trimmed]
@@ -683,12 +640,10 @@ router.post('/forgot-password', async (req, res) => {
       [user.id, trimmed, resetToken, note || null]
     );
 
-    // Protocol & Base URL
     const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
     const host = req.headers['x-forwarded-host'] || req.get('host');
     const baseUrl = `${protocol}://${host}`;
 
-    // Send email notification to Admin (phphuc0539@gmail.com) in background (non-blocking)
     sendAdminResetNotification({
       user,
       requestToken: resetToken,
@@ -706,16 +661,15 @@ router.post('/forgot-password', async (req, res) => {
   }
 });
 
-// GET /api/auth/approve-reset-password — Admin 1-click approve link from email
 router.get('/approve-reset-password', async (req, res) => {
   try {
     const { token } = req.query;
     if (!token) return res.status(400).send('Token không hợp lệ.');
 
     const reqRes = await pool.query(
-      `SELECT r.*, u.email, u.full_name, u.phone 
-       FROM password_reset_requests r 
-       JOIN users u ON r.user_id = u.id 
+      `SELECT r.*, u.email, u.full_name, u.phone
+       FROM password_reset_requests r
+       JOIN users u ON r.user_id = u.id
        WHERE r.token = $1 AND r.status = 'pending'`,
       [token]
     );
@@ -738,20 +692,16 @@ router.get('/approve-reset-password', async (req, res) => {
     const reqData = reqRes.rows[0];
     const user = { id: reqData.user_id, email: reqData.email, full_name: reqData.full_name, phone: reqData.phone };
 
-    // Generate new random temp password
     const tempPassword = `Tanbao@${Math.floor(100000 + Math.random() * 900000)}`;
     const hash = await bcrypt.hash(tempPassword, 12);
 
-    // Update user's password
     await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, user.id]);
 
-    // Mark request as approved
     await pool.query(
       "UPDATE password_reset_requests SET status = 'approved', approved_at = NOW() WHERE id = $1",
       [reqData.id]
     );
 
-    // Send new password to customer email
     await sendCustomerNewPassword({ user, newPassword: tempPassword });
 
     res.send(`
@@ -778,7 +728,6 @@ router.get('/approve-reset-password', async (req, res) => {
   }
 });
 
-// GET /api/auth/reject-reset-password — Admin 1-click reject link
 router.get('/reject-reset-password', async (req, res) => {
   try {
     const { token } = req.query;
@@ -806,15 +755,14 @@ router.get('/reject-reset-password', async (req, res) => {
   }
 });
 
-// GET /api/auth/reset-requests — Admin list reset requests
 router.get('/reset-requests', require('../middleware/auth'), async (req, res) => {
   try {
     if (req.user.role !== 'admin') return res.status(403).json({ error: 'Chỉ Admin mới có quyền truy cập.' });
 
     const result = await pool.query(`
-      SELECT r.*, u.email, u.full_name, u.phone 
-      FROM password_reset_requests r 
-      JOIN users u ON r.user_id = u.id 
+      SELECT r.*, u.email, u.full_name, u.phone
+      FROM password_reset_requests r
+      JOIN users u ON r.user_id = u.id
       ORDER BY r.created_at DESC
     `);
     res.json(result.rows);
@@ -823,7 +771,6 @@ router.get('/reset-requests', require('../middleware/auth'), async (req, res) =>
   }
 });
 
-// DELETE /api/auth/reset-requests/:id — Admin permanently deletes a specific reset request
 router.delete('/reset-requests/:id', require('../middleware/auth'), async (req, res) => {
   try {
     if (req.user.role !== 'admin') return res.status(403).json({ error: 'Chỉ Admin mới có quyền truy cập.' });
@@ -841,7 +788,6 @@ router.delete('/reset-requests/:id', require('../middleware/auth'), async (req, 
   }
 });
 
-// DELETE /api/auth/reset-requests — Admin bulk deletes reset requests (scope=handled or scope=all)
 router.delete('/reset-requests', require('../middleware/auth'), async (req, res) => {
   try {
     if (req.user.role !== 'admin') return res.status(403).json({ error: 'Chỉ Admin mới có quyền truy cập.' });

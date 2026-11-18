@@ -1,11 +1,3 @@
-﻿/* ═══════════════════════════════════════════════════════════════
-   Plant Book – Backend
-   db/migrate.js — Lightweight & Robust Database Migration Runner
-   Usage:
-     node backend/db/migrate.js up
-     node backend/db/migrate.js status
-   ═══════════════════════════════════════════════════════════════ */
-
 const fs = require('fs');
 const path = require('path');
 const pool = require('../config/db');
@@ -34,7 +26,6 @@ function getMigrationFiles() {
 }
 
 function parseSqlMigration(content) {
-  // Extract +migrate Up section
   const upMatch = content.match(/-- \+migrate Up([\s\S]*?)(?:-- \+migrate Down|$)/i);
   return upMatch ? upMatch[1].trim() : content;
 }

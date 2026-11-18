@@ -1,44 +1,8 @@
-/**
- * ==============================================================================
- * CÔNG CỤ DI CHUYỂN CƠ SỞ DỮ LIỆU SANG NAS CÔNG TY (POSTGRESQL → POSTGRESQL)
- * ==============================================================================
- * Cách dùng:
- *   node backend/scripts/migrate_to_nas.js <TARGET_URL>                 (chạy thử - dry-run)
- *   node backend/scripts/migrate_to_nas.js <TARGET_URL> --yes           (di chuyển thật)
- *
- * Tùy chọn:
- *   --source=<URL>        CSDL nguồn (mặc định: DATABASE_URL trong backend/.env)
- *   --mode=replace|upsert replace (mặc định): xóa sạch bảng đích rồi nạp lại
- *                         upsert: giữ dữ liệu đích, ghi đè theo khóa chính
- *   --batch=<n>           Số dòng mỗi lô INSERT (mặc định 1000)
- *   --only=a,b            Chỉ di chuyển các bảng này
- *   --exclude=a,b         Bỏ qua các bảng này
- *   --no-checksum         Bỏ qua đối soát checksum MD5 (chỉ so số dòng)
- *   --checksum-limit=<n>  Chỉ tính checksum cho bảng ≤ n dòng (mặc định 200000)
- *
- * Quy trình:
- *   1. Đọc TOÀN BỘ cấu trúc schema public của nguồn (bảng, cột, kiểu, default,
- *      enum, sequence, PK/UNIQUE/CHECK/FK, index, bảng phân vùng)
- *   2. Tạo cấu trúc còn thiếu trên NAS (idempotent - chạy lại nhiều lần an toàn)
- *   3. Nạp dữ liệu theo lô trong 1 transaction (lỗi → rollback, NAS giữ nguyên)
- *      - Nguồn đọc trong snapshot REPEATABLE READ (dữ liệu nhất quán)
- *      - Giữ dạng text gốc của mọi kiểu dữ liệu (JSONB, ngày giờ, số thực, bytea)
- *   4. Đồng bộ sequence, thêm khóa ngoại + index sau khi nạp
- *   5. Đối soát số dòng + checksum MD5 từng bảng
- *
- * Exit code: 0 = thành công · 1 = lỗi · 2 = dữ liệu lệch sau đối soát
- * ==============================================================================
- */
-
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const { resolveSslConfig, maskConnectionString } = require('../config/dbSsl');
 
-const MAX_PARAMS = 65000; // Giới hạn tham số của giao thức PostgreSQL là 65535
-
-// ─────────────────────────────────────────────────────────────────────────────
-// HÀM THUẦN (pure functions) — có unit test trong backend/tests/suites
-// ─────────────────────────────────────────────────────────────────────────────
+const MAX_PARAMS = 65000;
 
 function parseArgs(argv, env = process.env) {
   const opts = {
@@ -79,7 +43,6 @@ function quoteLiteral(value) {
   return "'" + String(value).replace(/'/g, "''") + "'";
 }
 
-/** Lấy tên sequence từ biểu thức default: nextval('public."plants_id_seq"'::regclass) → plants_id_seq */
 function extractSequenceName(defaultExpr) {
   if (!defaultExpr) return null;
   const m = String(defaultExpr).match(/nextval\('([^']+)'(?:::regclass)?\)/i);
@@ -88,20 +51,17 @@ function extractSequenceName(defaultExpr) {
   return parts[parts.length - 1].replace(/^"|"$/g, '').replace(/""/g, '"');
 }
 
-/** Số dòng mỗi lô sao cho không vượt giới hạn tham số */
 function computeBatchSize(columnCount, requested = 1000) {
   const cols = Math.max(1, columnCount);
   return Math.max(1, Math.min(requested, Math.floor(MAX_PARAMS / cols)));
 }
 
-/** Thêm IF NOT EXISTS và bỏ ON ONLY (để index lan xuống bảng con phân vùng) */
 function normalizeIndexDef(def) {
   return String(def)
     .replace(/^CREATE (UNIQUE )?INDEX (?!IF NOT EXISTS)/i, (_, u) => `CREATE ${u || ''}INDEX IF NOT EXISTS `)
     .replace(/ ON ONLY /i, ' ON ');
 }
 
-/** Sắp xếp bảng: bảng cha phân vùng luôn đứng trước bảng con */
 function sortTablesByDependency(tables) {
   const byName = new Map(tables.map(t => [t.name, t]));
   const depth = (t, seen = new Set()) => {
@@ -112,7 +72,6 @@ function sortTablesByDependency(tables) {
   return [...tables].sort((a, b) => depth(a) - depth(b) || a.name.localeCompare(b.name));
 }
 
-/** Câu lệnh CREATE TABLE IF NOT EXISTS từ metadata */
 function buildCreateTableSql(table, columns) {
   if (table.parent && table.partbound) {
     return `CREATE TABLE IF NOT EXISTS ${quoteIdent(table.name)} PARTITION OF ${quoteIdent(table.parent)} ${table.partbound}`;
@@ -130,7 +89,6 @@ function buildCreateTableSql(table, columns) {
   return `CREATE TABLE IF NOT EXISTS ${quoteIdent(table.name)} (\n  ${defs.join(',\n  ')}\n)${partition}`;
 }
 
-/** Câu lệnh INSERT nhiều dòng có tham số */
 function buildInsertSql(tableName, columns, rowCount, { overriding = false, mode = 'replace', pkColumns = [] } = {}) {
   const n = columns.length;
   const groups = [];
@@ -156,7 +114,6 @@ function buildInsertSql(tableName, columns, rowCount, { overriding = false, mode
   return sql;
 }
 
-/** Biểu thức checksum MD5 ổn định (thứ tự cột theo tên, thứ tự dòng theo hash) */
 function buildChecksumSql(tableName, columns) {
   const cols = [...columns].sort().map(quoteIdent).join(', ');
   const rowExpr = columns.length === 1 ? `ROW(${cols}, NULL)` : `ROW(${cols})`;
@@ -165,16 +122,12 @@ function buildChecksumSql(tableName, columns) {
 
 function filterTables(tables, { only = [], exclude = [] } = {}) {
   return tables.filter(t => {
-    const key = t.parent || t.name; // bảng con phân vùng đi theo bảng cha
+    const key = t.parent || t.name;
     if (only.length && !only.includes(t.name) && !only.includes(key)) return false;
     if (exclude.includes(t.name) || exclude.includes(key)) return false;
     return true;
   });
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// TRUY VẤN METADATA
-// ─────────────────────────────────────────────────────────────────────────────
 
 const SESSION_SQL = [
   "SET TimeZone TO 'UTC'",
@@ -258,7 +211,7 @@ async function introspect(client) {
   try {
     const seqRes = await client.query(`SELECT sequencename AS name, last_value FROM pg_sequences WHERE schemaname = 'public'`);
     sequences = seqRes.rows;
-  } catch (_) { /* thiếu quyền đọc pg_sequences → bỏ qua, vẫn đồng bộ theo MAX(id) */ }
+  } catch (_) {  }
 
   const extRes = await client.query(`SELECT extname AS name FROM pg_extension WHERE extname <> 'plpgsql' ORDER BY extname`);
 
@@ -271,7 +224,6 @@ async function introspect(client) {
   };
 }
 
-/** Đọc mảng text PostgreSQL '{a,b,"c d"}' (do dùng parser raw) */
 function parsePgArray(value) {
   if (Array.isArray(value)) return value;
   if (value === null || value === undefined) return [];
@@ -309,10 +261,6 @@ async function countRows(client, tableName) {
   return parseInt(res.rows[0].n, 10);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// CHƯƠNG TRÌNH CHÍNH
-// ─────────────────────────────────────────────────────────────────────────────
-
 const log = (...a) => console.log(...a);
 const warnings = [];
 const warn = (msg) => { warnings.push(msg); console.log(`   ⚠️  ${msg}`); };
@@ -329,7 +277,6 @@ function makeClient(url) {
     ssl: resolveSslConfig(url),
     connectionTimeoutMillis: 15000,
     application_name: 'plantbook-nas-migrate',
-    // Giữ nguyên dạng text gốc của mọi kiểu → nạp lại không mất độ chính xác
     types: { getTypeParser: () => (v) => v }
   });
 }
@@ -401,7 +348,6 @@ async function main(argv) {
     return 0;
   }
 
-  // ── 4. Tạo cấu trúc ───────────────────────────────────────────────────────
   log('\n🏗️  4. Tạo cấu trúc trên NAS...');
   for (const ext of meta.extensions) {
     await tryQuery(tgt, `CREATE EXTENSION IF NOT EXISTS ${quoteIdent(ext)}`, `Extension ${ext} không có trên NAS (bỏ qua nếu không dùng)`);
@@ -426,7 +372,7 @@ async function main(argv) {
       if (await tryQuery(tgt, buildCreateTableSql(t, cols), `Tạo bảng ${t.name}`)) { created++; existing.add(t.name); }
       continue;
     }
-    if (t.parent) continue; // bảng con phân vùng dùng cột của bảng cha
+    if (t.parent) continue;
     const have = new Set((await targetColumns(tgt, t.name)).map(c => c.name));
     for (const c of cols) {
       if (have.has(c.name) || c.generated === 's') continue;
@@ -443,7 +389,6 @@ async function main(argv) {
   }
   log(`   ✅ Tạo mới ${created} bảng, bổ sung ${columnsAdded} cột còn thiếu.`);
 
-  // ── 5. Nạp dữ liệu ────────────────────────────────────────────────────────
   log('\n📦 5. Nạp dữ liệu (1 transaction — lỗi sẽ rollback toàn bộ)...');
   try { await tgt.query('SET session_replication_role = replica'); }
   catch (err) { warn(`Không tắt được trigger khi nạp (cần quyền superuser): ${err.message}`); }
@@ -493,10 +438,9 @@ async function main(argv) {
     await tgt.query('SET session_replication_role = DEFAULT').catch(() => {});
   }
 
-  // ── 6. Sequence, khóa ngoại, index ────────────────────────────────────────
   log('\n🔗 6. Đồng bộ sequence, khóa ngoại, index...');
   const srcSeqLast = new Map(meta.sequences.map(s => [s.name, s.last_value === null ? 0 : parseInt(s.last_value, 10) || 0]));
-  const seqTarget = new Map(); // tên sequence → giá trị lớn nhất cần đặt
+  const seqTarget = new Map();
   for (const [name, last] of srcSeqLast) if (last > 0) seqTarget.set(name, last);
   for (const t of leafTables) {
     for (const c of meta.columns.get(t.oid) || []) {
@@ -531,12 +475,11 @@ async function main(argv) {
   }
   log(`   ✅ ${[...seqTarget.values()].filter(v => v > 0).length} sequence · ${fkOk} khóa ngoại · ${idxOk} index`);
 
-  // ── 7. Đối soát ───────────────────────────────────────────────────────────
   log('\n🔍 7. Đối soát toàn vẹn dữ liệu (nguồn ↔ NAS):');
   let mismatches = 0;
   for (const t of leafTables) {
     const s = srcCounts.get(t.name);
-    const d = await countRows(tgt, t.name).catch(() => -1); // -1 = bảng không tồn tại trên NAS
+    const d = await countRows(tgt, t.name).catch(() => -1);
     let line = `   - ${t.name.padEnd(32)} ${String(s).padStart(10)} ↔ ${String(d < 0 ? 'thiếu bảng' : d).padEnd(10)}`;
     if (s !== d) { mismatches++; log(`${line} ❌ LỆCH SỐ DÒNG`); continue; }
     const cols = insertColsByTable.get(t.name) || [];

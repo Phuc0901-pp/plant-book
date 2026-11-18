@@ -1,8 +1,3 @@
-/* ============================================================================
-   TBSG AgTech — Chibi ISO Vector Icon Library v1.0
-   Standardized W3C SVG 1.1 | 64x64 Grid | WCAG 2.1 AA Accessible (role="img")
-   ============================================================================ */
-
 (function (global) {
   'use strict';
 

@@ -1,26 +1,18 @@
 import 'package:flutter/material.dart';
 import '../core/theme/fluent_icons.dart';
 
-// ============================================================================
-// MICROSOFT FLUENT 2 DESIGN SYSTEM FOR PLANT BOOK MOBILE
-// Reference: Microsoft Loop / Microsoft Viva / To-Do / Teams Mobile
-// ============================================================================
-
 class AppTheme {
   static const String appVersion = 'v1.3.5';
 
-  // Core Microsoft Fluent 2 Tokens
-  static const Color fluentSurface = Color(0xFFFAF9F8); // Alabaster warm background
+  static const Color fluentSurface = Color(0xFFFAF9F8);
   static const Color fluentCardBg = Colors.white;
-  static const Color fluentBorder = Color(0xFFEDEBE9); // 0.8px subtle card border
+  static const Color fluentBorder = Color(0xFFEDEBE9);
   static const Color fluentBorderActive = Color(0xFF107C41);
 
-  // Microsoft Fluent Emerald (Brand Primary)
   static const Color fluentEmerald = Color(0xFF107C41);
   static const Color fluentEmeraldDark = Color(0xFF0F5B30);
   static const Color fluentEmeraldLight = Color(0xFFE6F4EA);
 
-  // Fluent 2 Pastel Squircle Palette
   static const Color mintPastel = Color(0xFFE6F4EA);
   static const Color mintText = Color(0xFF107C41);
 
@@ -36,13 +28,11 @@ class AppTheme {
   static const Color rosePastel = Color(0xFFFCE8E6);
   static const Color roseText = Color(0xFFD93025);
 
-  // Typography Tokens
-  static const Color fluentTextMain = Color(0xFF1F1F1F); // Fluent Dark 900
+  static const Color fluentTextMain = Color(0xFF1F1F1F);
   static const Color fluentTextSecondary = Color(0xFF424242);
   static const Color fluentTextMuted = Color(0xFF616161);
   static const Color fluentTextSubtle = Color(0xFF707070);
 
-  // Legacy mappings for full backward compatibility
   static const Color greenDark = fluentEmeraldDark;
   static const Color green = fluentEmerald;
   static const Color greenLight = mintPastel;
@@ -63,7 +53,6 @@ class AppTheme {
   static const Color textMain = fluentTextMain;
   static const Color textMuted = fluentTextMuted;
 
-  // Fluent 2 Dual Ambient Shadows
   static List<BoxShadow> get fluentShadow => const [
         BoxShadow(
           color: Color(0x0A0F172A),
@@ -164,11 +153,6 @@ class AppTheme {
   }
 }
 
-// ============================================================================
-// REUSABLE FLUENT 2 WIDGETS
-// ============================================================================
-
-/// Fluent 2 Standard Card with 20px squircle corners & ambient shadow
 class FluentCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
@@ -214,7 +198,6 @@ class FluentCard extends StatelessWidget {
   }
 }
 
-/// Fluent 2 Squircle Icon Box with Pastel background
 class FluentSquircleIcon extends StatelessWidget {
   final LucideIconName icon;
   final Color backgroundColor;

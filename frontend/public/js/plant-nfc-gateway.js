@@ -1,6 +1,3 @@
-// Modular Public Plant NTAG213 Field Binding, Web NFC Direct Write & Smart Farm Gateway
-// ─── Field Binding Module Functions (NTAG213 On-Site Binding & Strict Governance) ───
-
 function initFieldBindingModule(farmId, farmName, pucCode, nfcUid, inInventory = true, inventoryWarning = null) {
   window.currentBindingFarmId = farmId;
   window.currentBindingFarmName = farmName;
@@ -15,7 +12,6 @@ function initFieldBindingModule(farmId, farmName, pucCode, nfcUid, inInventory =
   const bindView = document.getElementById('field-binding-view');
   if (bindView) bindView.style.display = 'block';
 
-  // Populate metadata
   const badgeEl = document.getElementById('bind-tag-uid-badge');
   if (badgeEl) badgeEl.textContent = nfcUid || '--';
   const farmEl = document.getElementById('bind-farm-name');
@@ -23,7 +19,6 @@ function initFieldBindingModule(farmId, farmName, pucCode, nfcUid, inInventory =
   const pucEl = document.getElementById('bind-farm-puc');
   if (pucEl) pucEl.textContent = pucCode ? `PUC: ${pucCode}` : 'PUC: N/A';
 
-  // Warehouse Inventory Status Verification
   const invBadgeEl = document.getElementById('bind-inventory-badge');
   const btn = document.getElementById('btn-submit-binding');
 
@@ -59,16 +54,12 @@ function initFieldBindingModule(farmId, farmName, pucCode, nfcUid, inInventory =
     }
   }
 
-  // Clear previous state
   clearSelectedTree();
 
-  // Pre-warm GPS sensor immediately
   acquireGpsPosition(false);
 
-  // Load unassigned trees
   refreshUnassignedTrees();
 
-  // Re-hydrate Lucide icons
   if (window.lucide) window.lucide.createIcons();
 }
 
@@ -108,7 +99,7 @@ function renderUnassignedTreeChips() {
     <div style="font-size:11.5px; font-weight:700; color:#475569; margin-bottom:6px;">Chạm nhanh để chọn cây:</div>
     <div style="display:flex; flex-wrap:wrap; gap:6px;">
       ${trees.map(t => `
-        <button type="button" onclick="selectUnassignedTree(${t.id}, '${esc(t.tree_code || t.id)}', '${esc(t.plant_type || '')}', '${esc(t.plant_variety || '')}')" 
+        <button type="button" onclick="selectUnassignedTree(${t.id}, '${esc(t.tree_code || t.id)}', '${esc(t.plant_type || '')}', '${esc(t.plant_variety || '')}')"
                 style="padding:6px 12px; border-radius:8px; border:1.5px solid #10b981; background:#ecfdf5; color:#047857; font-weight:700; font-size:12.5px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; transition:all 0.15s;">
           <i data-lucide="leaf" class="lucide-xs"></i> Cây #${esc(t.tree_code || t.id)}
         </button>
@@ -200,8 +191,8 @@ function handleTreeSearchInput(query) {
   const q = String(query || '').trim().toLowerCase();
   const unassigned = window.currentUnassignedTrees || [];
 
-  const filtered = !q 
-    ? unassigned 
+  const filtered = !q
+    ? unassigned
     : unassigned.filter(t => {
         const code = String(t.tree_code || t.id).toLowerCase();
         const type = String(t.plant_type || '').toLowerCase();
@@ -221,8 +212,8 @@ function handleTreeSearchInput(query) {
   }
 
   dropdown.innerHTML = filtered.slice(0, 15).map(t => `
-    <div onclick="selectUnassignedTree(${t.id}, '${esc(t.tree_code || t.id)}', '${esc(t.plant_type || '')}', '${esc(t.plant_variety || '')}')" 
-         style="padding: 10px 14px; border-bottom: 1px solid #f1f5f9; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.15s;" 
+    <div onclick="selectUnassignedTree(${t.id}, '${esc(t.tree_code || t.id)}', '${esc(t.plant_type || '')}', '${esc(t.plant_variety || '')}')"
+         style="padding: 10px 14px; border-bottom: 1px solid #f1f5f9; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.15s;"
          onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='#fff'">
       <div>
         <div style="font-weight: 700; font-size: 13.5px; color: #0f172a;">
@@ -350,18 +341,15 @@ async function submitFieldBinding(allowReplace = false) {
       throw new Error(data.error || 'Lỗi khi gắn thẻ vào cây.');
     }
 
-    // Success Haptic Feedback
     if (navigator.vibrate) {
       try { navigator.vibrate([100, 50, 100]); } catch(e) {}
     }
 
     showNfcGpsToast(data.message || 'Đã gắn thẻ và lưu GPS thành công!');
 
-    // Close any replace modal
     const repModal = document.getElementById('replace-tag-confirm-modal');
     if (repModal) repModal.style.display = 'none';
 
-    // Update URL in browser history to reflect bound public route
     const boundUid = (data.plant && data.plant.nfc_uid) || nfcUid;
     const cleanRawUid = boundUid.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
     try {
@@ -370,11 +358,9 @@ async function submitFieldBinding(allowReplace = false) {
       console.warn('Could not update browser history state:', histErr);
     }
 
-    // Hide binding view
     document.getElementById('field-binding-view').style.display = 'none';
     currentPlantData = data.plant;
 
-    // Open dedicated NFC Write Modal if Web NFC is supported, otherwise render plant directly
     if ('NDEFReader' in window) {
       await openNfcWriteModal(data.plant, true);
     } else {
@@ -392,10 +378,6 @@ async function submitFieldBinding(allowReplace = false) {
     if (window.lucide) window.lucide.createIcons();
   }
 }
-
-// ═════════════════════════════════════════════════════════════════════════════
-// ─── INTERACTIVE WEB NFC DIRECT WRITE MODAL MODULE ───────────────────────────
-// ═════════════════════════════════════════════════════════════════════════════
 
 let _nfcWriteAbortController = null;
 let _pendingNfcWritePlant = null;
@@ -426,7 +408,6 @@ async function openNfcWriteModal(plant, isAutoFlow = false) {
   const subtitleEl = document.getElementById('nfc-write-modal-subtitle');
   if (subtitleEl) subtitleEl.textContent = isAutoFlow ? 'Bước cuối: Nạp link trực tiếp vào chip NFC' : 'Ghi đè đường dẫn mở thẳng vào chip NFC';
 
-  // Reset visual state to waiting
   const titleEl = document.getElementById('nfc-write-status-title');
   if (titleEl) titleEl.textContent = 'HÃY CHẠM MẶT SAU ĐIỆN THOẠI VÀO THẺ';
   const descEl = document.getElementById('nfc-write-status-desc');
@@ -466,7 +447,6 @@ async function startNfcDirectWriteSession() {
     return;
   }
 
-  // Cancel any existing session
   if (_nfcWriteAbortController) {
     try { _nfcWriteAbortController.abort(); } catch(_) {}
   }
@@ -496,7 +476,6 @@ async function startNfcDirectWriteSession() {
       records: [{ recordType: 'url', data: directUrl }]
     }, { signal: _nfcWriteAbortController.signal });
 
-    // Success!
     if (navigator.vibrate) {
       try { navigator.vibrate([150, 50, 150]); } catch(_) {}
     }
@@ -556,14 +535,11 @@ function cancelNfcDirectWriteSession() {
   }
 }
 
-// ─── Manual Trigger from Plant Profile ──────────────────────────────
 async function writePlantUrlToNfcChip(plant) {
   if (!plant) plant = currentPlantData;
   if (!plant) return;
   await openNfcWriteModal(plant, false);
 }
-
-// ─── Modal Functions: Replace & Revoke Old NFC Tag ───
 
 function openReplaceConfirmModal(conflictData) {
   window.pendingConflictData = conflictData;
@@ -601,10 +577,6 @@ function cancelReplaceAndPickAnother() {
   }
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
-// ─── SMART FARM GATEWAY & WEB NFC LISTENER MODULE (/farmId/public) ───────────
-// ═════════════════════════════════════════════════════════════════════════════
-
 let _currentFarmPortalData = null;
 let _currentGatewayTab = 'all';
 let _gatewayNdefReader = null;
@@ -624,7 +596,6 @@ async function loadFarmPortal(farmId) {
     const farm = data.farm || {};
     document.title = `${farm.name || 'Trang Trại'} — Cổng Nông Trại Thông Minh (Tanbao Agtech)`;
 
-    // Populate Farm Hero
     const nameEl = document.getElementById('gateway-farm-name');
     if (nameEl) nameEl.textContent = farm.name || `Trang trại #${farmId}`;
 
@@ -651,7 +622,6 @@ async function loadFarmPortal(farmId) {
       }
     }
 
-    // Stats
     const totalEl = document.getElementById('gateway-stat-total');
     if (totalEl) totalEl.textContent = farm.total_plants || 0;
     const assignedEl = document.getElementById('gateway-stat-assigned');
@@ -659,7 +629,6 @@ async function loadFarmPortal(farmId) {
     const unassignedEl = document.getElementById('gateway-stat-unassigned');
     if (unassignedEl) unassignedEl.textContent = farm.unassigned_count || 0;
 
-    // Tabs count
     const tabAll = document.getElementById('tab-count-all');
     if (tabAll) tabAll.textContent = farm.total_plants || 0;
     const tabAssigned = document.getElementById('tab-count-assigned');
@@ -667,16 +636,12 @@ async function loadFarmPortal(farmId) {
     const tabUnassigned = document.getElementById('tab-count-unassigned');
     if (tabUnassigned) tabUnassigned.textContent = farm.unassigned_count || 0;
 
-    // Staff Area
     renderGatewayStaffArea(farmId, farm);
 
-    // Render tree grid
     renderGatewayTreesGrid(_allGatewayPlants);
 
-    // Render farm supplies & investment section
     renderGatewaySupplies(data.supplies || [], data.total_investment || 0);
 
-    // Hide loader, show gateway
     document.getElementById('loader').style.display = 'none';
     document.getElementById('error-view').style.display = 'none';
     document.getElementById('auth-gate-view').style.display = 'none';
@@ -686,7 +651,6 @@ async function loadFarmPortal(farmId) {
 
     if (window.lucide) window.lucide.createIcons();
 
-    // Auto-activate Web NFC listener on supported mobile browsers
     autoStartGatewayWebNfc(farmId);
   } catch (err) {
     document.getElementById('loader').style.display = 'none';
@@ -743,13 +707,13 @@ function renderGatewayStaffArea(farmId, farm) {
 function openGatewayLoginModal() {
   const farmId = slugInfo.farmId;
   const farm = _currentFarmPortalData?.farm || {};
-  window.pendingBindingFarm = { 
-    farmId, 
-    farmName: farm.name, 
-    pucCode: farm.puc_code, 
-    nfcUid: null, 
-    farmOwnerUserId: farm.user_id, 
-    userId: farm.user_id 
+  window.pendingBindingFarm = {
+    farmId,
+    farmName: farm.name,
+    pucCode: farm.puc_code,
+    nfcUid: null,
+    farmOwnerUserId: farm.user_id,
+    userId: farm.user_id
   };
   document.getElementById('farm-gateway-view').style.display = 'none';
   document.getElementById('auth-gate-view').style.display = 'block';
@@ -805,7 +769,7 @@ async function triggerGatewayWebNfc() {
   try {
     _gatewayNdefReader = new NDEFReader();
     await _gatewayNdefReader.scan();
-    
+
     showPublicToast('Hãy chạm mặt sau điện thoại vào thẻ NFC trên cây ngay...', 'info');
     const statusText = document.getElementById('gateway-nfc-status-text');
     if (statusText) statusText.innerHTML = '<i data-lucide="radio" class="lucide-spin"></i> Đang lắng nghe chạm thẻ NFC trên cây...';
@@ -835,7 +799,6 @@ async function handleGatewayNfcDetected(farmId, cleanUid) {
     }
 
     if (data.assigned && data.plant) {
-      // Switch directly to plant view
       currentPlantData = data.plant;
       try {
         history.replaceState({}, '', `/${data.farm_id || farmId}/public/${encodeURIComponent(data.plant.nfc_uid || cleanUid)}`);
@@ -849,7 +812,6 @@ async function handleGatewayNfcDetected(farmId, cleanUid) {
       return;
     }
 
-    // Unassigned Tag:
     const { user } = getStoredAuth();
     const isAuthorized = user && userHasFarmAccess(user, farmId, data);
 
@@ -860,18 +822,17 @@ async function handleGatewayNfcDetected(farmId, cleanUid) {
       if (data.in_inventory === false) {
         showPublicToast(data.inventory_warning || `Thẻ NFC [${cleanUid}] chưa được nhập kho trang trại.`, 'warning');
       }
-      // Prompt staff login
       const promptMsg = data.in_inventory === false
         ? `[Cảnh báo] Đã nhận diện thẻ NFC [${cleanUid}] (CHƯA NHẬP KHO)!\n\nNếu bạn là Quản trị viên / Kỹ thuật viên, bạn có muốn Đăng nhập để kiểm tra không?`
         : `[Định danh] Đã nhận diện thẻ NFC [${cleanUid}] hợp lệ (chưa gán cây)!\n\nNếu bạn là Kỹ thuật viên / Chủ vườn, bạn có muốn Đăng nhập ngay để gán thẻ này vào cây và lưu GPS không?`;
 
       if (confirm(promptMsg)) {
-        window.pendingBindingFarm = { 
-          farmId, 
-          farmName: data.farm_name, 
-          pucCode: data.puc_code, 
-          nfcUid: cleanUid, 
-          inInventory: data.in_inventory, 
+        window.pendingBindingFarm = {
+          farmId,
+          farmName: data.farm_name,
+          pucCode: data.puc_code,
+          nfcUid: cleanUid,
+          inInventory: data.in_inventory,
           inventoryWarning: data.inventory_warning,
           farmOwnerUserId: data.farm_user_id || data.farm_owner_user_id || data.user_id,
           userId: data.farm_user_id || data.farm_owner_user_id || data.user_id
@@ -932,8 +893,8 @@ function renderGatewayTreesGrid(plants) {
       ? `<span style="background:#ecfdf5; color:#047857; font-size:11px; font-weight:800; padding:2px 8px; border-radius:100px; border:1px solid #a7f3d0; display:inline-flex; align-items:center; gap:3px;"><i data-lucide="check" class="lucide-sm"></i> Đã gắn thẻ</span>`
       : `<span style="background:#f1f5f9; color:#64748b; font-size:11px; font-weight:700; padding:2px 8px; border-radius:100px; border:1px solid #cbd5e1;">⚪ Chưa gắn thẻ</span>`;
 
-    const locLabel = p.location && p.location !== 'Vườn chính' && !p.location.includes('canh tác nông nghiệp') 
-      ? esc(p.location) 
+    const locLabel = p.location && p.location !== 'Vườn chính' && !p.location.includes('canh tác nông nghiệp')
+      ? esc(p.location)
       : (hasGps ? `GPS: ${Number(p.latitude).toFixed(6)}, ${Number(p.longitude).toFixed(6)}` : '');
 
     return `
@@ -1004,7 +965,6 @@ function filterGatewayTrees() {
 
 async function onGatewayTreeClick(plantId, treeCode, nfcUid, isAssigned) {
   if (isAssigned) {
-    // Open plant public profile
     document.getElementById('loader').style.display = 'block';
     document.getElementById('farm-gateway-view').style.display = 'none';
     try {
@@ -1023,7 +983,6 @@ async function onGatewayTreeClick(plantId, treeCode, nfcUid, isAssigned) {
       showPublicToast('Lỗi xem cây: ' + err.message);
     }
   } else {
-    // Unassigned tree
     const { user } = getStoredAuth();
     const farmId = slugInfo.farmId;
     const isAuthorized = user && userHasFarmAccess(user, farmId);
@@ -1036,4 +995,3 @@ async function onGatewayTreeClick(plantId, treeCode, nfcUid, isAssigned) {
     }
   }
 }
-

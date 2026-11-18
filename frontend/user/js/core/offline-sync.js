@@ -1,9 +1,3 @@
-/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/* ═══════════════════════════════════════════════════════════════
-   Plant Book – User Portal
-   core/offline-sync.js — Autonomous Offline Synchronization Engine
-   ═══════════════════════════════════════════════════════════════ */
-
 import { api, token } from './api.js';
 import { toast } from './utils.js';
 import {
@@ -16,9 +10,6 @@ import {
 
 let isSyncing = false;
 
-/**
- * Update the Topbar offline/online sync badge UI
- */
 export async function updateOfflineSyncBadge() {
   const badge = document.getElementById('offline-sync-badge');
   const textEl = document.getElementById('sync-status-text');
@@ -65,10 +56,6 @@ export async function updateOfflineSyncBadge() {
   }
 }
 
-/**
- * Trigger synchronization of all pending offline care logs and field mutations
- * @param {boolean} isManual - Whether invoked manually by user click
- */
 export async function triggerOfflineSync(isManual = false) {
   if (isSyncing) return;
   if (!token) return;
@@ -100,7 +87,6 @@ export async function triggerOfflineSync(isManual = false) {
   let successCount = 0;
   let failCount = 0;
 
-  // 1. Try High-Speed Single-Request Batch Sync first
   let batchSucceeded = false;
   try {
     const batchRes = await api('/plants/offline-batch-sync', {
@@ -125,7 +111,6 @@ export async function triggerOfflineSync(isManual = false) {
     console.warn('[OfflineSync] Batch sync fallback to individual item sync:', batchErr.message);
   }
 
-  // 2. Fallback: Individual item sync if batch endpoint was unavailable
   if (!batchSucceeded) {
     for (const item of pendingLogs) {
       try {
@@ -214,7 +199,6 @@ export async function triggerOfflineSync(isManual = false) {
   }
 }
 
-// ── Event Listeners for Autonomous Sync ──
 window.addEventListener('online', () => {
   console.log('[Network] Connection restored. Triggering offline sync...');
   updateOfflineSyncBadge();
@@ -232,7 +216,6 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-// Auto-check on initialization
 setTimeout(() => {
   updateOfflineSyncBadge();
   if (navigator.onLine) {

@@ -1,10 +1,3 @@
-/**
- * ==========================================================================
- * PLANT BOOK AGTECH -- ENTERPRISE INTERNATIONAL QC & QA AUDIT ENGINE
- * Standards: ISO/IEC 25010 | ISO/IEC/IEEE 29119 | OWASP ASVS v4.0 | VietGAP / GlobalGAP
- * ==========================================================================
- */
-
 const fs = require('fs');
 const path = require('path');
 
@@ -35,7 +28,6 @@ function runEnterpriseQCAudit() {
   console.log('\x1b[36m   Standards: ISO/IEC 25010 | ISO/IEC 29119 | OWASP Top 10 | VietGAP / GlobalGAP\x1b[0m');
   console.log('\x1b[36m==========================================================================\n\x1b[0m');
 
-  // ─── SUITE 1: DOM & MODAL ARCHITECTURE (ISO 25010 Reliability) ─────────
   console.log('\x1b[1m-- 1. HTML5 DOM INTEGRITY AND MODAL ARCHITECTURE --\x1b[0m');
   const userHtmlPath = path.join(ROOT_DIR, 'frontend/user/index.html');
   const adminHtmlPath = path.join(ROOT_DIR, 'frontend/admin/index.html');
@@ -69,7 +61,6 @@ function runEnterpriseQCAudit() {
     recordTest('Admin Modals', 'Admin Agri-ERP Supplies Modal (#supply-modal)', aHtml.includes('id="supply-modal"'));
   }
 
-  // ─── SUITE 2: JAVASCRIPT MODULE INTEGRITY (ISO/IEC 29119) ──────────────
   console.log('\n\x1b[1m-- 2. FRONTEND JAVASCRIPT MODULE INTEGRITY AND SYNTAX --\x1b[0m');
   function scanJsFiles(dir) {
     let files = [];
@@ -97,7 +88,6 @@ function runEnterpriseQCAudit() {
   }
   recordTest('JS Syntax', `Validated ${allJs.length} Frontend JS Modules for Balanced Syntax`, syntaxOk);
 
-  // ES Module Import-Export Cross-Validation Check
   const entryFiles = [
     path.join(ROOT_DIR, 'frontend/user/js/app.js'),
     path.join(ROOT_DIR, 'frontend/admin/js/app.js')
@@ -129,7 +119,6 @@ function runEnterpriseQCAudit() {
   }
   recordTest('ES Module Validation', 'All Imported Symbols Cross-Validated Against Target Module Exports', importExportErrors.length === 0, importExportErrors.join('; '));
 
-  // Plants Module Verification
   const userPlantsPath = path.join(ROOT_DIR, 'frontend/user/js/modules/plants.js');
   if (fs.existsSync(userPlantsPath)) {
     const pJs = fs.readFileSync(userPlantsPath, 'utf8');
@@ -142,7 +131,6 @@ function runEnterpriseQCAudit() {
     recordTest('Feature Integrity', 'Real-Time Open-Meteo Satellite Forecast (open-meteo.com)', pJs.includes('open-meteo.com'));
   }
 
-  // App.js Module Binding Verification
   const userAppPath = path.join(ROOT_DIR, 'frontend/user/js/app.js');
   if (fs.existsSync(userAppPath)) {
     const aJs = fs.readFileSync(userAppPath, 'utf8');
@@ -152,7 +140,6 @@ function runEnterpriseQCAudit() {
     recordTest('Module Exports', 'App.js exports updateMatrixRow on window', aJs.includes('window.updateMatrixRow = updateMatrixRow'));
   }
 
-  // Map Module Verification
   const userMapPath = path.join(ROOT_DIR, 'frontend/user/js/modules/map.js');
   if (fs.existsSync(userMapPath)) {
     const mMap = fs.readFileSync(userMapPath, 'utf8');
@@ -161,7 +148,6 @@ function runEnterpriseQCAudit() {
     recordTest('GIS Map Navigation', 'Non-Overwriting Internal Tree Profile View (viewInternalPlantProfile)', mMap.includes('function viewInternalPlantProfile'));
   }
 
-  // ─── SUITE 3: BACKEND REST API & OWASP ASVS v4.0 (ISO 27001) ───────────
   console.log('\n\x1b[1m-- 3. BACKEND REST API AND OWASP SECURITY AUDIT --\x1b[0m');
   const routeFiles = fs.readdirSync(path.join(ROOT_DIR, 'backend/routes')).filter(f => f.endsWith('.js'));
   let totalEndpoints = 0;
@@ -199,7 +185,6 @@ function runEnterpriseQCAudit() {
     recordTest('NFC Mount', 'NFC Route Prefix Mounted (app.use(\'/api/nfc\', ...))', srv.includes('/api/nfc'));
   }
 
-  // ─── SUITE 4: VIETGAP / GLOBALGAP AGRONOMIC COMPLIANCE ──────────────────
   console.log('\n\x1b[1m-- 4. VIETGAP / GLOBALGAP COMPLIANCE AND FARMING LOGS --\x1b[0m');
   const careModalHtml = path.join(ROOT_DIR, 'frontend/user/src/modals/care-modal.html');
   if (fs.existsSync(careModalHtml)) {
@@ -222,7 +207,6 @@ function runEnterpriseQCAudit() {
     recordTest('Data Governance', 'Selective Soft-Delete Log Engine with Audit Trail', lJs.includes('selectiveDelete') || lJs.includes('executeSelectiveDelete'));
   }
 
-  // ─── SUITE 5: AGRI-ERP SUPPLIES & INVESTMENT ACCOUNTING ─────────────────
   console.log('\n\x1b[1m-- 5. AGRI-ERP SUPPLIES AND INVESTMENT COSTING --\x1b[0m');
   const suppliesRoutePath = path.join(ROOT_DIR, 'backend/routes/supplies.js');
   if (fs.existsSync(suppliesRoutePath)) {
@@ -231,7 +215,6 @@ function runEnterpriseQCAudit() {
     recordTest('Agri-ERP Costing', 'Total Farm Investment Aggregation (total_spent / total_investment)', sRoute.includes('total_spent') || sRoute.includes('total_cost'));
   }
 
-  // ─── SUITE 6: PWA, OFFLINE ENGINE & SATELLITE IOT ───────────────────────
   console.log('\n\x1b[1m-- 6. PERFORMANCE, OFFLINE DB AND PWA ENGINE --\x1b[0m');
   const swPath = path.join(ROOT_DIR, 'frontend/user/sw.js');
   if (fs.existsSync(swPath)) {
@@ -248,7 +231,6 @@ function runEnterpriseQCAudit() {
   const singleflightPath = path.join(ROOT_DIR, 'backend/services/singleflight.js');
   recordTest('Performance', 'Singleflight Promise Deduplication Engine Present', fs.existsSync(singleflightPath));
 
-  // ─── SUITE 7: UI/UX & MOBILE ERGONOMICS (WCAG 2.1 AA) ────────────────────
   console.log('\n\x1b[1m-- 7. UI/UX AND MOBILE INTERACTION INTEGRITY --\x1b[0m');
   const layoutCssPath = path.join(ROOT_DIR, 'frontend/user/css/user-layout.css');
   if (fs.existsSync(layoutCssPath)) {
@@ -257,7 +239,6 @@ function runEnterpriseQCAudit() {
     recordTest('Touch Ergonomics', 'Touch Action & Non-Select Drag Rules for Mobile', css.includes('touch-action') || css.includes('user-select'));
   }
 
-  // ─── FINAL AUDIT SUMMARY REPORT ──────────────────────────────────────────
   console.log('\n\x1b[36m==========================================================================\x1b[0m');
   console.log('\x1b[36mINTERNATIONAL QUALITY ASSURANCE (QA) & QC AUDIT SUMMARY REPORT\x1b[0m');
   console.log('\x1b[36m==========================================================================\x1b[0m');

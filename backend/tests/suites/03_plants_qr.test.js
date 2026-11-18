@@ -65,10 +65,8 @@ describe('Suite 3: Plants Registry, Health Status & Public QR Code Generation', 
              nLng >= -180 && nLng <= 180;
     };
 
-    // Vietnam coordinates
     expect(isValidGPS(11.54321, 107.12345)).toBe(true);
-    expect(isValidGPS(12.6865, 108.0378)).toBe(true); // Dak Lak
-    // Invalid coordinates
+    expect(isValidGPS(12.6865, 108.0378)).toBe(true);
     expect(isValidGPS(191.0, 107.0)).toBe(false);
     expect(isValidGPS(11.0, 200.0)).toBe(false);
     expect(isValidGPS('abc', 'def')).toBe(false);
@@ -85,7 +83,6 @@ describe('Suite 3: Plants Registry, Health Status & Public QR Code Generation', 
           user.farm_id === plant.farm_id
         );
       }
-      // 'all' scope (PRO or Normal farmer)
       return (
         farm.user_id === user.id ||
         plant.created_by === user.id ||
@@ -151,14 +148,12 @@ describe('Suite 3: Plants Registry, Health Status & Public QR Code Generation', 
       return false;
     };
 
-    // Valid Full NFC UIDs (should trigger GPS sync)
     expect(isFullNfcUid('04:20:CF:5A:25:20:91')).toBe(true);
     expect(isFullNfcUid('04%3A20%3ACF%3A5A%3A25%3A20%3A91')).toBe(true);
     expect(isFullNfcUid('04-20-CF-5A-25-20-91')).toBe(true);
     expect(isFullNfcUid('0420CF5A252091')).toBe(true);
-    expect(isFullNfcUid('04:12:34:56')).toBe(true); // 4-byte UID
+    expect(isFullNfcUid('04:12:34:56')).toBe(true);
 
-    // Incomplete or non-NFC parameters (must NOT trigger GPS sync)
     expect(isFullNfcUid('04')).toBe(false);
     expect(isFullNfcUid('26')).toBe(false);
     expect(isFullNfcUid('sau-rieng-01')).toBe(false);
@@ -190,17 +185,14 @@ describe('Suite 3: Plants Registry, Health Status & Public QR Code Generation', 
       };
     };
 
-    // URL with Full NFC UID: https://plant-book.onrender.com/0/6/26/04%3A20%3ACF%3A5A%3A25%3A20%3A91
     const nfcUrl = parseAndCheckGpsSync('/0/6/26/04%3A20%3ACF%3A5A%3A25%3A20%3A91');
     expect(nfcUrl.nfcUid).toBe('04:20:CF:5A:25:20:91');
     expect(nfcUrl.shouldSyncGps).toBe(true);
 
-    // URL with incomplete prefix '04': https://plant-book.onrender.com/0/6/26/04
     const nonNfcUrl = parseAndCheckGpsSync('/0/6/26/04');
     expect(nonNfcUrl.nfcUid).toBe('04');
     expect(nonNfcUrl.shouldSyncGps).toBe(false);
 
-    // URL with farm and plant ID only: /6/26
     const standardUrl = parseAndCheckGpsSync('/6/26');
     expect(standardUrl.shouldSyncGps).toBe(false);
   });
@@ -228,7 +220,7 @@ describe('Suite 3: Plants Registry, Health Status & Public QR Code Generation', 
   it('3.11 Should validate NFC Inventory batch insertion, duplicate detection & state management', () => {
     class MockNfcInventory {
       constructor() {
-        this.store = new Map(); // uid -> { id, farm_id, status, plant_id }
+        this.store = new Map();
       }
       addBatch(farmId, uids) {
         const added = [];
@@ -270,13 +262,11 @@ describe('Suite 3: Plants Registry, Health Status & Public QR Code Generation', 
     expect(batch1.added.length).toBe(3);
     expect(batch1.duplicates.length).toBe(0);
 
-    // Duplicate tap rejection
     const batch2 = inv.addBatch(5, ['04:20:CF:5A:25:20:91', '04:20:CF:5A:25:20:99']);
     expect(batch2.added.length).toBe(1);
     expect(batch2.duplicates.length).toBe(1);
     expect(batch2.duplicates[0]).toBe('04:20:CF:5A:25:20:91');
 
-    // Assign tag
     inv.assignTag('04:20:CF:5A:25:20:91', 101);
     const stats = inv.getStats(5);
     expect(stats.total).toBe(4);
@@ -307,7 +297,6 @@ describe('Suite 3: Plants Registry, Health Status & Public QR Code Generation', 
   });
 
   it('3.13 Should enforce 1-Tree-1-Tag lifecycle: inventory check, duplicate prevention & old tag unassignment', () => {
-    // Mock Inventory & Plants Store
     const inventory = [
       { id: 1, farm_id: 6, nfc_uid: '04:A1:B2:C3:D4:E5:01', status: 'unassigned', plant_id: null },
       { id: 2, farm_id: 6, nfc_uid: '04:A1:B2:C3:D4:E5:02', status: 'unassigned', plant_id: null },
@@ -330,15 +319,12 @@ describe('Suite 3: Plants Registry, Health Status & Public QR Code Generation', 
       if (!targetPlant) throw new Error('Cây không tồn tại.');
 
       if (cleanUid) {
-        // 1. Inventory check
         const inInv = inventory.find(i => i.farm_id === farmId && i.nfc_uid === cleanUid);
         if (!inInv) throw new Error('Mã thẻ chưa được khai báo nhập kho cho trang trại này.');
 
-        // 2. Duplicate across trees check
         const conflict = plants.find(p => p.nfc_uid === cleanUid && p.id !== plantId);
         if (conflict) throw new Error(`Mã thẻ ${cleanUid} đã được gắn cho cây #${conflict.tree_code || conflict.id}.`);
 
-        // 3. Unassign old tag if replacing
         if (targetPlant.nfc_uid && targetPlant.nfc_uid !== cleanUid) {
           const oldInv = inventory.find(i => i.nfc_uid === targetPlant.nfc_uid);
           if (oldInv) {
@@ -347,13 +333,11 @@ describe('Suite 3: Plants Registry, Health Status & Public QR Code Generation', 
           }
         }
 
-        // 4. Update plant & inventory
         targetPlant.nfc_uid = cleanUid;
         targetPlant.public_url = `https://plant-book.onrender.com/${farmId}/${plantId}/${encodeURIComponent(cleanUid)}`;
         inInv.status = 'assigned';
         inInv.plant_id = plantId;
       } else {
-        // Deactivate
         if (targetPlant.nfc_uid) {
           const oldInv = inventory.find(i => i.nfc_uid === targetPlant.nfc_uid);
           if (oldInv) {
@@ -369,30 +353,24 @@ describe('Suite 3: Plants Registry, Health Status & Public QR Code Generation', 
       return targetPlant;
     };
 
-    // 1. Reject undeclared tag
     expect(() => assignNfcToPlant(6, 101, '04:99:99:99:99:99:99')).toThrow('Mã thẻ chưa được khai báo nhập kho cho trang trại này.');
 
-    // 2. Assign valid tag #1 to tree 101
     assignNfcToPlant(6, 101, '04:A1:B2:C3:D4:E5:01');
     expect(plants[0].nfc_uid).toBe('04:A1:B2:C3:D4:E5:01');
     expect(inventory[0].status).toBe('assigned');
     expect(inventory[0].plant_id).toBe(101);
 
-    // 3. Duplicate assignment to tree 102 rejected
     expect(() => assignNfcToPlant(6, 102, '04:A1:B2:C3:D4:E5:01')).toThrow('Mã thẻ 04:A1:B2:C3:D4:E5:01 đã được gắn cho cây #SR-01.');
 
-    // 4. Replace tree 101 tag with tag #2
     assignNfcToPlant(6, 101, '04:A1:B2:C3:D4:E5:02');
     expect(plants[0].nfc_uid).toBe('04:A1:B2:C3:D4:E5:02');
-    expect(inventory[0].status).toBe('unassigned'); // Old tag unassigned
+    expect(inventory[0].status).toBe('unassigned');
     expect(inventory[0].plant_id).toBe(null);
-    expect(inventory[1].status).toBe('assigned');   // New tag assigned
+    expect(inventory[1].status).toBe('assigned');
     expect(inventory[1].plant_id).toBe(101);
 
-    // 5. Cultivation logs remain 100% intact
     expect(logs.filter(l => l.plant_id === 101).length).toBe(2);
 
-    // 6. Deactivating tag clears GPS coordinates
     plants[0].latitude = 11.54321;
     plants[0].longitude = 107.12345;
     assignNfcToPlant(6, 101, null);
@@ -407,7 +385,7 @@ describe('Suite 3: Plants Registry, Health Status & Public QR Code Generation', 
       id: 101,
       farm_id: 6,
       tree_code: 'SR-01',
-      nfc_uid: '04:A1:B2:C3:D4:E5:02', // Current active tag
+      nfc_uid: '04:A1:B2:C3:D4:E5:02',
       is_public: true
     };
 
@@ -424,12 +402,10 @@ describe('Suite 3: Plants Registry, Health Status & Public QR Code Generation', 
       return { status: 200, access: 'allowed', plant };
     };
 
-    // Current tag access -> 200 Allowed
     const currentAccess = verifyPublicTagAccess('04:A1:B2:C3:D4:E5:02', activePlant);
     expect(currentAccess.status).toBe(200);
     expect(currentAccess.access).toBe('allowed');
 
-    // Old revoked tag access -> 410 Revoked & Frozen
     const oldAccess = verifyPublicTagAccess('04:A1:B2:C3:D4:E5:01', activePlant);
     expect(oldAccess.status).toBe(410);
     expect(oldAccess.access).toBe('revoked');
@@ -462,7 +438,6 @@ describe('Suite 3: Plants Registry, Health Status & Public QR Code Generation', 
       return trees;
     };
 
-    // Case 1: Numeric range with padding 01 -> 50
     const batch1 = generateTreeRange({ prefix: 'SR-', startNum: '01', endNum: '50', padZeros: true, plantType: 'Sầu riêng', farmId: 16 });
     expect(batch1.length).toBe(50);
     expect(batch1[0].tree_code).toBe('SR-01');
@@ -470,15 +445,12 @@ describe('Suite 3: Plants Registry, Health Status & Public QR Code Generation', 
     expect(batch1[0].public_slug).toBe('16_SR-01');
     expect(batch1[49].public_slug).toBe('16_SR-50');
 
-    // Case 2: Plain numbers 1 -> 10 without prefix
     const batch2 = generateTreeRange({ prefix: '', startNum: 1, endNum: 10, padZeros: false, plantType: 'Bưởi da xanh', farmId: 5 });
     expect(batch2.length).toBe(10);
     expect(batch2[0].tree_code).toBe('1');
     expect(batch2[9].tree_code).toBe('10');
 
-    // Case 3: Invalid range rejection
     expect(() => generateTreeRange({ startNum: 50, endNum: 10, plantType: 'Xoài' })).toThrow('Dải số thứ tự không hợp lệ.');
   });
 
 });
-

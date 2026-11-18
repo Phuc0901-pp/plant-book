@@ -1,4 +1,3 @@
-// Force IPv4 first — required for Render free tier (no outbound IPv6)
 const dns = require('dns');
 dns.setDefaultResultOrder('ipv4first');
 
@@ -16,7 +15,6 @@ const app = express();
 app.set('trust proxy', true);
 const PORT = process.env.PORT || 3000;
 
-// Automatically assemble modular HTML components on server startup
 try {
   const { buildAll } = require('./scripts/build-html');
   buildAll();
@@ -24,24 +22,20 @@ try {
   console.warn('[server] Warning running HTML component builder:', e.message);
 }
 
-// ─── Middleware ───────────────────────────────────────────────────
 const { securityHeaders, buildCorsOptions } = require('./middleware/securityHeaders');
 app.disable('x-powered-by');
 app.use(securityHeaders);
-app.use(compression()); // Gzip compression: giảm 70%-85% kích thước payload truyền tải
+app.use(compression());
 app.use(cors(buildCorsOptions()));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Serve favicon
 app.get('/favicon.ico', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/assets/favicon.ico'));
 });
 
-// Serve user portal images across all path prefixes (/user/img, /img, /usr-*/img)
 app.use(['/user/img', '/img', '/usr-*/img', '/usr-*/*/img'], express.static(path.join(__dirname, '../frontend/user/img')));
 
-// Serve frontend static files with smart ETag revalidation (saves 3G/4G bandwidth while guaranteeing fresh updates)
 app.use(express.static(path.join(__dirname, '../frontend'), {
   etag: true,
   lastModified: true,
@@ -75,7 +69,6 @@ app.use(express.static(path.join(__dirname, '../frontend/public'), {
   }
 }));
 
-// Serve Mobile App Deployment Artifacts (Android APK & iOS IPA bundles)
 app.use(['/build_output', '/'], express.static(path.join(__dirname, '../build_output'), {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.apk')) {
@@ -86,7 +79,6 @@ app.use(['/build_output', '/'], express.static(path.join(__dirname, '../build_ou
   }
 }));
 
-// ─── Health Check Endpoints (Exempt from Rate Limiting & Anti-Scraper) ──
 const { getAppVersion } = require('./config/appConfig');
 app.get(['/health', '/healthz', '/api/health'], (req, res) => {
   res.status(200).json({ status: 'ok', time: new Date().toISOString(), app: `Plant Book API ${getAppVersion()}` });
@@ -95,12 +87,10 @@ app.get(['/health', '/healthz', '/api/health'], (req, res) => {
 const { antiScraper, apiLimiter } = require('./middleware/antiScraper');
 const { userRateLimiter } = require('./middleware/userRateLimiter');
 
-// ─── API Routes (Protected by anti-scraper, global IP limiter & per-user 10 req/s limiter) ──
 app.use('/api', antiScraper);
 app.use('/api', apiLimiter);
 app.use('/api', userRateLimiter);
 
-// ─── Gallagher 8.30 HATEOAS Root Discovery Endpoint (GET /api) ──
 app.get('/api', (req, res) => {
   const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
   const host = req.get('host');
@@ -174,7 +164,6 @@ app.use('/api/ai', require('./routes/ai'));
 app.use('/api/diagnostics', require('./routes/diagnostics'));
 app.use('/api', require('./middleware/errorHandler'));
 
-// ─── SPA fallback ────────────────────────────────────────────────
 app.get([
   '/user',
   '/user/*',
@@ -210,9 +199,9 @@ app.get('/nfc/:uid', async (req, res) => {
   try {
     const uid = req.params.uid.trim();
     const result = await pool.query(
-      `SELECT p.id, p.farm_id, p.nfc_uid, f.user_id 
-       FROM plants p 
-       LEFT JOIN farms f ON f.id = p.farm_id 
+      `SELECT p.id, p.farm_id, p.nfc_uid, f.user_id
+       FROM plants p
+       LEFT JOIN farms f ON f.id = p.farm_id
        WHERE UPPER(p.nfc_uid) = UPPER($1) OR p.public_slug = $1 OR p.id::text = $1`,
       [uid]
     );
@@ -231,18 +220,15 @@ app.get('/plant/:slug', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/public/plant.html'));
 });
 
-// ─── Smart NFC Gateway & Lead Onboarding Route (/sub) ─────────────────────
 app.get(['/sub', '/sub/*', '/sub.html'], (req, res, next) => {
   if (req.path.includes('.') && !req.path.endsWith('.html')) return next();
   res.sendFile(path.join(__dirname, '../frontend/public/sub.html'));
 });
 
-// ─── Direct NFC Public & Farm Gateway Routes: /:farmId/public or /:farmId/public/:nfcUid ─────────────────────
 app.get(['/:farmId/public', '/:farmId/public/', '/:farmId/public/:nfcUid'], (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/public/plant.html'));
 });
 
-// ─── Hierarchical Public Plant Route: /:farmId/:plantId/:nfcUid? (or legacy /:userId/:farmId/:plantId/:nfcUid?) ───
 app.get(['/:farmId/:plantId/:nfcUid?', '/:userId/:farmId/:plantId/:nfcUid?'], (req, res, next) => {
   const reserved = ['admin', 'user', 'api', 'plant', 'nfc', 'assets', 'public', 'favicon.ico'];
   const fId = req.params.farmId || '';
@@ -267,7 +253,6 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/admin/index.html'));
 });
 
-// ─── API 404 Handler & Global Error Middleware ──────────────────────
 app.use('/api', (req, res) => {
   res.status(404).json({ success: false, error: 'Endpoint API không tồn tại hoặc đã thay đổi.' });
 });
@@ -276,7 +261,7 @@ app.use((err, req, res, next) => {
   const isApi = req.originalUrl && req.originalUrl.startsWith('/api');
   const statusCode = err.status || err.statusCode || 500;
   console.error(`[Server Error] [${req.method}] ${req.originalUrl}:`, err.message || err);
-  
+
   if (isApi) {
     return res.status(statusCode).json({
       success: false,
@@ -287,10 +272,8 @@ app.use((err, req, res, next) => {
   return res.status(statusCode).send('<h3>500 - Lỗi hệ thống</h3><p>Vui lòng thử lại sau.</p>');
 });
 
-// ─── Start ────────────────────────────────────────────────────────
 async function start() {
   try {
-    // 1. Create HTTP Server wrapped around Express
     const server = http.createServer(app);
     const wss = new WebSocket.Server({ server });
     const clients = new Set();
@@ -325,11 +308,9 @@ async function start() {
       }
     };
 
-    // Store broadcast function globally and in app
     global.broadcastWS = broadcast;
     app.set('broadcast', broadcast);
 
-    // 2. Start listening on PORT immediately (Health Check responds in < 1s)
     server.listen(PORT, async () => {
       console.log('\n╔══════════════════════════════════════════════════════════════════╗');
       console.log('║        🌿 TÂN BẢO SÀI GÒN AGTECH - PLANT BOOK PLATFORM           ║');
@@ -339,7 +320,6 @@ async function start() {
       console.log(`📋 [Admin Portal]  Bảng điều khiển   : /admin`);
       console.log(`📱 [Smart Gateway] Cổng nạp thẻ NFC : /sub\n`);
 
-      // 3. Initialize DB & Storage in background (Non-blocking for Render Health Check)
       try {
         await initDB();
         await ensureBucket();
@@ -348,15 +328,14 @@ async function start() {
         console.error('[Database Warning] ⚠️ Lỗi khởi tạo DB/Storage:', dbErr.message);
       }
 
-      // Setup interval to mark users offline after 30 minutes of inactivity
       try {
         const pool = require('./config/db');
         setInterval(async () => {
           try {
             const res = await pool.query(`
-              UPDATE users 
-              SET is_online = false 
-              WHERE is_online = true 
+              UPDATE users
+              SET is_online = false
+              WHERE is_online = true
                 AND last_active_at < NOW() - INTERVAL '30 minutes'
               RETURNING id, email
             `);
@@ -367,8 +346,7 @@ async function start() {
                   INSERT INTO user_activities (user_id, activity_type, description)
                   VALUES ($1, 'Đăng xuất', 'Hệ thống tự động đăng xuất do không hoạt động (quá 30 phút)')
                 `, [u.id]);
-                
-                // Broadcast real-time status change
+
                 if (global.broadcastWS) {
                   global.broadcastWS('user_status_changed', { id: u.id, is_online: false, last_active_at: new Date() });
                 }
@@ -377,12 +355,11 @@ async function start() {
           } catch (err) {
             console.error('[Session Error] ⚠️ Lỗi dọn dẹp tài khoản không hoạt động:', err.message);
           }
-        }, 30 * 60 * 1000); // 30 minutes
+        }, 30 * 60 * 1000);
       } catch (poolErr) {
         console.error('[Session Timer Warning] ⚠️ Lỗi khởi tạo bộ hẹn giờ:', poolErr.message);
       }
 
-      // Auto Keep-Alive Self-Ping (Ngăn Render Free-tier tự động ngủ)
       const appUrl = process.env.RENDER_EXTERNAL_URL || process.env.APP_URL;
       if (appUrl) {
         const pingUrl = `${appUrl.replace(/\/$/, '')}/api/health`;
@@ -393,18 +370,16 @@ async function start() {
           }).on('error', (e) => {
             console.warn(`[Keep-Alive Warning] ⚠️ Không thể ping dịch vụ: ${e.message}`);
           });
-        }, 10 * 60 * 1000); // Mỗi 10 phút
+        }, 10 * 60 * 1000);
       }
     });
 
   } catch (err) {
     console.error('❌ Startup error:', err);
-    // Thay vì exit(1) gây chết vĩnh viễn, thử khởi động lại sau 5s
     setTimeout(start, 5000);
   }
 }
 
-// ─── Global Process Crash Guards ─────────────────────────────────
 process.on('unhandledRejection', (reason, promise) => {
   console.error('⚠️ [Process Guard] Unhandled Rejection at:', promise, 'reason:', reason);
 });

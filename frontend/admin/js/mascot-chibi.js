@@ -1,10 +1,3 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/**
- * admin/js/mascot-chibi.js - Pure Minimal 3D Anime Chibi Plant Mascot with Gemini AI Chatbot
- * 🔒 Ẩn hoàn toàn khi ở màn hình đăng nhập, chỉ hiển thị sau khi Admin đăng nhập thành công.
- * 🚀 NÂNG CẤP: Kéo thả di chuyển tự do (Draggable) trên mọi thiết bị (Desktop, Laptop, Tablet, Mobile)
- */
-
 let _isChatOpen = false;
 let _chatHistory = [];
 let _isAiResponding = false;
@@ -70,7 +63,6 @@ function _formatAdminAiChatHtml(rawText) {
       const trimmed = line.trim();
       if (!trimmed) continue;
 
-      // 1. KPI Pills Bar: [KPI: val1 | val2 | val3]
       const kpiMatch = trimmed.match(/^\[KPI:\s*(.+?)\]$/);
       if (kpiMatch) {
         const items = kpiMatch[1].split('|').map(s => s.trim()).filter(Boolean);
@@ -81,21 +73,18 @@ function _formatAdminAiChatHtml(rawText) {
         continue;
       }
 
-      // 2. Structured Row Card: • or - (remove redundant bullet)
       const bulletMatch = trimmed.match(/^[•\-]\s+(.*)$/);
       if (bulletMatch) {
         renderedLines.push(`<div style="background:#f8fafc; border:1px solid #e2e8f0; border-left:3px solid #10b981; border-radius:8px; padding:6px 10px; margin-top:5px; font-size:12.5px; line-height:1.45;">${formatInline(bulletMatch[1])}</div>`);
         continue;
       }
 
-      // 3. Structured Row Card: \d+\.\s (keep number)
       const numMatch = trimmed.match(/^(\d+\.\s+.*)$/);
       if (numMatch) {
         renderedLines.push(`<div style="background:#f8fafc; border:1px solid #e2e8f0; border-left:3px solid #10b981; border-radius:8px; padding:6px 10px; margin-top:5px; font-size:12.5px; line-height:1.45;">${formatInline(numMatch[1])}</div>`);
         continue;
       }
 
-      // 4. Title or regular text line
       renderedLines.push(`<div style="margin-bottom:4px; font-size:13px; line-height:1.5;">${formatInline(trimmed)}</div>`);
     }
 
@@ -119,16 +108,12 @@ function isAdminLoggedIn() {
   return true;
 }
 
-/**
- * Attach full Touch & Mouse Draggable capability to Admin mascot
- */
 function attachAdminMascotDraggable(container, storageKey) {
   let isDragging = false;
   let hasMoved = false;
   let startX = 0, startY = 0;
   let initialLeft = 0, initialTop = 0;
 
-  // Restore saved position if any
   try {
     const saved = localStorage.getItem(storageKey);
     if (saved) {
@@ -151,9 +136,9 @@ function attachAdminMascotDraggable(container, storageKey) {
 
   function onPointerDown(e) {
     if (
-      e.target.closest('#admin-ai-chat-box') || 
-      e.target.closest('input') || 
-      e.target.closest('button') || 
+      e.target.closest('#admin-ai-chat-box') ||
+      e.target.closest('input') ||
+      e.target.closest('button') ||
       e.target.closest('textarea')
     ) {
       return;
@@ -282,7 +267,6 @@ function _adjustPopupPlacement(popupEl, containerEl) {
     popupEl.style.left = 'auto';
   }
 
-  // Viewport Horizontal Boundary Clamp
   requestAnimationFrame(() => {
     const pRect = popupEl.getBoundingClientRect();
     if (pRect.left < 10) {
@@ -305,7 +289,6 @@ function initAdminChibiMascot() {
     attachAdminMascotDraggable(mascotContainer, ADMIN_MASCOT_POS_KEY);
   }
 
-  // Inject styles & animations
   if (!document.getElementById('admin-chibi-clean-style')) {
     const style = document.createElement('style');
     style.id = 'admin-chibi-clean-style';
@@ -374,7 +357,6 @@ function initAdminChibiMascot() {
     document.head.appendChild(style);
   }
 
-  // Watch for login / logout state changes to auto show/hide mascot
   const loginObserver = new MutationObserver(() => {
     renderAdminMascot();
   });
@@ -388,7 +370,7 @@ function initAdminChibiMascot() {
 
 function toggleAdminAiChat(e) {
   if (e) e.stopPropagation();
-  if (window.__adminMascotJustDragged) return; // Prevent open chat on drag drop
+  if (window.__adminMascotJustDragged) return;
   _isChatOpen = !_isChatOpen;
   renderAdminMascot();
   if (_isChatOpen) {
@@ -488,7 +470,6 @@ function renderAdminMascot() {
   const container = document.getElementById('admin-chibi-mascot-widget');
   if (!container) return;
 
-  // 🔒 Login Guard: Hide mascot if not logged in
   if (!isAdminLoggedIn()) {
     container.style.display = 'none';
     return;
@@ -499,7 +480,6 @@ function renderAdminMascot() {
   let innerHTML = '';
 
   if (_isChatOpen) {
-    // 💬 CHATBOX GEMINI AI DRAWER
     innerHTML = `
       <div id="admin-ai-chat-box" onclick="event.stopPropagation()" style="
         position: absolute;
@@ -601,7 +581,6 @@ function renderAdminMascot() {
       </div>
     `;
   } else {
-    // 🌿 ONLY RENDER CUTE 3D ANIME CHIBI MASCOT AT BASE ANCHOR
     innerHTML = `
       <div onclick="toggleAdminAiChat(event)" class="admin-clean-avatar" title="Nhấn vào để chat hoặc KÉO THẢ di chuyển Bé Mầm!" style="animation: mascot-float-bounce 2.5s infinite ease-in-out;">
         ${_renderCleanAnimeMascotSVG()}
@@ -611,7 +590,6 @@ function renderAdminMascot() {
 
   container.innerHTML = innerHTML;
 
-  // Reposition chat popup relative to current container coordinates
   if (_isChatOpen) {
     const chatEl = document.getElementById('admin-ai-chat-box');
     _adjustPopupPlacement(chatEl, container);

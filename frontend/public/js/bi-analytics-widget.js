@@ -1,15 +1,3 @@
-/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/* ═══════════════════════════════════════════════════════════════════════════
-   Executive BI Financial Analytics & ML Predictive Yield Engine (Gói 4)
-   Compact High-Density Bento Edition (Zero-Scroll Executive Cockpit)
-   Features:
-   - Cost/Revenue per Individual Tree (/Tree) and per Hectare (/Ha)
-   - Full-Width 2x2 Cost Pillars Grid + Top Donut Summary Banner (Zero Clipping)
-   - 6-Month Cashflow + ROI Trajectory SVG Chart + ML Prescriptions
-   - Sub-Tab Switcher: [1. Biểu đồ BI & Dự báo ML] | [2. Ma trận ROI Theo Lô]
-   - Crystal-Clear Interactive Live Backend API Inspector Modal (Visual Summary + Full JSON)
-   - Strict RBAC Finance Redaction for care_worker & auditor_readonly
-   ═══════════════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
 
@@ -26,7 +14,7 @@
     isRedacted: false,
     farmId: 'all',
     year: 'all',
-    activePane: 'charts', // 'charts' | 'plots'
+    activePane: 'charts',
     lastLoadedAt: null
   };
 
@@ -222,14 +210,12 @@
     const tabChartsLabel = curLang === 'zh' ? '1. 成本结构与机器学习预测' : (curLang === 'en' ? '1. Cost Structure & ML Forecast' : '1. Cơ Cấu Chi Phí & Dự Báo ML');
     const tabPlotsLabel = curLang === 'zh' ? `2. 分区 ROI 矩阵 (${plots.length})` : (curLang === 'en' ? `2. Plot ROI Matrix (${plots.length})` : `2. Ma Trận ROI Theo Lô (${plots.length} lô)`);
 
-    // Stacked Horizontal Ratio Bar for the 4 Cost Pillars
     const stackedBarSegments = pillars.map(p => {
       const pct = Math.max(0, Number(p.share_percent) || 0);
       if (pct <= 0) return '';
       return `<div style="width:${pct}%; height:100%; background:${p.color};" title="${getPillarLocalizedLabel(p)}: ${pct}%"></div>`;
     }).join('');
 
-    // Full-Width 2x2 Grid for 4 Cost Pillars (Zero Clipping, Spacious & Clear)
     const pillarsGridHtml = pillars.map(p => `
       <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:9px 12px; min-width:0;">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; margin-bottom:3px;">
@@ -338,10 +324,10 @@
 
       <!-- Compact Body Content -->
       <div style="padding:14px 16px; background:#ffffff; display:flex; flex-direction:column; gap:12px;">
-        
+
         <!-- Row 1: Ultra-Compact 6-Metric KPI Ribbon -->
         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(155px, 1fr)); gap:8px;">
-          
+
           <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:8px 11px;">
             <div style="font-size:10.5px; font-weight:800; color:#64748b;" data-i18n="bi.kpi_total_investment">${tr('bi.kpi_total_investment')}</div>
             <div style="font-size:16px; font-weight:900; color:#0f172a; margin-top:2px;">${fmtMoney(ov.total_investment_vnd)}</div>
@@ -382,7 +368,7 @@
 
         <!-- Pane 1: Side-by-Side Cost Structure (Top Donut Banner + Full-Width 2x2 Grid) & Cashflow/ML Forecast -->
         <div style="display:${activePane === 'charts' ? 'grid' : 'none'}; grid-template-columns:repeat(auto-fit, minmax(340px, 1fr)); gap:14px; align-items:stretch;">
-          
+
           <!-- Left Card: Top Donut Summary Banner + Full-Width 2x2 Cost Pillars Grid (No Clipping, No White Gap) -->
           <div style="border:1px solid #e2e8f0; border-radius:14px; padding:14px 16px; background:#ffffff; display:flex; flex-direction:column; gap:12px;">
             <div style="font-size:12.5px; font-weight:800; color:#0f172a; display:flex; align-items:center; justify-content:space-between; gap:6px;">
@@ -564,7 +550,6 @@
     const r = _diagResultsCache[_selectedDiagIdx] || _diagResultsCache[0];
     const jsonPreview = JSON.stringify(r.json, null, 2);
 
-    // Extract human-readable summary from the First Endpoint (bi-overview)
     const ovJson = _diagResultsCache[0]?.json || {};
     const ovSum = ovJson.summary || {};
     const pillars = ovJson.cost_pillars || [];
@@ -645,7 +630,6 @@
     renderSelectedDiagEndpoint();
   };
 
-  // Interactive Live Backend API Diagnostic Modal for User Verification
   async function openBiApiDiagnosticsModal() {
     let modal = document.getElementById('bi-api-diagnostics-modal');
     if (!modal) {

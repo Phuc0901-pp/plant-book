@@ -8,15 +8,13 @@ import 'utils/theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // 1. Khởi tạo bộ nhớ đệm an toàn với cơ chế tự phục hồi chống treo ứng dụng
+
   try {
     await CacheService().init();
   } catch (e) {
     print('CacheService init error: $e');
   }
-  
-  // 2. Kiểm tra trạng thái phiên làm việc (timeout tối đa 1.5s để đảm bảo không bao giờ đơ máy khi mở app)
+
   Widget initialScreen = const LoginPage();
   try {
     final apiService = ApiService();
@@ -38,7 +36,6 @@ void main() async {
     initialScreen = const LoginPage();
   }
 
-  // 3. runApp luôn luôn được gọi ngay lập tức để render giao diện
   runApp(PlantBookApp(initialScreen: initialScreen));
 }
 

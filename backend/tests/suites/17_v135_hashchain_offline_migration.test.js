@@ -1,13 +1,3 @@
-/**
- * ══════════════════════════════════════════════════════════════════════════
- * Suite 17: v1.3.5 Enterprise Architectural Upgrades Verification
- * ══════════════════════════════════════════════════════════════════════════
- * 1. Idempotent Startup Migration Flag (legacy_data_normalization_v135) & Migration 008
- * 2. ISO/IEC 27001 Per-Farm Hash-Chain Mutex Lock (withFarmHashChainLock) & Farm Isolation
- * 3. Offline Batch Sync Column Alignment (created_by) & Route Alias (/:id/logs, /:id/care-log)
- * 4. Full-Stack SSOT Version Synchronization (v1.3.5 Build 19 across Backend, PWA, Admin, Flutter)
- */
-
 const { describe, it, expect } = require('../test-framework');
 const fs = require('fs');
 const path = require('path');
@@ -40,7 +30,6 @@ describe('Suite 17: v1.3.5 Hash-Chain Mutex Lock, Offline Batch Sync & Idempoten
     expect(plantsRoute.includes('withFarmHashChainLock')).toBe(true);
     expect(plantsRoute.includes('p.farm_id IS NOT DISTINCT FROM')).toBe(true);
 
-    // Simulate 10 concurrent cultivation log writes in the same farm using the exact mutex lock algorithm
     const locks = new Map();
     async function withFarmLock(farmKey, fn) {
       const prevPromise = locks.get(farmKey) || Promise.resolve();
@@ -77,7 +66,6 @@ describe('Suite 17: v1.3.5 Hash-Chain Mutex Lock, Offline Batch Sync & Idempoten
     await Promise.all(tasks);
     expect(ledger.length).toBe(10);
 
-    // Verify unbroken linear hash chain (zero forks!)
     for (let i = 1; i < ledger.length; i++) {
       expect(ledger[i].prev_log_hash).toBe(ledger[i - 1].record_hash);
     }
@@ -87,7 +75,6 @@ describe('Suite 17: v1.3.5 Hash-Chain Mutex Lock, Offline Batch Sync & Idempoten
     const plantsRoute = [path.join(path.join(rootDir, 'backend/routes'), 'plants.js'), ...fs.readdirSync(path.join(path.join(rootDir, 'backend/routes'), 'plants')).map(f => path.join(path.join(rootDir, 'backend/routes'), 'plants', f))].map(p => fs.readFileSync(p, 'utf8')).join('\n');
     const offlineSyncJs = fs.readFileSync(offlineSyncJsPath, 'utf8');
 
-    // Verify INSERT INTO plant_logs uses created_by instead of user_id
     expect(plantsRoute.includes('INSERT INTO plant_logs (plant_id, created_by, log_date, log_type, note, media_urls, details, operator_name, equipment_used)')).toBe(true);
     expect(plantsRoute.includes("router.post(['/:id/logs', '/:id/care-log']")).toBe(true);
     expect(offlineSyncJs.includes('/plants/${pid}/logs')).toBe(true);

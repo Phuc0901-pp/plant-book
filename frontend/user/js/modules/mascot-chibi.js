@@ -1,14 +1,3 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/**
- * modules/mascot-chibi.js - Bé Mầm Ôm Nút Dấu Cộng (+) Đa Năng
- * Gom Bé Mầm và Nút Thao Tác (+) thành 1 thực thể thống nhất:
- * Khi bấm vào -> Mở Menu 2 mục:
- * 1. 📝 Ghi nhật ký chăm sóc (mở modal ghi chép chăm sóc cây)
- * 2. 🌱 Bé Mầm tư vấn & hỏi đáp (mở khung Chat Google Gemini AI)
- * 🔒 Ẩn hoàn toàn khi ở màn hình đăng nhập, chỉ hiển thị sau khi đã đăng nhập thành công.
- * 🚀 NÂNG CẤP: Kéo thả di chuyển tự do (Draggable) không bao giờ bị tràn/lệch khung hình.
- */
-
 let _isUserChatOpen = false;
 let _isActionMenuOpen = false;
 let _userChatHistory = [];
@@ -75,7 +64,6 @@ function _formatAiChatMessageHtml(rawText) {
       const trimmed = line.trim();
       if (!trimmed) continue;
 
-      // 1. KPI Pills Bar: [KPI: val1 | val2 | val3]
       const kpiMatch = trimmed.match(/^\[KPI:\s*(.+?)\]$/);
       if (kpiMatch) {
         const items = kpiMatch[1].split('|').map(s => s.trim()).filter(Boolean);
@@ -86,21 +74,18 @@ function _formatAiChatMessageHtml(rawText) {
         continue;
       }
 
-      // 2. Structured Row Card: • or - (remove redundant bullet)
       const bulletMatch = trimmed.match(/^[•\-]\s+(.*)$/);
       if (bulletMatch) {
         renderedLines.push(`<div style="background:#f8fafc; border:1px solid #e2e8f0; border-left:3px solid #10b981; border-radius:8px; padding:6px 10px; margin-top:5px; font-size:12.5px; line-height:1.45;">${formatInline(bulletMatch[1])}</div>`);
         continue;
       }
 
-      // 3. Structured Row Card: \d+\.\s (keep number)
       const numMatch = trimmed.match(/^(\d+\.\s+.*)$/);
       if (numMatch) {
         renderedLines.push(`<div style="background:#f8fafc; border:1px solid #e2e8f0; border-left:3px solid #10b981; border-radius:8px; padding:6px 10px; margin-top:5px; font-size:12.5px; line-height:1.45;">${formatInline(numMatch[1])}</div>`);
         continue;
       }
 
-      // 4. Title or regular text line
       renderedLines.push(`<div style="margin-bottom:4px; font-size:13px; line-height:1.5;">${formatInline(trimmed)}</div>`);
     }
 
@@ -124,16 +109,12 @@ export function isUserLoggedIn() {
   return true;
 }
 
-/**
- * Attach full Touch & Mouse Draggable capability to mascot container
- */
 function attachMascotDraggable(container, storageKey) {
   let isDragging = false;
   let hasMoved = false;
   let startX = 0, startY = 0;
   let initialLeft = 0, initialTop = 0;
 
-  // Restore saved position if any
   try {
     const saved = localStorage.getItem(storageKey);
     if (saved) {
@@ -155,12 +136,11 @@ function attachMascotDraggable(container, storageKey) {
   } catch (_) {}
 
   function onPointerDown(e) {
-    // Only drag when interacting with the avatar directly, not inside chat inputs/buttons/history
     if (
-      e.target.closest('#user-ai-chat-box') || 
-      e.target.closest('#mascot-action-menu-box') || 
-      e.target.closest('input') || 
-      e.target.closest('button') || 
+      e.target.closest('#user-ai-chat-box') ||
+      e.target.closest('#mascot-action-menu-box') ||
+      e.target.closest('input') ||
+      e.target.closest('button') ||
       e.target.closest('textarea')
     ) {
       return;
@@ -289,7 +269,6 @@ function _adjustPopupPlacement(popupEl, containerEl) {
     popupEl.style.left = 'auto';
   }
 
-  // Viewport Horizontal Boundary Clamp
   requestAnimationFrame(() => {
     const pRect = popupEl.getBoundingClientRect();
     if (pRect.left < 10) {
@@ -312,13 +291,11 @@ export function initChibiMascot() {
     attachMascotDraggable(mascotContainer, USER_MASCOT_POS_KEY);
   }
 
-  // Hide old separate FAB button
   const oldFab = document.getElementById('fab-btn');
   if (oldFab) {
     oldFab.style.display = 'none';
   }
 
-  // Inject styles & animations
   if (!document.getElementById('user-chibi-unified-style')) {
     const style = document.createElement('style');
     style.id = 'user-chibi-unified-style';
@@ -401,7 +378,6 @@ export function initChibiMascot() {
     document.head.appendChild(style);
   }
 
-  // Close menu only when clicking truly outside the widget
   document.addEventListener('click', (e) => {
     const widget = document.getElementById('chibi-mascot-widget');
     if (!widget) return;
@@ -411,7 +387,6 @@ export function initChibiMascot() {
     }
   });
 
-  // Watch for login / logout state changes to auto show/hide mascot
   const loginObserver = new MutationObserver(() => {
     renderMascot();
   });
@@ -425,7 +400,7 @@ export function initChibiMascot() {
 
 export function onMascotClick(e) {
   if (e) e.stopPropagation();
-  if (window.__userMascotJustDragged) return; // Prevent open menu immediately on drag drop
+  if (window.__userMascotJustDragged) return;
   if (_isUserChatOpen) return;
   _isActionMenuOpen = !_isActionMenuOpen;
   renderMascot();
@@ -464,9 +439,6 @@ export function setMascotState(stateKey) {
   if (stateKey) renderMascot();
 }
 
-/**
- * 🌟 SVG BÉ MẦM ÔM NÚT DẤU CỘNG (+) 3D
- */
 function _renderChibiHuggingPlusSVG() {
   return `
     <svg width="100" height="115" viewBox="0 0 100 115" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -576,7 +548,6 @@ export function renderMascot() {
   const container = document.getElementById('chibi-mascot-widget');
   if (!container) return;
 
-  // 🔒 Login Guard: Hide mascot if not logged in
   if (!isUserLoggedIn()) {
     container.style.display = 'none';
     return;
@@ -587,7 +558,6 @@ export function renderMascot() {
   let innerHTML = '';
 
   if (_isUserChatOpen) {
-    // 💬 1. CHATBOX GEMINI AI DRAWER
     innerHTML = `
       <div id="user-ai-chat-box" onclick="event.stopPropagation()" style="
         position: absolute;
@@ -689,7 +659,6 @@ export function renderMascot() {
       </div>
     `;
   } else if (_isActionMenuOpen) {
-    // 📋 2. QUICK ACTION POPUP MENU
     innerHTML = `
       <div id="mascot-action-menu-box" onclick="event.stopPropagation()" style="
         position: absolute;
@@ -758,7 +727,6 @@ export function renderMascot() {
       </div>
     `;
   } else {
-    // 🌟 3. NORMAL STATE: BÉ MẦM ÔM NÚT DẤU CỘNG (+)
     innerHTML = `
       <div onclick="onMascotClick(event)" class="chibi-hugging-avatar" title="Bấm vào để mở menu hoặc KÉO THẢ di chuyển Bé Mầm!" style="animation: mascot-hugging-pulse 2.5s infinite ease-in-out;">
         ${_renderChibiHuggingPlusSVG()}
@@ -768,7 +736,6 @@ export function renderMascot() {
 
   container.innerHTML = innerHTML;
 
-  // Reposition popup relative to current container coordinates
   if (_isActionMenuOpen) {
     const menuEl = document.getElementById('mascot-action-menu-box');
     _adjustPopupPlacement(menuEl, container);

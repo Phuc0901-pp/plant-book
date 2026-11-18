@@ -2,8 +2,6 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
-/// Kết quả kiểm định 5 lớp bảo mật Vật lý - Số (Physical-Digital Security)
-/// cho thẻ NFC NTAG213 / QR Định danh theo chuẩn Gallagher 8.30, FIPS 201 PIV CHUID & ISO/IEC 27001.
 class Ntag213VerificationResult {
   final bool isValid;
   final int passedLayers;
@@ -58,8 +56,6 @@ class Ntag213VerificationResult {
       };
 }
 
-/// Kết quả thẩm định Chuỗi Băm Bất Biến (Immutable SHA-256 Hash-Chain Ledger)
-/// theo chuẩn ISO/IEC 27001 & VietGAP/GlobalG.A.P.
 class HashChainAuditResult {
   final bool isIntact;
   final int totalRecords;
@@ -82,14 +78,6 @@ class HashChainAuditResult {
   });
 }
 
-/// Dịch vụ Bảo mật, Mật mã học & Chữ ký số Chuẩn Quốc tế (Enterprise Crypto & Security Engine)
-/// Tuân thủ:
-/// - NIST FIPS 180-4 (SHA-256 Pure-Dart Bitwise Implementation - Không phụ thuộc thư viện ngoài)
-/// - NIST FIPS 198-1 (HMAC-SHA256)
-/// - Gallagher Command Centre v8.30 (`IssueLevel` Card Issuance Anti-Cloning)
-/// - NIST FIPS 201-3 PIV CHUID (`Card Holder Unique Identifier` SHA-256)
-/// - ISO/IEC 27001 Immutable Hash-Chain (`GENESIS_PLANT_BOOK_ENTERPRISE_2026`)
-/// - OWASP MASVS v2.0 Request Envelope Signing (`X-Client-Signature`, `X-Client-Nonce`, `X-Client-Timestamp`)
 class CryptoSecurityService {
   static const String genesisAnchor = 'GENESIS_PLANT_BOOK_ENTERPRISE_2026';
   static const String defaultPublicScanVerifyKey =
@@ -118,8 +106,6 @@ class CryptoSecurityService {
   static int _rotr32(int x, int n) =>
       ((x & 0xffffffff) >>> n) | ((x << (32 - n)) & 0xffffffff);
 
-  /// Thuật toán băm NIST FIPS 180-4 SHA-256 trả về mảng 32 bytes.
-  /// Khớp 100% bit-for-bit với `crypto.createHash('sha256')` trên Node.js Backend.
   static Uint8List sha256Bytes(List<int> inputBytes) {
     final int bitLength = inputBytes.length * 8;
     final int paddedLength = ((inputBytes.length + 9 + 63) ~/ 64) * 64;
@@ -206,7 +192,6 @@ class CryptoSecurityService {
     return digest;
   }
 
-  /// Chuyển mảng bytes sang chuỗi Hex chữ thường.
   static String bytesToHex(List<int> bytes) {
     final StringBuffer sb = StringBuffer();
     for (final int b in bytes) {
@@ -215,12 +200,10 @@ class CryptoSecurityService {
     return sb.toString();
   }
 
-  /// Băm chuỗi UTF-8 sang SHA-256 Hex (64 ký tự hex).
   static String sha256Hex(String input) {
     return bytesToHex(sha256Bytes(utf8.encode(input)));
   }
 
-  /// Thuật toán NIST FIPS 198-1 HMAC-SHA256 trả về mảng 32 bytes.
   static Uint8List hmacSha256Bytes(List<int> keyBytes, List<int> messageBytes) {
     const int blockSize = 64;
     List<int> normalizedKey = keyBytes;
@@ -248,16 +231,12 @@ class CryptoSecurityService {
     return sha256Bytes(outerInput);
   }
 
-  /// Tính chữ ký HMAC-SHA256 dạng chuỗi Hex (64 ký tự).
-  /// Khớp 100% với `crypto.createHmac('sha256', secret).update(message).digest('hex')`.
   static String hmacSha256Hex(String secretKey, String message) {
     return bytesToHex(
       hmacSha256Bytes(utf8.encode(secretKey), utf8.encode(message)),
     );
   }
 
-  /// So sánh chuỗi hằng thời gian (Constant-Time String Comparison)
-  /// chống tấn công Timing Side-Channel theo chuẩn OWASP MASVS.
   static bool constantTimeEquals(String a, String b) {
     final List<int> aBytes = utf8.encode(a.trim().toLowerCase());
     final List<int> bBytes = utf8.encode(b.trim().toLowerCase());
@@ -271,7 +250,6 @@ class CryptoSecurityService {
     return diff == 0;
   }
 
-  /// Chuẩn hóa UID thẻ vật lý NTAG213 (in hoa, loại bỏ dấu `:`, `-`, khoảng trắng).
   static String normalizeNfcUid(String rawUid) {
     return rawUid
         .trim()
@@ -279,9 +257,6 @@ class CryptoSecurityService {
         .replaceAll(RegExp(r'[\s:\-]'), '');
   }
 
-  /// Tạo chữ ký Gallagher 8.30 + NTAG213 HMAC-SHA256 (16 ký tự hex, 64-bit)
-  /// Công thức đồng bộ với `backend/routes/plants.js`:
-  /// `HMAC_SHA256(secret, "${cleanUid}:IL${issueLevel}").substring(0, 16)`
   static String generateNtag213HmacSignature({
     required String nfcUid,
     int issueLevel = 1,
@@ -293,9 +268,6 @@ class CryptoSecurityService {
     return hmacSha256Hex(secretKey, payload).substring(0, 16).toLowerCase();
   }
 
-  /// Tạo mã định danh PIV CHUID (FIPS 201 Card Holder Unique Identifier)
-  /// Công thức đồng bộ với Backend:
-  /// `SHA256("CHUID:PLANT:${plantId}:UID:${cleanUid}:IL:${issueLevel}")`
   static String generatePivChuidHash({
     required int plantId,
     required String nfcUid,
@@ -306,13 +278,6 @@ class CryptoSecurityService {
     return sha256Hex('CHUID:PLANT:$plantId:UID:$cleanUid:IL:$safeIssueLevel');
   }
 
-  /// Kiểm định 5 Lớp Bảo mật Vật lý - Số (5-Layer Physical-Digital Verification)
-  /// cho thẻ NFC NTAG213 / QR Định danh:
-  /// - Layer 1: Định dạng & Khớp UID vật lý (`04:A1:...` / `NTAG213`)
-  /// - Layer 2: Gallagher 8.30 `IssueLevel` (Chống thẻ nhân bản / thẻ cũ đã thu hồi)
-  /// - Layer 3: Chữ ký mật mã `HMAC-SHA256` (16-hex Constant-Time Verification)
-  /// - Layer 4: Định danh FIPS 201 `PIV CHUID Hash`
-  /// - Layer 5: Hàng rào địa lý Haversine `Geofence <= 8.0m`
   static Ntag213VerificationResult verifyNtag213Scan5Layer({
     required String scannedUid,
     String? expectedPlantUid,
@@ -334,14 +299,12 @@ class CryptoSecurityService {
         ? normalizeNfcUid(expectedPlantUid)
         : cleanScannedUid;
 
-    // Layer 1: UID Format & Hardware Match
     final bool layer1UidValid = cleanScannedUid.length >= 4 &&
         (cleanExpectedUid.isEmpty || cleanScannedUid == cleanExpectedUid);
     auditLog.add(layer1UidValid
         ? '[L1-UID] PASS: UID vật lý hợp lệ ($cleanScannedUid).'
         : '[L1-UID] FAIL: UID quét ($cleanScannedUid) không khớp hồ sơ ($cleanExpectedUid).');
 
-    // Layer 2: Gallagher 8.30 IssueLevel Anti-Cloning
     final int safeScannedIl = scannedIssueLevel < 1 ? 1 : scannedIssueLevel;
     final int safeExpectedIl = expectedIssueLevel < 1 ? 1 : expectedIssueLevel;
     final bool layer2IssueLevelValid = safeScannedIl == safeExpectedIl;
@@ -349,7 +312,6 @@ class CryptoSecurityService {
         ? '[L2-GALLAGHER-IL] PASS: IssueLevel = IL$safeScannedIl khớp phiên bản phát hành hiện hành.'
         : '[L2-GALLAGHER-IL] FAIL: IssueLevel thẻ (IL$safeScannedIl) đã bị thu hồi hoặc lệch phiên bản (yêu cầu IL$safeExpectedIl).');
 
-    // Layer 3: NIST FIPS 198-1 HMAC-SHA256 Signature
     final String expectedSig = generateNtag213HmacSignature(
       nfcUid: cleanScannedUid,
       issueLevel: safeScannedIl,
@@ -359,7 +321,6 @@ class CryptoSecurityService {
     if (scannedHmacSignature != null &&
         scannedHmacSignature.trim().isNotEmpty) {
       final String cleanSig = scannedHmacSignature.trim().toLowerCase();
-      // Chấp nhận chữ ký khớp với secret cục bộ hoặc chữ ký 16-hex hợp lệ chờ Backend xác thực Master Secret
       final bool isHex16 = RegExp(r'^[0-9a-f]{16,64}$').hasMatch(cleanSig);
       layer3HmacValid =
           constantTimeEquals(cleanSig, expectedSig) || isHex16;
@@ -371,7 +332,6 @@ class CryptoSecurityService {
           '[L3-HMAC-SHA256] PASS (LEGACY): Thẻ đọc trực tiếp UID vật lý, tạo chữ ký kiểm chứng $expectedSig.');
     }
 
-    // Layer 4: FIPS 201 PIV CHUID Hash
     final int resolvedPlantId = plantId ?? 0;
     final String computedChuid = generatePivChuidHash(
       plantId: resolvedPlantId,
@@ -389,7 +349,6 @@ class CryptoSecurityService {
         ? '[L4-PIV-CHUID] PASS: Định danh CHUID=${computedChuid.substring(0, 16)}... toàn vẹn.'
         : '[L4-PIV-CHUID] FAIL: Mã băm PIV CHUID không khớp hồ sơ gốc.');
 
-    // Layer 5: Haversine Geofence <= 8.0m
     double? distanceMeters;
     bool layer5GeofenceValid = true;
     if (userLat != null &&
@@ -466,7 +425,6 @@ class CryptoSecurityService {
     );
   }
 
-  /// Công thức Haversine tính khoảng cách thực địa (mét) độ chính xác cao.
   static double calculateHaversineMeters({
     required double lat1,
     required double lng1,
@@ -485,9 +443,6 @@ class CryptoSecurityService {
     return earthRadiusMeters * c;
   }
 
-  /// Tính mã băm Chuỗi Bất Biến (Immutable SHA-256 Record Hash) cho Nhật ký VietGAP.
-  /// Khớp 100% với hàm `sealPlantLogHashChain` trong `backend/routes/plants.js`:
-  /// `canonicalPayload = "${prevLogHash}|PLANT:${plantId}|ACT:${action}|DESC:${description}|SUP:${supplyId}|AMT:${usedAmount}|COST:${estimatedCost}|DATE:${logDate}"`
   static String computePlantLogRecordHash({
     String? prevLogHash,
     required int plantId,
@@ -523,7 +478,6 @@ class CryptoSecurityService {
     return value.toString();
   }
 
-  /// Thẩm định tính toàn vẹn của danh sách Nhật ký cây trồng trên thiết bị (Client-side Ledger Audit).
   static HashChainAuditResult auditPlantLogsLedger(
     List<Map<String, dynamic>> rawLogs,
   ) {
@@ -564,8 +518,6 @@ class CryptoSecurityService {
     );
   }
 
-  /// Tạo bằng chứng toàn vẹn ngoại tuyến (Offline Client Integrity Proof)
-  /// cho mỗi bản ghi `pending_logs` hoặc `pending_field_mutations` trước khi lưu vào Hive AES-256.
   static Map<String, String> createClientIntegrityEnvelope({
     required Map<String, dynamic> payload,
     String? previousClientHash,
@@ -590,8 +542,6 @@ class CryptoSecurityService {
     };
   }
 
-  /// Ký số HTTP Request Envelope theo chuẩn OWASP MASVS v2.0
-  /// giúp Backend phát hiện mọi hành vi sửa đổi gói tin trên đường truyền (Anti-MITM / Anti-Replay).
   static Map<String, String> signRequestHeaders({
     required String method,
     required String endpointPath,

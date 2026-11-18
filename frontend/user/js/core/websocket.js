@@ -1,9 +1,3 @@
-/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/* ═══════════════════════════════════════════════════════════════
-   Plant Book – User Portal
-   websocket.js — Real-time WebSockets synchronization
-   ═══════════════════════════════════════════════════════════════ */
-
 import { token } from './api.js';
 import { loadUserDashboard } from '../modules/dashboard.js';
 
@@ -39,7 +33,6 @@ export async function connectWebSocket() {
   }
 
   isConnecting = true;
-  // Pre-flight check: ensure backend is alive before opening WebSocket (prevents cold-start red console errors)
   const isHealthy = await checkServerHealth();
   isConnecting = false;
 
@@ -76,14 +69,12 @@ export async function connectWebSocket() {
       socket = null;
       if (!isManualClose && token) {
         retryCount++;
-        // Exponential backoff: 3s, 6s, 12s, max 30s
         const delay = Math.min(3000 * Math.pow(1.5, retryCount - 1), 30000);
         reconnectTimer = setTimeout(connectWebSocket, delay);
       }
     };
 
     socket.onerror = () => {
-      // Khi server đang khởi động, im lặng đóng socket và để onclose xử lý backoff
       if (socket) {
         try { socket.close(); } catch (_) {}
       }
@@ -108,7 +99,6 @@ export function closeWebSocket() {
   }
 }
 
-// Clean lifecycle & Back-Forward Cache (bfcache) handlers
 if (typeof window !== 'undefined') {
   window.addEventListener('pagehide', () => {
     if (socket) {
@@ -164,13 +154,11 @@ function handleUserRealtimeEvent(msg) {
 
   if (event === 'plants_updated' || event === 'farms_updated' || event === 'supplies_updated' || event === 'new_care_log') {
     console.log('⚡ [LiveSync] Nhận tín hiệu thay đổi dữ liệu thời gian thực:', event, data);
-    
-    // Debounce 300ms để gom các event liên tiếp thành 1 lần làm mới ngầm duy nhất
+
     if (_syncDebounceTimer) clearTimeout(_syncDebounceTimer);
     _syncDebounceTimer = setTimeout(async () => {
-      // 1. Làm mới dữ liệu ngầm (Silent Swap - Không chớp màn hình, không cần F5)
       if (typeof loadUserDashboard === 'function') {
-        await loadUserDashboard(true /* isSilent */);
+        await loadUserDashboard(true );
       }
       if (typeof window.loadSupplies === 'function') {
         window.loadSupplies();
@@ -182,7 +170,6 @@ function handleUserRealtimeEvent(msg) {
         window.refreshCareSuppliesDropdowns(true);
       }
 
-      // 2. Hiển thị thông báo Toast tinh tế
       if (typeof window.toast === 'function' && event === 'plants_updated' && data?.action) {
         let actionMsg = 'Dữ liệu cây trồng vừa được đồng bộ tự động.';
         if (data.action === 'reorder_gps') actionMsg = 'Đã cập nhật số hiệu cây mới theo tọa độ GPS.';

@@ -46,9 +46,7 @@ class _UserLogsPageState extends State<UserLogsPage> {
   @override
   void initState() {
     super.initState();
-    // 1. Cache-First: Hiển thị tức thì trong 0ms từ bộ nhớ đệm Hive AES-256
     _loadFromCacheFirst();
-    // 2. Revalidation: Đồng bộ ngầm với máy chủ khi có mạng
     _loadLogs();
   }
 
@@ -96,7 +94,6 @@ class _UserLogsPageState extends State<UserLogsPage> {
   }
 
   Future<void> _loadLogs() async {
-    // 1. Tự động đồng bộ ngay các bản ghi ngoại tuyến lên Server khi có mạng
     try {
       await _apiService.syncOfflineLogs();
     } catch (_) {}
@@ -147,7 +144,6 @@ class _UserLogsPageState extends State<UserLogsPage> {
     final query = _searchController.text.trim().toLowerCase();
     setState(() {
       _filteredLogs = _allLogs.where((log) {
-        // Farm filter
         if (_selectedFarmId != 'all') {
           final targetFarmId = int.tryParse(_selectedFarmId);
           if (targetFarmId != null) {
@@ -157,7 +153,6 @@ class _UserLogsPageState extends State<UserLogsPage> {
           }
         }
 
-        // Category filter
         if (_selectedCategory != 'all') {
           final target = _selectedCategory.toLowerCase();
           final type = log.logType.toLowerCase();
@@ -172,7 +167,6 @@ class _UserLogsPageState extends State<UserLogsPage> {
           }
         }
 
-        // Search query
         if (query.isNotEmpty) {
           final noteMatch = (log.note ?? '').toLowerCase().contains(query);
           final typeMatch = log.logType.toLowerCase().contains(query);
@@ -255,7 +249,6 @@ class _UserLogsPageState extends State<UserLogsPage> {
       ),
       body: Column(
         children: [
-          // 1. Search Bar with Voice Dictation
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 6, 16, 8),
             child: Row(
@@ -321,7 +314,6 @@ class _UserLogsPageState extends State<UserLogsPage> {
             ),
           ),
 
-          // 2. Category Filter Chips (Horizontal Fluent Pills)
           SizedBox(
             height: 44,
             child: ListView.separated(
@@ -378,7 +370,6 @@ class _UserLogsPageState extends State<UserLogsPage> {
 
           const SizedBox(height: 6),
 
-          // 3. Logs List or Empty State
           Expanded(
             child: _isLoading
                 ? const LoadingIndicator(message: 'Đang tải lịch sử canh tác thực tế...')
@@ -473,7 +464,6 @@ class _UserLogsPageState extends State<UserLogsPage> {
     final parsedDate = DateTime.tryParse(log.logDate);
     final formattedDate = parsedDate != null ? DateFormat('dd/MM/yyyy').format(parsedDate) : log.logDate;
 
-    // Extract Labor specific fields if available
     final details = log.details;
     final workContent = details['work_content'] ?? details['reason'] ?? '';
     final workerCount = details['worker_count'] ?? details['amount'];
@@ -510,7 +500,6 @@ class _UserLogsPageState extends State<UserLogsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Top Row: Activity Pill + Date
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -568,7 +557,6 @@ class _UserLogsPageState extends State<UserLogsPage> {
                 ),
                 const SizedBox(height: 10),
 
-                // Labor Specific Detail Row
                 if (isLabor && (workContent != '' || workerCount != null)) ...[
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -611,14 +599,12 @@ class _UserLogsPageState extends State<UserLogsPage> {
                   const SizedBox(height: 8),
                 ],
 
-                // Note Content
                 if (log.note != null && log.note!.isNotEmpty)
                   Text(
                     log.note!,
                     style: const TextStyle(fontSize: 13, color: AppTheme.fluentTextMain, height: 1.35, fontWeight: FontWeight.w500),
                   ),
 
-                // PHI Warning Badge
                 if (log.isPhiViolation) ...[
                   const SizedBox(height: 8),
                   Container(
@@ -643,7 +629,6 @@ class _UserLogsPageState extends State<UserLogsPage> {
                   ),
                 ],
 
-                // Footer: Plant ID & Operator
                 const SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,

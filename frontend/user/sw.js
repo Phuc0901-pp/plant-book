@@ -1,8 +1,3 @@
-/* ═══════════════════════════════════════════════════════════════
-   Plant Book – User Portal
-   sw.js — PWA Service Worker (Network-First Strategy with Offline Fallback)
-   ═══════════════════════════════════════════════════════════════ */
-
 const CACHE_NAME = 'pb-farmer-cache-v1.3.7';
 
 const STATIC_ASSETS = [
@@ -48,7 +43,6 @@ const STATIC_ASSETS = [
   '/assets/login-hero.jpg'
 ];
 
-// 1. Install Event — Pre-cache critical assets safely
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
@@ -64,7 +58,6 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// 2. Activate Event — Clean up all older caches immediately and claim clients
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
@@ -80,16 +73,13 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// 3. Fetch Event — Network-First Strategy (Always fetch fresh data from server, fall back to cache when offline)
 self.addEventListener('fetch', (event) => {
   const req = event.request;
 
-  // Only handle HTTP/HTTPS GET requests
   if (req.method !== 'GET') {
     return;
   }
 
-  // Skip cross-origin, API, WebSocket, Mapbox, and browser extension requests
   const url = new URL(req.url);
   if (
     url.origin !== self.location.origin ||
@@ -104,11 +94,8 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     (async () => {
       try {
-        // ─── STRATEGY: NETWORK-FIRST ───
-        // Always try fetching the latest code/data from the server first
         const networkResponse = await fetch(req);
 
-        // Dynamically update cache with fresh response for offline resilience
         if (
           networkResponse &&
           networkResponse.status === 200 &&
@@ -121,16 +108,13 @@ self.addEventListener('fetch', (event) => {
 
         return networkResponse;
       } catch (err) {
-        // ─── FALLBACK: NETWORK FAILED (DEVICE IS OFFLINE) ───
         console.warn(`[SW] Network fetch failed (offline mode) for ${req.url}:`, err.message);
 
-        // 1. Try exact cached asset
         const exactCached = await caches.match(req);
         if (exactCached) {
           return exactCached;
         }
 
-        // 2. Document Navigation Fallback -> Cached user index.html or custom offline card
         if (req.mode === 'navigate' || req.destination === 'document') {
           const fallbackDoc =
             (await caches.match('/user/index.html')) ||
@@ -172,7 +156,6 @@ self.addEventListener('fetch', (event) => {
           );
         }
 
-        // 3. Image Fallback -> Cached logo or 1x1 transparent GIF
         if (req.destination === 'image' || req.url.match(/\.(png|jpg|jpeg|svg|webp|ico|gif)$/i)) {
           const cachedImg =
             (await caches.match('/assets/favicon.png')) ||
@@ -194,7 +177,6 @@ self.addEventListener('fetch', (event) => {
           });
         }
 
-        // 4. Other assets -> Return safe 504 Gateway Timeout
         return new Response('', {
           status: 504,
           statusText: 'Gateway Timeout (Offline)'

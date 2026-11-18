@@ -1,12 +1,9 @@
-/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-// ── Plants ─────────────────────────────────────────────────
-
 async function loadPlants() {
   const search = document.getElementById('plant-search')?.value || '';
   const user = document.getElementById('plant-filter-user')?.value || 'all';
   const farm = document.getElementById('plant-filter-farm')?.value || 'all';
   const health = document.getElementById('plant-filter-health')?.value || '';
-  
+
   const params = new URLSearchParams();
   if (search) params.append('search', search);
   if (user && user !== 'all') params.append('user_id', user);
@@ -27,7 +24,6 @@ async function loadPlants() {
       return;
     }
 
-    // Group plants by farm into folder structure
     const groupedByFarm = {};
     plants.forEach(p => {
       const farmKey = p.farm_id ? `farm_${p.farm_id}` : 'unassigned';
@@ -169,7 +165,6 @@ function toggleFarmFolder(folderId) {
 
 window.toggleFarmFolder = toggleFarmFolder;
 
-
 let _plantFiltersLoaded = false;
 async function initPlantFilters() {
   if (_plantFiltersLoaded) return;
@@ -179,13 +174,13 @@ async function initPlantFilters() {
       api('/farms')
     ]);
     window._allFarmsCache = farms;
-    
+
     const userSelect = document.getElementById('plant-filter-user');
     if (userSelect) {
       userSelect.innerHTML = '<option value="all">Tất cả khách hàng (nông hộ)</option>' +
         users.map(u => `<option value="${u.id}">${esc(u.full_name)} (${u.role === 'admin' ? 'Admin' : 'Nông hộ'})</option>`).join('');
     }
-    
+
     updatePlantFarmFilterDropdown(farms);
     _plantFiltersLoaded = true;
   } catch (err) {
@@ -204,7 +199,7 @@ function updatePlantFarmFilterDropdown(farms) {
 function onPlantUserFilterChange() {
   const userId = document.getElementById('plant-filter-user').value;
   const farms = window._allFarmsCache || [];
-  
+
   if (userId === 'all') {
     updatePlantFarmFilterDropdown(farms);
   } else {
@@ -370,7 +365,6 @@ if (typeof document !== 'undefined') {
   });
 }
 
-
 async function openPlantModal(id = null, syncUrl = true) {
   editingPlantId = id;
   resetPlantForm();
@@ -402,7 +396,6 @@ async function openPlantModal(id = null, syncUrl = true) {
     window.syncAdminUrl({ modal: 'plant', id: id || null });
   }
 
-  // Load farms dropdown
   await loadFarmsDropdown();
 
   if (id) {
@@ -420,7 +413,6 @@ async function openPlantModal(id = null, syncUrl = true) {
       document.getElementById('f-latitude').value = plant.latitude !== null && plant.latitude !== undefined ? plant.latitude : '';
       document.getElementById('f-longitude').value = plant.longitude !== null && plant.longitude !== undefined ? plant.longitude : '';
 
-      // Update header badges
       if (codeBadge) {
         codeBadge.textContent = `#${plant.tree_code || plant.id}`;
         codeBadge.style.display = 'inline-block';
@@ -446,12 +438,10 @@ async function openPlantModal(id = null, syncUrl = true) {
         subVariety.textContent = `${typeStr}${varStr}${locStr}`;
       }
 
-      // Show public URL
       if (plant.is_public && plant.public_slug) {
         showPublicURL(plant.public_slug);
       }
 
-      // Preload media & logs for instant tab counters
       const mediaCont = document.getElementById('plant-media-container');
       if (mediaCont) {
         mediaCont.innerHTML = renderMediaSection(plant.id);
@@ -463,7 +453,6 @@ async function openPlantModal(id = null, syncUrl = true) {
         loadPlantLogs(plant.id);
       }
 
-      // Store extra data for rendering
       window._currentPlantData = plant.data || {};
       window._currentSchemaFields = plant.schema_fields || [];
     } catch (err) {
@@ -522,7 +511,7 @@ function resetPlantForm() {
         <small style="color:#94a3b8;">Nhật ký chăm sóc sẽ ghi nhận lịch sử bón phân, tưới tiêu, phun thuốc và truy xuất nguồn gốc.</small>
       </div>`;
   }
-  
+
   const mediaCountBadge = document.getElementById('plant-media-count-badge');
   if (mediaCountBadge) { mediaCountBadge.textContent = '0'; mediaCountBadge.style.display = 'none'; }
   const logsCountBadge = document.getElementById('plant-logs-count-badge');
@@ -533,7 +522,6 @@ function resetPlantForm() {
   if (radioSingle) radioSingle.checked = true;
   togglePlantCreateMode('single');
 
-  // Reset to first tab
   const tabs = document.querySelectorAll('.plant-modal-tabs .tab');
   if (tabs.length > 0) {
     tabs.forEach((t, i) => t.classList.toggle('active', i === 0));
@@ -628,7 +616,6 @@ async function savePlant() {
     return;
   }
 
-  // Single tree mode
   let finalLat = (document.getElementById('f-latitude')?.value || '').trim();
   let finalLng = (document.getElementById('f-longitude')?.value || '').trim();
   let finalLoc = (document.getElementById('f-location')?.value || '').trim();
@@ -687,7 +674,6 @@ async function savePlant() {
       showPublicURL(plant.public_slug);
     }
 
-    // Refresh media/logs sections
     const mediaCont = document.getElementById('plant-media-container');
     if (mediaCont) {
       mediaCont.innerHTML = renderMediaSection(plant.id);
@@ -721,7 +707,6 @@ async function savePlant() {
     if (subVariety) {
       subVariety.textContent = `${plant.plant_type || 'Cây trồng'}${plant.plant_variety ? ' · Giống: ' + plant.plant_variety : ''}${plant.location ? ' · Vị trí: ' + plant.location : ''}`;
     }
-    // Cập nhật ngay bộ nhớ đệm cây trồng trên bản đồ GIS
     if (typeof window.currentPlants !== 'undefined' && Array.isArray(window.currentPlants)) {
       const idx = window.currentPlants.findIndex(p => p.id === plant.id || p.id == plant.id);
       if (idx !== -1) window.currentPlants[idx] = { ...window.currentPlants[idx], ...plant };
@@ -736,7 +721,6 @@ async function savePlant() {
         }
       });
     }
-    // Gọi hook cập nhật marker mượt mà tại chỗ trên bản đồ GIS
     if (typeof window.onPlantSavedHook === 'function') {
       try { window.onPlantSavedHook(plant); } catch(he) { console.warn('Plant saved hook error:', he); }
     } else if (typeof window.drawFarmsAndPlantsLayers === 'function') {
@@ -775,8 +759,6 @@ async function deletePlant(id, name) {
     toast('Lỗi xóa: ' + err.message, 'error');
   }
 }
-
-// ── Schema extra fields ─────────────────────────────────────
 
 document.getElementById('f-schema-id').addEventListener('change', renderExtraFields);
 
@@ -823,8 +805,6 @@ function collectExtraFields() {
   return data;
 }
 
-
-// ── Web Audio Feedback API for NFC Scan (Ding & Beep-beep) ─────────
 let _adminAudioCtx = null;
 function getAdminAudioContext() {
   if (!_adminAudioCtx) {
@@ -879,7 +859,6 @@ function playAdminDuplicateBeep() {
   } catch (_) {}
 }
 
-// ── Admin NFC Inventory Management (View & Modal) ────────────────
 let _currentInvFarmId = null;
 let _nfcInventoryCache = [];
 let _isContinuousScanning = false;
@@ -904,9 +883,6 @@ function getActiveAdminFarmId() {
   return null;
 }
 
-/**
- * Open Admin NFC Inventory directly in Database sub-tab from Sidebar or anywhere
- */
 async function openAdminNfcInventoryView(farmId = null) {
   const targetFarmId = farmId || getActiveAdminFarmId();
   if (typeof showPage === 'function') {
@@ -919,9 +895,6 @@ async function openAdminNfcInventoryView(farmId = null) {
 }
 window.openAdminNfcInventoryView = openAdminNfcInventoryView;
 
-/**
- * Initialize Admin NFC Page View (called when clicking db-tab-nfc)
- */
 async function initAdminNfcPage(farmId = null) {
   const sel = document.getElementById('db-nfc-filter-farm');
   let farms = window._allFarmsCache || (typeof dbFarmsCache !== 'undefined' ? dbFarmsCache : []);
@@ -1059,7 +1032,6 @@ async function loadAdminNfcPageData(farmId) {
     if (unassignedEl) unassignedEl.textContent = unassigned;
     if (badgeEl) badgeEl.textContent = `${total} thẻ`;
 
-    // Update NTAG213 Master Template URL for this farm
     const origin = (window.location.origin && !window.location.origin.includes('localhost')) ? window.location.origin : 'https://plant-book.onrender.com';
     const templateUrl = `${origin}/${farmId}/public/`;
     const templateInput = document.getElementById('db-nfc-template-url-input');
@@ -1141,7 +1113,6 @@ function renderAdminNfcPageTable(tags) {
     return;
   }
 
-  // 10 bản ghi trong 1 trang
   const totalItems = _filteredAdminNfcTags.length;
   const totalPages = Math.ceil(totalItems / ADMIN_NFC_PAGE_SIZE) || 1;
   if (_currentAdminNfcPage > totalPages) _currentAdminNfcPage = totalPages;
@@ -1230,7 +1201,6 @@ function renderAdminNfcPageTable(tags) {
     `;
   }).join('');
 
-  // Hiển thị thanh phân trang 10 bản ghi / trang
   if (pagInfo) {
     pagInfo.textContent = `Hiển thị ${startIdx + 1} - ${endIdx} trong tổng số ${totalItems} thẻ (Trang ${_currentAdminNfcPage}/${totalPages})`;
   }
@@ -1283,7 +1253,7 @@ function onAdminNfcSortDropdownChange(val) {
   else if (val === 'uid_desc') { _adminNfcSortField = 'uid'; _adminNfcSortOrder = 'desc'; }
   else if (val === 'assigned_first') { _adminNfcSortField = 'status'; _adminNfcSortOrder = 'desc'; }
   else if (val === 'unassigned_first') { _adminNfcSortField = 'status'; _adminNfcSortOrder = 'asc'; }
-  
+
   updateAdminNfcSortIcons();
   filterAdminNfcTable();
 }
@@ -1317,8 +1287,8 @@ function updateAdminNfcSortIcons() {
     if (_adminNfcSortField === col) {
       iconEl.style.opacity = '1';
       iconEl.style.color = '#059669';
-      iconEl.innerHTML = _adminNfcSortOrder === 'asc' 
-        ? '<i data-lucide="arrow-up" class="lucide-sm"></i>' 
+      iconEl.innerHTML = _adminNfcSortOrder === 'asc'
+        ? '<i data-lucide="arrow-up" class="lucide-sm"></i>'
         : '<i data-lucide="arrow-down" class="lucide-sm"></i>';
     } else {
       iconEl.style.opacity = '0.4';
@@ -1337,7 +1307,6 @@ function filterAdminNfcTable() {
 
   let list = (_nfcInventoryCache || []).slice();
 
-  // 1. Lọc theo trạng thái & GPS
   if (statusFilter === 'unassigned') {
     list = list.filter(t => t.status !== 'assigned' && t.plant_id == null);
   } else if (statusFilter === 'assigned') {
@@ -1348,7 +1317,6 @@ function filterAdminNfcTable() {
     list = list.filter(t => (t.status === 'assigned' || t.plant_id != null) && (t.latitude == null || t.longitude == null || isNaN(Number(t.latitude)) || isNaN(Number(t.longitude)) || (Number(t.latitude) === 0 && Number(t.longitude) === 0)));
   }
 
-  // 2. Lọc theo từ khóa tìm kiếm (UID, số cây, loại cây, giống cây, vị trí, GPS)
   if (q) {
     list = list.filter(t => {
       const matchUid = t.nfc_uid && t.nfc_uid.toLowerCase().includes(q);
@@ -1362,7 +1330,6 @@ function filterAdminNfcTable() {
     });
   }
 
-  // 3. Sắp xếp danh sách
   list.sort((a, b) => {
     let cmp = 0;
     if (_adminNfcSortField === 'id') {
@@ -1397,11 +1364,8 @@ function filterAdminNfcTable() {
 }
 window.filterAdminNfcTable = filterAdminNfcTable;
 
-// ═══════════════════════════════════════════════════════════════
-// SMART NFC INVENTORY SCAN ENGINE (RATE LIMIT 3 REQ/S & 3S DEBOUNCE)
-// ═══════════════════════════════════════════════════════════════
-const NFC_SCAN_RATE_LIMIT_MS = 333; // Tối đa 3 req/s
-const NFC_SAME_TAG_WAIT_MS = 3000;  // 3s yên lặng chờ với cùng 1 thẻ
+const NFC_SCAN_RATE_LIMIT_MS = 333;
+const NFC_SAME_TAG_WAIT_MS = 3000;
 
 const _nfcScanEngine = {
   lastUid: null,
@@ -1438,24 +1402,19 @@ const _nfcScanEngine = {
 
     const now = Date.now();
 
-    // ── QUY TẮC 1: NẾU VẪN LÀ THẺ ĐÓ ──
     if (this.lastUid === cleanUid) {
       const elapsed = now - this.lastScanTime;
 
-      // Trong vòng 3s: Vẫn là ID thẻ đó -> Yên lặng đợi (không cảnh báo, không thông báo rác)
       if (elapsed < NFC_SAME_TAG_WAIT_MS) {
         return;
       }
 
-      // Sau 3s: Vẫn là thẻ đó -> Cảnh báo thẻ đã tồn tại trong kho
-      this.lastScanTime = now; // Cập nhật mốc thời gian để tránh spam chuỗi beep
+      this.lastScanTime = now;
       playAdminDuplicateBeep();
       toast(`⚠️ Thẻ ${cleanUid} đã tồn tại trong kho trang trại!`, 'error');
       return;
     }
 
-    // ── QUY TẮC 2: THẺ MỚI KHÁC BIỆT HOẶC LẦN QUÉT ĐẦU TIÊN ──
-    // Kiểm tra Rate Limit: Tối đa 3 requests/giây (khoảng cách 333ms)
     if (now - this.lastReqTime < NFC_SCAN_RATE_LIMIT_MS) {
       return;
     }
@@ -1464,7 +1423,6 @@ const _nfcScanEngine = {
     this.isProcessing = true;
     this.lastReqTime = now;
 
-    // Kiểm tra nhanh bộ nhớ cục bộ nếu thẻ đã có sẵn trong kho
     if (this.knownUids.has(cleanUid)) {
       this.lastUid = cleanUid;
       this.lastScanTime = now;
@@ -1474,7 +1432,6 @@ const _nfcScanEngine = {
       return;
     }
 
-    // Gửi API lưu kho thẻ mới
     try {
       const res = await api(`/plants/farms/${_currentInvFarmId}/nfc-inventory/batch`, {
         method: 'POST',
@@ -1612,7 +1569,6 @@ async function openNfcInventoryModal(farmId = null) {
 
   await loadNfcInventoryData(targetFarmId);
 
-  // Focus quick input
   setTimeout(() => {
     document.getElementById('nfc-inv-quick-input')?.focus();
   }, 200);
@@ -1681,7 +1637,6 @@ function renderNfcInventoryTable(tags) {
     return;
   }
 
-  // 10 bản ghi trong 1 trang
   const totalItems = _filteredModalNfcTags.length;
   const totalPages = Math.ceil(totalItems / MODAL_NFC_PAGE_SIZE) || 1;
   if (_currentModalNfcPage > totalPages) _currentModalNfcPage = totalPages;
@@ -1709,7 +1664,7 @@ function renderNfcInventoryTable(tags) {
       plantInfo = `
         <div style="display:flex; flex-direction:column; gap:2px;">
           <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
-            <strong style="color:#0f172a; font-size:12.5px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="trees" class="lucide-sm" style="color:#059669;"></i> ${esc(treeCodeText)}</strong> 
+            <strong style="color:#0f172a; font-size:12.5px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="trees" class="lucide-sm" style="color:#059669;"></i> ${esc(treeCodeText)}</strong>
             <span style="font-size:11px; color:#64748b; font-weight:600;">${esc(plantTypeDesc)}</span>
           </div>
           ${hasGps ? `
@@ -1935,12 +1890,8 @@ async function unassignAllAdminNfcTags() {
 }
 window.unassignAllAdminNfcTags = unassignAllAdminNfcTags;
 
-// ─── NFC Inventory Export & Symmetrical Import Controller ───────────────────
 let _parsedNfcImportData = null;
 
-/**
- * Export Admin NFC Inventory to CSV / Excel with UTF-8 BOM
- */
 async function exportAdminNfcInventoryCsv(farmId = null) {
   const targetFarmId = farmId || _currentInvFarmId || getActiveAdminFarmId();
   if (!targetFarmId) {
@@ -1992,11 +1943,11 @@ async function exportAdminNfcInventoryCsv(farmId = null) {
       const treeCodeText = t.tree_code != null ? String(t.tree_code) : (t.plant_id ? String(t.plant_id) : '');
       const plantTypeDesc = t.plant_variety ? `${t.plant_type || ''} (${t.plant_variety})` : (t.plant_type || '');
       const locationText = t.location || (t.plant_data && (t.plant_data.tag_position || t.plant_data.location)) || '';
-      
+
       const hasGps = t.latitude != null && t.longitude != null && !isNaN(Number(t.latitude)) && !isNaN(Number(t.longitude)) && (Number(t.latitude) !== 0 || Number(t.longitude) !== 0);
       const latStr = hasGps ? Number(t.latitude).toFixed(6) : '';
       const lngStr = hasGps ? Number(t.longitude).toFixed(6) : '';
-      
+
       let publicUrl = t.public_url || '';
       if (publicUrl && !publicUrl.startsWith('http')) {
         publicUrl = `${window.location.origin}${publicUrl}`;
@@ -2042,9 +1993,6 @@ async function exportAdminNfcInventoryCsv(farmId = null) {
 }
 window.exportAdminNfcInventoryCsv = exportAdminNfcInventoryCsv;
 
-/**
- * Download standard sample CSV template for NFC inventory import
- */
 function downloadNfcSampleCsv() {
   const sampleHeaders = [
     'STT',
@@ -2091,9 +2039,6 @@ function downloadNfcSampleCsv() {
 }
 window.downloadNfcSampleCsv = downloadNfcSampleCsv;
 
-/**
- * Open Admin NFC Import Modal
- */
 async function openAdminNfcImportModal(farmId = null) {
   const targetFarmId = farmId || _currentInvFarmId || getActiveAdminFarmId();
   if (!targetFarmId) {
@@ -2108,11 +2053,10 @@ async function openAdminNfcImportModal(farmId = null) {
     selectEl.value = targetFarmId;
   }
 
-  // Reset modal state
   _parsedNfcImportData = null;
   const fileInput = document.getElementById('nfc-import-file-input');
   if (fileInput) fileInput.value = '';
-  
+
   const fileBadge = document.getElementById('nfc-import-file-badge');
   if (fileBadge) fileBadge.style.display = 'none';
 
@@ -2142,9 +2086,6 @@ function closeAdminNfcImportModal() {
 }
 window.closeAdminNfcImportModal = closeAdminNfcImportModal;
 
-/**
- * Handle Drag and Drop for CSV Import
- */
 function handleNfcImportDrop(event) {
   event.preventDefault();
   const dropzone = document.getElementById('nfc-import-dropzone');
@@ -2160,9 +2101,6 @@ function handleNfcImportDrop(event) {
 }
 window.handleNfcImportDrop = handleNfcImportDrop;
 
-/**
- * Handle File Selection from Input
- */
 function handleNfcImportFileSelect(event) {
   if (event.target && event.target.files && event.target.files.length > 0) {
     const file = event.target.files[0];
@@ -2171,9 +2109,6 @@ function handleNfcImportFileSelect(event) {
 }
 window.handleNfcImportFileSelect = handleNfcImportFileSelect;
 
-/**
- * Process and Read CSV/TXT File
- */
 function processNfcImportFile(file) {
   if (!file) return;
 
@@ -2195,15 +2130,11 @@ function processNfcImportFile(file) {
   reader.readAsText(file, 'utf-8');
 }
 
-/**
- * Parse CSV Content with Symmetrical Detection
- */
 function parseNfcCsvContent(text) {
   if (!text || typeof text !== 'string') {
     return { totalRows: 0, items: [], validTags: [], duplicates: [], treeCount: 0 };
   }
 
-  // Remove BOM if present
   let cleanText = text.replace(/^\uFEFF/, '').trim();
   if (!cleanText) {
     return { totalRows: 0, items: [], validTags: [], duplicates: [], treeCount: 0 };
@@ -2214,13 +2145,11 @@ function parseNfcCsvContent(text) {
     return { totalRows: 0, items: [], validTags: [], duplicates: [], treeCount: 0 };
   }
 
-  // Detect delimiter
   const firstLine = lines[0];
   let delimiter = ',';
   if ((firstLine.match(/;/g) || []).length > (firstLine.match(/,/g) || []).length) delimiter = ';';
   else if ((firstLine.match(/\t/g) || []).length > (firstLine.match(/,/g) || []).length) delimiter = '\t';
 
-  // Helper to split CSV row handling quotes
   const parseRow = (line) => {
     const cells = [];
     let cur = '';
@@ -2245,7 +2174,6 @@ function parseNfcCsvContent(text) {
     return cells;
   };
 
-  // Header detection
   const headerCells = parseRow(firstLine).map(c => c.toLowerCase().trim());
   let uidIdx = -1;
   let treeIdx = -1;
@@ -2275,7 +2203,6 @@ function parseNfcCsvContent(text) {
 
   let startRow = hasHeader ? 1 : 0;
   if (uidIdx === -1) {
-    // If no header found with 'uid', default to column 1 (index 1 if STT exists, or index 0)
     uidIdx = (headerCells.length > 1 && /^\d+$/.test(headerCells[0])) ? 1 : 0;
   }
 
@@ -2291,22 +2218,19 @@ function parseNfcCsvContent(text) {
     let rawUid = row[uidIdx] || row[0] || '';
     rawUid = rawUid.replace(/["']/g, '').trim().toUpperCase();
 
-    // Check if valid hex UID (colon, dash, space, or raw hex 8-20 chars)
     const isFormattedHex = /^[0-9A-F]{2}([:\-\s][0-9A-F]{2}){3,9}$/i.test(rawUid);
     const isRawHex = /^[0-9A-F]{8,20}$/i.test(rawUid);
     const isLikelyUid = isFormattedHex || isRawHex || (rawUid.length >= 8 && /^[0-9A-F:\-\s]+$/i.test(rawUid));
 
     if (!rawUid || !isLikelyUid) {
-      // If single column or unformatted, try to extract hex pattern
       const match = rawUid.match(/[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){3,7}/);
       if (match) {
         rawUid = match[0].toUpperCase();
       } else {
-        continue; // Skip invalid line
+        continue;
       }
     }
 
-    // Format raw hex into standard colon-separated if raw (e.g. 0420CF5A252091 -> 04:20:CF:5A:25:20:91)
     let formattedUid = rawUid;
     if (/^[0-9A-F]{14}$/i.test(rawUid)) {
       formattedUid = rawUid.match(/.{2}/g).join(':').toUpperCase();
@@ -2348,9 +2272,6 @@ function parseNfcCsvContent(text) {
   };
 }
 
-/**
- * Render Live Preview for Parsed Import Data
- */
 function renderNfcImportPreview(parsed) {
   const previewSec = document.getElementById('nfc-import-preview-section');
   const tbody = document.getElementById('nfc-import-preview-tbody');
@@ -2424,9 +2345,6 @@ function renderNfcImportPreview(parsed) {
   if (window.lucide) window.lucide.createIcons();
 }
 
-/**
- * Submit Parsed NFC Tags to Backend API
- */
 async function submitAdminNfcImport() {
   if (!_parsedNfcImportData || !_parsedNfcImportData.items || _parsedNfcImportData.items.length === 0) {
     toast('Chưa có dữ liệu thẻ hợp lệ để import!', 'error');
@@ -2468,8 +2386,7 @@ async function submitAdminNfcImport() {
     closeAdminNfcImportModal();
 
     toast(res.message || `Import thành công ${res.added_count || 0} thẻ NFC vào kho!`, 'success');
-    
-    // Refresh page data
+
     _currentInvFarmId = targetFarmId;
     const pageFarmSelect = document.getElementById('db-nfc-filter-farm');
     if (pageFarmSelect) pageFarmSelect.value = targetFarmId;
@@ -2485,7 +2402,6 @@ async function submitAdminNfcImport() {
 }
 window.submitAdminNfcImport = submitAdminNfcImport;
 
-// ── In-Field Walk & GPS Tagging Controller ──────────────────────────
 let _fieldTagFarmId = null;
 let _fieldTagPlants = [];
 let _fieldTagIndex = 0;
@@ -2503,7 +2419,6 @@ async function openFieldTaggingModal(farmId = null) {
   const farmNameEl = document.getElementById('field-tag-farm-name');
   if (farmNameEl) farmNameEl.textContent = farmObj ? farmObj.name : `Trang trại #${targetFarmId}`;
 
-  // Fetch plants of this farm
   try {
     const plants = await api(`/plants?farm_id=${targetFarmId}`);
     _fieldTagPlants = (plants || []).sort((a,b) => {
@@ -2579,7 +2494,7 @@ function renderCurrentFieldTree() {
     const varietyStr = p.plant_variety ? ` — Giống: ${p.plant_variety.replace(/\(durian\)|\(mango\)|\(avocado\)/gi, '').trim()}` : '';
     plantTypeEl.textContent = `${typeStr}${varietyStr}`;
   }
-  
+
   if (currentUidEl) {
     if (p.nfc_uid) {
       currentUidEl.innerHTML = `<span style="color:#059669; font-weight:800; font-family:ui-monospace, monospace;">${p.nfc_uid}</span>`;
@@ -2769,7 +2684,6 @@ async function executeFieldTagAssign(plant, uid, ndefInstance) {
     playAdminSuccessDing();
     toast(`Đã gán thẻ ${uid} và lưu GPS cho Cây #${plant.tree_code || plant.id}!`, 'success');
 
-    // Attempt to write NDEF URL to NFC tag
     if (ndefInstance && res.plant?.public_url) {
       try {
         await ndefInstance.write({
@@ -2781,7 +2695,6 @@ async function executeFieldTagAssign(plant, uid, ndefInstance) {
       }
     }
 
-    // Update local cached plant
     plant.nfc_uid = uid;
     plant.latitude = lat;
     plant.longitude = lng;
@@ -2792,7 +2705,6 @@ async function executeFieldTagAssign(plant, uid, ndefInstance) {
       loadAdminNfcPageData(_fieldTagFarmId);
     }
 
-    // Check auto advance
     const autoNext = document.getElementById('field-tag-auto-next')?.checked;
     if (autoNext && _fieldTagIndex < _fieldTagPlants.length - 1) {
       setTimeout(() => {
@@ -2806,18 +2718,12 @@ async function executeFieldTagAssign(plant, uid, ndefInstance) {
   }
 }
 
-
-
-// ── CSV Import & Plant Association ───────────────────────────
-
 async function openAddPlantsManual() {
   if (!activeFarmId) {
     toast('Vui lòng chọn trang trại trước!', 'error');
     return;
   }
-  // Open modal
   await openPlantModal();
-  // Pre-select the farm
   const select = document.getElementById('f-farm-id');
   if (select) {
     select.value = activeFarmId;
@@ -2829,27 +2735,25 @@ async function openCsvImportModal() {
     toast('Vui lòng chọn trang trại trước!', 'error');
     return;
   }
-  
-  // Reset form
+
   document.getElementById('csv-file-input').value = '';
   document.getElementById('csv-plant-type').value = '';
   document.getElementById('csv-plant-variety').value = '';
   document.getElementById('csv-plant-age').value = '';
   document.getElementById('csv-health-status').value = 'Tốt';
   document.getElementById('csv-is-public').value = 'true';
-  
-  // Populate schemas
+
   const schemaSelect = document.getElementById('csv-schema-id');
   if (schemaSelect) {
     schemaSelect.innerHTML = '<option value="">— Không dùng schema —</option>' +
       schemasCache.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
   }
-  
+
   document.getElementById('csv-preview-section').style.display = 'none';
   document.getElementById('csv-preview-table-body').innerHTML = '';
   document.getElementById('csv-import-submit-btn').disabled = true;
   window._parsedCsvItems = [];
-  
+
   document.getElementById('csv-import-modal').style.display = 'flex';
 }
 
@@ -2858,12 +2762,10 @@ function closeCsvImportModal() {
   window._parsedCsvItems = [];
 }
 
-// Local CSV parser
 function parseCsvContent(text) {
   const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
   if (lines.length < 2) return [];
 
-  // Parse header
   const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
   const sttIdx = headers.findIndex(h => h === 'stt' || h === 'id' || h === 'no');
   const eIdx = headers.findIndex(h => h === 'e' || h === 'easting' || h === 'lng' || h === 'longitude' || h === 'kinh độ');
@@ -2890,7 +2792,6 @@ function parseCsvContent(text) {
   return items;
 }
 
-// Bind CSV file input changes
 const csvInput = document.getElementById('csv-file-input');
 if (csvInput) {
   csvInput.addEventListener('change', function(e) {
@@ -2901,7 +2802,7 @@ if (csvInput) {
     reader.onload = function(evt) {
       const text = evt.target.result;
       const items = parseCsvContent(text);
-      
+
       if (items.length === 0) {
         document.getElementById('csv-preview-section').style.display = 'none';
         document.getElementById('csv-import-submit-btn').disabled = true;
@@ -2911,7 +2812,7 @@ if (csvInput) {
 
       window._parsedCsvItems = items;
       document.getElementById('csv-preview-count').textContent = items.length;
-      
+
       const tbody = document.getElementById('csv-preview-table-body');
       tbody.innerHTML = items.map(item => `
         <tr>
@@ -2920,7 +2821,7 @@ if (csvInput) {
           <td style="padding:4px 6px;">${item.n.toFixed(6)}</td>
         </tr>
       `).join('');
-      
+
       document.getElementById('csv-preview-section').style.display = 'block';
       document.getElementById('csv-import-submit-btn').disabled = false;
     };
@@ -2962,7 +2863,6 @@ async function submitCsvImport() {
     });
     toast(`Đã import thành công ${res.count} cây vào trang trại!`);
     closeCsvImportModal();
-    // Refresh farm details and map to show the new plants
     if (activeFarmId) {
       await initGisPage();
       selectFarm(activeFarmId);

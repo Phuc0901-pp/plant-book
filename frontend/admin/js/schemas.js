@@ -1,8 +1,4 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-// ── Helpers & Translation ───────────────────────────────
-
 const CROP_TRANSLATIONS = {
-  // Trái cây / Fruits
   "sầu riêng": "durian",
   "cà phê": "coffee",
   "ca cao": "cacao",
@@ -86,7 +82,6 @@ const CROP_TRANSLATIONS = {
   "khổ qua": "bitter melon",
   "mướp đắng": "bitter melon",
 
-  // Không dấu / Diacritic-free
   "sau rieng": "durian",
   "ca phe": "coffee",
   "ca-phe": "coffee",
@@ -183,19 +178,16 @@ function removeDiacritics(str) {
 async function translateCropName(viName) {
   const cleanVi = viName.trim().toLowerCase();
   if (!cleanVi) return "";
-  
-  // 1. Check direct match in dictionary
+
   if (CROP_TRANSLATIONS[cleanVi]) {
     return CROP_TRANSLATIONS[cleanVi];
   }
-  
-  // 2. Check normalized match (no diacritics)
+
   const normVi = removeDiacritics(cleanVi);
   if (CROP_TRANSLATIONS[normVi]) {
     return CROP_TRANSLATIONS[normVi];
   }
-  
-  // 3. Fallback to MyMemory translation API
+
   try {
     const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(viName)}&langpair=vi|en`;
     const res = await fetch(url);
@@ -213,11 +205,9 @@ async function translateCropName(viName) {
   } catch (e) {
     console.error("MyMemory translation error:", e);
   }
-  
-  // 4. Ultimate fallback: use the normalized name itself
+
   return normVi.replace(/[^a-z0-9]/g, "_");
 }
-
 
 function apiForm(path, body) {
   return fetch(API + path, {
@@ -231,14 +221,10 @@ function apiForm(path, body) {
   });
 }
 
-
 function healthBadge(h) {
   const map = { 'Tốt':'badge-green','Bình thường':'badge-blue','Cần chú ý':'badge-amber','Bệnh':'badge-red' };
   return `<span class="badge ${map[h]||'badge-gray'}">${esc(h)}</span>`;
 }
-
-
-// ── Schemas (Enterprise Plant Catalog & Agronomic Schemas) ──
 
 async function loadSchemasTab() {
   await Promise.all([
@@ -348,22 +334,19 @@ async function loadSchemasDropdown() {
   try {
     const schemas = await api('/schemas');
     schemasCache = schemas;
-    
-    // Populate f-plant-type select
+
     const pTypeSel = document.getElementById('f-plant-type');
     if (pTypeSel) {
       pTypeSel.innerHTML = '<option value="">— Chọn loại cây —</option>' +
         schemas.map(s => `<option value="${esc(s.name)}" data-schema-id="${s.id}">${esc(s.name)}</option>`).join('');
     }
 
-    // Populate f-plant-type-range select
     const pTypeRangeSel = document.getElementById('f-plant-type-range');
     if (pTypeRangeSel) {
       pTypeRangeSel.innerHTML = '<option value="">— Chọn loại cây —</option>' +
         schemas.map(s => `<option value="${esc(s.name)}" data-schema-id="${s.id}">${esc(s.name)}</option>`).join('');
     }
-    
-    // Populate csv-plant-type select
+
     const csvTypeSel = document.getElementById('csv-plant-type');
     if (csvTypeSel) {
       csvTypeSel.innerHTML = '<option value="">— Chọn loại cây —</option>' +
@@ -378,7 +361,7 @@ function onPlantTypeChange() {
   const pTypeSel = document.getElementById('f-plant-type');
   const selectedOpt = pTypeSel.options[pTypeSel.selectedIndex];
   const schemaId = selectedOpt ? selectedOpt.getAttribute('data-schema-id') : '';
-  
+
   document.getElementById('f-schema-id').value = schemaId || '';
   renderExtraFields();
 }
@@ -397,7 +380,7 @@ function onCsvPlantTypeChange() {
   const csvTypeSel = document.getElementById('csv-plant-type');
   const selectedOpt = csvTypeSel.options[csvTypeSel.selectedIndex];
   const schemaId = selectedOpt ? selectedOpt.getAttribute('data-schema-id') : '';
-  
+
   document.getElementById('csv-schema-id').value = schemaId || '';
 }
 
@@ -415,7 +398,6 @@ async function openSchemaModal(id = null, syncUrl = true) {
   document.getElementById('s-name').value = '';
   document.getElementById('s-desc').value = '';
 
-  // Reset image upload fields
   const fileInput = document.getElementById('s-image');
   if (fileInput) fileInput.value = '';
   document.getElementById('schema-image-preview-container').style.display = 'none';
@@ -429,7 +411,6 @@ async function openSchemaModal(id = null, syncUrl = true) {
       document.getElementById('s-desc').value = schema.description || '';
       schemaFields = schema.fields || [];
 
-      // Resolve crop image from schema name
       let englishName = '';
       const match = name.match(/\(([^)]+)\)/);
       if (match && match[1]) {
@@ -482,15 +463,15 @@ function previewSchemaImage(input) {
   const container = document.getElementById('schema-image-preview-container');
   const img = document.getElementById('schema-image-preview');
   const label = document.getElementById('schema-image-filename');
-  
+
   if (input.files && input.files[0]) {
     const file = input.files[0];
     label.textContent = file.name;
-    
+
     const reader = new FileReader();
     reader.onload = function(e) {
       img.src = e.target.result;
-      img.onerror = null; // Clear error handler for local preview
+      img.onerror = null;
       container.style.display = 'flex';
     };
     reader.readAsDataURL(file);
@@ -540,7 +521,7 @@ function removeSchemaField(i) {
 async function saveSchema() {
   let name = document.getElementById('s-name').value.trim();
   if (!name) { toast('Tên schema là bắt buộc!', 'error'); return; }
-  
+
   const btn = document.querySelector('#schema-modal .modal-footer button.btn-primary');
   let oldHtml = '';
   if (btn) {
@@ -550,7 +531,6 @@ async function saveSchema() {
   }
 
   try {
-    // Automatically translate and append English name in parentheses if not already present
     if (!/\([^)]+\)/.test(name)) {
       const translated = await translateCropName(name);
       if (translated) {
@@ -566,12 +546,11 @@ async function saveSchema() {
       await api('/schemas', { method: 'POST', body: JSON.stringify(body) });
     }
 
-    // Upload crop image if selected
     const fileInput = document.getElementById('s-image');
     if (fileInput && fileInput.files && fileInput.files[0]) {
       const fd = new FormData();
       fd.append('image', fileInput.files[0]);
-      
+
       const match = name.match(/\(([^)]+)\)/);
       const englishName = (match && match[1]) ? match[1].trim() : 'unknown';
       fd.append('englishName', englishName);
@@ -612,12 +591,9 @@ async function deleteSchema(id, name) {
   }
 }
 
-// Enter key for add field
 document.getElementById('new-field-name').addEventListener('keydown', e => {
   if (e.key === 'Enter') addSchemaField();
 });
-
-// ── Configuration tabs & care options ──────────────────────
 
 function switchConfigTab(tab) {
   document.getElementById('config-tab-schema').classList.toggle('active', tab === 'schema');
@@ -673,4 +649,3 @@ async function saveCareConfigs() {
     btn.disabled = false;
   }
 }
-

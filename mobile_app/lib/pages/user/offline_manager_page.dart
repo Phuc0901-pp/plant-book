@@ -142,7 +142,6 @@ class _OfflineManagerPageState extends State<OfflineManagerPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Status Banner
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -206,7 +205,6 @@ class _OfflineManagerPageState extends State<OfflineManagerPage> {
             ),
             const SizedBox(height: 20),
 
-            // 2. Pre-cache Action Button
             SizedBox(
               width: double.infinity,
               height: 52,
@@ -229,7 +227,6 @@ class _OfflineManagerPageState extends State<OfflineManagerPage> {
             ),
             const SizedBox(height: 20),
 
-            // 3. Cache Storage Stats 2x2 Grid
             const Text(
               'DỮ LIỆU ĐÃ LƯU TRÊN BỘ NHỚ THIẾT BỊ',
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted, letterSpacing: 0.8),
@@ -285,7 +282,6 @@ class _OfflineManagerPageState extends State<OfflineManagerPage> {
             ),
             const SizedBox(height: 24),
 
-            // 4. Pending Sync Queue Section
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [

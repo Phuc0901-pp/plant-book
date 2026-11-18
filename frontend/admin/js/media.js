@@ -1,6 +1,3 @@
-/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-// ── Media ─────────────────────────────────────────────────
-
 function renderMediaSection(plantId) {
   return `
     <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
@@ -83,7 +80,7 @@ async function loadPlantMedia(plantId) {
           </a>
         </div>
       </div>`).join('');
-  } catch (err) { /* ignore */ }
+  } catch (err) {  }
 }
 
 async function uploadMedia(plantId, files) {
@@ -122,8 +119,6 @@ async function deleteMedia(plantId, mediaId) {
     toast('Lỗi xóa: ' + err.message, 'error');
   }
 }
-
-// ── Logs ─────────────────────────────────────────────────
 
 function getAgronomicLogTypeBadge(type) {
   switch (type) {
@@ -251,7 +246,7 @@ async function loadPlantLogs(plantId) {
         </div>
       `;
     }).join('');
-  } catch (err) { /* ignore */ }
+  } catch (err) {  }
 }
 
 async function addLog(plantId) {
@@ -289,21 +284,19 @@ async function deleteLog(plantId, logId) {
   }
 }
 
-// ── Global Media Library (Phase 2 & 5-Level Folder Hierarchy) ───────────────────
-
 let allMediaUsers = [];
 let allMediaFarms = [];
 let allMediaPlants = [];
-let currentMediaTab = 'all'; // 'all' or 'pending'
-let mediaViewMode = 'folder'; // 'folder' or 'grid'
-let currentFolderPath = []; // Folder breadcrumb path array e.g. [{level:'user', id:1, name:'...'}, ...]
+let currentMediaTab = 'all';
+let mediaViewMode = 'folder';
+let currentFolderPath = [];
 let globalMediaCache = [];
 
 function setMediaViewMode(mode) {
   mediaViewMode = mode;
   const btnFolder = document.getElementById('btn-media-mode-folder');
   const btnGrid = document.getElementById('btn-media-mode-grid');
-  
+
   if (btnFolder) {
     btnFolder.style.background = (mode === 'folder') ? '#059669' : 'transparent';
     btnFolder.style.color = (mode === 'folder') ? '#ffffff' : '#475569';
@@ -326,7 +319,7 @@ async function initGlobalMediaLibrary() {
 
     const userSelect = document.getElementById('media-filter-user');
     if (userSelect) {
-      userSelect.innerHTML = '<option value="">1. Tất cả nông hộ (Khách hàng)</option>' + 
+      userSelect.innerHTML = '<option value="">1. Tất cả nông hộ (Khách hàng)</option>' +
         allMediaUsers.filter(u => u.role === 'user').map(u => `<option value="${u.id}">👤 ${esc(u.full_name)} (${esc(u.phone || u.email)})</option>`).join('');
     }
 
@@ -422,10 +415,7 @@ async function loadGlobalMediaGallery() {
   }
 }
 
-// ── Standardized Filename Generator ──
-// Quy chuẩn: [Mã Trang trại]_[Mã Cây]_[Thời gian YYMMDD_HHMMSS][_STT].ext
 function getStandardizedFileName(m, indexInGroup = 0, totalSameTime = 1) {
-  // 1. Farm Code
   let farmCode = 'TT01';
   if (m.farm_name) {
     const clean = m.farm_name.replace(/Trang trại|Nông trại|Vườn/gi, '').trim();
@@ -437,10 +427,8 @@ function getStandardizedFileName(m, indexInGroup = 0, totalSameTime = 1) {
     }
   }
 
-  // 2. Tree Code
   const treeCode = String(m.tree_code || m.plant_id || 'C01').replace(/[^a-zA-Z0-9-]/g, '_');
 
-  // 3. Timestamp (YYMMDD_HHMMSS)
   const d = m.uploaded_at ? new Date(m.uploaded_at) : new Date();
   const yy = String(d.getFullYear()).slice(-2);
   const mm = String(d.getMonth() + 1).padStart(2, '0');
@@ -450,7 +438,6 @@ function getStandardizedFileName(m, indexInGroup = 0, totalSameTime = 1) {
   const ss = String(d.getSeconds()).padStart(2, '0');
   const timestamp = `${yy}${mm}${dd}_${hh}${min}${ss}`;
 
-  // 4. File extension
   let ext = m.media_type === 'video' ? 'mp4' : 'jpg';
   if (m.url) {
     const rawExt = m.url.split('?')[0].split('.').pop().toLowerCase();
@@ -459,7 +446,6 @@ function getStandardizedFileName(m, indexInGroup = 0, totalSameTime = 1) {
     }
   }
 
-  // 5. Sequence suffix if multiple files share exact same timestamp
   const seqSuffix = (totalSameTime > 1 && indexInGroup >= 0)
     ? `_${String(indexInGroup + 1).padStart(2, '0')}`
     : '';
@@ -486,7 +472,6 @@ async function downloadMediaWithStandardName(url, fileName) {
   }
 }
 
-// Helper calculation for Quarter (Q1: T1-T3, Q2: T4-T6, Q3: T7-T9, Q4: T10-T12)
 function getQuarterFromDate(dateObj) {
   const m = dateObj.getMonth() + 1;
   if (m <= 3) return 'Quý 1 (Tháng 1-3)';
@@ -507,7 +492,6 @@ function renderMediaView() {
   foldersGrid.innerHTML = '';
   if (empty) empty.style.display = 'none';
 
-  // Update Breadcrumb UI
   if (breadcrumb) {
     let bcHtml = `<span style="color:#059669; cursor:pointer;" onclick="navigateToMediaFolder(-1)"><i data-lucide="folder-tree" class="lucide-sm"></i> Thư viện gốc</span>`;
     currentFolderPath.forEach((item, idx) => {
@@ -521,7 +505,6 @@ function renderMediaView() {
     return;
   }
 
-  // Check if Grid Mode
   if (mediaViewMode === 'grid') {
     foldersGrid.style.display = 'none';
     grid.style.display = 'grid';
@@ -529,13 +512,11 @@ function renderMediaView() {
     return;
   }
 
-  // Folder View Mode: Filter items based on current level in path
   foldersGrid.style.display = 'grid';
 
   const depth = currentFolderPath.length;
   let scopedMedia = [...globalMediaCache];
 
-  // Apply breadcrumb filters
   currentFolderPath.forEach(p => {
     if (p.level === 'farm') scopedMedia = scopedMedia.filter(m => (m.farm_id || 0) == p.id);
     else if (p.level === 'plant') scopedMedia = scopedMedia.filter(m => m.plant_id == p.id);
@@ -548,7 +529,6 @@ function renderMediaView() {
     return;
   }
 
-  // LEVEL 0: Subfolders by Trang Trại (Farm)
   if (depth === 0) {
     const farmGroups = {};
     scopedMedia.forEach(m => {
@@ -577,7 +557,6 @@ function renderMediaView() {
     `).join('');
     grid.style.display = 'none';
   }
-  // LEVEL 1: Subfolders by Cây trồng (Plant)
   else if (depth === 1) {
     const plantGroups = {};
     scopedMedia.forEach(m => {
@@ -602,7 +581,6 @@ function renderMediaView() {
     `).join('');
     grid.style.display = 'none';
   }
-  // LEVEL 2: Subfolders by Năm (Year)
   else if (depth === 2) {
     const yearGroups = {};
     scopedMedia.forEach(m => {
@@ -626,7 +604,6 @@ function renderMediaView() {
     `).join('');
     grid.style.display = 'none';
   }
-  // LEVEL 3: Subfolders by Quý (Quarter: Q1, Q2, Q3, Q4)
   else if (depth === 3) {
     const qtrGroups = {};
     scopedMedia.forEach(m => {
@@ -650,7 +627,6 @@ function renderMediaView() {
     `).join('');
     grid.style.display = 'none';
   }
-  // LEVEL 4: Hiển thị trực tiếp danh sách Media Cards
   else if (depth >= 4) {
     foldersGrid.style.display = 'none';
     grid.style.display = 'grid';
@@ -681,7 +657,6 @@ function renderMediaCardsList(mediaList) {
     return;
   }
 
-  // Count duplicate timestamps for standard filename sequence numbering
   const timeCounts = {};
   mediaList.forEach(m => {
     const key = `${m.farm_id}_${m.plant_id}_${m.uploaded_at}`;
@@ -780,5 +755,3 @@ window.setMediaViewMode = setMediaViewMode;
 window.enterMediaFolder = enterMediaFolder;
 window.navigateToMediaFolder = navigateToMediaFolder;
 window.downloadMediaWithStandardName = downloadMediaWithStandardName;
-
-

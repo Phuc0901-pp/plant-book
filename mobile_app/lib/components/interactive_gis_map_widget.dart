@@ -10,7 +10,6 @@ import '../utils/theme.dart';
 import '../pages/plant_detail_page.dart';
 import 'loading_indicator.dart';
 
-/// Component Bản đồ GIS Vệ Tinh Tương Tác dùng chung cho toàn bộ Mobile App
 class InteractiveGisMapWidget extends StatefulWidget {
   final List<Farm> farms;
   final List<Plant> plants;
@@ -299,7 +298,7 @@ class _InteractiveGisMapWidgetState extends State<InteractiveGisMapWidget> {
   }
 
   String _generateMapHtml() {
-    double centerLat = 10.9575; // Default reference coordinate
+    double centerLat = 10.9575;
     double centerLng = 107.0850;
 
     final primaryFarm = widget.farms.isNotEmpty ? widget.farms.first : null;
@@ -308,7 +307,6 @@ class _InteractiveGisMapWidgetState extends State<InteractiveGisMapWidget> {
       centerLng = primaryFarm.longitude!;
     }
 
-    // 1. Process Farm Boundary Polygon
     final List<dynamic> polygons = [];
 
     for (final farm in widget.farms) {
@@ -322,12 +320,11 @@ class _InteractiveGisMapWidgetState extends State<InteractiveGisMapWidget> {
         } catch (_) {}
       }
 
-      // If no custom polygon, generate a clean, realistic agricultural boundary around farm center (~120m x 90m)
       if (coords.isEmpty) {
         final fLat = farm.latitude ?? centerLat;
         final fLng = farm.longitude ?? centerLng;
-        const dLat = 0.00050; // ~55m north/south
-        const dLng = 0.00060; // ~66m east/west
+        const dLat = 0.00050;
+        const dLng = 0.00060;
         coords = [
           [fLng - dLng, fLat - dLat * 0.9],
           [fLng + dLng * 0.95, fLat - dLat],
@@ -346,7 +343,6 @@ class _InteractiveGisMapWidgetState extends State<InteractiveGisMapWidget> {
 
     final String polygonsJson = jsonEncode(polygons);
 
-    // 2. Process Plants: Align plants strictly inside the farm boundary!
     final List<Map<String, dynamic>> processedPlants = [];
     int cols = 6;
     if (widget.plants.length > 18) cols = 7;
@@ -360,10 +356,8 @@ class _InteractiveGisMapWidgetState extends State<InteractiveGisMapWidget> {
       bool validPlantCoords = false;
       if (p.latitude != null && p.longitude != null && p.latitude != 0 && p.longitude != 0) {
         if (widget.farms.length <= 1) {
-          // If viewing a single farm, detect if coordinates are an outlier from another province/mock seed
           final dLat = (p.latitude! - centerLat).abs();
           final dLng = (p.longitude! - centerLng).abs();
-          // ~0.015 degrees is ~1.6km. Outlier plants outside 1.6km are automatically aligned into the farm grid
           if (dLat < 0.015 && dLng < 0.015) {
             validPlantCoords = true;
             pLat = p.latitude!;
@@ -377,7 +371,6 @@ class _InteractiveGisMapWidgetState extends State<InteractiveGisMapWidget> {
       }
 
       if (!validPlantCoords) {
-        // Auto-generate realistic agricultural grid coordinates neatly inside the farm plot
         final row = i ~/ cols;
         final col = i % cols;
         final totalRows = (widget.plants.length / cols).ceil().clamp(1, 100);
@@ -422,7 +415,7 @@ class _InteractiveGisMapWidgetState extends State<InteractiveGisMapWidget> {
       -webkit-user-select: none;
       user-select: none;
     }
-    
+
     /* Tree Marker Styling */
     .tree-marker {
       width: 24px;
@@ -453,7 +446,7 @@ class _InteractiveGisMapWidgetState extends State<InteractiveGisMapWidget> {
       border-color: #FEF3C7;
       box-shadow: 0 2px 8px rgba(245,158,11,0.7);
     }
-    
+
     /* Farm Boundary Label Badge */
     .farm-label {
       background: rgba(15, 23, 42, 0.92) !important;
@@ -668,7 +661,7 @@ class _InteractiveGisMapWidgetState extends State<InteractiveGisMapWidget> {
       }
       if (Array.isArray(coords) && coords.length > 0) {
         const leafletCoords = coords.map(pt => [pt[1], pt[0]]);
-        
+
         // Outer dark shadow boundary for crisp contrast on light satellite backgrounds
         L.polygon(leafletCoords, {
           color: '#064E3B',
@@ -757,9 +750,9 @@ class _InteractiveGisMapWidgetState extends State<InteractiveGisMapWidget> {
           function(pos) {
             const userLat = pos.coords.latitude;
             const userLng = pos.coords.longitude;
-            
+
             if (userMarker) map.removeLayer(userMarker);
-            
+
             const userIcon = L.divIcon({
               className: 'gps-user-icon',
               html: '<div class="user-pos-marker"></div>',
@@ -818,7 +811,6 @@ class _InteractiveGisMapWidgetState extends State<InteractiveGisMapWidget> {
     return Stack(
       children: [
         mapWidget,
-        // Nút mở rộng Toàn màn hình (Fullscreen Button)
         Positioned(
           top: 12,
           right: 12,
@@ -870,7 +862,6 @@ class _InteractiveGisMapWidgetState extends State<InteractiveGisMapWidget> {
   }
 }
 
-/// Màn hình Bản đồ GIS Vệ Tinh Toàn Màn Hình (Fullscreen GIS Experience)
 class GisMapFullScreenPage extends StatefulWidget {
   final List<Farm> farms;
   final List<Farm> allFarms;
@@ -973,7 +964,6 @@ class _GisMapFullScreenPageState extends State<GisMapFullScreenPage> {
             isFullscreen: true,
             onPlantTap: widget.onPlantTap,
           ),
-          // Top Floating Stats Pill
           Positioned(
             top: 12,
             right: 12,

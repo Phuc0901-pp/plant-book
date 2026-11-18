@@ -1,26 +1,11 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/* ═══════════════════════════════════════════════════════════════
-   Plant Book – User Portal
-   modules/media.js — File upload preview, watermark & lightbox
-   ═══════════════════════════════════════════════════════════════ */
-
 import { esc } from '../core/utils.js';
 
-/** Danh sách file media đã chọn cho nhật ký chăm sóc hiện tại */
 export let selectedCareFiles = [];
 
-/**
- * Xoá danh sách file đã chọn (gọi khi mở modal mới).
- */
 export function clearSelectedFiles() {
   selectedCareFiles = [];
 }
 
-/**
- * Xử lý khi người dùng chọn file từ camera, quay video hoặc thư viện.
- * Tích luỹ các file vào selectedCareFiles và hiển thị thumbnail xem trước.
- * @param {'capture'|'video'|'library'} source
- */
 export function onCareMediaSelected(source) {
   let inputId = 'c-detail-media-library';
   if (source === 'capture') inputId = 'c-detail-media-capture';
@@ -34,7 +19,7 @@ export function onCareMediaSelected(source) {
   if (newFiles.length === 0) return;
 
   selectedCareFiles = selectedCareFiles.concat(newFiles);
-  input.value = ''; // Reset for re-selection
+  input.value = '';
 
   if (typeof window.renderMediaPreviews === 'function') {
     window.renderMediaPreviews();
@@ -70,14 +55,6 @@ export function onCareMediaSelected(source) {
   });
 }
 
-/**
- * Đóng dấu watermark lên ảnh bệnh cây.
- * Ghi thông tin: Mã cây / Thời gian / Tên bệnh vào góc dưới ảnh.
- * @param {File} file
- * @param {string} treeCode
- * @param {string} diseaseName
- * @returns {Promise<File>}
- */
 export function watermarkImage(file, treeCode, diseaseName) {
   return new Promise((resolve) => {
     if (!file.type.startsWith('image/')) return resolve(file);
@@ -143,12 +120,6 @@ export function watermarkImage(file, treeCode, diseaseName) {
   });
 }
 
-/**
- * Mở lightbox xem ảnh hoặc video toàn màn hình.
- * Click vào bất kỳ vùng nào để đóng.
- * @param {string} url
- * @param {'image'|'video'} type
- */
 export function openLightbox(url, type) {
   const overlay = document.createElement('div');
   Object.assign(overlay.style, {
@@ -198,12 +169,6 @@ export function openLightbox(url, type) {
   document.body.appendChild(overlay);
 }
 
-/**
- * Tạo HTML thumbnail media (dùng chung cho bảng nhật ký).
- * @param {Array} mediaUrls — mảng { url, type } hoặc string URL
- * @param {number} size — kích thước thumbnail (px), mặc định 40
- * @returns {string} HTML string
- */
 export function buildMediaThumbnailsHtml(mediaUrls, size = 40) {
   if (!mediaUrls || mediaUrls.length === 0) return '';
   const thumbs = mediaUrls.map(m => {

@@ -1,9 +1,3 @@
-/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/* ═══════════════════════════════════════════════════════════════
-   Plant Book – User Portal
-   modules/notifications.js — Autonomous Notification Engine & Web Push API
-   ═══════════════════════════════════════════════════════════════ */
-
 import { api } from '../core/api.js';
 
 let _notificationsCache = [];
@@ -39,7 +33,7 @@ function formatTimeAgo(dateStr) {
   if (diffSec < 60) return 'Vừa xong';
   if (diffSec < 3600) return `${Math.floor(diffSec / 60)} phút trước`;
   if (diffSec < 86400) return `${Math.floor(diffSec / 3600)} giờ trước`;
-  
+
   const isToday = d.toDateString() === now.toDateString();
   const timePart = d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
   if (isToday) return `Hôm nay ${timePart}`;
@@ -59,7 +53,6 @@ export function renderNotificationsUI(unreadCount, list, activeFilter = 'all') {
     }
   }
 
-  // Update active tab buttons if present
   document.querySelectorAll('.notif-filter-tab').forEach(tab => {
     if (tab.dataset.filter === activeFilter) {
       tab.classList.add('active');
@@ -70,7 +63,6 @@ export function renderNotificationsUI(unreadCount, list, activeFilter = 'all') {
 
   if (!container) return;
 
-  // Filter list
   let displayList = list || [];
   if (activeFilter === 'unread') {
     displayList = displayList.filter(n => !n.is_read);
@@ -146,15 +138,15 @@ export function renderNotificationsUI(unreadCount, list, activeFilter = 'all') {
     const timeAgo = formatTimeAgo(n.created_at);
 
     return `
-      <div id="notif-item-${n.id}" onclick="readSingleNotification(${n.id})" 
-        style="background:${isUnread ? cfg.cardBg : '#ffffff'}; 
-               border: 1px solid ${isUnread ? cfg.tagBorder : '#e2e8f0'}; 
-               border-left: ${cfg.borderLeft}; 
-               border-radius: 14px; 
-               padding: 12px 14px; 
-               cursor: pointer; 
-               transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); 
-               box-shadow: ${isUnread ? '0 2px 8px rgba(0,0,0,0.04)' : '0 1px 2px rgba(0,0,0,0.02)'}; 
+      <div id="notif-item-${n.id}" onclick="readSingleNotification(${n.id})"
+        style="background:${isUnread ? cfg.cardBg : '#ffffff'};
+               border: 1px solid ${isUnread ? cfg.tagBorder : '#e2e8f0'};
+               border-left: ${cfg.borderLeft};
+               border-radius: 14px;
+               padding: 12px 14px;
+               cursor: pointer;
+               transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+               box-shadow: ${isUnread ? '0 2px 8px rgba(0,0,0,0.04)' : '0 1px 2px rgba(0,0,0,0.02)'};
                position: relative;"
         onmouseenter="this.style.transform='translateY(-1.5px)'; this.style.boxShadow='0 6px 16px rgba(0,0,0,0.06)';"
         onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='${isUnread ? '0 2px 8px rgba(0,0,0,0.04)' : '0 1px 2px rgba(0,0,0,0.02)'}';"
@@ -168,9 +160,9 @@ export function renderNotificationsUI(unreadCount, list, activeFilter = 'all') {
             ${isUnread ? `<span style="display:inline-flex; align-items:center; gap:3px; font-size:10.5px; font-weight:700; color:#dc2626; background:#fee2e2; padding:2px 6px; border-radius:12px;"><span style="width:5px; height:5px; border-radius:50%; background:#dc2626;"></span> Mới</span>` : ''}
           </div>
 
-          <button onclick="dismissSingleNotification(event, ${n.id})" title="Xóa thông báo này" 
-            style="background:transparent; border:none; color:#94a3b8; cursor:pointer; width:24px; height:24px; border-radius:6px; display:flex; align-items:center; justify-content:center; transition:all 0.2s;" 
-            onmouseenter="this.style.color='#dc2626'; this.style.background='#fee2e2';" 
+          <button onclick="dismissSingleNotification(event, ${n.id})" title="Xóa thông báo này"
+            style="background:transparent; border:none; color:#94a3b8; cursor:pointer; width:24px; height:24px; border-radius:6px; display:flex; align-items:center; justify-content:center; transition:all 0.2s;"
+            onmouseenter="this.style.color='#dc2626'; this.style.background='#fee2e2';"
             onmouseleave="this.style.color='#94a3b8'; this.style.background='transparent';"
           >
             <i data-lucide="x" style="width:14px; height:14px;"></i>
@@ -252,13 +244,12 @@ export async function markAllNotificationsRead() {
 }
 window.markAllNotificationsRead = markAllNotificationsRead;
 
-/** Web Audio API Synthesizers for Notification Sounds */
 export function playCheerfulChime() {
   try {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     if (!AudioCtx) return;
     const ctx = new AudioCtx();
-    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6 (Cheerful Arpeggio Chime)
+    const notes = [523.25, 659.25, 783.99, 1046.50];
     notes.forEach((freq, idx) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -282,7 +273,6 @@ export function playStrongAlert() {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     if (!AudioCtx) return;
     const ctx = new AudioCtx();
-    // Strong 3-pulse alarm siren (880Hz A5 & 1174Hz D6)
     [0, 0.15, 0.3].forEach((delay) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -325,7 +315,6 @@ export async function readSingleNotification(id) {
 }
 window.readSingleNotification = readSingleNotification;
 
-/** HTML5 Web Push Notification Request */
 export function requestWebPushPermission() {
   if (!('Notification' in window)) {
     alert('Trình duyệt của bạn không hỗ trợ thông báo màn hình.');
@@ -347,7 +336,6 @@ export function requestWebPushPermission() {
 }
 window.requestWebPushPermission = requestWebPushPermission;
 
-// Auto load notifications when user logs in
 window.addEventListener('DOMContentLoaded', () => {
   if (localStorage.getItem('pb_token')) {
     setTimeout(loadNotifications, 1000);

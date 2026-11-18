@@ -15,7 +15,7 @@ class _AdminUserPageState extends State<AdminUserPage> {
   final ApiService _apiService = ApiService();
   bool _isLoading = true;
   List<dynamic> _users = [];
-  String _filterTab = 'all'; // 'all', 'pending', 'pro'
+  String _filterTab = 'all';
 
   @override
   void initState() {
@@ -75,7 +75,6 @@ class _AdminUserPageState extends State<AdminUserPage> {
       ),
       body: Column(
         children: [
-          // Filter Tabs (Tất cả, Chờ duyệt ⏳, Nông hộ PRO 👑)
           Container(
             color: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),

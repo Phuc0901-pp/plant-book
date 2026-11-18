@@ -24,7 +24,6 @@ class AdminDrawer extends StatelessWidget {
       backgroundColor: const Color(0xFF0F172A),
       child: Column(
         children: [
-          // Microsoft Fluent Dark Slate Header
           Container(
             padding: const EdgeInsets.only(top: 48, bottom: 18, left: 18, right: 18),
             decoration: const BoxDecoration(
@@ -84,7 +83,6 @@ class AdminDrawer extends StatelessWidget {
             ),
           ),
 
-          // 10 Admin Modules Navigation List
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
@@ -112,7 +110,6 @@ class AdminDrawer extends StatelessWidget {
             ),
           ),
 
-          // Brand Signature Footer
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: const BoxDecoration(
@@ -180,7 +177,7 @@ class AdminDrawer extends StatelessWidget {
           ),
         ),
         onTap: () {
-          Navigator.pop(context); // Close drawer
+          Navigator.pop(context);
           if (!isActive) {
             Navigator.pushReplacement(
               context,
@@ -192,4 +189,3 @@ class AdminDrawer extends StatelessWidget {
     );
   }
 }
-

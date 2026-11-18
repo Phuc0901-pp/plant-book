@@ -27,32 +27,26 @@ describe('Suite 10: Open-Meteo Weather API Integration, WMO Interpretation & Fau
   });
 
   it('10.2 Should accurately decode WMO Weather codes (0..99) with icons, Vietnamese labels and safe fallback', () => {
-    // 0 = Sunny
     const wmo0 = weatherService.getWmoWeatherInfo(0);
     expect(wmo0.label).toBe('Trời nắng trong xanh');
     expect(wmo0.icon).toBe('fa-solid fa-sun');
     expect(wmo0.category).toBe('clear');
 
-    // 2 = Partly Cloudy
     const wmo2 = weatherService.getWmoWeatherInfo(2);
     expect(wmo2.label).toBe('Mây rải rác');
     expect(wmo2.category).toBe('partly_cloudy');
 
-    // 65 = Heavy Rain
     const wmo65 = weatherService.getWmoWeatherInfo(65);
     expect(wmo65.label).toBe('Mưa to nặng hạt');
     expect(wmo65.category).toBe('heavy_rain');
 
-    // 95 = Thunderstorm
     const wmo95 = weatherService.getWmoWeatherInfo(95);
     expect(wmo95.label).toBe('Mưa dông, sấm sét');
     expect(wmo95.icon).toBe('fa-solid fa-bolt-lightning');
 
-    // 99 = Severe Thunderstorm with Hail
     const wmo99 = weatherService.getWmoWeatherInfo(99);
     expect(wmo99.label).toBe('Dông mạnh kèm mưa đá lớn');
 
-    // Unknown code fallback
     const wmoUnknown = weatherService.getWmoWeatherInfo(999);
     expect(wmoUnknown.label).toBe('Trời quang đãng');
     expect(wmoUnknown.icon).toBe('fa-solid fa-sun');
@@ -73,28 +67,23 @@ describe('Suite 10: Open-Meteo Weather API Integration, WMO Interpretation & Fau
   });
 
   it('10.4 Should generate accurate Agricultural Action Recommendations based on weather thresholds', () => {
-    // Rain condition (>= 60%)
     const rainAgro = weatherService.getAgriRecommendation({ rainProb: 75, temp: 28, humidity: 80, windSpeed: 12 });
     expect(rainAgro.type).toBe('warning');
     expect(rainAgro.tip.includes('hoãn phun thuốc BVTV và bón phân')).toBe(true);
 
-    // Extreme Heat (>= 34°C)
     const heatAgro = weatherService.getAgriRecommendation({ rainProb: 10, temp: 36, humidity: 60, windSpeed: 8 });
     expect(heatAgro.type).toBe('warning');
     expect(heatAgro.tip.includes('Nắng nóng gay gắt')).toBe(true);
     expect(heatAgro.tip.includes('tăng lượng tưới')).toBe(true);
 
-    // High Humidity (>= 85%)
     const humidAgro = weatherService.getAgriRecommendation({ rainProb: 20, temp: 29, humidity: 90, windSpeed: 6 });
     expect(humidAgro.type).toBe('info');
     expect(humidAgro.tip.includes('nấm bệnh và sâu rầy')).toBe(true);
 
-    // Strong Wind (>= 30 km/h)
     const windAgro = weatherService.getAgriRecommendation({ rainProb: 15, temp: 30, humidity: 70, windSpeed: 35 });
     expect(windAgro.type).toBe('warning');
     expect(windAgro.tip.includes('chằng chống cành sầu riêng')).toBe(true);
 
-    // Normal favorable weather
     const normalAgro = weatherService.getAgriRecommendation({ rainProb: 15, temp: 30, humidity: 72, windSpeed: 10 });
     expect(normalAgro.type).toBe('success');
     expect(normalAgro.tip.includes('Thời tiết thuận lợi')).toBe(true);
@@ -132,7 +121,7 @@ describe('Suite 10: Open-Meteo Weather API Integration, WMO Interpretation & Fau
     expect(parsed.metrics.feelLike).toBe(36);
     expect(parsed.metrics.humidity).toBe(72);
     expect(parsed.metrics.windSpeed).toBe(15);
-    expect(parsed.metrics.windDir).toBe('Đông Nam'); // 110 deg ~ Dong Nam
+    expect(parsed.metrics.windDir).toBe('Đông Nam');
     expect(parsed.metrics.uv).toBe('7.8');
     expect(parsed.metrics.uvStatus).toBe('Cao');
     expect(parsed.metrics.rainProb).toBe(40);

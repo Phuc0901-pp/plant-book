@@ -1,6 +1,3 @@
-/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-// ── Dashboard (SAP Fiori Horizon Enterprise Operations Cockpit) ───────
-
 let dashboardClockInterval = null;
 
 function updateDashboardClock() {
@@ -74,17 +71,13 @@ async function loadDashboard() {
     allFarms = farms || [];
     allRecentLogs = recentLogs || [];
 
-    // 1. General Governance Metrics
     const farmerUsers = (users || []).filter(u => u.role !== 'admin');
     const totalFarmers = farmerUsers.length > 0 ? farmerUsers.length : (users || []).length;
-    
-    // Total farms count:
+
     const totalFarmsCount = (farms || []).length;
 
-    // Schemas count:
     const cropSchemasCount = (schemas || []).length;
 
-    // Key regions / provinces detection:
     const regionSet = new Set();
     (farms || []).forEach(f => {
       const text = `${f.name || ''} ${f.description || ''}`.toLowerCase();
@@ -101,7 +94,6 @@ async function loadDashboard() {
     const detectedRegions = regionSet.size > 0 ? Array.from(regionSet) : defaultMajorRegions;
     const totalRegionsCount = Math.max(detectedRegions.length, 3);
 
-    // Render General Governance Stats
     if (typeof animateValue === 'function') {
       animateValue(document.getElementById('stat-farmers'), 0, totalFarmers, 1000);
       animateValue(document.getElementById('stat-farms'), 0, totalFarmsCount, 1000);
@@ -117,9 +109,8 @@ async function loadDashboard() {
       document.getElementById('stat-regions-sub').textContent = detectedRegions.slice(0, 3).join(', ') + (detectedRegions.length > 3 ? '...' : '');
     }
 
-    // 2. Incident & Critical Alerts Telemetry
     const sickPlants = (plants || []).filter(p => ['Bệnh', 'Cần chú ý'].includes(p.health_status));
-    
+
     const brokenDevices = (devices || []).filter(d => {
       const st = (d.status || '').toLowerCase();
       return st === 'hỏng' || st === 'mất kết nối' || st === 'offline' || st === 'lỗi';
@@ -150,7 +141,6 @@ async function loadDashboard() {
     if (elCalib) elCalib.textContent = `${calibrationDevices.length} cảm biến`;
     if (elTotalInc) elTotalInc.textContent = `${totalIncidents} sự cố cần theo dõi`;
 
-    // 3. Initialize Master GIS Cockpit
     if (typeof initGisPage === 'function') {
       initGisPage();
     }
@@ -478,13 +468,13 @@ function matchesFilter(plant, type) {
   if (type === 'all') return true;
   if (type === 'sick') return plant.health_status === 'Bệnh';
   if (type === 'watch') return plant.health_status === 'Cần chú ý';
-  
+
   const now = new Date();
   if (type === 'not-watered') {
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     return plant.last_watered !== todayStr;
   }
-  
+
   if (type === 'not-fertilized') {
     if (!plant.last_fertilized) return true;
     const lastFertDate = new Date(plant.last_fertilized + 'T00:00:00');
@@ -499,17 +489,16 @@ function matchesFilter(plant, type) {
 function filterDashboard(type) {
   currentDashboardFilter = type;
   document.querySelectorAll('.dashboard-filter-bar .filter-chip').forEach(btn => btn.classList.remove('active'));
-  
+
   let btnId = 'btn-filter-all';
   if (type === 'sick') btnId = 'btn-filter-sick';
   else if (type === 'watch') btnId = 'btn-filter-watch';
   else if (type === 'not-watered') btnId = 'btn-filter-not-watered';
   else if (type === 'not-fertilized') btnId = 'btn-filter-not-fertilized';
-  
+
   const btn = document.getElementById(btnId);
   if (btn) btn.classList.add('active');
 
-  // Toggle map markers visibility/opacity
   dashboardMarkers.forEach(({ marker, plant, element }) => {
     if (matchesFilter(plant, type)) {
       element.classList.remove('filtered-out');
@@ -518,7 +507,5 @@ function filterDashboard(type) {
     }
   });
 
-  // Filter logs table
   renderDashboardLogsTable(allRecentLogs);
 }
-

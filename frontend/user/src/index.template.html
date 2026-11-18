@@ -1,47 +1,33 @@
-<!-- ====================================================================
-     PLANT BOOK — FARMER USER PORTAL
-     Auto-assembled via backend/scripts/build-html.js
-     DO NOT edit index.html directly; edit modular files in src/
-     ==================================================================== -->
 <!-- @include 'layout/head.html' -->
 
 <!-- @include 'modals/auth-modals.html' -->
 
-<!-- ════════════════ APP ════════════════ -->
 <div id="app" style="display:none; flex-direction:row">
   <div class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
 
   <!-- @include 'layout/sidebar.html' -->
 
-  <!-- ── Main ── -->
   <main class="main">
     <!-- @include 'layout/topbar.html' -->
 
     <div class="content">
-      <!-- ── 1. DASHBOARD / HOME ── -->
       <!-- @include 'views/dashboard.html' -->
 
-      <!-- ── 2. PLANTS (SỔ CÂY TRỒNG & GIS) ── -->
       <!-- @include 'views/plants.html' -->
 
-      <!-- ── 3. SUPPLIES (KHO & CHI PHÍ VẬT TƯ) ── -->
       <!-- @include 'views/supplies.html' -->
 
-      <!-- ── 4. LOGS (NHẬT KÝ CANH TÁC) ── -->
       <!-- @include 'views/logs.html' -->
 
-      <!-- ── 5. WIKI (HƯỚNG DẪN KỸ THUẬT & SOP) ── -->
       <!-- @include 'views/guide.html' -->
 
-      <!-- ── 6. SETTINGS & PROFILE ── -->
       <!-- @include 'views/profile.html' -->
     </div>
   </main>
 
   <!-- @include 'layout/bottom-nav.html' -->
-</div><!-- end app -->
+</div>
 
-<!-- ════════════════ MODALS & OVERLAYS ════════════════ -->
 <!-- @include 'modals/plant-create-modal.html' -->
 <!-- @include 'modals/nfc-modal.html' -->
 <!-- @include 'modals/nfc-inventory-modal.html' -->

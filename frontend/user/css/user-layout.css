@@ -1,9 +1,3 @@
-/* ═══════════════════════════════════════════════════════════════
-   Plant Book – User Panel Layout
-   Màu chủ đạo: xanh lá (giống admin), accent cam nhạt cho user role
-   ═══════════════════════════════════════════════════════════════ */
-
-/* ── Design Tokens ── */
 :root {
   --font-sans: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, Monaco, monospace;
@@ -11,7 +5,7 @@
   --green-dark: #1b4d3e;
   --green-light: #f0fdf4;
   --green-glow: rgba(34,197,94,0.15);
-  --user-accent: #f97316;       /* cam – phân biệt role user */
+  --user-accent: #f97316;
   --user-accent-soft: #fff7ed;
   --red: #ef4444;
   --amber: #f59e0b;
@@ -32,7 +26,6 @@
   --shadow-lg: 0 20px 25px -5px rgba(0,0,0,.1), 0 10px 10px -5px rgba(0,0,0,.04);
 }
 
-/* ── Reset ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
@@ -53,7 +46,6 @@ code, kbd, samp, pre, .font-mono {
   font-family: var(--font-mono) !important;
 }
 
-/* ── Modal & Dialogs ── */
 .modal-overlay {
   position: fixed !important;
   inset: 0 !important;
@@ -128,7 +120,6 @@ code, kbd, samp, pre, .font-mono {
   font-size: 16px;
   font-weight: 700;
 }
-/* ── Universal Premium Animated Modal Close Button System ── */
 .modal-close,
 .modal-close-btn {
   background: rgba(255, 255, 255, 0.16);
@@ -200,7 +191,6 @@ code, kbd, samp, pre, .font-mono {
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2) !important;
 }
 
-/* ── Selectable Past Disease Badges / Chips ── */
 .past-disease-chips-wrap {
   display: flex;
   flex-wrap: wrap;
@@ -246,7 +236,6 @@ code, kbd, samp, pre, .font-mono {
   display: inline-block !important;
 }
 
-/* ── Mapbox GL Marker Popup Clean Viewport Containment ── */
 .mapboxgl-popup {
   z-index: 1000 !important;
   max-width: 320px !important;
@@ -272,7 +261,6 @@ code, kbd, samp, pre, .font-mono {
   color: #ef4444 !important;
 }
 
-/* ── Matrix Table System ── */
 .matrix-table-wrap {
   max-height: 360px;
   overflow-x: auto;
@@ -321,7 +309,6 @@ code, kbd, samp, pre, .font-mono {
   background: #fff;
 }
 
-/* ── Master Clean ERP Header System (Executive AgTech Cockpit) ── */
 .royal-page-header,
 .executive-obsidian-banner,
 .royal-agritech-banner,
@@ -418,9 +405,6 @@ code, kbd, samp, pre, .font-mono {
   color: #ffffff !important;
 }
 
-/* ══════════════════════════════════════════
-   APP SHELL
-══════════════════════════════════════════ */
 #app {
   display: none;
   height: 100vh;
@@ -428,7 +412,6 @@ code, kbd, samp, pre, .font-mono {
   flex-direction: row;
 }
 
-/* ── Sidebar ── */
 .sidebar {
   width: 260px;
   min-width: 260px;
@@ -483,7 +466,6 @@ code, kbd, samp, pre, .font-mono {
 .sidebar-user .user-name { font-size: 13px; font-weight: 500; }
 .sidebar-user .user-email { font-size: 11px; color: rgba(255,255,255,.5); margin-top: 2px; }
 
-/* User role pill in sidebar */
 .sb-role-pill {
   display: inline-flex;
   align-items: center;
@@ -530,7 +512,6 @@ nav { padding: 12px; flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrollin
 .nav-item.active { background: var(--green); color: #fff; }
 .nav-item i { width: 18px; text-align: center; font-size: 14px; }
 
-/* "Coming soon" tag trên nav items */
 .nav-soon {
   margin-left: auto;
   font-size: 9px;
@@ -574,7 +555,6 @@ nav { padding: 12px; flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrollin
   color: #fecaca;
 }
 
-/* Sidebar overlay (mobile) */
 .sidebar-overlay {
   position: fixed;
   inset: 0;
@@ -583,7 +563,6 @@ nav { padding: 12px; flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrollin
   display: none;
 }
 
-/* ── Main area ── */
 .main {
   flex: 1;
   overflow-y: auto;
@@ -605,9 +584,9 @@ nav { padding: 12px; flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrollin
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
   color: #0f172a !important;
 }
-.topbar h1 { 
-  font-size: 15px !important; 
-  font-weight: 800 !important; 
+.topbar h1 {
+  font-size: 15px !important;
+  font-weight: 800 !important;
   color: #0f172a !important;
   letter-spacing: -0.2px !important;
   display: flex !important;
@@ -616,7 +595,6 @@ nav { padding: 12px; flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrollin
 }
 .topbar-actions { display: flex; gap: 10px; align-items: center; }
 
-/* ── Master Clean ERP Header System (Executive AgTech Cockpit) ── */
 .royal-page-header {
   box-sizing: border-box !important;
   min-height: 84px !important;
@@ -821,7 +799,6 @@ nav { padding: 12px; flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrollin
 
 .content { padding: 24px 28px; flex: 1; }
 
-/* ── Notification Center Dropdown & Mobile Centered Modal ── */
 #notif-overlay {
   display: none;
   position: fixed;
@@ -862,13 +839,9 @@ nav { padding: 12px; flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrollin
   }
 }
 
-/* ── Page sections ── */
 .page-section { display: none; }
 .page-section.active { display: block !important; }
 
-/* ══════════════════════════════════════════
-   "ĐANG PHÁT TRIỂN" BANNER
-══════════════════════════════════════════ */
 .dev-banner {
   display: flex;
   flex-direction: column;
@@ -927,9 +900,6 @@ nav { padding: 12px; flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrollin
   font-weight: 600;
 }
 
-/* ══════════════════════════════════════════
-   UTILITY – Spinner, Toast
-══════════════════════════════════════════ */
 .spinner {
   display: inline-block;
   width: 16px; height: 16px;
@@ -965,9 +935,6 @@ nav { padding: 12px; flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrollin
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* ══════════════════════════════════════════
-   RESPONSIVE – Mobile
-══════════════════════════════════════════ */
 @media (max-width: 768px) {
   #app { position: relative; }
 
@@ -1022,7 +989,6 @@ nav { padding: 12px; flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrollin
   }
   .dev-banner { min-height: 280px; padding: 32px 16px; }
 
-  /* ── Mobile Bottom Nav ── */
   .mobile-bottom-nav {
     display: flex !important;
     position: fixed;
@@ -1037,7 +1003,7 @@ nav { padding: 12px; flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrollin
     justify-content: space-around;
     align-items: center;
   }
-  
+
   .bottom-nav-item {
     display: flex;
     flex-direction: column;
@@ -1070,7 +1036,6 @@ nav { padding: 12px; flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrollin
     bottom: 74px !important;
   }
 
-  /* Elevation Legend on Mobile */
   .elevation-legend-widget-container {
     bottom: 74px !important;
     left: 10px !important;
@@ -1104,13 +1069,6 @@ nav { padding: 12px; flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrollin
   display: none;
 }
 
-
-
-
-/* ══════════════════════════════════════════════════════════════
-   LOGIN PAGE — Modern Glassmorphic Design & Animations
-   ══════════════════════════════════════════════════════════════ */
-
 @keyframes loginPageIn  { from{opacity:0} to{opacity:1} }
 @keyframes heroZoom     { from{transform:scale(1)} to{transform:scale(1.06)} }
 @keyframes formSlideUp  { from{opacity:0;transform:translateY(32px)} to{opacity:1;transform:translateY(0)} }
@@ -1135,7 +1093,6 @@ nav { padding: 12px; flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrollin
   z-index: 10000;
 }
 
-/* ─── LEFT: Hero ─── */
 .login-hero {
   flex: 0 0 55%;
   width: 55%;
@@ -1216,7 +1173,6 @@ nav { padding: 12px; flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrollin
 .stat-float-val   { font-size: 18px; font-weight: 700; color: #fff; line-height: 1; }
 .stat-float-label { font-size: 11px; color: rgba(255,255,255,.6); margin-top: 3px; }
 
-/* ─── RIGHT: Form Panel ─── */
 .login-form-panel {
   flex: 0 0 45%;
   width: 45%;
@@ -1367,7 +1323,6 @@ nav { padding: 12px; flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrollin
 }
 .btn-toggle-pass:hover { color: var(--green); }
 
-/* Fix browser autofill / clear input background & text color issue */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
@@ -1419,7 +1374,6 @@ input:-webkit-autofill:active {
 
 .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
 
-/* ─── Mobile ≤1024px Breakpoint ─── */
 @media(max-width:1024px){
   #login-page {
     flex-direction: column !important;
@@ -1492,7 +1446,6 @@ input:-webkit-autofill:active {
   .login-footer-note { color: rgba(255,255,255,.4) !important; }
 }
 
-/* Guard 1: When JS hides #login-page (display: none), force hide it completely */
 #login-page[style*="display: none"],
 #login-page[style*="display:none"],
 div#login-page[style*="display: none"],
@@ -1505,7 +1458,6 @@ div#login-page[style*="display:none"] {
   overflow: hidden !important;
 }
 
-/* Guard 2: When #app is hidden (user on login page), force hide bottom-nav and fab-btn */
 #app[style*="display: none"] ~ .bottom-nav,
 #app[style*="display:none"] ~ .bottom-nav,
 #app[style*="display: none"] .bottom-nav,
@@ -1524,7 +1476,6 @@ div#login-page[style*="display:none"] {
   pointer-events: none !important;
 }
 
-/* ── Premium Cards ── */
 .card {
   background: var(--white);
   border-radius: var(--radius);
@@ -1553,7 +1504,6 @@ div#login-page[style*="display:none"] {
   margin: 0;
 }
 
-/* ── Modern Tables ── */
 table {
   width: 100%;
   border-collapse: collapse;
@@ -1583,7 +1533,6 @@ tr:hover td {
   background: var(--gray-50);
 }
 
-/* ── Badges ── */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -1601,7 +1550,6 @@ tr:hover td {
 .badge-brown { background: #fdf8f6; color: #7c2d12; border: 1px solid #ffedd5; }
 .badge-purple { background: #faf5ff; color: #6b21a8; border: 1px solid #e9d5ff; }
 
-/* ── Alert boxes ── */
 .alert {
   padding: 12px 16px;
   border-radius: var(--radius);
@@ -1628,7 +1576,6 @@ tr:hover td {
   border: 1px solid #bbf7d0;
 }
 
-/* ── Buttons ── */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -1676,7 +1623,6 @@ tr:hover td {
   border-radius: 4px;
 }
 
-/* ── Form components ── */
 .field {
   margin-bottom: 16px;
 }
@@ -1704,7 +1650,6 @@ tr:hover td {
   border-color: var(--green);
 }
 
-/* ── Modal overlay and popup ── */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -1754,7 +1699,6 @@ tr:hover td {
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-/* ── Empty states ── */
 .empty-state {
   text-align: center;
   padding: 32px 16px;
@@ -1770,7 +1714,6 @@ tr:hover td {
   margin-top: 6px;
 }
 
-/* ── Responsive grids ── */
 @media (max-width: 1024px) {
   .user-dashboard-grid {
     flex-direction: column !important;
@@ -1783,7 +1726,6 @@ tr:hover td {
   }
 }
 
-/* ── Zoom-dependent Dot Styling on Map ── */
 .low-zoom .plant-marker-wrap {
   width: 12px !important;
   height: 12px !important;
@@ -1812,13 +1754,11 @@ tr:hover td {
   transition: all 0.15s ease-in-out;
 }
 
-/* ── Mobile App Navigation Bar ── */
 .bottom-nav {
   display: none;
 }
 
 @media (max-width: 768px) {
-  /* ── Strict Mobile Viewport Containment ── */
   html, body {
     overflow-x: hidden !important;
     max-width: 100vw !important;
@@ -1843,13 +1783,12 @@ tr:hover td {
     box-sizing: border-box;
   }
 
-  /* ── General Mobile Sizing Polish ── */
   .content {
     padding: 12px !important;
     width: 100% !important;
     box-sizing: border-box !important;
   }
-  
+
   .welcome-banner {
     padding: 14px 16px !important;
     margin-bottom: 12px !important;
@@ -1864,15 +1803,14 @@ tr:hover td {
   .welcome-banner p {
     display: none !important;
   }
-  
-  /* ── Map Card Constraints (Co bản đồ gọn gàng) ── */
+
   #user-map {
     height: 220px !important;
     border-radius: 8px !important;
     width: 100% !important;
     box-sizing: border-box !important;
   }
-  
+
   .card {
     margin-bottom: 12px !important;
     border-radius: 12px !important;
@@ -1889,8 +1827,7 @@ tr:hover td {
   .card-header span {
     font-size: 10px !important;
   }
-  
-  /* ── Mobile Navigation Bar ── */
+
   .bottom-nav {
     display: flex;
     position: fixed;
@@ -1929,12 +1866,11 @@ tr:hover td {
     color: var(--green);
     transform: scale(1.05);
   }
-  
+
   .mobile-toggle-btn, .sidebar, .sidebar-overlay {
     display: none !important;
   }
-  
-  /* ── Mobile Table-to-Card Layout (Hủy cuộn ngang, thiết kế thẻ app) ── */
+
   .table-responsive {
     overflow-x: visible !important;
     border: none !important;
@@ -1942,17 +1878,17 @@ tr:hover td {
     padding: 0 !important;
     margin: 0 !important;
   }
-  
+
   table.table {
     display: block !important;
     width: 100% !important;
     border: none !important;
   }
-  
+
   .table-responsive thead, .table thead, table thead {
     display: none !important;
   }
-  
+
   #user-plants-table, #user-logs-table {
     display: block !important;
     width: 100% !important;
@@ -1960,7 +1896,7 @@ tr:hover td {
     margin: 0 !important;
     box-sizing: border-box;
   }
-  
+
   #user-plants-table tr, #user-logs-table tr {
     display: block !important;
     width: 100% !important;
@@ -1972,7 +1908,7 @@ tr:hover td {
     box-shadow: 0 2px 8px rgba(0,0,0,0.03);
     box-sizing: border-box;
   }
-  
+
   #user-plants-table td, #user-logs-table td {
     display: flex !important;
     justify-content: space-between;
@@ -1985,7 +1921,6 @@ tr:hover td {
     box-sizing: border-box;
   }
 
-  /* Make cell values align to the right side of the card */
   #user-plants-table td > div, #user-logs-table td > div {
     text-align: right !important;
     display: block !important;
@@ -1997,12 +1932,11 @@ tr:hover td {
     font-weight: 700;
     color: var(--gray-500);
   }
-  
+
   #user-plants-table thead, #user-logs-table thead {
     display: none !important;
   }
 
-  /* Optimize Action Button in Plant Cards */
   #user-plants-table td[data-label="Thao tác"] {
     display: block !important;
     text-align: center !important;
@@ -2035,7 +1969,6 @@ tr:hover td {
     justify-content: flex-end !important;
   }
 
-  /* Optimize Action Buttons in Care Logs Card */
   #user-logs-table td[data-label="Thao tác"] {
     display: flex !important;
     justify-content: space-between !important;
@@ -2056,7 +1989,6 @@ tr:hover td {
     font-size: 12px !important;
   }
 
-  /* Optimize Farm Detail Header Card on Mobile */
   .farm-detail-header-card {
     padding: 12px 14px !important;
     gap: 10px !important;
@@ -2092,7 +2024,6 @@ tr:hover td {
     white-space: nowrap !important;
   }
 
-  /* Optimize Supplies Navigation Tabs on Mobile */
   .supplies-tabs {
     gap: 6px !important;
     padding: 4px !important;
@@ -2114,7 +2045,6 @@ tr:hover td {
     height: 14px !important;
   }
 
-  /* Optimize Smart Alert Cards on Mobile */
   .smart-alert-card {
     flex-direction: column !important;
     align-items: stretch !important;
@@ -2131,8 +2061,6 @@ tr:hover td {
   }
 }
 
-
-/* ── Floating Action Button (FAB) ── */
 .fab-btn {
   position: fixed;
   bottom: 76px;
@@ -2164,7 +2092,6 @@ tr:hover td {
   100% { box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4); }
 }
 
-/* Adjust FAB position on Desktop screens */
 @media (min-width: 769px) {
   .fab-btn {
     bottom: 30px;
@@ -2175,7 +2102,6 @@ tr:hover td {
   }
 }
 
-/* ── Disease Warning Card Style ── */
 .disease-alert-card {
   transition: transform 0.2s ease;
 }
@@ -2183,13 +2109,6 @@ tr:hover td {
   transform: translateY(-2px);
 }
 
-/* Desktop view restored to full width */
-
-/* ══════════════════════════════════════════════════════════════
-   SETTINGS PAGE — Premium Glassmorphism UI
-   ══════════════════════════════════════════════════════════════ */
-
-/* ── Keyframes ── */
 @keyframes settingsFadeIn {
   from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -2206,7 +2125,6 @@ tr:hover td {
   100% { background-position: 400px 0; }
 }
 
-/* ── Settings Header ── */
 .settings-header {
   display: flex;
   align-items: center;
@@ -2232,7 +2150,6 @@ tr:hover td {
   font-size: 13px; color: var(--text-muted); margin: 0;
 }
 
-/* ── Settings Grid ── */
 .settings-grid {
   display: grid;
   grid-template-columns: 1fr 380px;
@@ -2240,7 +2157,6 @@ tr:hover td {
   animation: settingsFadeIn .5s cubic-bezier(.22,.68,0,1.15) .08s both;
 }
 
-/* ── Settings Card base ── */
 .settings-card {
   background: rgba(255,255,255,.92);
   backdrop-filter: blur(20px) saturate(180%);
@@ -2262,7 +2178,6 @@ tr:hover td {
     inset 0 1px 0 rgba(255,255,255,.9);
 }
 
-/* ── Avatar Section ── */
 .settings-avatar-section {
   display: flex;
   align-items: center;
@@ -2296,7 +2211,6 @@ tr:hover td {
 .settings-avatar-img.hidden,
 .settings-avatar-initials.hidden { display: none !important; }
 
-/* Animated ring around avatar */
 .settings-avatar-ring {
   position: absolute; inset: -4px;
   border-radius: 50%;
@@ -2311,7 +2225,6 @@ tr:hover td {
   box-shadow: 0 0 12px 3px rgba(249,115,22,0.25);
 }
 
-/* Camera overlay on hover */
 .settings-avatar-overlay {
   position: absolute; inset: 0;
   border-radius: 50%;
@@ -2329,7 +2242,6 @@ tr:hover td {
 .settings-avatar-overlay span { font-size: 10px; font-weight: 600; letter-spacing: .04em; }
 .settings-avatar-wrap:hover .settings-avatar-overlay { opacity: 1; }
 
-/* Uploading state */
 .settings-avatar-wrap.uploading .settings-avatar-overlay { opacity: 1; }
 .settings-avatar-wrap.uploading .settings-avatar-overlay i {
   animation: spin .8s linear infinite;
@@ -2346,14 +2258,12 @@ tr:hover td {
 }
 .settings-joined-label span { color: var(--green-dark); font-weight: 600; }
 
-/* ── Divider ── */
 .settings-divider {
   height: 1px;
   background: linear-gradient(to right, transparent, var(--gray-200), transparent);
   margin: 20px 0;
 }
 
-/* ── Section title ── */
 .settings-section-title {
   font-size: 13px; font-weight: 700;
   color: var(--green-dark);
@@ -2363,7 +2273,6 @@ tr:hover td {
 }
 .settings-section-title i { color: var(--green); }
 
-/* ── Form grid ── */
 .settings-form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2374,7 +2283,6 @@ tr:hover td {
   grid-template-columns: 1fr;
 }
 
-/* ── Input field ── */
 .settings-field { display: flex; flex-direction: column; }
 .settings-label {
   font-size: 10.5px; font-weight: 700;
@@ -2423,7 +2331,6 @@ tr:hover td {
 }
 .settings-select { cursor: pointer; }
 
-/* Password toggle button */
 .settings-pw-toggle {
   position: absolute; right: 12px;
   background: none; border: none;
@@ -2433,7 +2340,6 @@ tr:hover td {
 }
 .settings-pw-toggle:hover { color: var(--green-dark); }
 
-/* ── Action buttons ── */
 .settings-btn {
   width: 100%;
   padding: 13px 20px;
@@ -2488,7 +2394,6 @@ tr:hover td {
 }
 .settings-btn:disabled { opacity: .65; cursor: not-allowed; transform: none !important; }
 
-/* ── Security badge ── */
 .settings-security-badge {
   display: flex; align-items: center; gap: 14px;
   background: linear-gradient(135deg, rgba(30,64,175,.05) 0%, rgba(59,130,246,.08) 100%);
@@ -2508,7 +2413,6 @@ tr:hover td {
   font-size: 12px; color: var(--text-muted); margin: 0;
 }
 
-/* ── Security tips ── */
 .settings-tips {
   margin-top: 20px;
   display: flex; flex-direction: column; gap: 8px;
@@ -2519,7 +2423,6 @@ tr:hover td {
 }
 .settings-tip i { color: var(--green); font-size: 11px; }
 
-/* ── Responsive ── */
 @media (max-width: 900px) {
   .settings-grid { grid-template-columns: 1fr; }
 }
@@ -2530,10 +2433,6 @@ tr:hover td {
   .settings-avatar-info { text-align: center; }
 }
 
-
-/* ══════════════════════════════════════════
-   PLANT ACTION MENU (3-dot dropdown)
-══════════════════════════════════════════ */
 .plant-action-menu {
   position: relative;
   display: inline-flex;
@@ -2602,10 +2501,6 @@ tr:hover td {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-
-/* ══════════════════════════════════════════
-   NFC MODAL
-══════════════════════════════════════════ */
 #nfc-modal {
   display: none;
   position: fixed;
@@ -2642,7 +2537,6 @@ tr:hover td {
   to   { opacity:1; transform:translateY(0)   scale(1); }
 }
 
-/* Custom smooth scrollbar for NFC modal */
 .nfc-modal-box::-webkit-scrollbar {
   width: 6px;
 }
@@ -2651,7 +2545,6 @@ tr:hover td {
   border-radius: 4px;
 }
 
-/* Header */
 .nfc-modal-header {
   display: flex;
   align-items: center;
@@ -2699,7 +2592,6 @@ tr:hover td {
 }
 .modal-close-btn:hover { background: var(--gray-100); color: var(--gray-800); }
 
-/* Current UID row */
 .nfc-current-uid-row {
   display: flex;
   align-items: center;
@@ -2715,7 +2607,6 @@ tr:hover td {
   white-space: nowrap;
 }
 
-/* Scan area */
 .nfc-scan-area {
   display: flex;
   flex-direction: column;
@@ -2751,7 +2642,6 @@ tr:hover td {
   gap: 8px;
 }
 
-/* Divider */
 .nfc-divider {
   display: flex;
   align-items: center;
@@ -2768,7 +2658,6 @@ tr:hover td {
   background: var(--gray-200);
 }
 
-/* Manual input */
 .nfc-manual-section { margin-bottom: 16px; }
 .nfc-input-label {
   display: block;
@@ -2790,7 +2679,6 @@ tr:hover td {
 }
 .nfc-manual-input:focus { border-color: var(--blue); }
 
-/* Deactivate button */
 .nfc-deactivate-btn {
   display: flex;
   align-items: center;
@@ -2812,7 +2700,6 @@ tr:hover td {
   border-color: #fca5a5;
 }
 
-/* Footer */
 .nfc-modal-footer {
   display: flex;
   justify-content: flex-end;
@@ -2820,7 +2707,6 @@ tr:hover td {
   border-top: 1px solid var(--gray-100);
 }
 
-/* Badges */
 .badge-green {
   display: inline-flex;
   align-items: center;
@@ -2846,7 +2732,6 @@ tr:hover td {
   font-weight: 600;
 }
 
-/* Hide FAB button & mobile nav on login screen */
 #login-page:not([style*="display: none"]) ~ #app .fab-btn,
 #login-page:not([style*="display: none"]) ~ #app .mobile-bottom-nav,
 #login-page:not([style*="display: none"]) ~ .fab-btn,
@@ -2854,7 +2739,6 @@ tr:hover td {
   display: none !important;
 }
 
-/* ─── Supplies Page & Monitoring Styling ─── */
 .supplies-banner {
   background: linear-gradient(135deg, #091e15 0%, #1b4d3e 60%, #14532d 100%) !important;
   border-radius: 16px !important;
@@ -2879,8 +2763,6 @@ tr:hover td {
   margin: 0 !important;
 }
 
-
-/* ─── Ultra-Professional Supply Modal Styling ─── */
 .supply-modal-custom {
   max-width: 560px !important;
   width: 92vw !important;
@@ -3033,7 +2915,6 @@ tr:hover td {
   gap: 10px !important;
 }
 
-/* ─── Ultra-Premium Product Photo Upload Card ─── */
 .sp-image-upload-card {
   display: flex !important;
   align-items: center !important;
@@ -3118,7 +2999,6 @@ tr:hover td {
   padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;
 }
 
-/* ─── Plant Action Menu & 3-Dots Dropdown ─── */
 .plant-action-menu {
   position: relative !important;
   display: inline-block !important;
@@ -3197,17 +3077,11 @@ td[data-label="Thao tác"] {
   overflow: visible !important;
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   ANDROID MOBILE APP NATIVE STYLING & TABLE-TO-CARD UX (RESPONSIVE)
-   Phát triển & Sở hữu bởi Phạm Hoàng Phúc © 2026
-   ═══════════════════════════════════════════════════════════════ */
-
 @media (max-width: 767px) {
-  /* Mobile padding offset for fixed bottom navigation bar */
   .main {
     padding-bottom: 84px !important;
   }
-  
+
   .content {
     padding: 14px 12px 90px 12px !important;
   }
@@ -3216,12 +3090,11 @@ td[data-label="Thao tác"] {
     padding: 0 14px !important;
     height: 58px !important;
   }
-  
+
   .topbar h1 {
     font-size: 16px !important;
   }
 
-  /* Fixed Android Bottom Navigation Bar */
   .bottom-nav {
     display: flex !important;
     position: fixed !important;
@@ -3272,14 +3145,13 @@ td[data-label="Thao tác"] {
     border-radius: 3px !important;
   }
 
-  /* Table-to-Card Responsive Transformation on Mobile */
-  .responsive-table table, 
-  .responsive-table thead, 
-  .responsive-table tbody, 
-  .responsive-table th, 
-  .responsive-table td, 
-  .responsive-table tr { 
-    display: block !important; 
+  .responsive-table table,
+  .responsive-table thead,
+  .responsive-table tbody,
+  .responsive-table th,
+  .responsive-table td,
+  .responsive-table tr {
+    display: block !important;
   }
 
   .responsive-table thead {
@@ -3311,7 +3183,6 @@ td[data-label="Thao tác"] {
     font-size: 12px !important;
   }
 
-  /* Brand Signature Footer Styling */
   .brand-signature {
     text-align: center !important;
     font-size: 12px !important;
@@ -3323,11 +3194,6 @@ td[data-label="Thao tác"] {
   }
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   EXECUTIVE FARMER COCKPIT (TẦNG 1) - RESPONSIVE & ERP WIDGETS
-   ═══════════════════════════════════════════════════════════════ */
-
-/* 1. Cockpit Grid Layout */
 .cockpit-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -3355,7 +3221,6 @@ td[data-label="Thao tác"] {
   }
 }
 
-/* 2. Farm Scale Interactive Trigger & Popover */
 .farm-interactive-trigger {
   border: 1.5px solid transparent;
   border-radius: 10px;
@@ -3455,7 +3320,6 @@ td[data-label="Thao tác"] {
   gap: 4px;
 }
 
-/* 3. Crop Multi-segment Progress Bar */
 .crop-progress-bar {
   display: flex;
   height: 8px;
@@ -3471,7 +3335,6 @@ td[data-label="Thao tác"] {
   position: relative;
 }
 
-/* 4. Crop Chips Matrix */
 .crop-chips-matrix {
   display: flex;
   flex-wrap: wrap;
@@ -3516,7 +3379,6 @@ td[data-label="Thao tác"] {
   font-weight: 800;
 }
 
-/* 5. Date Group Header Row & Multi-time Chips for Activity Log */
 .date-group-header-row td {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
   border-top: 2px solid #cbd5e1 !important;
@@ -3544,9 +3406,6 @@ td[data-label="Thao tác"] {
   font-size: 10px !important;
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   AGTECH ERP SUPPLIES MANAGEMENT STYLES
-   ═══════════════════════════════════════════════════════════════ */
 .erp-supplies-table {
   width: 100%;
   border-collapse: separate;
@@ -3615,8 +3474,6 @@ td[data-label="Thao tác"] {
   color: #ffffff;
   box-shadow: 0 2px 6px rgba(5, 150, 105, 0.25);
 }
-
-
 
 .stock-timeline-item {
   position: relative;
@@ -3723,7 +3580,6 @@ td[data-label="Thao tác"] {
   }
 }
 
-/* ─── Bách Khoa / Knowledge Center Sub-tabs (Enterprise Card Grid) ─── */
 .wiki-subtabs-nav {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -3825,7 +3681,6 @@ td[data-label="Thao tác"] {
   margin-left: 6px;
 }
 
-/* Active State */
 .wiki-subtab.active {
   background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
   border-color: #047857 !important;
@@ -3889,17 +3744,6 @@ td[data-label="Thao tác"] {
   }
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   STANDARDIZED 6-TIER RESPONSIVE BREAKPOINTS FRAMEWORK
-   1. Extra Small:  Phones < 576px
-   2. Small:        Phones >= 576px (576px - 767px)
-   3. Medium:       Tablets >= 768px (768px - 991px)
-   4. Large:        Laptops >= 992px (992px - 1199px)
-   5. Extra Large:  Desktops >= 1200px (1200px - 1399px)
-   6. Extra Extra:  Large Desktops >= 1400px
-   ═══════════════════════════════════════════════════════════════ */
-
-/* ── 1. Extra Small (< 576px) — Smartphones Portrait ── */
 @media (max-width: 575.98px) {
   .main-content {
     padding: 12px 10px 84px 10px !important;
@@ -3930,7 +3774,6 @@ td[data-label="Thao tác"] {
   }
 }
 
-/* ── 2. Small (576px - 767.98px) — Smartphones Landscape & Phablets ── */
 @media (min-width: 576px) and (max-width: 767.98px) {
   .main-content {
     padding: 16px 14px 84px 14px !important;
@@ -3947,7 +3790,6 @@ td[data-label="Thao tác"] {
   }
 }
 
-/* ── 3. Medium (768px - 991.98px) — Tablets & Small Laptops ── */
 @media (min-width: 768px) and (max-width: 991.98px) {
   .main-content {
     padding: 20px 18px !important;
@@ -3961,7 +3803,6 @@ td[data-label="Thao tác"] {
   }
 }
 
-/* ── 4. Large (992px - 1199.98px) — Standard Laptops ── */
 @media (min-width: 992px) and (max-width: 1199.98px) {
   .main-content {
     padding: 24px 22px !important;
@@ -3972,7 +3813,6 @@ td[data-label="Thao tác"] {
   }
 }
 
-/* ── 5. Extra Large (1200px - 1399.98px) — Standard Desktop Monitors ── */
 @media (min-width: 1200px) and (max-width: 1399.98px) {
   .main-content {
     padding: 28px 24px !important;
@@ -3985,7 +3825,6 @@ td[data-label="Thao tác"] {
   }
 }
 
-/* ── 6. Extra Extra Large (>= 1400px) — Ultra-wide & 2K/4K Displays ── */
 @media (min-width: 1400px) {
   .main-content {
     padding: 32px 28px !important;
@@ -3998,9 +3837,6 @@ td[data-label="Thao tác"] {
   }
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   MODAL MOBILE-FIRST RESPONSIVE & HIGH Z-INDEX STACKING
-   ═══════════════════════════════════════════════════════════════ */
 .modal-overlay,
 #nfc-modal,
 #care-modal,
@@ -4048,7 +3884,6 @@ td[data-label="Thao tác"] {
     z-index: 5 !important;
   }
 
-  /* When modal is open, prevent bottom-nav and mascot from blocking user actions */
   body:has(#nfc-modal.open) .bottom-nav,
   body:has(#nfc-modal.open) .user-unified-mascot-container,
   body:has(#nfc-modal.open) #fab-btn,
@@ -4060,9 +3895,6 @@ td[data-label="Thao tác"] {
   }
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   FARM DETAIL HEADER & FARMER NFC CARD (RESPONSIVE SCALE)
-   ═══════════════════════════════════════════════════════════════ */
 .farm-detail-header-card {
   display: flex !important;
   flex-direction: column !important;
@@ -4180,7 +4012,6 @@ td[data-label="Thao tác"] {
   gap: 4px !important;
 }
 
-/* ── Farmer NFC Status & Quick Action Card ── */
 .farmer-nfc-card {
   background: #ffffff !important;
   border: 1.5px solid #cbd5e1 !important;
@@ -4276,7 +4107,6 @@ td[data-label="Thao tác"] {
   box-shadow: 0 2px 8px rgba(16,185,129,0.25) !important;
 }
 
-/* ── ERP Plant Action Button Group (Replaces 3-dots) ── */
 .erp-plant-action-btns {
   display: flex !important;
   align-items: center !important;
@@ -4346,7 +4176,6 @@ td[data-label="Thao tác"] {
   color: #065f46 !important;
 }
 
-/* ── Supplies Navigation Tabs (Executive AgTech ERP Theme) ── */
 .supplies-tabs {
   margin-bottom: 24px !important;
   display: flex !important;
@@ -4421,7 +4250,6 @@ td[data-label="Thao tác"] {
   color: #059669 !important;
 }
 
-/* ── 7-Day Weather Forecast Grid: 4 on Top Row, 3 on Bottom Row (Balanced & Full Width) ── */
 .weather-forecast-grid-4-3 {
   display: grid !important;
   grid-template-columns: repeat(12, 1fr) !important;
@@ -4430,11 +4258,11 @@ td[data-label="Thao tác"] {
 }
 
 .weather-forecast-grid-4-3 .weather-card-top-4 {
-  grid-column: span 3 !important; /* 4 cards * 3 = 12 cols (Row 1: 100% width) */
+  grid-column: span 3 !important;
 }
 
 .weather-forecast-grid-4-3 .weather-card-bottom-3 {
-  grid-column: span 4 !important; /* 3 cards * 4 = 12 cols (Row 2: 100% width) */
+  grid-column: span 4 !important;
 }
 
 @media (max-width: 991px) {
@@ -4509,9 +4337,7 @@ td[data-label="Thao tác"] {
   flex-wrap: wrap !important;
 }
 
-/* ── Mobile Layout Adjustments (@media max-width: 768px) ── */
 @media (max-width: 768px) {
-  /* Supplies Mobile Actions & Filters */
   .supplies-card-header {
     flex-direction: column !important;
     align-items: stretch !important;
@@ -4551,7 +4377,6 @@ td[data-label="Thao tác"] {
     min-width: 100% !important;
   }
 
-  /* Topbar Mobile Title Fix (Prevent multi-line break) */
   .topbar {
     padding: 0 12px !important;
     height: 54px !important;
@@ -4573,9 +4398,6 @@ td[data-label="Thao tác"] {
   }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   ENTERPRISE AGTECH FARM CARDS GRID (SỔ NÔNG NHÀN MASTER HUB)
-   ═══════════════════════════════════════════════════════════════════════════ */
 .user-farms-grid-container {
   display: grid !important;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)) !important;
@@ -4607,7 +4429,6 @@ td[data-label="Thao tác"] {
   box-shadow: 0 12px 28px -4px rgba(5, 150, 105, 0.12), 0 4px 8px -2px rgba(0, 0, 0, 0.02) !important;
 }
 
-/* Card Header: Icon + Title & Ownership Badge */
 .user-farm-card-head {
   display: flex !important;
   align-items: flex-start !important;
@@ -4678,7 +4499,6 @@ td[data-label="Thao tác"] {
   flex-shrink: 0 !important;
 }
 
-/* Card Location / Address */
 .user-farm-card-location {
   display: flex !important;
   align-items: center !important;
@@ -4695,7 +4515,6 @@ td[data-label="Thao tác"] {
   text-overflow: ellipsis !important;
 }
 
-/* Card Metrics 2-column Grid */
 .user-farm-card-metrics {
   background: #f8fafc !important;
   border: 1px solid #e2e8f0 !important;
@@ -4744,7 +4563,6 @@ td[data-label="Thao tác"] {
   color: #0284c7 !important;
 }
 
-/* Certifications & Badges Row */
 .user-farm-card-certs {
   display: flex !important;
   flex-wrap: wrap !important;
@@ -4785,7 +4603,6 @@ td[data-label="Thao tác"] {
   font-size: 11px !important;
 }
 
-/* Bottom Actions Bar */
 .user-farm-card-actions {
   margin-top: auto !important;
   display: flex !important;
@@ -4866,7 +4683,6 @@ td[data-label="Thao tác"] {
   color: #b91c1c !important;
 }
 
-/* Dotted Add New Farm Card */
 .user-farm-card-create {
   background: #f0fdf4 !important;
   border: 2px dashed #10b981 !important;
@@ -4918,9 +4734,6 @@ td[data-label="Thao tác"] {
   }
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   SMART FARM AGTECH IOT RADAR & ENTERPRISE ALERT CENTER
-   ═══════════════════════════════════════════════════════════════ */
 .smart-farm-radar-pulse {
   position: relative;
   width: 36px;
@@ -4993,7 +4806,6 @@ td[data-label="Thao tác"] {
   border: 1.5px solid #a7f3d0;
 }
 
-/* ── Smart Farm Alert Cards (International Agronomic Pattern) ── */
 .smart-alert-card {
   border-radius: 14px;
   padding: 16px 20px;
@@ -5168,9 +4980,6 @@ td[data-label="Thao tác"] {
   box-shadow: 0 4px 12px rgba(5, 150, 105, 0.28);
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   EXECUTIVE ERP ENTERPRISE TABLE SYSTEM
-   ═══════════════════════════════════════════════════════════════ */
 .erp-enterprise-table {
   width: 100% !important;
   border-collapse: separate !important;
@@ -5228,7 +5037,6 @@ td[data-label="Thao tác"] {
   gap: 6px !important;
 }
 
-/* ── Satellite Provider Switcher Floating & Header Controls (User Portal) ── */
 .sat-switch-btn {
   background: transparent;
   color: #cbd5e1;
@@ -5257,9 +5065,3 @@ td[data-label="Thao tác"] {
   border-color: #34d399 !important;
   box-shadow: 0 2px 8px rgba(16, 185, 129, 0.45);
 }
-
-
-
-
-
-

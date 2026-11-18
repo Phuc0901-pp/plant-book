@@ -7,14 +7,12 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Configure multer storage to write directly to frontend/assets/crop/
 const cropStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     const dest = path.join(__dirname, '../../frontend/assets/crop');
     cb(null, dest);
   },
   filename: (req, file, cb) => {
-    // We expect req.body.englishName to contain the english crop name (e.g. 'durian')
     const englishName = (req.body.englishName || 'unknown').trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
     const ext = path.extname(file.originalname).toLowerCase();
     cb(null, englishName + ext);
@@ -23,7 +21,7 @@ const cropStorage = multer.diskStorage({
 
 const uploadCrop = multer({
   storage: cropStorage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowed = /jpeg|jpg|png|gif|webp/;
     const ext = path.extname(file.originalname).toLowerCase().slice(1);
@@ -32,12 +30,10 @@ const uploadCrop = multer({
   }
 });
 
-
-// GET all schemas
 router.get('/', auth, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT ps.*, u.full_name as creator_name 
+      `SELECT ps.*, u.full_name as creator_name
        FROM plant_schemas ps
        LEFT JOIN users u ON u.id = ps.created_by
        ORDER BY ps.created_at DESC`
@@ -49,7 +45,6 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-// GET single schema
 router.get('/:id', auth, async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM plant_schemas WHERE id=$1', [req.params.id]);
@@ -60,14 +55,13 @@ router.get('/:id', auth, async (req, res) => {
   }
 });
 
-// POST create schema (requires admin)
 router.post('/', auth, admin, async (req, res) => {
   try {
     const { name, description, fields } = req.body;
     if (!name) return res.status(400).json({ error: 'Tên schema là bắt buộc.' });
 
     const result = await pool.query(
-      `INSERT INTO plant_schemas (name, description, fields, created_by) 
+      `INSERT INTO plant_schemas (name, description, fields, created_by)
        VALUES ($1,$2,$3,$4) RETURNING *`,
       [name, description || '', JSON.stringify(fields || []), req.user.id]
     );
@@ -78,7 +72,6 @@ router.post('/', auth, admin, async (req, res) => {
   }
 });
 
-// PUT update schema (requires admin)
 router.put('/:id', auth, admin, async (req, res) => {
   try {
     const { name, description, fields } = req.body;
@@ -94,7 +87,6 @@ router.put('/:id', auth, admin, async (req, res) => {
   }
 });
 
-// DELETE schema (requires admin)
 router.delete('/:id', auth, admin, async (req, res) => {
   try {
     await pool.query('DELETE FROM plant_schemas WHERE id=$1', [req.params.id]);
@@ -104,18 +96,16 @@ router.delete('/:id', auth, admin, async (req, res) => {
   }
 });
 
-// POST upload crop image (requires admin)
 router.post('/upload-image', auth, admin, uploadCrop.single('image'), (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'Không nhận được file ảnh.' });
     }
-    
-    // To prevent extension conflicts (e.g., if durian.png exists, and we upload durian.jpg, delete durian.png)
+
     const englishName = (req.body.englishName || 'unknown').trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
     const uploadedExt = path.extname(req.file.originalname).toLowerCase();
     const destDir = path.join(__dirname, '../../frontend/assets/crop');
-    
+
     const possibleExts = ['.png', '.jpg', '.jpeg', '.webp', '.gif'];
     possibleExts.forEach(ext => {
       if (ext !== uploadedExt) {

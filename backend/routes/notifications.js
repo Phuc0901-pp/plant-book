@@ -1,14 +1,8 @@
-/* ═══════════════════════════════════════════════════════════════
-   Plant Book – Backend
-   routes/notifications.js — Autonomous In-App & Sensor Rules Engine
-   ═══════════════════════════════════════════════════════════════ */
-
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
 
-// Standard agricultural metric definitions
 const METRIC_LABELS = {
   soil_moisture_20cm: { name: 'Độ ẩm đất tầng 20cm', unit: '%' },
   soil_moisture_50cm: { name: 'Độ ẩm đất tầng 50cm', unit: '%' },
@@ -20,17 +14,15 @@ const METRIC_LABELS = {
   water_level: { name: 'Mực nước bể lưu', unit: '%' }
 };
 
-// GET /api/notifications — Fetch user active notifications (is_archived = false)
 router.get('/', auth, async (req, res) => {
   try {
     const userId = req.user.id;
-    
-    // Auto check & generate initial notifications if empty
+
     const checkRes = await pool.query('SELECT COUNT(*)::int as count FROM user_notifications WHERE user_id = $1', [userId]);
     if (checkRes.rows[0].count === 0) {
       await pool.query(`
         INSERT INTO user_notifications (user_id, title, message, type, is_read, is_archived)
-        VALUES 
+        VALUES
           ($1, 'Cảnh Báo Độ Ẩm Đất Tầng 20cm Dưới Ngưỡng An Toàn', 'Cảm biến IoT ghi nhận độ ẩm đất tầng 20cm giảm còn 42% (dưới ngưỡng 50%). Khuyến nghị kích hoạt tưới nhỏ giọt bổ sung nước cho bộ rễ.', 'danger', false, false),
           ($1, 'Dự Báo Khí Tượng & Khuyến Cáo Phun Thuốc Phòng Bệnh', 'Khả năng mưa rào rải rác 65% kèm độ ẩm không khí tăng cao (>80%). Khuyến nghị tạm hoãn phun thuốc phòng trừ sâu bệnh để tránh thất thoát do rửa trôi.', 'warning', false, false),
           ($1, 'Lịch Trình Chăm Sóc & Bổ Sung Dinh Dưỡng Định Kỳ', 'Đến chu kỳ bón phân hữu cơ vi sinh và kiểm tra sức khỏe tán cây theo quy trình kỹ thuật VietGAP.', 'info', true, false)
@@ -38,9 +30,9 @@ router.get('/', auth, async (req, res) => {
     }
 
     const result = await pool.query(`
-      SELECT * FROM user_notifications 
+      SELECT * FROM user_notifications
       WHERE user_id = $1 AND (is_archived = false OR is_archived IS NULL)
-      ORDER BY created_at DESC 
+      ORDER BY created_at DESC
       LIMIT 30
     `, [userId]);
 
@@ -60,7 +52,6 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-// PUT /api/notifications/read-all — Mark all active notifications as read
 router.put('/read-all', auth, async (req, res) => {
   try {
     await pool.query(
@@ -74,7 +65,6 @@ router.put('/read-all', auth, async (req, res) => {
   }
 });
 
-// PUT /api/notifications/:id/read — Mark single notification as read
 router.put('/:id/read', auth, async (req, res) => {
   try {
     await pool.query('UPDATE user_notifications SET is_read = true WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id]);
@@ -85,7 +75,6 @@ router.put('/:id/read', auth, async (req, res) => {
   }
 });
 
-// DELETE /api/notifications/:id — Soft-delete / Dismiss notification (Nông hộ xóa đệm)
 router.delete('/:id', auth, async (req, res) => {
   try {
     await pool.query(
@@ -99,25 +88,18 @@ router.delete('/:id', auth, async (req, res) => {
   }
 });
 
-
-// ─── SENSOR THRESHOLD & ALERT RULES ENDPOINTS ───────────────────
-
-// GET /api/notifications/rules — Fetch threshold alert rules for user
 router.get('/rules', auth, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Check if this user has ever been initialized with sample rules
     const userRes = await pool.query('SELECT rules_initialized FROM users WHERE id = $1', [userId]);
     const rulesInitialized = userRes.rows[0]?.rules_initialized || false;
 
-    // Only auto-seed default sample rules if user has NEVER initialized rules before
-    // Once rules_initialized = true, we NEVER auto-seed again (respects deletions)
     if (!rulesInitialized) {
       const countRes = await pool.query('SELECT COUNT(*)::int as count FROM user_alert_rules WHERE user_id = $1', [userId]);
       if (countRes.rows[0].count === 0) {
         await pool.query(`
-          INSERT INTO user_alert_rules 
+          INSERT INTO user_alert_rules
             (user_id, title, category_type, metric_key, metric_name, operator, threshold_value, unit, action_type, action_recommendation, alert_level, check_offline_iot, check_disease_history, reconfirm_event_type, is_enabled)
           VALUES
             ($1, 'Cảnh Báo Độ Ẩm Đất Tầng 10cm & Trạng Thái IoT', 'danger', 'soil_moisture_10cm', 'Độ ẩm đất tầng 10cm', '<', 50, '%', 'Tưới nước', 'Độ ẩm đất tầng 10cm xuống dưới 50%. Tự động quét kiểm tra các thiết bị cảm biến IoT không có dữ liệu (null/0). Khuyến nghị tưới bổ sung đến khi độ ẩm >= 50%!', 'danger', true, false, NULL, true),
@@ -125,7 +107,6 @@ router.get('/rules', auth, async (req, res) => {
             ($1, 'Xác Nhận Cập Nhật Dữ Liệu Canh Tác Thực Địa', 'info', 'system_event', 'Sự kiện Hệ thống', '=', 1, '', 'Hệ thống', 'Xác nhận toàn bộ hoạt động cập nhật nhật ký canh tác (Tưới nước, Bón phân, Thu hoạch) được đồng bộ an toàn!', 'info', false, false, 'log_update', true)
         `, [userId]);
       }
-      // Mark this user as initialized so we NEVER auto-seed again
       await pool.query('UPDATE users SET rules_initialized = true WHERE id = $1', [userId]);
     }
 
@@ -144,8 +125,6 @@ router.get('/rules', auth, async (req, res) => {
   }
 });
 
-
-// POST /api/notifications/rules — Create new threshold rule
 router.post('/rules', auth, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -179,9 +158,9 @@ router.post('/rules', auth, async (req, res) => {
     const matchOp = (match_type === 'OR') ? 'OR' : 'AND';
 
     const insertRes = await pool.query(`
-      INSERT INTO user_alert_rules 
+      INSERT INTO user_alert_rules
         (user_id, farm_id, title, category_type, metric_key, metric_name, operator, threshold_value, unit, action_type, action_recommendation, alert_level, check_offline_iot, check_disease_history, reconfirm_event_type, conditions_json, match_type, notify_time_type, custom_time, frequency, is_enabled)
-      VALUES 
+      VALUES
         ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, true)
       RETURNING *
     `, [
@@ -218,7 +197,6 @@ router.post('/rules', auth, async (req, res) => {
   }
 });
 
-// PUT /api/notifications/rules/:id — Update rule or toggle is_enabled
 router.put('/rules/:id', auth, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -268,18 +246,18 @@ router.put('/rules/:id', auth, async (req, res) => {
     const newFrequency = frequency || current.frequency || 'always';
 
     const updateRes = await pool.query(`
-      UPDATE user_alert_rules 
-      SET 
-        is_enabled = $1, 
+      UPDATE user_alert_rules
+      SET
+        is_enabled = $1,
         title = $2,
         category_type = $3,
-        metric_key = $4, 
+        metric_key = $4,
         metric_name = $5,
-        operator = $6, 
-        threshold_value = $7, 
+        operator = $6,
+        threshold_value = $7,
         unit = $8,
-        action_type = $9, 
-        action_recommendation = $10, 
+        action_type = $9,
+        action_recommendation = $10,
         alert_level = $11,
         check_offline_iot = $12,
         check_disease_history = $13,
@@ -327,7 +305,6 @@ router.put('/rules/:id', auth, async (req, res) => {
   }
 });
 
-// DELETE /api/notifications/rules/:id — Delete rule
 router.delete('/rules/:id', auth, async (req, res) => {
   try {
     const userId = req.user.id;

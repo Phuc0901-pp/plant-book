@@ -1,8 +1,3 @@
-/* ═══════════════════════════════════════════════════════════════
-   Plant Book – User Portal
-   core/config.js — Centralized App Configuration (SSOT)
-   ═══════════════════════════════════════════════════════════════ */
-
 export const APP_CONFIG = {
   "app": {
     "name": "Sổ Nông Tân Bảo Agtech",
@@ -67,9 +62,6 @@ export function getAppConfig() {
   return APP_CONFIG;
 }
 
-/**
- * Dynamically synchronizes application version from database via /api/version
- */
 export async function syncAppVersionFromDB() {
   try {
     const res = await fetch('/api/version');
@@ -88,9 +80,6 @@ export async function syncAppVersionFromDB() {
   }
 }
 
-/**
- * Updates version tags across the DOM dynamically
- */
 export function updateAppVersionInDOM(versionTag) {
   if (!versionTag) return;
   document.querySelectorAll('.app-version-badge, .app-version-tag, [data-app-version]').forEach(el => {

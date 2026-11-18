@@ -1,14 +1,11 @@
-<!-- ════════════════ LOGIN ════════════════ -->
 <div id="login-page">
 
-  <!-- PARTICLES BACKGROUND (mobile) -->
   <div class="login-bg-particles" aria-hidden="true">
     <div class="lbp"></div><div class="lbp"></div><div class="lbp"></div>
     <div class="lbp"></div><div class="lbp"></div><div class="lbp"></div>
     <div class="lbp"></div><div class="lbp"></div>
   </div>
 
-  <!-- CỘT TRÁI: Hero Image -->
   <div class="login-hero">
     <img src="/assets/login-hero.jpg" alt="Vườn cây Tanbao Corp" class="login-hero-img">
     <div class="login-hero-overlay"></div>
@@ -20,7 +17,6 @@
       <div class="leaf-particle"></div>
       <div class="leaf-particle"></div>
     </div>
-    <!-- NFC badge -->
     <div class="hero-nfc-badge">
       <i data-lucide="wifi" class="lucide-sm"></i>
       <span>NFC Ready</span>
@@ -62,14 +58,11 @@
     </div>
   </div>
 
-  <!-- CỘT PHẢI: Form đăng nhập -->
   <div class="login-form-panel">
-    <!-- Decorative orbs -->
     <div class="lf-orb lf-orb--1" aria-hidden="true"></div>
     <div class="lf-orb lf-orb--2" aria-hidden="true"></div>
 
     <div class="login-card">
-      <!-- Brand -->
       <div class="login-logo">
         <div class="login-logo-wrap">
           <img src="/assets/logo.png" alt="TANBAO AgTech" class="company-logo">
@@ -81,15 +74,12 @@
 
       <div class="login-divider"></div>
 
-      <!-- Error -->
       <div class="login-error" id="login-error">
         <i data-lucide="alert-circle" class="lucide-sm"></i>
         <span id="login-error-text"></span>
       </div>
 
-      <!-- Login Form -->
       <form onsubmit="event.preventDefault(); if (typeof window.doLogin === 'function') { window.doLogin(); } else if (typeof doLogin === 'function') { doLogin(); }" style="display:contents;">
-        <!-- Email or Phone -->
         <div class="form-group">
           <label for="login-email"><i data-lucide="user" class="lucide-sm"></i> Email hoặc Số điện thoại</label>
           <div class="lf-input-wrap">
@@ -97,7 +87,6 @@
           </div>
         </div>
 
-        <!-- Password -->
         <div class="form-group">
           <div class="form-label-row">
             <label for="login-pass" style="margin-bottom:0;"><i data-lucide="lock" class="lucide-sm"></i> Mật khẩu</label>
@@ -113,7 +102,6 @@
           </div>
         </div>
 
-        <!-- Submit -->
         <button type="submit" class="btn-login" id="login-btn">
           <span id="login-btn-text">
             <i data-lucide="log-in" class="lucide-sm"></i> Đăng nhập
@@ -122,7 +110,6 @@
         </button>
       </form>
 
-      <!-- Register Account Link -->
       <div style="text-align:center; margin-top:16px;">
         <span style="font-size:13px; color:var(--text-muted);">Chưa có tài khoản Nông hộ?</span>
         <a href="javascript:void(0)" onclick="openRegisterModal()" style="font-size:13px; font-weight:700; color:var(--green); margin-left:6px; text-decoration:none;">
@@ -130,7 +117,6 @@
         </a>
       </div>
 
-      <!-- Security note -->
       <div class="login-footer-note">
         <i data-lucide="shield-check" class="lucide-sm" style="color:#22c55e;"></i>
         Bảo mật SSL/TLS &nbsp;·&nbsp; Phát triển & Sở hữu bởi <strong>TBSG Agtech © 2026</strong>
@@ -141,7 +127,6 @@
 
 </div>
 
-<!-- ════════════ FORGOT PASSWORD MODAL ════════════ -->
 <div class="modal-overlay" id="forgot-modal" style="display:none" onclick="if(event.target===this)closeForgotPasswordModal()">
   <div class="modal" style="max-width:440px; width:92%; max-height:90vh; max-height:90dvh; display:flex; flex-direction:column; border-radius:16px; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.3);">
     <div class="modal-header" style="background:linear-gradient(135deg, #064e3b, #047857); padding:16px 20px; color:#fff; flex-shrink:0;">
@@ -174,7 +159,6 @@
   </div>
 </div>
 
-<!-- ════════════ 3-STEP FARMER REGISTRATION MODAL ════════════ -->
 <div class="modal-overlay" id="register-modal" style="display:none" onclick="if(event.target===this)closeRegisterModal()">
   <div class="modal" style="max-width:500px; width:92%; max-height:90vh; max-height:90dvh; display:flex; flex-direction:column; border-radius:16px; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.35);">
     <div class="modal-header" style="background:linear-gradient(135deg, #064e3b, #047857); border-bottom:none; padding:16px 20px; color:#ffffff; flex-shrink:0;">
@@ -183,9 +167,8 @@
       </h2>
       <button class="modal-close" onclick="closeRegisterModal()" style="color:#ffffff; opacity:0.9; font-size:22px;">×</button>
     </div>
-    
+
     <div class="modal-body" style="padding:22px; background:#ffffff; overflow-y:auto; flex:1 1 auto; max-height:calc(90vh - 130px); max-height:calc(90dvh - 130px); -webkit-overflow-scrolling:touch;">
-      <!-- Step Indicator Bar -->
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; padding:10px 14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; flex-shrink:0;">
         <div style="flex:1; text-align:center;">
           <div id="step-dot-1" style="width:30px; height:30px; border-radius:50%; background:#059669; color:white; font-size:13px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; margin-bottom:4px; box-shadow:0 2px 6px rgba(5,150,105,0.3);">1</div>
@@ -209,7 +192,6 @@
       </div>
 
       <form id="reg-form" onsubmit="return false;">
-      <!-- BƯỚC 1: TÀI KHOẢN & MẬT KHẨU (BẮT BUỘC) -->
       <div id="reg-step-1">
         <div class="form-group" style="margin-bottom:16px;">
           <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i data-lucide="phone" class="lucide-sm" style="color:#059669"></i> Số điện thoại đăng ký *</label>
@@ -225,7 +207,6 @@
         </div>
       </div>
 
-      <!-- BƯỚC 2: THÔNG TIN CÁ NHÂN & CÂY TRỒNG (KHÔNG BẮT BUỘC) -->
       <div id="reg-step-2" style="display:none;">
         <p style="font-size:12px; color:#065f46; margin-bottom:14px; background:#ecfdf5; padding:10px 14px; border-radius:10px; border:1px solid #a7f3d0; font-weight:600; line-height:1.4;">
            Các thông tin dưới đây là tùy chọn, giúp Admin hỗ trợ và cấu hình trang trại chuẩn xác hơn.
@@ -269,7 +250,6 @@
       </div>
       </form>
 
-      <!-- BƯỚC 3: XÁC NHẬN & GỬI YÊU CẦU -->
       <div id="reg-step-3" style="display:none;">
         <div style="background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:12px; padding:16px; margin-bottom:16px;">
           <h4 style="font-size:13px; margin:0 0 12px 0; color:#0f172a; font-weight:800; text-transform:uppercase; letter-spacing:0.5px;"><i data-lucide="clipboard-check" class="lucide-sm" style="color:#059669"></i> Kiểm tra lại thông tin đăng ký</h4>
@@ -295,7 +275,3 @@
     </div>
   </div>
 </div>
-
-
-
-<!-- ════════════════ APP ════════════════ -->

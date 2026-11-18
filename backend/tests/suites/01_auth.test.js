@@ -55,7 +55,6 @@ describe('Suite 1: Authentication, Password Hashing & RBAC Authorization', () =>
     const adminUser = { id: 1, role: 'admin', full_name: 'Quản trị viên' };
     const farmerUser = { id: 5, role: 'user', full_name: 'Chủ Trang Trại' };
 
-    // Middleware simulation for requireAdmin
     const checkAdminAccess = (user) => {
       if (!user || user.role !== 'admin') {
         return { status: 403, error: 'Chỉ Quản trị viên mới có quyền thực hiện thao tác này' };
@@ -131,7 +130,6 @@ describe('Suite 1: Authentication, Password Hashing & RBAC Authorization', () =>
       };
     };
 
-    // Case 1: Phone + Address without Email
     const res1 = validateCreateUser({
       full_name: 'Bùi Văn Dũng',
       phone: '0912345678',
@@ -144,7 +142,6 @@ describe('Suite 1: Authentication, Password Hashing & RBAC Authorization', () =>
     expect(res1.user.address).toBe('Xã Ea Ktur, Huyện Cư Kuin, Đắk Lắk');
     expect(res1.user.email).toBe(null);
 
-    // Case 2: Email + Phone + Address
     const res2 = validateCreateUser({
       full_name: 'Trần Văn Nông',
       phone: '0988776655',
@@ -156,7 +153,6 @@ describe('Suite 1: Authentication, Password Hashing & RBAC Authorization', () =>
     expect(res2.user.email).toBe('tranvan@tanbaocorp.vn');
     expect(res2.user.phone).toBe('0988776655');
 
-    // Case 3: Missing both email and phone
     const res3 = validateCreateUser({
       full_name: 'Nguyễn Không Liên Lạc',
       phone: '',
@@ -182,29 +178,24 @@ describe('Suite 1: Authentication, Password Hashing & RBAC Authorization', () =>
       ) || null;
     };
 
-    // Login with Phone of user who has no email
     const userByPhone = findUserByIdentifier('0912345678');
     expect(userByPhone).toBeTruthy();
     expect(userByPhone.id).toBe(2);
     expect(userByPhone.full_name).toBe('Bùi Văn Dũng');
 
-    // Login with Email of user who has no phone
     const userByEmail = findUserByIdentifier('mai.le@tanbaocorp.vn');
     expect(userByEmail).toBeTruthy();
     expect(userByEmail.id).toBe(3);
     expect(userByEmail.full_name).toBe('Lê Thị Mai');
 
-    // Login with Phone of user who has both
     const adminByPhone = findUserByIdentifier('0900000001');
     expect(adminByPhone).toBeTruthy();
     expect(adminByPhone.id).toBe(1);
 
-    // Login with Email of user who has both
     const adminByEmail = findUserByIdentifier('admin@tanbaocorp.vn');
     expect(adminByEmail).toBeTruthy();
     expect(adminByEmail.id).toBe(1);
 
-    // Non-existent identifier
     const nonExistent = findUserByIdentifier('0999999999');
     expect(nonExistent).toBe(null);
   });
@@ -216,7 +207,6 @@ describe('Suite 1: Authentication, Password Hashing & RBAC Authorization', () =>
       { id: 3, user_id: 12, identity: 'user@tanbaocorp.vn', status: 'rejected', created_at: '2026-07-20T11:25:14Z' }
     ];
 
-    // Single delete simulation
     const deleteSingleRequest = (id) => {
       const idx = resetRequests.findIndex(r => r.id === id);
       if (idx !== -1) {
@@ -226,7 +216,6 @@ describe('Suite 1: Authentication, Password Hashing & RBAC Authorization', () =>
       return { success: false };
     };
 
-    // Bulk delete simulation (handled vs all)
     const clearRequests = (scope) => {
       if (scope === 'handled') {
         const remaining = resetRequests.filter(r => r.status === 'pending');
@@ -240,13 +229,11 @@ describe('Suite 1: Authentication, Password Hashing & RBAC Authorization', () =>
       }
     };
 
-    // Test deleting single approved request #2
     const res1 = deleteSingleRequest(2);
     expect(res1.success).toBe(true);
     expect(res1.deleted.id).toBe(2);
     expect(resetRequests.length).toBe(2);
 
-    // Test clearing handled requests (should delete #3 rejected, keep #1 pending)
     const res2 = clearRequests('handled');
     expect(res2.success).toBe(true);
     expect(res2.deleted_count).toBe(1);
@@ -254,7 +241,6 @@ describe('Suite 1: Authentication, Password Hashing & RBAC Authorization', () =>
     expect(resetRequests[0].id).toBe(1);
     expect(resetRequests[0].status).toBe('pending');
 
-    // Test clearing all requests
     const res3 = clearRequests('all');
     expect(res3.success).toBe(true);
     expect(res3.deleted_count).toBe(1);
@@ -262,4 +248,3 @@ describe('Suite 1: Authentication, Password Hashing & RBAC Authorization', () =>
   });
 
 });
-

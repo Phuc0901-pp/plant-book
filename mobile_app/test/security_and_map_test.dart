@@ -12,7 +12,6 @@ void main() {
     });
 
     test('hmacSha256Hex matches RFC 4231 test vector #1', () {
-      // Key: 20 bytes of 0x0b, Data: "Hi There"
       final key = String.fromCharCodes(List<int>.filled(20, 0x0b));
       const expected =
           'b0344c61d8db38535ca8afceaf0bf12b881dc200c9833da726e9376c2e32cff7';

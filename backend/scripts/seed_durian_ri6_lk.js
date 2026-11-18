@@ -1,10 +1,3 @@
-/**
- * Seed Script: Dữ liệu canh tác mẫu Cây Sầu Riêng Ri6 STT 1-5 Trọn Vẹn 22 Năm (2004 - 2026)
- * Trang trại Long Khánh (LK Farm) - Chuẩn Nông Học VietGAP Tinh Hoa
- * Đồng bộ 100% Chi Phí Đầu Tư Vật Tư Tiêu Hao (Phân bón, Thuốc BVTV, Tiền nước, Nhân công)
- * Tối ưu hóa Bộ nhớ (0% Nguy cơ OOM trên Render 512MB RAM)
- * Chạy: node scripts/seed_durian_ri6_lk.js
- */
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 const pool = require('../config/db');
 
@@ -14,7 +7,6 @@ async function seedDurianRi6LK(options = {}) {
     console.log('🌱 Bắt đầu nạp dữ liệu mẫu Nông học VietGAP & Chi phí đầu tư 5 Cây Sầu Riêng Ri6 LK...');
     await client.query('BEGIN');
 
-    // Đảm bảo tất cả các cột cần thiết trên các bảng đã tồn tại trước khi seed
     await client.query(`
       ALTER TABLE farms ADD COLUMN IF NOT EXISTS user_id INTEGER;
       ALTER TABLE farms ADD COLUMN IF NOT EXISTS latitude NUMERIC;
@@ -50,12 +42,11 @@ async function seedDurianRi6LK(options = {}) {
       ALTER TABLE plant_logs ADD COLUMN IF NOT EXISTS equipment_used VARCHAR(255);
     `);
 
-    // ── 1. TÌM TRANG TRẠI "LK" HIỆN HỮU VÀ TÀI KHOẢN NÔNG HỘ SỞ HỮU ──
     const farmRes = await client.query(`
-      SELECT * FROM farms 
-      WHERE name = 'LK' 
-         OR name ILIKE '%LK%' 
-         OR name ILIKE '%Long Khánh%' 
+      SELECT * FROM farms
+      WHERE name = 'LK'
+         OR name ILIKE '%LK%'
+         OR name ILIKE '%Long Khánh%'
          OR puc_code = 'VN-LK-001'
       ORDER BY CASE WHEN name = 'LK' THEN 1 WHEN name ILIKE '%LK%' THEN 2 ELSE 3 END, id ASC
     `);
@@ -70,7 +61,6 @@ async function seedDurianRi6LK(options = {}) {
       farmName = targetFarm.name || 'LK';
       userId = targetFarm.user_id;
 
-      // Cập nhật thông số VietGAP và tọa độ GIS chuẩn WGS-84 cho trang trại LK hiện hữu
       const defaultPolygon = JSON.stringify([
         [107.240500, 10.940500],
         [107.243500, 10.940800],
@@ -80,7 +70,7 @@ async function seedDurianRi6LK(options = {}) {
       ]);
 
       await client.query(`
-        UPDATE farms SET 
+        UPDATE farms SET
           puc_code = 'VN-LK-001',
           vietgap_cert_number = 'VG-2026-LK88',
           vietgap_cert_org = 'Quacert Việt Nam',
@@ -95,11 +85,11 @@ async function seedDurianRi6LK(options = {}) {
       console.log(`🏡 Đã tìm thấy và cập nhật chứng nhận VietGAP cho Trang Trại "${farmName}" (ID: ${farmId}, User ID: ${userId})`);
     } else {
       const uRes = await client.query(`
-        SELECT id FROM users 
-        WHERE full_name ILIKE '%Mathew%' 
-           OR phone = '0123456789' 
-           OR email = 'nongho.longkhanh@tanbaocorp.vn' 
-           OR role = 'admin' 
+        SELECT id FROM users
+        WHERE full_name ILIKE '%Mathew%'
+           OR phone = '0123456789'
+           OR email = 'nongho.longkhanh@tanbaocorp.vn'
+           OR role = 'admin'
         ORDER BY id ASC LIMIT 1
       `);
       userId = uRes.rows.length > 0 ? uRes.rows[0].id : 1;
@@ -124,18 +114,16 @@ async function seedDurianRi6LK(options = {}) {
       console.log(`🏡 Đã tạo mới Trang Trại "LK" (ID: ${farmId})`);
     }
 
-    // Lấy danh sách tất cả User IDs liên quan
     const allRelatedUsersRes = await client.query(`
-      SELECT id FROM users 
-      WHERE id = $1 
-         OR farm_id = $2 
-         OR full_name ILIKE '%Mathew%' 
+      SELECT id FROM users
+      WHERE id = $1
+         OR farm_id = $2
+         OR full_name ILIKE '%Mathew%'
          OR phone = '0123456789'
          OR role = 'admin'
     `, [userId, farmId]);
     const userIdsToSeed = allRelatedUsersRes.rows.map(r => r.id);
 
-    // ── 2. ĐỒNG BỘ 10 VẬT TƯ TIÊU CHUẨN SẦU RIÊNG RI6 CHO CÁC TÀI KHOẢN LIÊN QUAN ──
     const suppliesData = [
       {
         name: 'Phân hữu cơ vi sinh nở Bỉ (Belgo Organic)',
@@ -358,7 +346,6 @@ async function seedDurianRi6LK(options = {}) {
     }
     console.log(`📦 Đã đồng bộ danh mục 10 vật tư & nhân công chuyên dụng cho sầu riêng Ri6`);
 
-    // ── 3. CẤU HÌNH BỘ 5 CÂY SẦU RIÊNG RI6 (STT 1 ĐẾN 5) TẠI TRANG TRẠI LK ──
     const durianTreesConfig = [
       {
         tree_code: '1',
@@ -483,10 +470,9 @@ async function seedDurianRi6LK(options = {}) {
       'Khác': ['Đầu dò cảm biến IoT độ ẩm đất', 'Máy đo pH/EC đất Hanna', 'Dao nạo vỏ cây chuyên dụng']
     };
 
-    // Lấy danh sách cây hiện hữu của trang trại LK
     const existingPlantsInFarm = await client.query(`
-      SELECT * FROM plants 
-      WHERE farm_id = $1 
+      SELECT * FROM plants
+      WHERE farm_id = $1
       ORDER BY id ASC
     `, [farmId]);
 
@@ -494,12 +480,10 @@ async function seedDurianRi6LK(options = {}) {
     let totalAllGeneratedLogs = 0;
     let totalAllSupplyUsages = 0;
 
-    // ── 4. LẶP VÀ KHỞI TẠO TỪNG CÂY TRONG BỘ 5 CÂY SẦU RIÊNG (STT #1 ĐẾN #5) ──
     for (let treeIdx = 0; treeIdx < durianTreesConfig.length; treeIdx++) {
       const treeCfg = durianTreesConfig[treeIdx];
       const mult = treeCfg.yield_multiplier;
 
-      // Tính toán lịch sử mùa vụ và sinh trắc học riêng cho từng cây
       const treeYieldRecords = baseYieldRecords.map(r => {
         const adjustedFruits = Math.round(r.fruit_count * mult);
         const adjustedYield = Math.round(r.yield_kg * mult);
@@ -555,7 +539,6 @@ async function seedDurianRi6LK(options = {}) {
         }
       };
 
-      // Tìm cây khớp theo tree_code hoặc mã liên quan
       let existingPlant = existingPlantsInFarm.rows.find(p =>
         p.tree_code === treeCfg.tree_code ||
         treeCfg.code_match.includes(p.tree_code) ||
@@ -571,7 +554,6 @@ async function seedDurianRi6LK(options = {}) {
 
       if (existingPlant) {
         currentPlantId = existingPlant.id;
-        // BẢO TOÀN 100% TỌA ĐỘ GPS HIỆN HỮU NẾU ĐÃ CÓ (Tự động sửa nếu bị lưu ngược)
         let finalLat = existingPlant.latitude != null ? Number(existingPlant.latitude) : treeCfg.default_lat;
         let finalLng = existingPlant.longitude != null ? Number(existingPlant.longitude) : treeCfg.default_lng;
         if (Math.abs(finalLat) > 90 && Math.abs(finalLng) <= 90) {
@@ -653,14 +635,12 @@ async function seedDurianRi6LK(options = {}) {
         nfc_uid: treeCfg.nfc_uid
       });
 
-      // ── 5. XÓA DỮ LIỆU CŨ CỦA CÂY ĐỂ ĐỒNG BỘ MỚI HOÀN TOÀN ──
       await client.query(`DELETE FROM plant_logs WHERE plant_id = $1`, [currentPlantId]);
       await client.query(`DELETE FROM supply_usages WHERE plant_id = $1`, [currentPlantId]);
 
       const generatedLogs = [];
       const generatedUsages = [];
 
-      // Helper ghi nhận tiêu hao vật tư đồng bộ
       function recordSupplyUsage(supName, dateStr, quantity, unit, unitPrice, customTotalCost, note) {
         const supplyId = supplyMap[supName];
         if (!supplyId) return null;
@@ -682,12 +662,10 @@ async function seedDurianRi6LK(options = {}) {
         return { supply_id: supplyId, supply_name: supName, quantity, unit, unit_price: uPrice, total_cost: totalCost };
       }
 
-      // ── 5A. NĂM 2004 - 2008 (THỜI KỲ KIẾN THIẾT CƠ BẢN - NĂM 1 ĐẾN 5) ──
       for (let year = 2004; year <= 2008; year++) {
         const treeAge = year - 2004 + 1;
 
         if (year === 2004) {
-          // Ngày xuống giống cây con 18/06/2004
           const plantDate = '2004-06-18';
           const supFert = recordSupplyUsage('Phân hữu cơ vi sinh nở Bỉ (Belgo Organic)', plantDate, 10, 'kg', 15200, 152000, `Bón lót xuống giống Cây #${treeCfg.tree_code}`);
           const supWater = recordSupplyUsage('Tiền nước tưới giếng khoan công nghiệp', plantDate, 0.2, 'm3', 3500, 700, `Tưới đẫm khi trồng Cây #${treeCfg.tree_code}`);
@@ -707,7 +685,6 @@ async function seedDurianRi6LK(options = {}) {
           });
         }
 
-        // Các sự kiện chuẩn nông học trong thời kỳ kiến thiết cơ bản (Mỗi năm ~12 nhật ký đại diện)
         const seasonalEvents = [
           { m: 1, d: 15, type: 'Tưới nước', water: 0.2, text: 'Tưới giữ ẩm bồn gốc mùa khô hanh' },
           { m: 2, d: 20, type: 'Tưới nước', water: 0.25, text: 'Tưới đẫm tán lá chống khô hạn' },
@@ -756,32 +733,26 @@ async function seedDurianRi6LK(options = {}) {
         }
       }
 
-      // ── 5B. NĂM 2009 - 2023 (THỜI KỲ KINH DOANH THƯƠNG PHẨM - NĂM 6 ĐẾN 20) ──
       for (let year = 2009; year <= 2023; year++) {
         const treeAge = year - 2004 + 1;
         const seasonYield = treeYieldRecords.find(y => y.year === year) || treeYieldRecords[0];
 
-        // Chuỗi nông học kinh doanh chuẩn VietGAP hàng năm (~22 logs/năm + vật tư tương ứng)
         const commercialCycle = [
-          // 1. Tháng 1: Thụ phấn nhân tạo ban đêm & phun Canxi Bo
           { m: 1, d: 5, type: 'Tưới nước', water: 0.35, text: 'Tưới nhấp nhẹ giữ ẩm chống rụng hoa' },
           { m: 1, d: 10, type: 'Thụ phấn', labor: 0.5, text: 'Quét phấn chéo bổ sung từ giống Monthong sang nhụy Ri6 bằng chổi mềm lúc 18h30 - 20h00' },
           { m: 1, d: 18, type: 'Bón phân', fert: 'Phân bón lá Canxi Bo Sữa Bo-Trac Yara Anh Quốc', fertQty: 100, fertUnit: 'ml', fertCost: 18000, text: 'Phun Canxi Bo tăng sức sống hạt phấn và chống nứt cuống hoa' },
           { m: 1, d: 25, type: 'Phun thuốc', pest: 'Thuốc trừ sâu rầy sinh học Radiant 60SC', pestQty: 25, pestUnit: 'ml', pestCost: 19500, phi: 3, text: 'Phun phòng trừ bọ trĩ chích hút hoa non' },
 
-          // 2. Tháng 2 & 3: Nuôi trái non & Định hình quả
           { m: 2, d: 10, type: 'Tưới nước', water: 0.45, text: 'Tưới nước nuôi trái non giai đoạn trứng gà' },
           { m: 2, d: 20, type: 'Cắt tỉa', labor: 0.5, text: 'Tỉa bỏ trái non dị hình, vẹo múi, cuống nhỏ, giữ lại quả cân đối' },
           { m: 3, d: 5, type: 'Bón phân', fert: 'Phân NPK 20-20-15+TE Đầu Trâu Chuyên Cây Ăn Trái', fertQty: Math.round(2.5 * mult), fertUnit: 'kg', fertCost: Math.round(2.5 * mult * 17800), text: 'Bón phân NPK Đầu Trâu nuôi trái lớn nhanh' },
           { m: 3, d: 18, type: 'Tưới nước', water: 0.5, text: 'Tưới nước bù áp định kỳ giữ độ ẩm 65%' },
           { m: 3, d: 28, type: 'Phun thuốc', pest: 'Thuốc trừ nấm bệnh Anvil 5SC (Syngenta)', pestQty: 40, pestUnit: 'ml', pestCost: 10400, phi: 14, text: 'Phun ngừa nấm thán thư cuống trái và cháy lá' },
 
-          // 3. Tháng 4 & 5: Vỗ béo cơm vàng & Cắt tỉa hoàn thiện
           { m: 4, d: 10, type: 'Bón phân', fert: 'Phân Kali Trắng Sunfat K2SO4 SoluPotasse 0-0-50', fertQty: Math.round(1.5 * mult), fertUnit: 'kg', fertCost: Math.round(1.5 * mult * 30000), text: 'Bón Kali Sunfat SoluPotasse giúp cơm vàng óng ráo nước' },
           { m: 4, d: 22, type: 'Tưới nước', water: 0.4, text: 'Tưới nhẹ duy trì thể trạng quả trước thu hoạch' },
           { m: 5, d: 5, type: 'Khác', text: 'Buộc dây níu cành chống giông lốc gió quật gãy cành trĩu quả' },
 
-          // 4. Thu hoạch Đợt 1 (15/05)
           {
             m: 5, d: 15, type: 'Thu hoạch', isHarvest: true, harvestBatchNum: 1,
             labor: 0.5,
@@ -790,7 +761,6 @@ async function seedDurianRi6LK(options = {}) {
             text: `THU HOẠCH CHÍNH VỤ SẦU RIÊNG RI6 ĐỢT 1 (Đạt chuẩn VietGAP xuất khẩu)`
           },
 
-          // 5. Thu hoạch Đợt 2 (28/05)
           {
             m: 5, d: 28, type: 'Thu hoạch', isHarvest: true, harvestBatchNum: 2,
             labor: 0.5,
@@ -799,13 +769,11 @@ async function seedDurianRi6LK(options = {}) {
             text: `THU HOẠCH VÉT SẦU RIÊNG RI6 ĐỢT 2 HOÀN TẤT VỤ MÙA`
           },
 
-          // 6. Tháng 6 & 7: Phục hồi cây sau thu hoạch
           { m: 6, d: 15, type: 'Cắt tỉa', labor: 0.5, text: 'Cắt bỏ cuống quả cũ, tỉa cành khô tàn kiệt sức sau thu hoạch' },
           { m: 6, d: 25, type: 'Phun thuốc', pest: 'Thuốc đặc trị nứt thân xì mủ Ridomil Gold 68WG', pestQty: 50, pestUnit: 'g', pestCost: 16000, phi: 14, text: 'Quét vôi pha Ridomil phòng nấm gốc xì mủ' },
           { m: 7, d: 10, type: 'Bón phân', fert: 'Phân hữu cơ vi sinh nở Bỉ (Belgo Organic)', fertQty: Math.round(15 * mult), fertUnit: 'kg', fertCost: Math.round(15 * mult * 15200), text: 'Bón phân hữu cơ vi sinh Bỉ phục hồi rễ tơ và tán lá' },
           { m: 7, d: 20, type: 'Tưới nước', water: 0.5, text: 'Tưới xả phân kích phát cơi đọt mới' },
 
-          // 7. Tháng 8 - 11: Xử lý ra hoa nghịch vụ & Làm cỏ tạo hạn
           { m: 8, d: 20, type: 'Khác', text: 'Quan trắc cơi đọt 2, tán lá chuyển màu xanh dày bóng' },
           { m: 9, d: 15, type: 'Khác', text: 'Dọn sạch cỏ bồn, cào xới nhẹ mặt đất chuẩn bị xiết nước' },
           { m: 10, d: 15, type: 'Bón phân', fert: 'Phân bón lá tạo mầm hoa MKP 0-52-34 Haifa Israel', fertQty: Math.round(0.5 * mult), fertUnit: 'kg', fertCost: Math.round(0.5 * mult * 50000), text: 'Phun MKP 0-52-34 già lá nhanh và tạo mầm hoa' },
@@ -865,14 +833,12 @@ async function seedDurianRi6LK(options = {}) {
         }
       }
 
-      // ── 5C. NĂM 2024 - 2026 (CANH TÁC CHUYÊN SÂU HIỆN TẠI - 40+ LOGS/NĂM CHI TIẾT) ──
       for (let year = 2024; year <= 2026; year++) {
         const treeAge = year - 2004 + 1;
         const seasonYield = treeYieldRecords.find(y => y.year === year) || treeYieldRecords[treeYieldRecords.length - 1];
         const maxMonth = (year === 2026) ? 6 : 12;
 
         for (let m = 1; m <= maxMonth; m++) {
-          // 1. Kiểm tra vườn & đo cảm biến độ ẩm / EC đất (Hàng tháng)
           const checkDate = `${year}-${String(m).padStart(2, '0')}-05`;
           generatedLogs.push({
             plant_id: currentPlantId,
@@ -887,7 +853,6 @@ async function seedDurianRi6LK(options = {}) {
             created_by: userId
           });
 
-          // 2. Tưới nước bù áp định kỳ
           if (m <= 5 || m >= 11) {
             const waterDate = `${year}-${String(m).padStart(2, '0')}-12`;
             const waterLiters = Math.round(500 * mult);
@@ -906,7 +871,6 @@ async function seedDurianRi6LK(options = {}) {
             });
           }
 
-          // 3. Bón phân theo từng giai đoạn sinh trưởng
           if (m === 2 || m === 4 || m === 7 || m === 10) {
             const fertDate = `${year}-${String(m).padStart(2, '0')}-18`;
             let fName = 'Phân NPK 20-20-15+TE Đầu Trâu Chuyên Cây Ăn Trái';
@@ -942,7 +906,6 @@ async function seedDurianRi6LK(options = {}) {
             });
           }
 
-          // 4. Phun thuốc bảo vệ thực vật định kỳ
           if (m === 1 || m === 3 || m === 8) {
             const sprayDate = `${year}-${String(m).padStart(2, '0')}-24`;
             let pName = 'Thuốc trừ sâu rầy sinh học Radiant 60SC';
@@ -983,9 +946,7 @@ async function seedDurianRi6LK(options = {}) {
             });
           }
 
-          // 5. Cắt tỉa / Thụ phấn / Thu hoạch chuyên biệt
           if (m === 1) {
-            // Thụ phấn ban đêm
             const polDate = `${year}-01-15`;
             recordSupplyUsage('Nhân công chăm sóc kỹ thuật VietGAP', polDate, 0.5, 'công', 350000, 175000, `Thụ phấn đêm Cây #${treeCfg.tree_code}`);
             generatedLogs.push({
@@ -1003,7 +964,6 @@ async function seedDurianRi6LK(options = {}) {
           }
 
           if (m === 5) {
-            // Thu hoạch Đợt 1 (15/05)
             const hDate1 = `${year}-05-15`;
             const cutKg1 = Math.round(seasonYield.yield_kg * 0.6);
             const cutFruits1 = Math.round(seasonYield.fruit_count * 0.6);
@@ -1035,7 +995,6 @@ async function seedDurianRi6LK(options = {}) {
               created_by: userId
             });
 
-            // Thu hoạch Đợt 2 (28/05)
             const hDate2 = `${year}-05-28`;
             const cutKg2 = Math.round(seasonYield.yield_kg * 0.4);
             const cutFruits2 = Math.round(seasonYield.fruit_count * 0.4);
@@ -1073,7 +1032,6 @@ async function seedDurianRi6LK(options = {}) {
       totalAllGeneratedLogs += generatedLogs.length;
       totalAllSupplyUsages += generatedUsages.length;
 
-      // Chèn nhật ký vào plant_logs theo batch
       const chunkSize = 500;
       for (let i = 0; i < generatedLogs.length; i += chunkSize) {
         const chunk = generatedLogs.slice(i, i + chunkSize);
@@ -1112,7 +1070,6 @@ async function seedDurianRi6LK(options = {}) {
         await client.query(insertSql, queryParams);
       }
 
-      // Chèn toàn bộ chi phí vật tư vào supply_usages theo batch
       for (let i = 0; i < generatedUsages.length; i += chunkSize) {
         const chunk = generatedUsages.slice(i, i + chunkSize);
         const valuePlaceholders = [];
@@ -1149,7 +1106,6 @@ async function seedDurianRi6LK(options = {}) {
       console.log(`📝 [Tree #${treeCfg.tree_code}] Đã nạp thành công ${generatedLogs.length} nhật ký VietGAP & ${generatedUsages.length} đợt tiêu hao vật tư!`);
     }
 
-    // ── 6. CẬP NHẬT TỔNG SỐ LƯỢNG CÂY TRỒNG TRANG TRẠI LK ──
     const totalPlantsInFarmRes = await client.query(`SELECT COUNT(*) as count FROM plants WHERE farm_id = $1`, [farmId]);
     const finalTotalPlants = parseInt(totalPlantsInFarmRes.rows[0].count, 10);
     await client.query(`UPDATE farms SET total_plants = $1 WHERE id = $2`, [finalTotalPlants, farmId]);

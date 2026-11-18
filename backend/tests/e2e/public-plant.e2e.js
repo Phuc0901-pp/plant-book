@@ -1,7 +1,3 @@
-/**
- * PlantBook AgTech — Public Plant Profile & Chibi ISO + Labor Modal E2E Suite
- */
-
 const { chromium } = require('playwright-core');
 const fs = require('fs');
 

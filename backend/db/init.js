@@ -7,7 +7,6 @@ async function initDB() {
   try {
     await client.query('BEGIN');
 
-    // Users table
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -20,7 +19,6 @@ async function initDB() {
       )
     `);
 
-    // Plant fields definition table (template/schema for a plant type)
     await client.query(`
       CREATE TABLE IF NOT EXISTS plant_schemas (
         id SERIAL PRIMARY KEY,
@@ -33,7 +31,6 @@ async function initDB() {
       )
     `);
 
-    // Plants table (actual plant records)
     await client.query(`
       CREATE TABLE IF NOT EXISTS plants (
         id SERIAL PRIMARY KEY,
@@ -53,7 +50,6 @@ async function initDB() {
       )
     `);
 
-    // Media table (images & videos linked to plants)
     await client.query(`
       CREATE TABLE IF NOT EXISTS plant_media (
         id SERIAL PRIMARY KEY,
@@ -66,7 +62,6 @@ async function initDB() {
       )
     `);
 
-    // Plant diary / log entries
     await client.query(`
       CREATE TABLE IF NOT EXISTS plant_logs (
         id SERIAL PRIMARY KEY,
@@ -96,8 +91,6 @@ async function initDB() {
       ALTER TABLE plant_logs ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ NULL;
     `);
 
-
-    // System configurations table
     await client.query(`
       CREATE TABLE IF NOT EXISTS system_configs (
         key VARCHAR(255) PRIMARY KEY,
@@ -106,7 +99,6 @@ async function initDB() {
       )
     `);
 
-    // App Versions table (SSOT for dynamic system & mobile versioning)
     await client.query(`
       CREATE TABLE IF NOT EXISTS app_versions (
         id SERIAL PRIMARY KEY,
@@ -125,7 +117,6 @@ async function initDB() {
       CREATE INDEX IF NOT EXISTS idx_app_versions_active ON app_versions(is_active, id DESC);
     `);
 
-    // Password reset requests table
     await client.query(`
       CREATE TABLE IF NOT EXISTS password_reset_requests (
         id SERIAL PRIMARY KEY,
@@ -139,7 +130,6 @@ async function initDB() {
       )
     `);
 
-    // Ensure status & tier columns exist in users table
     await client.query(`
       ALTER TABLE users ADD COLUMN IF NOT EXISTS is_online BOOLEAN DEFAULT false;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS last_active_at TIMESTAMPTZ DEFAULT NOW();
@@ -148,8 +138,6 @@ async function initDB() {
       ALTER TABLE users ADD COLUMN IF NOT EXISTS tier_admin_note TEXT NULL;
     `);
 
-
-    // User activities history table
     await client.query(`
       CREATE TABLE IF NOT EXISTS user_activities (
         id SERIAL PRIMARY KEY,
@@ -160,7 +148,6 @@ async function initDB() {
       )
     `);
 
-    // Audit logs table for data edits & deletions (Vật tư, Nhật ký, Media, Cây trồng)
     await client.query(`
       CREATE TABLE IF NOT EXISTS data_audit_logs (
         id SERIAL PRIMARY KEY,
@@ -177,8 +164,6 @@ async function initDB() {
       )
     `);
 
-
-    // Farms table (GIS boundaries)
     await client.query(`
       CREATE TABLE IF NOT EXISTS farms (
         id SERIAL PRIMARY KEY,
@@ -192,7 +177,6 @@ async function initDB() {
       )
     `);
 
-    // Alter plants table for GIS & assigned user
     await client.query(`
       ALTER TABLE plants ADD COLUMN IF NOT EXISTS farm_id INTEGER REFERENCES farms(id) ON DELETE SET NULL;
       ALTER TABLE plants ADD COLUMN IF NOT EXISTS latitude NUMERIC;
@@ -201,8 +185,6 @@ async function initDB() {
       ALTER TABLE plants ADD COLUMN IF NOT EXISTS assigned_to_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL;
     `);
 
-
-    // Alter farms table to assign a user/farmer & permission toggles for farmers
     await client.query(`
       ALTER TABLE farms ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE SET NULL;
       ALTER TABLE farms ADD COLUMN IF NOT EXISTS latitude NUMERIC;
@@ -219,7 +201,6 @@ async function initDB() {
       ALTER TABLE farms ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ NULL;
     `);
 
-    // Farm IoT Sensors & 6-Day Weather forecast table (Persistent DB per farm)
     await client.query(`
       CREATE TABLE IF NOT EXISTS farm_iot_sensors (
         id SERIAL PRIMARY KEY,
@@ -232,7 +213,6 @@ async function initDB() {
       );
     `);
 
-    // User Notifications Table (Autonomous In-App & Web Push Notification System)
     await client.query(`
       CREATE TABLE IF NOT EXISTS user_notifications (
         id SERIAL PRIMARY KEY,
@@ -255,7 +235,6 @@ async function initDB() {
       ALTER TABLE user_notifications ADD COLUMN IF NOT EXISTS rule_id INTEGER NULL;
     `);
 
-    // User Sensor Threshold & Automated Alert Rules Table
     await client.query(`
       CREATE TABLE IF NOT EXISTS user_alert_rules (
         id SERIAL PRIMARY KEY,
@@ -294,9 +273,6 @@ async function initDB() {
       ALTER TABLE user_alert_rules ADD COLUMN IF NOT EXISTS frequency VARCHAR(50) DEFAULT 'always';
     `);
 
-
-
-    // User profile extension columns
     await client.query(`
       ALTER TABLE users ALTER COLUMN email DROP NOT NULL;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
@@ -319,19 +295,12 @@ async function initDB() {
       ALTER TABLE users ADD COLUMN IF NOT EXISTS rules_initialized BOOLEAN DEFAULT false;
     `);
 
-
-    // Backfill farm_id for existing farmers who created farms previously
     await client.query(`
       UPDATE users u
       SET farm_id = (SELECT id FROM farms WHERE user_id = u.id ORDER BY id ASC LIMIT 1)
       WHERE u.farm_id IS NULL AND EXISTS (SELECT 1 FROM farms WHERE user_id = u.id);
     `);
 
-
-
-
-
-    // NFC Tag UID column, planting_date, plot_code, row_number and public_url for plants
     await client.query(`
       ALTER TABLE plants ADD COLUMN IF NOT EXISTS nfc_uid VARCHAR(100) UNIQUE;
       ALTER TABLE plants ADD COLUMN IF NOT EXISTS planting_date DATE;
@@ -364,7 +333,6 @@ async function initDB() {
       CREATE INDEX IF NOT EXISTS idx_farm_plots_farm ON farm_plots(farm_id);
     `);
 
-    // Devices table
     await client.query(`
       CREATE TABLE IF NOT EXISTS devices (
         id SERIAL PRIMARY KEY,
@@ -380,7 +348,6 @@ async function initDB() {
       )
     `);
 
-    // Supplies (Vật tư khai báo) table
     await client.query(`
       CREATE TABLE IF NOT EXISTS supplies (
         id SERIAL PRIMARY KEY,
@@ -406,15 +373,14 @@ async function initDB() {
       ALTER TABLE supplies ADD COLUMN IF NOT EXISTS fertilizer_type VARCHAR(100);
       ALTER TABLE supplies ADD COLUMN IF NOT EXISTS farm_id INTEGER REFERENCES farms(id) ON DELETE CASCADE;
 
-      UPDATE supplies 
-      SET 
+      UPDATE supplies
+      SET
         package_price = CASE WHEN COALESCE(package_price, 0) = 0 THEN unit_price ELSE package_price END,
         unit_price = CASE WHEN COALESCE(package_qty, 1) > 1 AND unit_price >= COALESCE(package_price, unit_price) THEN (CASE WHEN COALESCE(package_price, 0) > 0 THEN package_price ELSE unit_price END) / package_qty ELSE unit_price END,
         unit_price_small = CASE WHEN COALESCE(package_qty, 1) > 1 THEN (CASE WHEN COALESCE(package_price, 0) > 0 THEN package_price ELSE unit_price END) / (package_qty * 1000) ELSE unit_price END
       WHERE COALESCE(package_qty, 1) > 1;
     `);
 
-    // Supply Usages (Giám sát tiêu hao vật tư) table
     await client.query(`
       CREATE TABLE IF NOT EXISTS supply_usages (
         id SERIAL PRIMARY KEY,
@@ -431,7 +397,6 @@ async function initDB() {
       )
     `);
 
-    // Fixed Assets (Tài sản cố định vĩnh cửu) table
     await client.query(`
       CREATE TABLE IF NOT EXISTS fixed_assets (
         id SERIAL PRIMARY KEY,
@@ -448,9 +413,6 @@ async function initDB() {
       )
     `);
 
-
-
-    // ════════════════ VIETGAP COMPLIANCE SCHEMAS ════════════════
     await client.query(`
       ALTER TABLE supplies ADD COLUMN IF NOT EXISTS phi_days INTEGER DEFAULT 0;
       ALTER TABLE supplies ADD COLUMN IF NOT EXISTS active_ingredient VARCHAR(255);
@@ -475,7 +437,6 @@ async function initDB() {
       ALTER TABLE plant_logs ADD COLUMN IF NOT EXISTS is_phi_violation BOOLEAN DEFAULT false;
     `);
 
-    // AI Training Studio & Agronomic Knowledge Base Tables
     await client.query(`
       CREATE TABLE IF NOT EXISTS ai_knowledge_articles (
         id SERIAL PRIMARY KEY,
@@ -590,7 +551,6 @@ async function initDB() {
       );
     `);
 
-    // Database Performance Indexes
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_plants_farm_id ON plants(farm_id);
       CREATE INDEX IF NOT EXISTS idx_plants_health ON plants(health_status);
@@ -612,7 +572,6 @@ async function initDB() {
       CREATE INDEX IF NOT EXISTS idx_ai_training_qa_active ON ai_training_qa(is_active);
     `);
 
-    // Seed default configurations
     const defaultConfigs = [
       { key: 'fertilizers', value: JSON.stringify(["Phân NPK 16-16-8", "Phân hữu cơ trùn quế", "Phân bón lá Đầu Trâu", "Phân chuồng hoai mục"]) },
       { key: 'pesticides', value: JSON.stringify(["Thuốc trừ sâu sinh học", "Thuốc trừ bệnh Anvil", "Thuốc trừ nấm Ridomil Gold", "Chất kích thích sinh trưởng Atonik"]) },
@@ -631,7 +590,6 @@ async function initDB() {
       `, [config.key, config.value]);
     }
 
-    // Seed default app version (SSOT for dynamic version management)
     await client.query(`
       INSERT INTO app_versions (
         version_tag, version_number, build_number, platform,
@@ -657,7 +615,6 @@ async function initDB() {
         updated_at = NOW();
     `);
 
-    // Sync to system_configs
     await client.query(`
       INSERT INTO system_configs (key, value, updated_at)
       VALUES ('app_version', '{"version": "1.3.5", "versionTag": "v1.3.5", "buildNumber": 19, "releaseDate": "2026-10-16"}'::jsonb, NOW())
@@ -666,8 +623,6 @@ async function initDB() {
         updated_at = NOW();
     `);
 
-
-    // Seed admin user
     const adminEmail = process.env.ADMIN_EMAIL || 'admin@tanbaocorp.vn';
     const adminPass = process.env.ADMIN_PASSWORD || 'Tanbao@123';
     const existing = await client.query('SELECT id FROM users WHERE email=$1', [adminEmail]);
@@ -682,10 +637,9 @@ async function initDB() {
       console.log(`ℹ️  Admin user already exists: ${adminEmail}`);
     }
 
-    // ════════════════ SMART ARCHITECTURE & AUDIT TRAIL ════════════════
     await client.query(`
       ALTER TABLE plants ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ NULL;
-      
+
       CREATE TABLE IF NOT EXISTS audit_logs (
         id SERIAL PRIMARY KEY,
         action_type VARCHAR(100) NOT NULL,
@@ -707,7 +661,6 @@ async function initDB() {
       CREATE INDEX IF NOT EXISTS idx_plant_logs_hashchain ON plant_logs(id DESC) WHERE is_deleted IS NOT TRUE AND record_hash IS NOT NULL;
     `);
 
-    // Chỉ chạy chuẩn hóa dữ liệu lịch sử & UTF-8 đúng 1 lần duy nhất (tránh Full-Table Scan làm chậm khởi động server)
     let shouldRunLegacyCleanup = true;
     try {
       const flagRes = await client.query(`SELECT value FROM system_configs WHERE key = 'legacy_data_normalization_v135' LIMIT 1`);
@@ -717,16 +670,14 @@ async function initDB() {
     } catch (_) {}
 
     if (shouldRunLegacyCleanup) {
-      // Tự động hoán đổi và sửa lỗi tọa độ nếu latitude > 90 (bị lưu ngược với longitude)
       try {
         await client.query(`
-          UPDATE plants 
-          SET latitude = longitude, longitude = latitude 
+          UPDATE plants
+          SET latitude = longitude, longitude = latitude
           WHERE latitude > 90 AND longitude <= 90;
         `);
       } catch (_) {}
 
-      // Đồng bộ user_id giữa bảng farms và users (nếu có user được gán farm_id nhưng farms.user_id chưa cập nhật)
       try {
         await client.query(`
           UPDATE farms f
@@ -736,7 +687,6 @@ async function initDB() {
         `);
       } catch (_) {}
 
-      // Xóa định vị GPS của các cây trong vườn "Bùi Văn Dũng" theo yêu cầu
       try {
         await client.query(`
           UPDATE plants
@@ -747,17 +697,16 @@ async function initDB() {
         `);
       } catch (_) {}
 
-      // Tự động quét và chuẩn hóa toàn bộ ký tự tiếng Việt UTF-8 (sửa triệt để lỗi font / mojibake trong plant_logs)
       try {
         await client.query(`
-          UPDATE plant_logs 
-          SET log_type = 'Bón phân', 
+          UPDATE plant_logs
+          SET log_type = 'Bón phân',
               note = 'Bón phân hữu cơ vi sinh nở Bỉ phục hồi rễ',
               details = jsonb_set(
                 jsonb_set(
                   jsonb_set(
                     jsonb_set(
-                      COALESCE(details, '{}'::jsonb), 
+                      COALESCE(details, '{}'::jsonb),
                       '{method}', '"Bón gốc"'
                     ),
                     '{operator_name}', '"Kỹ thuật viên Nguyễn Văn A"'
@@ -779,20 +728,20 @@ async function initDB() {
           UPDATE plant_logs SET log_type = 'Bệnh cây' WHERE (log_type ILIKE '%b%nh%c%y%' OR log_type ILIKE '%b%nh%') AND log_type != 'Bệnh cây';
 
           -- Phục hồi dứt điểm mọi bản ghi thu hoạch từng bị gán nhãn sai thành Phun thuốc (bảo vệ Kiểm toán quả)
-          UPDATE plant_logs 
-          SET log_type = 'Thu hoạch' 
+          UPDATE plant_logs
+          SET log_type = 'Thu hoạch'
           WHERE (
-            details::text ILIKE '%fruit_count%' 
-            OR details::text ILIKE '%price_per_tree%' 
-            OR details::text ILIKE '%total_revenue%' 
+            details::text ILIKE '%fruit_count%'
+            OR details::text ILIKE '%price_per_tree%'
+            OR details::text ILIKE '%total_revenue%'
             OR details::text ILIKE '%avg_price_per_fruit%'
             OR (details::text ILIKE '%"quality"%' AND details::text ILIKE '%Loại%')
             OR (equipment_used ILIKE '%kéo%' AND details::text ILIKE '%"kg"%' AND log_type = 'Phun thuốc')
           ) AND log_type != 'Thu hoạch' AND log_type != 'Kiểm toán quả' AND NOT (details ? 'audit_stage') AND details->>'fruit_stage' IS NULL;
 
           -- Dọn dẹp chi phí vật tư bị ghi nhận nhầm từ các log thu hoạch
-          DELETE FROM supply_usages 
-          WHERE (note ILIKE '%[Phun thuốc]%' OR note ILIKE '%Thuốc BVTV%') 
+          DELETE FROM supply_usages
+          WHERE (note ILIKE '%[Phun thuốc]%' OR note ILIKE '%Thuốc BVTV%')
             AND (note ILIKE '%600 kg%' OR note ILIKE '%kg cho cây%' OR note ILIKE '%kg toàn vườn%');
 
           UPDATE supply_usages SET note = 'Tự động từ nhật ký [Bón phân] tại vườn' WHERE note LIKE '%T%đ%ng t%nh%t k%[B%' OR note LIKE '%[B%n%ph%n]%';
@@ -843,7 +792,6 @@ async function initDB() {
       console.warn('Cảnh báo khởi tạo cột Gallagher 8.30 / ISO 27001:', migErr.message);
     }
 
-    // Đồng bộ 2 chiều tự động giữa bảng plants và kho nfc_tags_inventory khi khởi động
     try {
       await client.query(`
         UPDATE nfc_tags_inventory n
@@ -910,7 +858,6 @@ async function initDB() {
     client.release();
   }
 
-  // Tự động khởi tạo / cập nhật dữ liệu mẫu Cây Sầu Riêng Ri6 STT 1 (20 năm tuổi) trang trại Long Khánh
   try {
     const { seedDurianRi6LK } = require('../scripts/seed_durian_ri6_lk');
     await seedDurianRi6LK();

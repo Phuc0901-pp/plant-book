@@ -2,7 +2,6 @@ const { describe, it, expect } = require('../test-framework');
 
 describe('Suite 6: IoT Sensor Telemetry, Threshold Rules & In-App Alert System', () => {
 
-  // Rule Evaluator Engine
   function evaluateAlertRule(sensorData, rule) {
     if (!rule || !sensorData) return { triggered: false };
 
@@ -44,8 +43,8 @@ describe('Suite 6: IoT Sensor Telemetry, Threshold Rules & In-App Alert System',
 
   it('6.1 Should evaluate simple sensor thresholds correctly (< or >)', () => {
     const sensorData = {
-      soil_moisture: 28, // 28% (Dry soil)
-      air_temp: 34.5     // 34.5°C (High temp)
+      soil_moisture: 28,
+      air_temp: 34.5
     };
 
     const dryRule = {
@@ -76,8 +75,8 @@ describe('Suite 6: IoT Sensor Telemetry, Threshold Rules & In-App Alert System',
 
   it('6.2 Should evaluate composite multi-condition alert rules (AND condition logic)', () => {
     const sensorData = {
-      air_temp: 36.2,      // > 35°C
-      air_humidity: 40.0   // < 50%
+      air_temp: 36.2,
+      air_humidity: 40.0
     };
 
     const heatWaveRule = {
@@ -108,11 +107,9 @@ describe('Suite 6: IoT Sensor Telemetry, Threshold Rules & In-App Alert System',
     expect(notification.is_read).toBe(false);
     expect(notification.is_archived).toBe(false);
 
-    // Mark as read
     notification.is_read = true;
     expect(notification.is_read).toBe(true);
 
-    // Archive notification
     notification.is_archived = true;
     notification.archived_at = new Date().toISOString();
     expect(notification.is_archived).toBe(true);

@@ -1,4 +1,3 @@
-// Modular Plant & NFC Router Aggregator (Enterprise ISO Architecture)
 const express = require('express');
 const router = express.Router();
 

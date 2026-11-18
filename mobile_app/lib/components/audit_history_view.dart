@@ -46,17 +46,15 @@ class AuditHistoryView extends StatelessWidget {
           physics: const NeverScrollableScrollPhysics(),
           itemCount: history.length,
           itemBuilder: (context, index) {
-            // Reverse history to show newest edits first
             final item = history[history.length - 1 - index];
             final prev = item.previousVersion;
-            
-            // Format previous details value
+
             final prevVal = prev['details'] != null
-                ? (prev['details']['value'] ?? 
-                   prev['details']['method'] ?? 
-                   prev['details']['fertilizer'] ?? 
-                   prev['details']['pesticide'] ?? 
-                   prev['details']['reason'] ?? 
+                ? (prev['details']['value'] ??
+                   prev['details']['method'] ??
+                   prev['details']['fertilizer'] ??
+                   prev['details']['pesticide'] ??
+                   prev['details']['reason'] ??
                    prev['details']['disease'] ?? '—')
                 : '—';
 
@@ -64,7 +62,6 @@ class AuditHistoryView extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Timeline line & circle
                   Column(
                     children: [
                       Container(
@@ -78,16 +75,15 @@ class AuditHistoryView extends StatelessWidget {
                       Expanded(
                         child: Container(
                           width: 2,
-                          color: index == history.length - 1 
-                              ? Colors.transparent 
+                          color: index == history.length - 1
+                              ? Colors.transparent
                               : AppTheme.userAccent.withOpacity(0.3),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(width: 12),
-                  
-                  // Content box
+
                   Expanded(
                     child: Container(
                       margin: const EdgeInsets.only(bottom: 12),

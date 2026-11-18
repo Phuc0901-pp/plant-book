@@ -3,7 +3,6 @@ const router = express.Router();
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
 
-// GET /api/costs/consumables — Lấy danh sách tiêu hao vật tư từ DB
 router.get('/consumables', auth, async (req, res) => {
   try {
     const { farm_id, user_id } = req.query;
@@ -45,7 +44,6 @@ router.get('/consumables', auth, async (req, res) => {
   }
 });
 
-// GET /api/costs/fixed — Lấy danh sách tài sản cố định từ DB
 router.get('/fixed', auth, async (req, res) => {
   try {
     const { farm_id, user_id } = req.query;
@@ -100,7 +98,6 @@ router.get('/fixed', auth, async (req, res) => {
   }
 });
 
-// POST /api/costs/consumables — Khai báo và ghi nhận vật tư tiêu hao vào DB
 router.post('/consumables', auth, async (req, res) => {
   try {
     const { farm_id, date, category, name, unit, qty, price, note } = req.body;
@@ -112,7 +109,6 @@ router.post('/consumables', auth, async (req, res) => {
     const farmUserId = farmRes.rows.length > 0 ? farmRes.rows[0].user_id : req.user.id;
     const targetUserId = (req.user.role === 'admin' && farmUserId) ? farmUserId : req.user.id;
 
-    // 1. Check or insert into supplies table
     let supplyId = null;
     const supplyCheck = await pool.query(
       `SELECT id FROM supplies WHERE user_id = $1 AND category = $2 AND LOWER(name) = LOWER($3)`,
@@ -130,7 +126,6 @@ router.post('/consumables', auth, async (req, res) => {
       supplyId = newSupply.rows[0].id;
     }
 
-    // 2. Insert into supply_usages
     const usageDate = date ? date : new Date().toISOString().split('T')[0];
     const quantity = parseFloat(qty) || 1;
     const unitPrice = parseFloat(price) || 0;
@@ -150,7 +145,6 @@ router.post('/consumables', auth, async (req, res) => {
   }
 });
 
-// POST /api/costs/fixed — Khai báo tài sản cố định vào DB
 router.post('/fixed', auth, async (req, res) => {
   try {
     const { farm_id, name, category, year, cost, life, note } = req.body;

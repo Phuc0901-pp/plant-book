@@ -17,7 +17,7 @@ class AdminFarmMapPage extends StatefulWidget {
 class _AdminFarmMapPageState extends State<AdminFarmMapPage> {
   final ApiService _apiService = ApiService();
   bool _isLoading = true;
-  int _viewMode = 0; // 0 = Map view, 1 = List view
+  int _viewMode = 0;
   List<Farm> _farms = [];
   List<Plant> _plants = [];
 
@@ -73,7 +73,6 @@ class _AdminFarmMapPageState extends State<AdminFarmMapPage> {
           ? const LoadingIndicator(message: 'Đang tải bản đồ ranh giới GIS & Vệ tinh...')
           : Column(
               children: [
-                // Top GIS Dashboard Banner
                 Container(
                   width: double.infinity,
                   decoration: const BoxDecoration(
@@ -126,7 +125,6 @@ class _AdminFarmMapPageState extends State<AdminFarmMapPage> {
                   ),
                 ),
 
-                // Content View
                 Expanded(
                   child: _viewMode == 0
                       ? Padding(

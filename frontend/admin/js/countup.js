@@ -1,8 +1,3 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/**
- * admin/js/countup.js - Universal Number Count-Up Animation (0 -> target) for Admin Portal
- */
-
 function animateValue(el, start, end, duration = 1000, decimals = 0, suffix = '') {
   if (!el) return;
   const startTime = performance.now();
@@ -12,8 +7,7 @@ function animateValue(el, start, end, duration = 1000, decimals = 0, suffix = ''
   function update(currentTime) {
     const elapsed = currentTime - startTime;
     const progress = Math.min(elapsed / duration, 1);
-    
-    // Easing: easeOutExpo
+
     const ease = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
     const current = startVal + (endVal - startVal) * ease;
 
@@ -33,7 +27,7 @@ function animateValue(el, start, end, duration = 1000, decimals = 0, suffix = ''
 
 function triggerAdminPageCountUpAnimations(pageId) {
   const container = document.getElementById(`page-${pageId}`) || document;
-  
+
   const countIds = [
     'stat-plants', 'stat-healthy', 'stat-watch', 'stat-schemas',
     'total-plants-count', 'total-users-count', 'total-farms-count'

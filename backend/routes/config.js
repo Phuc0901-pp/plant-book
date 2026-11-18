@@ -4,7 +4,6 @@ const pool = require('../config/db');
 const auth = require('../middleware/auth');
 const admin = require('../middleware/admin');
 
-// GET all configurations (Public - for dropdowns on public page)
 router.get('/', async (req, res) => {
   try {
     const result = await pool.query('SELECT key, value FROM system_configs');
@@ -19,17 +18,15 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET Mapbox public token (served from env, avoids hardcoding in frontend)
 router.get('/mapbox-token', (req, res) => {
   const fallback = ['pk.eyJ1IjoicGh1Y21lb21lbyIsImEiOiJjbXF0OTR6', 'OGMwMnI5MnNzZmduMzJ1cmtqIn0.IX-oZwIsPUEw1G10eR_JsQ'].join('');
   const token = process.env.MAPBOX_TOKEN || fallback;
   res.json({ token });
 });
 
-// PUT update configurations (Admin auth required)
 router.put('/', auth, admin, async (req, res) => {
   try {
-    const updates = req.body; // e.g. { fertilizers: [...], pesticides: [...] }
+    const updates = req.body;
     if (!updates || typeof updates !== 'object') {
       return res.status(400).json({ error: 'Dữ liệu cấu hình không hợp lệ.' });
     }
@@ -40,7 +37,7 @@ router.put('/', auth, admin, async (req, res) => {
     }
 
     const client = await pool.connect();
-    
+
     try {
       await client.query('BEGIN');
       for (const [key, value] of Object.entries(updates)) {
@@ -65,12 +62,10 @@ router.put('/', auth, admin, async (req, res) => {
   }
 });
 
-// ─── Zalo Official Account Configuration Endpoints ─────────────────────────
 router.get('/zalo', auth, admin, async (req, res) => {
   try {
     const zaloService = require('../services/zaloService');
     const config = await zaloService.getZaloConfig();
-    // Mask secret key
     const maskedSecret = config.secretKey ? config.secretKey.substring(0, 4) + '••••••••' + config.secretKey.slice(-4) : '';
     res.json({
       success: true,

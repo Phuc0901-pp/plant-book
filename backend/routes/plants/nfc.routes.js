@@ -31,14 +31,12 @@ router.get(['/farms/:farmId/tags', '/farm/:farmId/tags', '/nfc/farm/:farmId/tags
   }
 });
 
-
 router.put('/:id/nfc', auth, async (req, res) => {
   const client = await pool.connect();
   try {
     const plantId = parseInt(req.params.id);
-    const { nfc_uid } = req.body; // string UID or null to deactivate
+    const { nfc_uid } = req.body;
 
-    // 1. Verify the requesting user owns this plant (or is admin or assigned farmer)
     const plantRes = await client.query(
       `SELECT p.id, p.nfc_uid, p.public_slug, p.tree_code, p.created_by, p.assigned_to_user_id, p.farm_id, f.user_id as farm_owner_id
        FROM plants p
@@ -61,9 +59,7 @@ router.put('/:id/nfc', auth, async (req, res) => {
 
     await client.query('BEGIN');
 
-    // 2. If assigning a new UID:
     if (cleanUid) {
-      // 2a. Check if this UID is already assigned to ANOTHER plant
       const plantConflict = await client.query(
         `SELECT id, tree_code FROM plants
          WHERE (UPPER(TRIM(nfc_uid)) = UPPER($1) OR UPPER(regexp_replace(COALESCE(nfc_uid, ''), '[^A-Za-z0-9]', '', 'g')) = $2)
@@ -78,7 +74,6 @@ router.put('/:id/nfc', auth, async (req, res) => {
         });
       }
 
-      // 2b. If replacing an existing tag on this plant, unassign old tag in inventory
       if (plant.nfc_uid && formatStandardNfcUid(plant.nfc_uid) !== cleanUid) {
         await client.query(
           `UPDATE nfc_tags_inventory
@@ -88,7 +83,6 @@ router.put('/:id/nfc', auth, async (req, res) => {
         );
       }
 
-      // 2c. Update target plant with new UID, GPS (if provided) & 3-segment public URL
       const publicUrl = generatePublicPlantUrl(plant.farm_id, plantId, cleanUid);
       const latVal = (latitude !== undefined && latitude !== null && latitude !== '') ? parseFloat(latitude) : null;
       const lngVal = (longitude !== undefined && longitude !== null && longitude !== '') ? parseFloat(longitude) : null;
@@ -96,7 +90,7 @@ router.put('/:id/nfc', auth, async (req, res) => {
       let updated;
       if (latVal !== null && !isNaN(latVal) && lngVal !== null && !isNaN(lngVal)) {
         updated = await client.query(
-          `UPDATE plants 
+          `UPDATE plants
            SET nfc_uid = $1, public_url = $2, latitude = $3, longitude = $4, updated_at = NOW()
            WHERE id = $5
            RETURNING id, tree_code, public_slug, nfc_uid, public_url, farm_id, latitude, longitude`,
@@ -104,7 +98,7 @@ router.put('/:id/nfc', auth, async (req, res) => {
         );
       } else {
         updated = await client.query(
-          `UPDATE plants 
+          `UPDATE plants
            SET nfc_uid = $1, public_url = $2, updated_at = NOW()
            WHERE id = $3
            RETURNING id, tree_code, public_slug, nfc_uid, public_url, farm_id, latitude, longitude`,
@@ -112,7 +106,6 @@ router.put('/:id/nfc', auth, async (req, res) => {
         );
       }
 
-      // 2d. Upsert inventory item to assigned with HMAC signature
       const hmacSig = nfcSecurity.generateHmacSignature(cleanUid, plantId);
       await syncPlantNfcToInventory(client, {
         nfcUid: cleanUid,
@@ -137,7 +130,6 @@ router.put('/:id/nfc', auth, async (req, res) => {
         message: `Đã gắn thẻ định danh ${cleanUid} cho cây ${plant.tree_code || plantId}`
       });
     } else {
-      // Deactivating / Unassigning tag from this plant
       if (plant.nfc_uid) {
         await client.query(
           `UPDATE nfc_tags_inventory
@@ -149,7 +141,7 @@ router.put('/:id/nfc', auth, async (req, res) => {
 
       const publicUrl = generatePublicPlantUrl(plant.farm_id, plantId, null);
       const updated = await client.query(
-        `UPDATE plants 
+        `UPDATE plants
          SET nfc_uid = NULL, latitude = NULL, longitude = NULL, public_url = $1, updated_at = NOW()
          WHERE id = $2
          RETURNING id, tree_code, public_slug, nfc_uid, public_url, farm_id, latitude, longitude`,
@@ -171,7 +163,7 @@ router.put('/:id/nfc', auth, async (req, res) => {
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('NFC assign error:', err);
-    if (err.code === '23505') { // unique_violation
+    if (err.code === '23505') {
       return res.status(409).json({ error: 'Mã thẻ này đã được sử dụng bởi một cây trồng khác.' });
     }
     res.status(500).json({ error: 'Lỗi server khi cập nhật định danh thẻ: ' + err.message });
@@ -180,7 +172,6 @@ router.put('/:id/nfc', auth, async (req, res) => {
   }
 });
 
-// ─── NTAG213 Security Provisioning & Configuration Endpoint ─────────────────
 router.post('/plants/:id/nfc/provision-ntag213', auth, async (req, res) => {
   try {
     const plantId = parseInt(req.params.id);
@@ -220,7 +211,6 @@ router.post('/plants/:id/nfc/provision-ntag213', auth, async (req, res) => {
   }
 });
 
-// ─── NFC 4-Tier Security & Geofence Scan Verification Endpoint ───────────────
 router.post('/plants/nfc/verify-scan', async (req, res) => {
   const client = await pool.connect();
   try {
@@ -234,7 +224,6 @@ router.post('/plants/nfc/verify-scan', async (req, res) => {
       });
     }
 
-    // 1. Find the plant
     let plantQuery;
     let plantParams;
     if (cleanUid) {
@@ -257,7 +246,6 @@ router.post('/plants/nfc/verify-scan', async (req, res) => {
 
     const plantRes = await client.query(plantQuery, plantParams);
     if (plantRes.rows.length === 0) {
-      // Check if tag is in inventory but unassigned
       const invTag = cleanUid ? await client.query('SELECT * FROM nfc_tags_inventory WHERE UPPER(nfc_uid) = UPPER($1)', [cleanUid]) : { rows: [] };
       if (invTag.rows.length > 0) {
         return res.status(404).json({
@@ -278,14 +266,12 @@ router.post('/plants/nfc/verify-scan', async (req, res) => {
 
     const plant = plantRes.rows[0];
 
-    // 2. Fetch inventory tag info for counter & signature
     const tagRes = await client.query(
       'SELECT * FROM nfc_tags_inventory WHERE UPPER(nfc_uid) = UPPER($1)',
       [cleanUid || plant.nfc_uid]
     );
     const tagInfo = tagRes.rows[0] || {};
 
-    // 3. Run 4-Tier Security Verification
     const verification = nfcSecurity.verifyNtag213Scan({
       uid: cleanUid || plant.nfc_uid,
       plantId: plant.id,
@@ -299,7 +285,6 @@ router.post('/plants/nfc/verify-scan', async (req, res) => {
       geofenceRadius: plant.allowed_radius || 8.0
     });
 
-    // 4. Record Audit Log in DB
     const scannedLat = latitude !== undefined && latitude !== null ? parseFloat(latitude) : null;
     const scannedLng = longitude !== undefined && longitude !== null ? parseFloat(longitude) : null;
     const plantLat = plant.latitude !== null ? parseFloat(plant.latitude) : null;
@@ -328,10 +313,9 @@ router.post('/plants/nfc/verify-scan', async (req, res) => {
       user_id ? parseInt(user_id, 10) : null
     ]);
 
-    // 5. Update last counter & scan position if verified successfully
     if (verification.isValid && cleanUid) {
-      const nextCounter = counter !== undefined && counter !== null 
-        ? parseInt(counter, 10) 
+      const nextCounter = counter !== undefined && counter !== null
+        ? parseInt(counter, 10)
         : (tagInfo.last_counter || 0) + 1;
 
       await client.query(`
@@ -340,15 +324,14 @@ router.post('/plants/nfc/verify-scan', async (req, res) => {
         WHERE UPPER(nfc_uid) = UPPER($4)
       `, [nextCounter, scannedLat, scannedLng, cleanUid]);
     } else if (!verification.isValid) {
-      // 6. Asynchronously trigger Zalo Security Alert to Farm Owner
       try {
         const ownerRes = await client.query(`
-          SELECT u.phone, u.full_name, u.email 
+          SELECT u.phone, u.full_name, u.email
           FROM farms f
           JOIN users u ON u.id = f.user_id
           WHERE f.id = $1
         `, [plant.farm_id]);
-        
+
         const ownerPhone = ownerRes.rows[0]?.phone;
         zaloService.sendZaloSecurityAlert({
           phone: ownerPhone,
@@ -385,7 +368,6 @@ router.post('/plants/nfc/verify-scan', async (req, res) => {
   }
 });
 
-// ─── Get Farm NFC Security Logs ─────────────────────────────────────────────
 router.get('/farms/:farmId/nfc-security-logs', auth, async (req, res) => {
   try {
     const farmId = parseInt(req.params.farmId);
@@ -413,13 +395,11 @@ router.get('/farms/:farmId/nfc-security-logs', auth, async (req, res) => {
   }
 });
 
-// ─── NFC Inventory API Endpoints (Batch registration, table listing, delete) ──
 router.get('/farms/:farmId/nfc-inventory', auth, async (req, res) => {
   try {
     const farmId = parseInt(req.params.farmId);
     if (isNaN(farmId)) return res.status(400).json({ error: 'Mã trang trại không hợp lệ.' });
 
-    // Verify access
     if (req.user.role !== 'admin') {
       const farmCheck = await pool.query('SELECT user_id FROM farms WHERE id = $1', [farmId]);
       if (farmCheck.rows.length === 0 || (farmCheck.rows[0].user_id !== req.user.id && req.user.farm_id !== farmId)) {
@@ -429,7 +409,6 @@ router.get('/farms/:farmId/nfc-inventory', auth, async (req, res) => {
 
     await ensureNfcInventoryColumns(pool);
 
-    // Two-way reconciliation: ensure any NFC tag attached to a plant in this farm is synced to nfc_tags_inventory
     try {
       await reconcileFarmNfcInventory(pool, farmId);
     } catch (reconcileErr) {
@@ -458,7 +437,6 @@ router.get('/farms/:farmId/nfc-inventory', auth, async (req, res) => {
   }
 });
 
-// ─── Manual & Realtime Two-Way Sync Endpoint for Farm NFC Inventory ──────────
 router.post('/farms/:farmId/nfc-inventory/sync', auth, async (req, res) => {
   try {
     const farmId = parseInt(req.params.farmId);
@@ -528,7 +506,6 @@ router.post('/farms/:farmId/nfc-inventory/batch', auth, async (req, res) => {
       const cleanUid = formatStandardNfcUid(rawUid);
       if (!cleanUid) continue;
 
-      // Check if already in inventory (ignoring colons)
       const existing = await client.query(
         `SELECT id, farm_id, status, plant_id FROM nfc_tags_inventory WHERE UPPER(REPLACE(nfc_uid, ':', '')) = UPPER(REPLACE($1, ':', ''))`,
         [cleanUid]
@@ -539,7 +516,6 @@ router.post('/farms/:farmId/nfc-inventory/batch', auth, async (req, res) => {
         continue;
       }
 
-      // Check if already assigned to a plant
       const existingPlant = await client.query(
         `SELECT id, tree_code, farm_id, latitude, longitude FROM plants WHERE UPPER(REPLACE(nfc_uid, ':', '')) = UPPER(REPLACE($1, ':', '')) AND deleted_at IS NULL`,
         [cleanUid]
@@ -547,7 +523,6 @@ router.post('/farms/:farmId/nfc-inventory/batch', auth, async (req, res) => {
 
       if (existingPlant.rows.length > 0) {
         const ep = existingPlant.rows[0];
-        // Auto-backfill into nfc_tags_inventory so warehouse reflects this assigned plant tag!
         const syncedRow = await syncPlantNfcToInventory(client, {
           nfcUid: cleanUid,
           farmId: ep.farm_id || farmId,
@@ -561,7 +536,6 @@ router.post('/farms/:farmId/nfc-inventory/batch', auth, async (req, res) => {
         continue;
       }
 
-      // Insert new inventory tag
       const insertRes = await client.query(
         `INSERT INTO nfc_tags_inventory (farm_id, nfc_uid, status, created_by, updated_at)
          VALUES ($1, $2, 'unassigned', $3, NOW())
@@ -573,9 +547,8 @@ router.post('/farms/:farmId/nfc-inventory/batch', auth, async (req, res) => {
 
     await client.query('COMMIT');
 
-    // If single tap registration and it's a duplicate that wasn't newly synced, return 409
     if (rawList.length === 1 && duplicates.length > 0 && added.length === 0) {
-      return res.status(409).json({ 
+      return res.status(409).json({
         error: `Thẻ ${duplicates[0].uid} bị trùng: ${duplicates[0].reason}`,
         duplicate: duplicates[0]
       });
@@ -598,14 +571,12 @@ router.post('/farms/:farmId/nfc-inventory/batch', auth, async (req, res) => {
   }
 });
 
-// ─── Symmetrical Import NFC Inventory (CSV / Excel items with auto-assign & GPS) ──
 router.post('/farms/:farmId/nfc-inventory/import', auth, async (req, res) => {
   const client = await pool.connect();
   try {
     const farmId = parseInt(req.params.farmId);
     if (isNaN(farmId)) return res.status(400).json({ error: 'Mã trang trại không hợp lệ.' });
 
-    // Verify access
     if (req.user.role !== 'admin') {
       const farmCheck = await client.query('SELECT user_id FROM farms WHERE id = $1', [farmId]);
       if (farmCheck.rows.length === 0 || (farmCheck.rows[0].user_id !== req.user.id && req.user.farm_id !== farmId)) {
@@ -634,7 +605,6 @@ router.post('/farms/:farmId/nfc-inventory/import', auth, async (req, res) => {
       const cleanUid = formatStandardNfcUid(rawUid);
       if (!cleanUid) continue;
 
-      // Check if tag already exists in inventory
       const existingTag = await client.query(
         `SELECT id, farm_id, status, plant_id FROM nfc_tags_inventory WHERE UPPER(REPLACE(nfc_uid, ':', '')) = UPPER(REPLACE($1, ':', ''))`,
         [cleanUid]
@@ -652,7 +622,6 @@ router.post('/farms/:farmId/nfc-inventory/import', auth, async (req, res) => {
         tagId = existing.id;
         duplicates.push({ uid: cleanUid, reason: 'Thẻ đã có sẵn trong kho trang trại này.' });
       } else {
-        // Insert new inventory tag
         const insertRes = await client.query(
           `INSERT INTO nfc_tags_inventory (farm_id, nfc_uid, status, created_by, updated_at)
            VALUES ($1, $2, 'unassigned', $3, NOW())
@@ -664,7 +633,6 @@ router.post('/farms/:farmId/nfc-inventory/import', auth, async (req, res) => {
         isNew = true;
       }
 
-      // Auto-assign to plant if tree_code or plant_id is provided
       if (auto_assign && (item.tree_code || item.plant_id)) {
         let plant = null;
 
@@ -680,7 +648,7 @@ router.post('/farms/:farmId/nfc-inventory/import', auth, async (req, res) => {
           const rawCode = String(item.tree_code).trim();
           const cleanCode = rawCode.replace(/^cây\s*#/i, '').replace(/^#/i, '').trim();
           const pRes = await client.query(
-            `SELECT id, tree_code, nfc_uid, latitude, longitude FROM plants 
+            `SELECT id, tree_code, nfc_uid, latitude, longitude FROM plants
              WHERE farm_id = $1 AND (UPPER(tree_code) = UPPER($2) OR UPPER(tree_code) = UPPER($3) OR id::text = $3)
              LIMIT 1`,
             [farmId, rawCode, cleanCode]
@@ -692,7 +660,6 @@ router.post('/farms/:farmId/nfc-inventory/import', auth, async (req, res) => {
           const targetPlantId = plant.id;
           const publicUrl = generatePublicPlantUrl(farmId, targetPlantId, cleanUid);
 
-          // Parse GPS coordinates if available
           let validLat = null;
           let validLng = null;
           if (update_gps && item.latitude != null && item.longitude != null) {
@@ -706,25 +673,24 @@ router.post('/farms/:farmId/nfc-inventory/import', auth, async (req, res) => {
 
           if (validLat !== null && validLng !== null) {
             await client.query(
-              `UPDATE plants 
-               SET nfc_uid = $1, latitude = $2, longitude = $3, public_url = $4, updated_at = NOW() 
+              `UPDATE plants
+               SET nfc_uid = $1, latitude = $2, longitude = $3, public_url = $4, updated_at = NOW()
                WHERE id = $5`,
               [cleanUid, validLat, validLng, publicUrl, targetPlantId]
             );
             gpsUpdatedCount++;
           } else {
             await client.query(
-              `UPDATE plants 
-               SET nfc_uid = $1, public_url = $2, updated_at = NOW() 
+              `UPDATE plants
+               SET nfc_uid = $1, public_url = $2, updated_at = NOW()
                WHERE id = $3`,
               [cleanUid, publicUrl, targetPlantId]
             );
           }
 
-          // Update inventory status to assigned
           await client.query(
-            `UPDATE nfc_tags_inventory 
-             SET farm_id = $1, status = 'assigned', plant_id = $2, assigned_at = COALESCE(assigned_at, NOW()), tagged_at = NOW(), updated_at = NOW() 
+            `UPDATE nfc_tags_inventory
+             SET farm_id = $1, status = 'assigned', plant_id = $2, assigned_at = COALESCE(assigned_at, NOW()), tagged_at = NOW(), updated_at = NOW()
              WHERE id = $3`,
             [farmId, targetPlantId, tagId]
           );
@@ -758,14 +724,12 @@ router.post('/farms/:farmId/nfc-inventory/import', auth, async (req, res) => {
   }
 });
 
-// ─── Unassign ALL tags from plants in a farm ─────────────────────────────────
 router.post('/farms/:farmId/nfc-inventory/unassign-all', auth, async (req, res) => {
   const client = await pool.connect();
   try {
     const farmId = parseInt(req.params.farmId);
     if (isNaN(farmId)) return res.status(400).json({ error: 'Mã trang trại không hợp lệ.' });
 
-    // Verify access
     if (req.user.role !== 'admin') {
       const farmCheck = await client.query('SELECT user_id FROM farms WHERE id = $1', [farmId]);
       if (farmCheck.rows.length === 0 || (farmCheck.rows[0].user_id !== req.user.id && req.user.farm_id !== farmId)) {
@@ -775,13 +739,11 @@ router.post('/farms/:farmId/nfc-inventory/unassign-all', auth, async (req, res) 
 
     await client.query('BEGIN');
 
-    // 1. Get all plants currently assigned with an NFC tag in this farm
     const assignedPlants = await client.query(
       'SELECT id, tree_code, nfc_uid FROM plants WHERE farm_id = $1 AND nfc_uid IS NOT NULL',
       [farmId]
     );
 
-    // 2. Set nfc_uid = NULL & GPS coordinates = NULL for all plants in this farm & update standard public_url
     for (const p of assignedPlants.rows) {
       const standardUrl = generatePublicPlantUrl(farmId, p.id, null);
       await client.query(
@@ -790,10 +752,9 @@ router.post('/farms/:farmId/nfc-inventory/unassign-all', auth, async (req, res) 
       );
     }
 
-    // 3. Reset all inventory items in this farm to unassigned
     const resetRes = await client.query(
-      `UPDATE nfc_tags_inventory 
-       SET status = 'unassigned', plant_id = NULL, tagged_at = NULL 
+      `UPDATE nfc_tags_inventory
+       SET status = 'unassigned', plant_id = NULL, tagged_at = NULL
        WHERE farm_id = $1 AND (status = 'assigned' OR plant_id IS NOT NULL)
        RETURNING *`,
       [farmId]
@@ -819,7 +780,6 @@ router.post('/farms/:farmId/nfc-inventory/unassign-all', auth, async (req, res) 
   }
 });
 
-// ─── Unassign a single tag from a plant ──────────────────────────────────────
 router.post('/farms/:farmId/nfc-inventory/:id/unassign', auth, async (req, res) => {
   const client = await pool.connect();
   try {
@@ -827,7 +787,6 @@ router.post('/farms/:farmId/nfc-inventory/:id/unassign', auth, async (req, res) 
     const farmId = parseInt(req.params.farmId);
     if (isNaN(id) || isNaN(farmId)) return res.status(400).json({ error: 'Tham số không hợp lệ.' });
 
-    // Verify access
     if (req.user.role !== 'admin') {
       const farmCheck = await client.query('SELECT user_id FROM farms WHERE id = $1', [farmId]);
       if (farmCheck.rows.length === 0 || (farmCheck.rows[0].user_id !== req.user.id && req.user.farm_id !== farmId)) {
@@ -845,7 +804,6 @@ router.post('/farms/:farmId/nfc-inventory/:id/unassign', auth, async (req, res) 
 
     const tag = tagRes.rows[0];
 
-    // Unassign from plant
     if (tag.plant_id || tag.nfc_uid) {
       const plantRes = await client.query(
         'SELECT id, farm_id FROM plants WHERE (id = $1 OR UPPER(nfc_uid) = UPPER($2)) AND farm_id = $3',
@@ -860,10 +818,9 @@ router.post('/farms/:farmId/nfc-inventory/:id/unassign', auth, async (req, res) 
       }
     }
 
-    // Reset inventory row
     await client.query(
-      `UPDATE nfc_tags_inventory 
-       SET status = 'unassigned', plant_id = NULL, tagged_at = NULL 
+      `UPDATE nfc_tags_inventory
+       SET status = 'unassigned', plant_id = NULL, tagged_at = NULL
        WHERE id = $1`,
       [id]
     );
@@ -907,7 +864,6 @@ router.delete('/farms/:farmId/nfc-inventory/:id', auth, async (req, res) => {
 
     const deletedTag = result.rows[0];
 
-    // If assigned to a plant, also set plant's nfc_uid to NULL and clear GPS
     if (deletedTag.plant_id || deletedTag.nfc_uid) {
       const pRes = await client.query(
         'SELECT id FROM plants WHERE (id = $1 OR UPPER(nfc_uid) = UPPER($2)) AND farm_id = $3',
@@ -937,7 +893,6 @@ router.delete('/farms/:farmId/nfc-inventory/:id', auth, async (req, res) => {
   }
 });
 
-// ─── Field Tagging: Quick Assign NFC Tag + GPS location to a Tree ────────────
 router.post('/farms/:farmId/tag-nfc-gps', auth, async (req, res) => {
   const client = await pool.connect();
   try {
@@ -964,7 +919,6 @@ router.post('/farms/:farmId/tag-nfc-gps', auth, async (req, res) => {
 
     await client.query('BEGIN');
 
-    // Find the plant by plant_id or farm_id + tree_code
     let targetPlant = null;
     if (plant_id) {
       const pRes = await client.query('SELECT * FROM plants WHERE id = $1 AND farm_id = $2', [plant_id, farmId]);
@@ -980,7 +934,6 @@ router.post('/farms/:farmId/tag-nfc-gps', auth, async (req, res) => {
       return res.status(404).json({ error: `Không tìm thấy cây số ${tree_code || plant_id} trong trang trại này.` });
     }
 
-    // 1. Check if this UID is used by another plant
     const uidConflict = await client.query(
       `SELECT id, tree_code FROM plants WHERE UPPER(REPLACE(nfc_uid, ':', '')) = UPPER(REPLACE($1, ':', '')) AND id != $2 AND deleted_at IS NULL`,
       [cleanUid, targetPlant.id]
@@ -990,15 +943,13 @@ router.post('/farms/:farmId/tag-nfc-gps', auth, async (req, res) => {
       return res.status(409).json({ error: `Mã thẻ ${cleanUid} đã được gắn cho cây #${uidConflict.rows[0].tree_code || uidConflict.rows[0].id}. Mỗi cây chỉ được gắn 1 thẻ duy nhất.` });
     }
 
-    // 2. Generate public URL: https://plant-book.onrender.com/{farm_id}/{plant_id}/{nfc_uid}
     const publicUrl = generatePublicPlantUrl(farmId, targetPlant.id, cleanUid);
 
-    // 3. Update plant
     const updateRes = await client.query(
-      `UPDATE plants 
-       SET nfc_uid = $1, 
-           latitude = COALESCE($2, latitude), 
-           longitude = COALESCE($3, longitude), 
+      `UPDATE plants
+       SET nfc_uid = $1,
+           latitude = COALESCE($2, latitude),
+           longitude = COALESCE($3, longitude),
            public_url = $4,
            updated_at = NOW()
        WHERE id = $5
@@ -1008,7 +959,6 @@ router.post('/farms/:farmId/tag-nfc-gps', auth, async (req, res) => {
 
     const updatedPlant = updateRes.rows[0];
 
-    // 4. Sync / Auto-register NFC Inventory item so Admin NFC Warehouse always receives the tag
     await syncPlantNfcToInventory(client, {
       nfcUid: cleanUid,
       farmId,
@@ -1039,7 +989,6 @@ router.post('/farms/:farmId/tag-nfc-gps', auth, async (req, res) => {
   }
 });
 
-// GET /api/plants/nfc/:uid — Public lookup plant by NFC UID, Slug, or ID
 router.get('/nfc/:uid', async (req, res) => {
   try {
     const uid = req.params.uid.trim();
@@ -1086,8 +1035,6 @@ router.get('/nfc/:uid', async (req, res) => {
   }
 });
 
-// ─── Soft Delete Plant (Chống xóa nhầm & Audit Trail) ────────────────────────
-
 router.get('/farms/:farmId/unassigned-trees', auth, async (req, res) => {
   try {
     const farmId = parseInt(req.params.farmId);
@@ -1095,7 +1042,6 @@ router.get('/farms/:farmId/unassigned-trees', auth, async (req, res) => {
       return res.status(400).json({ error: 'ID nông trại không hợp lệ.' });
     }
 
-    // Permission check
     if (req.user.role !== 'admin' && Number(req.user.farm_id) !== farmId) {
       const farmOwn = await pool.query('SELECT user_id FROM farms WHERE id = $1', [farmId]);
       if (farmOwn.rows.length === 0 || Number(farmOwn.rows[0].user_id) !== Number(req.user.id)) {
@@ -1109,8 +1055,8 @@ router.get('/farms/:farmId/unassigned-trees', auth, async (req, res) => {
              ps.name as schema_name
       FROM plants p
       LEFT JOIN plant_schemas ps ON ps.id = p.schema_id
-      WHERE p.farm_id = $1 
-        AND (p.nfc_uid IS NULL OR TRIM(p.nfc_uid) = '') 
+      WHERE p.farm_id = $1
+        AND (p.nfc_uid IS NULL OR TRIM(p.nfc_uid) = '')
         AND (p.deleted_at IS NULL)
     `;
     const params = [farmId];
@@ -1135,7 +1081,6 @@ router.get('/farms/:farmId/unassigned-trees', auth, async (req, res) => {
   }
 });
 
-// ─── Quick On-Site Tag Binding with Strict 1-Tree-1-Tag Governance & Auto GPS ───
 router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
   const client = await pool.connect();
   try {
@@ -1146,7 +1091,6 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
       return res.status(400).json({ error: 'ID nông trại không hợp lệ.' });
     }
 
-    // Permission check
     if (req.user.role !== 'admin' && Number(req.user.farm_id) !== farmId) {
       const farmOwn = await pool.query('SELECT user_id FROM farms WHERE id = $1', [farmId]);
       if (farmOwn.rows.length === 0 || Number(farmOwn.rows[0].user_id) !== Number(req.user.id)) {
@@ -1177,17 +1121,15 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
 
     await client.query('BEGIN');
 
-    // 0. WAREHOUSE INVENTORY CHECK: Verify tag or auto-register for authorized staff
     const invCheck = await client.query(
-      `SELECT id, farm_id, status, plant_id, nfc_uid 
-       FROM nfc_tags_inventory 
+      `SELECT id, farm_id, status, plant_id, nfc_uid
+       FROM nfc_tags_inventory
        WHERE (UPPER(nfc_uid) = UPPER($1) OR UPPER(regexp_replace(COALESCE(nfc_uid, ''), '[^A-Za-z0-9]', '', 'g')) = $2)`,
       [cleanUid, cleanRawUid]
     );
 
     let invItem = null;
     if (invCheck.rows.length === 0) {
-      // Auto-register tag into farm warehouse inventory if user is Admin or Farm Manager
       const autoInv = await client.query(
         `INSERT INTO nfc_tags_inventory (farm_id, nfc_uid, status, created_by)
          VALUES ($1, $2, 'available', $3)
@@ -1199,7 +1141,6 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
       invItem = invCheck.rows[0];
     }
 
-    // Check if tag is allocated to a different farm
     if (invItem.farm_id && Number(invItem.farm_id) !== Number(farmId)) {
       await client.query('ROLLBACK');
       return res.status(400).json({
@@ -1208,7 +1149,6 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
       });
     }
 
-    // Check if tag is revoked/frozen
     if (invItem.status === 'revoked') {
       await client.query('ROLLBACK');
       return res.status(410).json({
@@ -1217,7 +1157,6 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
       });
     }
 
-    // 1. Find target plant by plant_id, tree_code, or numeric ID
     let targetPlant = null;
     if (plant_id) {
       const pRes = await client.query('SELECT * FROM plants WHERE id = $1 AND farm_id = $2 AND deleted_at IS NULL LIMIT 1 FOR UPDATE', [parseInt(plant_id), farmId]);
@@ -1231,7 +1170,7 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
       const intDigits = isPureDigits ? parseInt(codeWithoutHash, 10) : null;
 
       const pRes = await client.query(
-        `SELECT * FROM plants 
+        `SELECT * FROM plants
          WHERE farm_id = $1
            AND (
              id::text = $2
@@ -1239,23 +1178,22 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
              OR UPPER(tree_code) = UPPER($3)
              OR UPPER(regexp_replace(COALESCE(tree_code, ''), '[^A-Za-z0-9]', '', 'g')) = UPPER($4)
              OR (
-               $5::int IS NOT NULL 
+               $5::int IS NOT NULL
                AND (
                  id = $5::int
                  OR CAST(NULLIF(regexp_replace(tree_code, '\\D', '', 'g'), '') AS INTEGER) = $5::int
                )
              )
-           ) 
-           AND deleted_at IS NULL 
+           )
+           AND deleted_at IS NULL
          ORDER BY (CASE WHEN UPPER(tree_code) = UPPER($2) THEN 1 WHEN UPPER(tree_code) = UPPER($3) THEN 2 ELSE 3 END) ASC, id ASC
-         LIMIT 1 
+         LIMIT 1
          FOR UPDATE`,
         [farmId, cleanCode, codeWithoutHash, rawCode, intDigits]
       );
       if (pRes.rows.length > 0) targetPlant = pRes.rows[0];
     }
 
-    // If target plant still does not exist, AUTO-CREATE it on-the-fly for this farm
     if (!targetPlant && tree_code) {
       const cleanCode = String(tree_code).trim();
       const newSlug = `${farmId}_${cleanCode.replace(/[^A-Za-z0-9_-]/g, '') || Date.now()}`;
@@ -1276,12 +1214,10 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
 
     let replacedOldUid = null;
 
-    // 2. TREE GOVERNANCE & REPLACEMENT CHECK
     if (targetPlant.nfc_uid && String(targetPlant.nfc_uid).trim().length > 0) {
       const existingTag = targetPlant.nfc_uid.trim().toUpperCase();
       const existingRawTag = existingTag.replace(/[^A-Za-z0-9]/g, '');
-      
-      // If tapping the exact same tag on the same tree -> allow updating GPS without replacing
+
       if (existingTag !== cleanUid && existingRawTag !== cleanRawUid) {
         if (!allow_replace) {
           await client.query('ROLLBACK');
@@ -1297,7 +1233,6 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
           });
         }
 
-        // USER CONFIRMED REPLACEMENT: Revoke & Freeze Old Tag permanently
         replacedOldUid = existingTag;
         await client.query(
           `INSERT INTO nfc_tags_inventory (farm_id, nfc_uid, status, plant_id, tagged_at, created_by)
@@ -1309,9 +1244,8 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
       }
     }
 
-    // 3. Check if cleanUid is already assigned to ANOTHER plant anywhere in the system
     const uidConflict = await client.query(
-      `SELECT id, tree_code, farm_id FROM plants 
+      `SELECT id, tree_code, farm_id FROM plants
        WHERE (UPPER(nfc_uid) = UPPER($1) OR UPPER(regexp_replace(COALESCE(nfc_uid, ''), '[^A-Za-z0-9]', '', 'g')) = $2) AND id != $3 AND deleted_at IS NULL`,
       [cleanUid, cleanRawUid, targetPlant.id]
     );
@@ -1323,17 +1257,15 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
       });
     }
 
-    // 4. Generate public URL
     const host = req.get('host') || 'plant-book.onrender.com';
     const proto = req.get('x-forwarded-proto') || req.protocol || 'https';
     const publicUrl = `${proto}://${host}/${farmId}/public/${cleanUid}`;
 
-    // 5. Atomic Update Plant
     const updateRes = await client.query(
-      `UPDATE plants 
-       SET nfc_uid = $1, 
-           latitude = COALESCE($2, latitude), 
-           longitude = COALESCE($3, longitude), 
+      `UPDATE plants
+       SET nfc_uid = $1,
+           latitude = COALESCE($2, latitude),
+           longitude = COALESCE($3, longitude),
            gps_accuracy = COALESCE($4, gps_accuracy),
            nfc_tagged_at = NOW(),
            nfc_tagged_by = $5,
@@ -1346,14 +1278,13 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
 
     const updatedPlant = updateRes.rows[0];
 
-    // 6. Update NFC Inventory for the newly assigned tag
     await client.query(
-      `UPDATE nfc_tags_inventory 
-       SET farm_id = $1, 
-           status = 'assigned', 
-           plant_id = $2, 
-           last_scanned_lat = COALESCE($3, last_scanned_lat), 
-           last_scanned_lng = COALESCE($4, last_scanned_lng), 
+      `UPDATE nfc_tags_inventory
+       SET farm_id = $1,
+           status = 'assigned',
+           plant_id = $2,
+           last_scanned_lat = COALESCE($3, last_scanned_lat),
+           last_scanned_lng = COALESCE($4, last_scanned_lng),
            tagged_at = NOW()
        WHERE id = $5`,
       [farmId, targetPlant.id, lat, lng, invItem.id]
@@ -1361,7 +1292,6 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
 
     await client.query('COMMIT');
 
-    // Safe async audit logging after commit
     try {
       await logAuditAction(
         req.user.id,
@@ -1374,14 +1304,14 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
         { nfc_uid: cleanUid, tree_code: updatedPlant.tree_code, lat, lng },
         `Gắn thẻ NFC thực địa tại trang trại #${farmId}`
       );
-    } catch(auditErr) { /* ignore non-critical audit log error */ }
+    } catch(auditErr) {  }
 
     const broadcast = req.app.get('broadcast');
     if (broadcast) broadcast('plants_updated', { plant_id: updatedPlant.id, farm_id: farmId, action: 'nfc_tagged_quick' });
 
     res.json({
       success: true,
-      message: replacedOldUid 
+      message: replacedOldUid
         ? `Đã thay thế thẻ mới ${cleanUid} cho cây #${updatedPlant.tree_code || updatedPlant.id} và thu hồi thẻ cũ ${replacedOldUid}!`
         : `Đã gắn thẻ NFC ${cleanUid} và định vị GPS cho cây #${updatedPlant.tree_code || updatedPlant.id} thành công!`,
       plant: updatedPlant,
@@ -1397,7 +1327,6 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
   }
 });
 
-// ─── Single Plant High-Precision Provisioning via Smart NFC Gateway /sub ───
 router.post(['/single-provision', '/plants/single-provision'], auth, async (req, res) => {
   const client = await pool.connect();
   try {
@@ -1435,7 +1364,6 @@ router.post(['/single-provision', '/plants/single-provision'], auth, async (req,
       return res.status(400).json({ error: 'Mã trang trại là bắt buộc.' });
     }
 
-    // Permission check
     if (req.user.role !== 'admin' && Number(req.user.farm_id) !== farmId) {
       const farmOwn = await pool.query('SELECT user_id FROM farms WHERE id = $1', [farmId]);
       if (farmOwn.rows.length === 0 || Number(farmOwn.rows[0].user_id) !== Number(req.user.id)) {
@@ -1458,7 +1386,6 @@ router.post(['/single-provision', '/plants/single-provision'], auth, async (req,
       cleanUid = formatStandardNfcUid(nfc_uid);
     }
 
-    // Check plot & ensure plot exists in farm_plots (safely outside transaction)
     const finalPlot = plot_code && String(plot_code).trim() ? String(plot_code).trim().toUpperCase() : 'A1';
     const finalRow = row_number && parseInt(row_number) ? parseInt(row_number) : 1;
 
@@ -1475,7 +1402,6 @@ router.post(['/single-provision', '/plants/single-provision'], auth, async (req,
       }
     } catch (_) {}
 
-    // Check tree_code or generate auto tree_code
     let finalCode = tree_code && String(tree_code).trim() ? String(tree_code).trim() : null;
     if (!finalCode) {
       const countRes = await pool.query('SELECT COUNT(*)::int as count FROM plants WHERE farm_id = $1', [farmId]);
@@ -1483,7 +1409,6 @@ router.post(['/single-provision', '/plants/single-provision'], auth, async (req,
       finalCode = `C${String(nextNum).padStart(3, '0')}`;
     }
 
-    // Generate public slug
     const cleanVarietySlug = (plant_variety || plant_type || 'tree')
       .toLowerCase()
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -1510,10 +1435,8 @@ router.post(['/single-provision', '/plants/single-provision'], auth, async (req,
       batch_code: batch_code || null
     };
 
-    // BEGIN Transaction for core plant creation
     await client.query('BEGIN');
 
-    // Insert plant
     const plantInsert = await client.query(`
       INSERT INTO plants (
         farm_id, tree_code, plant_variety, plant_type, planting_date,
@@ -1534,14 +1457,12 @@ router.post(['/single-provision', '/plants/single-provision'], auth, async (req,
     ]);
     const newPlant = plantInsert.rows[0];
 
-    // Auto-increment total_plants on farm
     await client.query('UPDATE farms SET total_plants = COALESCE(total_plants, 0) + 1 WHERE id = $1', [farmId]);
 
-    // Sync farm passport certificates if supplied
     if (puc_code || vietgap_cert_number || vietgap_cert_org) {
       try {
         await client.query(`
-          UPDATE farms 
+          UPDATE farms
           SET puc_code = COALESCE(puc_code, $1),
               vietgap_cert_number = COALESCE(vietgap_cert_number, $2),
               vietgap_cert_org = COALESCE(vietgap_cert_org, $3)
@@ -1552,19 +1473,16 @@ router.post(['/single-provision', '/plants/single-provision'], auth, async (req,
 
     await client.query('COMMIT');
 
-    // URLs
     const origin = (process.env.APP_URL || 'https://dev-plantbook.onrender.com').replace(/\/$/, '');
     const uidSuffix = cleanUid ? `/${encodeURIComponent(cleanUid)}` : '';
     const hierarchicalUrl = `${origin}/${farmId}/${newPlant.id}${uidSuffix}`;
     const publicUrl = `${origin}/plant/${newPlant.public_slug}`;
 
-    // Update public_url in DB
     try {
       await pool.query('UPDATE plants SET public_url = $1 WHERE id = $2', [hierarchicalUrl, newPlant.id]);
       newPlant.public_url = hierarchicalUrl;
     } catch (_) {}
 
-    // Record initial photo in plant_media if provided
     if (effectiveCover) {
       try {
         await pool.query(`
@@ -1576,7 +1494,6 @@ router.post(['/single-provision', '/plants/single-provision'], auth, async (req,
       }
     }
 
-    // Record NFC UID in nfc_tags_inventory if provided
     if (cleanUid) {
       await syncPlantNfcToInventory(pool, {
         nfcUid: cleanUid,
@@ -1590,7 +1507,6 @@ router.post(['/single-provision', '/plants/single-provision'], auth, async (req,
       });
     }
 
-    // Broadcast WebSocket event
     const broadcast = req.app.get('broadcast');
     if (broadcast) broadcast('plants_updated', { plant_id: newPlant.id, farm_id: farmId, action: 'single_provision' });
 
@@ -1612,7 +1528,6 @@ router.post(['/single-provision', '/plants/single-provision'], auth, async (req,
   }
 });
 
-// ─── Verify NFC Physical Tag Write Success & Auto-Sync UID to Plant ───
 router.post(['/nfc/verify-write', '/plants/nfc/verify-write'], auth, async (req, res) => {
   const client = await pool.connect();
   try {
@@ -1628,7 +1543,6 @@ router.post(['/nfc/verify-write', '/plants/nfc/verify-write'], auth, async (req,
 
     let updatedPlant = null;
     if (cleanUid) {
-      // 1. Kiểm tra cây trồng
       const plantRes = await client.query(
         `SELECT id, farm_id, tree_code, nfc_uid, latitude, longitude FROM plants WHERE id = $1`,
         [cleanPlantId]
@@ -1638,17 +1552,15 @@ router.post(['/nfc/verify-write', '/plants/nfc/verify-write'], auth, async (req,
         const p = plantRes.rows[0];
         const newPublicUrl = written_url || generatePublicPlantUrl(p.farm_id, p.id, cleanUid);
 
-        // 2. Cập nhật cây với UID mới và public URL
         const upRes = await client.query(
-          `UPDATE plants 
-           SET nfc_uid = $1, public_url = $2, updated_at = NOW() 
-           WHERE id = $3 
+          `UPDATE plants
+           SET nfc_uid = $1, public_url = $2, updated_at = NOW()
+           WHERE id = $3
            RETURNING id, farm_id, tree_code, nfc_uid, public_url, latitude, longitude`,
           [cleanUid, newPublicUrl, cleanPlantId]
         );
         updatedPlant = upRes.rows[0];
 
-        // 3. Cập nhật / gán thẻ vào nfc_tags_inventory
         await syncPlantNfcToInventory(client, {
           nfcUid: cleanUid,
           farmId: p.farm_id,
@@ -1661,7 +1573,6 @@ router.post(['/nfc/verify-write', '/plants/nfc/verify-write'], auth, async (req,
       }
     }
 
-    // 4. Ghi log hoạt động
     await client.query(`
       INSERT INTO user_activities (user_id, activity_type, description)
       VALUES ($1, 'Ghi Thẻ NFC Thành Công', $2)
@@ -1669,7 +1580,6 @@ router.post(['/nfc/verify-write', '/plants/nfc/verify-write'], auth, async (req,
 
     await client.query('COMMIT');
 
-    // 5. Broadcast cập nhật cây qua WebSocket
     try {
       const broadcast = req.app.get('broadcast');
       if (broadcast) broadcast('plants_updated', { plant_id: cleanPlantId, farm_id: updatedPlant?.farm_id, nfc_uid: cleanUid, action: 'nfc_verified' });
@@ -1677,7 +1587,7 @@ router.post(['/nfc/verify-write', '/plants/nfc/verify-write'], auth, async (req,
 
     res.json({
       success: true,
-      message: cleanUid 
+      message: cleanUid
         ? `Đã cập nhật mã thẻ NFC ${cleanUid} vào Cây #${cleanPlantId} thành công!`
         : 'Đã xác nhận ghi thẻ NFC thành công!',
       plant: updatedPlant,
@@ -1693,8 +1603,6 @@ router.post(['/nfc/verify-write', '/plants/nfc/verify-write'], auth, async (req,
   }
 });
 
-// ─── Public Farm Gateway & Smart NFC Portal: /farms/:farmId/public-portal ───
-
 router.post('/:id(\\d+)/nfc-reissue', auth, async (req, res) => {
   try {
     const plantId = parseInt(req.params.id, 10);
@@ -1707,7 +1615,6 @@ router.post('/:id(\\d+)/nfc-reissue', auth, async (req, res) => {
     const plant = plantRes.rows[0];
     const uid = formatStandardNfcUid(req.body.uid || plant.nfc_uid || plant.nfc_tag_id || `NFC-TB-${plantId}`);
 
-    // Ensure column exists
     await pool.query(`
       ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS issue_level INTEGER DEFAULT 1;
       ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS card_type VARCHAR(50) DEFAULT 'NTAG213_CRYPTO';
@@ -1762,7 +1669,5 @@ router.post('/:id(\\d+)/nfc-reissue', auth, async (req, res) => {
     res.status(500).json({ error: 'Lỗi cấp lại IssueLevel thẻ NFC: ' + err.message });
   }
 });
-
-// ─── Enterprise Local-First Offline Batch Synchronization Endpoint (Phase 3 & 4) ──
 
 module.exports = router;

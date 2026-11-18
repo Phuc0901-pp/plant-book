@@ -36,7 +36,6 @@ describe('Suite 15: Per-User Rate Limiting & Anti-Freeze Architecture (50 req/s 
     expect(middlewareContent.includes('userRateLimiter')).toBe(true);
     expect(middlewareContent.includes('keyGenerator')).toBe(true);
 
-    // Mock key generator logic
     function mockKeyGen(req) {
       if (req.user && req.user.id) {
         return `user_${req.user.id}`;
@@ -59,16 +58,13 @@ describe('Suite 15: Per-User Rate Limiting & Anti-Freeze Architecture (50 req/s 
       return `ip_${ip}`;
     }
 
-    // 1. Authenticated req with req.user.id
     const key1 = mockKeyGen({ user: { id: 42, role: 'farmer' } });
     expect(key1).toBe('user_42');
 
-    // 2. Req with Bearer JWT token
     const testToken = jwt.sign({ id: 99, email: 'farmer99@tanbaocorp.vn' }, 'secret_key');
     const key2 = mockKeyGen({ headers: { authorization: `Bearer ${testToken}` } });
     expect(key2).toBe('user_99');
 
-    // 3. Anonymous req with x-forwarded-for IP
     const key3 = mockKeyGen({ headers: { 'x-forwarded-for': '113.161.42.10, 10.0.0.1' } });
     expect(key3).toBe('ip_113.161.42.10');
   });

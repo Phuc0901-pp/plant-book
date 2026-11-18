@@ -6,8 +6,7 @@
 <meta http-equiv="content-language" content="vi">
 <title>Sổ Nông Nhàn - TBSG Agtech — Hồ sơ cây trồng</title>
 <script>
-  // 1. window.onerror explicitly suppresses console printing in Chrome when returning true
-  window.onerror = function(message, source, lineno, colno, error) {
+window.onerror = function(message, source, lineno, colno, error) {
     const msg = String(message || '');
     const src = String(source || '');
     const stack = String(error?.stack || '');
@@ -21,12 +20,11 @@
       src.includes('moz-extension://') ||
       src.includes('web-vitals')
     ) {
-      return true; // Suppress from console
+      return true;
     }
     return false;
   };
 
-  // 2. Global error event listener
   window.addEventListener('error', function(event) {
     const msg = String(event.message || '');
     const src = String(event.filename || '');
@@ -47,7 +45,6 @@
     }
   }, true);
 
-  // 3. Unhandled promise rejections
   window.addEventListener('unhandledrejection', function(event) {
     const reason = String(event.reason?.message || event.reason || '');
     const stack = String(event.reason?.stack || '');
@@ -68,7 +65,6 @@
 <link rel="shortcut icon" type="image/png" href="/assets/favicon.png">
 <link rel="apple-touch-icon" href="/assets/favicon.png">
 
-<!-- Google Fonts: Be Vietnam Pro (Enterprise Vietnamese Standard) & JetBrains Mono (Codes/UID) -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300;1,400;1,500;1,600;1,700;1,800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
@@ -85,7 +81,6 @@
 <body>
 
 <div id="root">
-  <!-- Enterprise Unified Header Navbar -->
   <header class="erp-main-header">
     <div class="erp-header-container">
       <div class="erp-header-left">
@@ -100,7 +95,6 @@
         </a>
       </div>
 
-      <!-- Dynamic Header Center Breadcrumbs & Identity (Managed by JS) -->
       <div class="erp-header-center" id="erp-header-breadcrumbs-slot">
         <div class="erp-header-center-pill">
           <i data-lucide="award" class="lucide-xs" style="color:#059669;"></i>
@@ -108,7 +102,6 @@
         </div>
       </div>
 
-      <!-- Header Right Action Group -->
       <div class="erp-header-right" id="erp-header-actions-slot"><div id="export-lang-switcher" style="display:inline-flex; align-items:center; gap:2px; background:#f1f5f9; border:1px solid #cbd5e1; border-radius:9px; padding:2px; margin-right:4px;" title="Chuyển đổi ngôn ngữ truy xuất xuất khẩu (Tiếng Việt / English / 中文)"><button type="button" data-lang-btn="vi" onclick="window.switchExportLanguage('vi')" style="border:none; border-radius:7px; padding:4px 7px; font-size:11px; font-weight:800; cursor:pointer; background:#059669; color:#ffffff;">🇻🇳 VI</button><button type="button" data-lang-btn="en" onclick="window.switchExportLanguage('en')" style="border:none; border-radius:7px; padding:4px 7px; font-size:11px; font-weight:700; cursor:pointer; background:transparent; color:#334155;">🇬🇧 EN</button><button type="button" data-lang-btn="zh" onclick="window.switchExportLanguage('zh')" style="border:none; border-radius:7px; padding:4px 7px; font-size:11px; font-weight:700; cursor:pointer; background:transparent; color:#334155;">🇨🇳 中文</button></div>
         <button type="button" class="erp-nav-btn" onclick="window.print()" title="In hồ sơ cây trồng">
           <i data-lucide="printer" class="lucide-xs"></i> <span>In hồ sơ</span>
@@ -123,8 +116,6 @@
     </div>
   </header>
 
-
-  <!-- Loading State -->
   <div id="loader">
     <div class="hero-container">
       <div class="glass-panel hero-card" style="height: 380px;">
@@ -146,7 +137,6 @@
     </div>
   </div>
 
-  <!-- Error View -->
   <div id="error-view" style="display: none;">
     <div class="glass-panel error-state">
       <div class="icon"><i data-lucide="leaf" class="lucide-sm" style="font-size:56px;color:rgba(239,68,68,0.5)"></i></div>
@@ -155,11 +145,9 @@
     </div>
   </div>
 
-  <!-- Auth Gate View (Màn hình đăng nhập ẩn / xác thực trước khi cập nhật cây trồng) -->
   <div id="auth-gate-view" style="display: none;">
     <div class="auth-gate-container">
       <div class="glass-panel auth-gate-card">
-        <!-- Plant Quick Summary Header -->
         <div class="auth-gate-plant-header">
           <div class="auth-gate-plant-avatar" id="gate-plant-img-wrap">
             <img id="gate-plant-img" src="/assets/crop/durian.png" alt="Cây trồng" onerror="if(typeof tryNextCropExt==='function'){tryNextCropExt(this,'durian');}else{this.src='/assets/durian.png';}">
@@ -176,7 +164,6 @@
 
         <div class="auth-gate-divider"></div>
 
-        <!-- Login Section -->
         <div class="auth-gate-login-section">
           <div class="auth-gate-badge">
             <i data-lucide="shield-check" class="lucide-sm" style="color:#059669"></i>
@@ -211,7 +198,6 @@
             <div class="auth-gate-or-line"></div>
           </div>
 
-          <!-- Nút xem chi tiết chỉ đọc -->
           <button type="button" class="btn-gate-readonly" onclick="enterReadOnlyMode()">
             <i data-lucide="eye" class="lucide-sm" style="color:#059669; font-size: 16px;"></i>
             <span>Xem chi tiết (Chỉ xem dữ liệu canh tác — Không chỉnh sửa)</span>
@@ -224,10 +210,8 @@
     </div>
   </div>
 
-  <!-- Farm Gateway / Smart NFC Portal View (Cổng Nông Trại Thông Minh khi mở /:farmId/public) -->
   <div id="farm-gateway-view" style="display: none; max-width: 1200px; margin: 0 auto 30px auto; padding: 0 16px;">
-    
-    <!-- Farm Hero Header Card -->
+
     <div class="glass-panel" style="border-radius: 20px; overflow: hidden; margin-bottom: 20px; border: 1.5px solid #10b981; background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%); box-shadow: 0 10px 30px rgba(16, 185, 129, 0.1);">
       <div style="background: linear-gradient(135deg, #064e3b 0%, #047857 100%); color: #ffffff; padding: 24px 20px; text-align: center; position: relative;">
         <div style="display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; background: #ffffff; border: 3px solid #34d399; margin-bottom: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.2);">
@@ -243,7 +227,6 @@
         <div id="gateway-farm-address" style="display: none; font-size: 12.5px; color: #d1fae5; line-height: 1.4; max-width: 600px; margin: 0 auto;"></div>
       </div>
 
-      <!-- Quick Farm Stats Row -->
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; padding: 16px 20px; background: #ffffff; border-bottom: 1px solid #e2e8f0;">
         <div style="text-align: center; padding: 10px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
           <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Tổng Cây Trồng</div>
@@ -260,9 +243,8 @@
       </div>
     </div>
 
-    <!-- Smart NFC Radar / Tap Zone Section -->
     <div class="glass-panel" style="border-radius: 20px; padding: 26px 20px; margin-bottom: 20px; text-align: center; border: 2px dashed #10b981; background: #ffffff; box-shadow: 0 10px 30px rgba(16, 185, 129, 0.08); position: relative; overflow: hidden;">
-      
+
       <div style="margin-bottom: 16px;">
         <div style="display: inline-flex; align-items: center; justify-content: center; width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #047857); color: #ffffff; font-size: 38px; box-shadow: 0 0 0 10px rgba(16, 185, 129, 0.15), 0 0 0 20px rgba(16, 185, 129, 0.05);">
           <i data-lucide="radio" class="lucide-sm" style="font-size: 38px;"></i>
@@ -274,27 +256,23 @@
         Hệ thống đang tự động lắng nghe: Hãy chạm mặt sau điện thoại vào thẻ NFC cắm trên cây để mở ngay hồ sơ cây hoặc gán số cây tại vườn.
       </p>
 
-      <!-- Web NFC Status Badge -->
       <div style="display: inline-flex; align-items: center; gap: 8px; background: #f0fdf4; border: 1.5px solid #86efac; color: #047857; padding: 8px 18px; border-radius: 100px; font-size: 12.5px; font-weight: 700; margin-bottom: 16px;">
         <i data-lucide="phone-call" class="lucide-sm" style="color: #059669;"></i>
         <span id="gateway-nfc-status-text">Chưa có thẻ định danh cho cây, liên hệ <a href="tel:090804895" style="color: #047857; text-decoration: underline; font-weight: 800;">(090804895)</a></span>
       </div>
 
-      <!-- Trigger Scan Button -->
       <div>
         <button type="button" id="btn-gateway-trigger-nfc" onclick="triggerGatewayWebNfc()" style="background: linear-gradient(135deg, #10b981, #047857); color: #ffffff; border: none; padding: 12px 28px; border-radius: 12px; font-size: 14px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);">
           <i data-lucide="scan" class="lucide-sm"></i> Kích Hoạt Quét Thẻ NFC (Chạm Lưng Máy)
         </button>
       </div>
 
-      <!-- Manual UID Input Option -->
       <div style="margin-top: 14px;">
         <button type="button" onclick="toggleGatewayManualUidInput()" style="background: none; border: none; color: #0284c7; font-size: 12px; font-weight: 700; cursor: pointer; text-decoration: underline;">
           Không có NFC? Hoặc nhập mã UID thẻ thủ công
         </button>
       </div>
 
-      <!-- Hidden Manual UID input container -->
       <div id="gateway-manual-uid-wrap" style="display: none; max-width: 420px; margin: 14px auto 0 auto; padding-top: 14px; border-top: 1px dashed #cbd5e1;">
         <div style="display: flex; gap: 8px;">
           <input type="text" id="gateway-manual-uid-input" placeholder="Nhập mã UID (vd: 04:F4:86:5A:...)" style="flex: 1; padding: 9px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 13px; font-family: monospace; font-weight: 700;">
@@ -305,17 +283,13 @@
       </div>
     </div>
 
-    <!-- Technician / Staff Auth Status & Actions Strip -->
     <div id="gateway-staff-strip" class="glass-panel" style="border-radius: 14px; padding: 14px 18px; margin-bottom: 20px; background: #ffffff; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
       <div id="gateway-staff-info" style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: #475569;">
-        <!-- Filled dynamically -->
       </div>
       <div id="gateway-staff-actions" style="display: flex; gap: 8px;">
-        <!-- Filled dynamically -->
       </div>
     </div>
 
-    <!-- Tree Directory & Search Section -->
     <div class="glass-panel" style="border-radius: 20px; padding: 20px; background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
         <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 6px;">
@@ -327,27 +301,22 @@
         </div>
       </div>
 
-      <!-- Filter tabs -->
       <div style="display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap;">
         <button type="button" id="tab-btn-all" class="btn-gateway-tab active" onclick="setGatewayTab('all', this)" style="padding: 6px 12px; font-size: 12px; font-weight: 700; border-radius: 8px; border: 1px solid #10b981; background: #ecfdf5; color: #047857; cursor: pointer;">Tất cả (<span id="tab-count-all">0</span>)</button>
         <button type="button" id="tab-btn-assigned" class="btn-gateway-tab" onclick="setGatewayTab('assigned', this)" style="padding: 6px 12px; font-size: 12px; font-weight: 700; border-radius: 8px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; cursor: pointer;">Đã gắn thẻ (<span id="tab-count-assigned">0</span>)</button>
         <button type="button" id="tab-btn-unassigned" class="btn-gateway-tab" onclick="setGatewayTab('unassigned', this)" style="padding: 6px 12px; font-size: 12px; font-weight: 700; border-radius: 8px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; cursor: pointer;">Chưa gắn thẻ (<span id="tab-count-unassigned">0</span>)</button>
       </div>
 
-      <!-- Tree Grid / List Container -->
       <div id="gateway-trees-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; max-height: 480px; overflow-y: auto; padding-right: 4px;">
-        <!-- Filled dynamically -->
       </div>
     </div>
 
   </div>
 
-  <!-- Field Binding View (Gán thẻ NFC trực tiếp tại vườn + Auto GPS + Chống ghi đè) -->
   <div id="field-binding-view" style="display: none;">
     <div class="auth-gate-container">
       <div class="glass-panel auth-gate-card" style="max-width: 540px; border: 1.5px solid #10b981; box-shadow: 0 16px 40px rgba(16, 185, 129, 0.12);">
-        
-        <!-- Header Tag Info -->
+
         <div style="text-align: center; margin-bottom: 20px;">
           <div style="display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #ecfdf5, #d1fae5); border: 2px solid #10b981; color: #047857; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(16,185,129,0.2);">
             <i data-lucide="nfc" class="lucide-sm" style="font-size: 32px;"></i>
@@ -370,7 +339,6 @@
 
         <div class="auth-gate-divider" style="margin: 16px 0;"></div>
 
-        <!-- Strict Governance Notice -->
         <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 12px; font-size: 12.5px; color: #166534; margin-bottom: 18px; display: flex; gap: 10px; align-items: flex-start;">
           <i data-lucide="shield-alert" class="lucide-sm" style="color: #16a34a; font-size: 18px; flex-shrink: 0; margin-top: 2px;"></i>
           <div>
@@ -379,7 +347,6 @@
           </div>
         </div>
 
-        <!-- Error/Conflict Warning Alert Box -->
         <div id="bind-error-alert" style="display: none; background: #fef2f2; border: 1.5px solid #ef4444; border-radius: 12px; padding: 14px; margin-bottom: 18px;">
           <div style="display: flex; gap: 10px; align-items: flex-start;">
             <i data-lucide="alert-triangle" class="lucide-sm" style="color: #dc2626; font-size: 20px; flex-shrink: 0; margin-top: 2px;"></i>
@@ -390,9 +357,7 @@
           </div>
         </div>
 
-        <!-- Binding Form -->
         <form id="form-field-binding" onsubmit="event.preventDefault(); submitFieldBinding();">
-          <!-- Tree Selector -->
           <div class="field" style="margin-bottom: 16px;">
             <label style="font-weight: 700; font-size: 13px; color: #1e293b; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
               <span><i data-lucide="trees" class="lucide-sm" style="color: #059669;"></i> Chọn Cây Chưa Gắn Thẻ (<span id="bind-unassigned-count" style="color: #059669;">0</span> cây khả dụng)</span>
@@ -400,17 +365,15 @@
                 <i data-lucide="refresh-cw" class="lucide-sm"></i> Tải lại
               </button>
             </label>
-            
+
             <div style="position: relative;">
               <input type="text" id="bind-tree-search" placeholder="Gõ STT hoặc mã cây (VD: S-A-001, 15, Cây 1)..." autocomplete="off" oninput="handleTreeSearchInput(this.value)" onfocus="handleTreeSearchInput(this.value)" style="width: 100%; padding: 12px 14px; font-size: 14px; font-weight: 600; border: 1.5px solid #cbd5e1; border-radius: 10px; outline: none; transition: border-color 0.2s;" required>
               <div id="bind-tree-dropdown" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; max-height: 240px; overflow-y: auto; background: #ffffff; border: 1.5px solid #10b981; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 1000;">
-                <!-- Dynamically populated -->
               </div>
             </div>
             <input type="hidden" id="bind-selected-plant-id" value="">
             <input type="hidden" id="bind-selected-tree-code" value="">
-            
-            <!-- Quick Tap Chips for Available Trees -->
+
             <div id="bind-unassigned-chips" style="margin-top: 10px;"></div>
 
             <div id="bind-selected-preview" style="display: none; margin-top: 8px; padding: 8px 12px; background: #f0fdf4; border-radius: 8px; border: 1px solid #86efac; font-size: 12.5px; color: #166534; display: flex; justify-content: space-between; align-items: center;">
@@ -419,7 +382,6 @@
             </div>
           </div>
 
-          <!-- Live GPS Radar Status Component -->
           <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-bottom: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
               <span style="font-weight: 700; font-size: 12.5px; color: #334155; display: flex; align-items: center; gap: 6px;">
@@ -433,7 +395,7 @@
 
             <div style="font-family: monospace; font-size: 13px; color: #0f172a; font-weight: 700; background: #ffffff; padding: 10px 12px; border-radius: 8px; border: 1px solid #cbd5e1; display: flex; justify-content: space-between; align-items: center;">
               <div>
-                <span>Lat: <strong id="bind-gps-lat" style="color: #047857;">Đang dò...</strong></span> | 
+                <span>Lat: <strong id="bind-gps-lat" style="color: #047857;">Đang dò...</strong></span> |
                 <span>Lng: <strong id="bind-gps-lng" style="color: #047857;">Đang dò...</strong></span>
               </div>
               <span id="bind-gps-acc" style="font-size: 11.5px; color: #64748b; font-weight: 600;">Sai số: ±...</span>
@@ -443,13 +405,11 @@
             </div>
           </div>
 
-          <!-- Submit Button -->
           <button type="submit" id="btn-submit-binding" style="width: 100%; height: 52px; background: linear-gradient(135deg, #059669, #047857); color: #ffffff; border: none; border-radius: 12px; font-size: 15px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 8px 20px rgba(5, 150, 105, 0.35); transition: all 0.2s;">
             <i data-lucide="link" class="lucide-sm"></i> Xác nhận Gắn Thẻ &amp; Lưu Tọa Độ GPS
           </button>
         </form>
 
-        <!-- Back / Cancel options -->
         <div style="text-align: center; margin-top: 14px;">
           <a href="/" style="font-size: 12.5px; color: #64748b; text-decoration: none; font-weight: 600;">
             <i data-lucide="arrow-left" class="lucide-sm" style="vertical-align: -2px;"></i> Hủy &amp; Quay lại Trang chủ
@@ -460,7 +420,6 @@
     </div>
   </div>
 
-  <!-- Replace & Revoke Tag Confirmation Modal -->
   <div class="modal-overlay" id="replace-tag-confirm-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(15,23,42,0.75); z-index:99999; align-items:center; justify-content:center;">
     <div class="modal" style="max-width:500px; width:92%; background:#ffffff; border-radius:18px; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.35); border:2px solid #ef4444;">
       <div style="background:linear-gradient(135deg, #991b1b, #dc2626); color:#ffffff; padding:18px 22px; display:flex; align-items:center; gap:10px;">
@@ -502,11 +461,9 @@
     </div>
   </div>
 
-  <!-- NFC Direct Write Modal (Ghi đè link vào chip NFC) -->
   <div class="modal-overlay" id="nfc-write-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(15,23,42,0.82); z-index:999999; align-items:center; justify-content:center; backdrop-filter:blur(6px);">
     <div class="modal" style="max-width:480px; width:92%; background:#ffffff; border-radius:20px; overflow:hidden; box-shadow:0 25px 60px rgba(0,0,0,0.4); border:2px solid #10b981; text-align:center;">
-      
-      <!-- Modal Header -->
+
       <div style="background:linear-gradient(135deg, #064e3b, #047857); color:#ffffff; padding:20px 22px;">
         <h3 style="margin:0 0 4px 0; font-size:17px; font-weight:800; color:#ffffff; display:flex; align-items:center; justify-content:center; gap:8px;">
           <i data-lucide="nfc" class="lucide-sm" style="font-size:22px;"></i> NẠP LINK VÀO CHIP NFC
@@ -514,21 +471,18 @@
         <p style="margin:0; font-size:12px; color:#a7f3d0;" id="nfc-write-modal-subtitle">Ghi đè đường dẫn mở thẳng vào chip NFC</p>
       </div>
 
-      <!-- Modal Body -->
       <div style="padding:24px 20px;">
-        
-        <!-- Radar Scanning Animation -->
+
         <div id="nfc-write-anim-container" style="margin:10px auto 20px auto; width:96px; height:96px; border-radius:50%; background:linear-gradient(135deg, #ecfdf5, #d1fae5); border:3px solid #10b981; display:flex; align-items:center; justify-content:center; position:relative; box-shadow:0 0 0 12px rgba(16,185,129,0.15), 0 0 0 24px rgba(16,185,129,0.06);">
           <i data-lucide="radio" id="nfc-write-icon" class="lucide-spin" style="font-size:44px; color:#047857;"></i>
         </div>
 
         <h4 id="nfc-write-status-title" style="font-size:16px; font-weight:800; color:#0f172a; margin:0 0 8px 0;">HÃY CHẠM MẶT SAU ĐIỆN THOẠI VÀO THẺ</h4>
-        
+
         <p id="nfc-write-status-desc" style="font-size:13px; color:#475569; line-height:1.5; margin:0 0 16px 0;">
           Giữ mặt sau điện thoại sát vào thẻ NFC trên cây khoảng <strong>1 - 2 giây</strong> cho đến khi máy rung để nạp link trực tiếp.
         </p>
 
-        <!-- Target Plant & URL Box -->
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px; margin-bottom:20px; text-align:left; font-size:12.5px;">
           <div style="margin-bottom:6px; display:flex; justify-content:space-between;">
             <span style="color:#64748b; font-weight:600;">Cây trồng:</span>
@@ -544,7 +498,6 @@
           </div>
         </div>
 
-        <!-- Action Buttons -->
         <div style="display:flex; gap:10px;">
           <button type="button" id="btn-nfc-write-retry" onclick="startNfcDirectWriteSession()" style="flex:1; height:44px; background:linear-gradient(135deg, #10b981, #047857); color:#ffffff; border:none; border-radius:10px; font-size:13.5px; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
             <i data-lucide="refresh-cw" class="lucide-sm"></i> Thử Lại
@@ -559,19 +512,14 @@
     </div>
   </div>
 
-  <!-- Plant Profile View -->
   <div id="plant-view" style="display: none;"></div>
 </div>
 
-<!-- Lightbox Modal -->
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
   <button class="lightbox-close" onclick="closeLightbox()"><i data-lucide="x" class="lucide-sm"></i></button>
   <div id="lightbox-content"></div>
 </div>
 
-<!-- ==================== CARE MODALS ==================== -->
-
-<!-- Water Modal -->
 <div class="modal-overlay" id="modal-water" onclick="closeModalOnOuterClick(event, 'modal-water')">
   <div class="glass-panel modal">
     <div class="modal-header">
@@ -584,7 +532,6 @@
           <label>Phương pháp tưới *</label>
           <div class="custom-select-wrap">
             <select id="water-method-select" onchange="toggleCustomInput('water-method')">
-              <!-- Loaded dynamically -->
             </select>
             <input type="text" id="water-method-custom" placeholder="Phương pháp khác..." style="display:none; width: 40%;">
           </div>
@@ -593,7 +540,6 @@
         <div class="field">
           <label><i data-lucide="droplet" class="lucide-sm" style="color:var(--green-bright)"></i> Nguồn nước / Tiền nước (Từ Kho vật tư)</label>
           <select id="water-supply-select" onchange="calculatePublicWaterCost()">
-            <!-- Loaded dynamically from farm supplies -->
           </select>
         </div>
 
@@ -612,7 +558,6 @@
           </div>
         </div>
 
-        <!-- Auto Conversion & Cost Preview Box -->
         <div id="water-conversion-preview-box" class="calc-breakdown-card" style="margin-bottom:14px; padding:12px 16px; background:linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%); border:1px solid #7dd3fc; border-radius:12px;">
           <div style="font-size:11px; font-weight:700; color:#0369a1; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:6px;">
             <i data-lucide="calculator" class="lucide-sm"></i> TỰ ĐỘNG QUY ĐỔI LÍT ➔ M³ &amp; QUY THÀNH TIỀN
@@ -633,7 +578,6 @@
           </select>
         </div>
 
-        <!-- VietGAP Operator & Equipment Box -->
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; margin-bottom:14px;">
           <div style="font-size:11.5px; font-weight:700; color:#047857; margin-bottom:6px; display:flex; align-items:center; gap:5px;">
             <i data-lucide="user-check" class="lucide-sm"></i> Tiêu Chuẩn VietGAP: Người Thực Hiện &amp; Thiết Bị
@@ -673,7 +617,6 @@
   </div>
 </div>
 
-<!-- Fertilize Modal -->
 <div class="modal-overlay" id="modal-fertilize" onclick="closeModalOnOuterClick(event, 'modal-fertilize')">
   <div class="glass-panel modal">
     <div class="modal-header">
@@ -686,11 +629,10 @@
           <label><i data-lucide="link" class="lucide-sm" style="color:var(--green-bright)"></i> Chọn loại Phân bón (Từ Kho Vật tư) *</label>
           <div class="custom-select-wrap">
             <select id="fertilizer-supply-select" onchange="onPublicFertilizerSelected(this)">
-              <!-- Loaded dynamically from farm supplies -->
             </select>
             <input type="text" id="fertilizer-custom" placeholder="Tên phân bón..." style="display:none; width: 40%;">
           </div>
-          
+
           <div id="fertilizer-supply-img-wrap" style="display:none; align-items:center; gap:8px; margin-top:8px; background:#f8fafc; padding:6px 10px; border-radius:8px; border:1px solid #e2e8f0;">
             <img id="fertilizer-supply-img-preview" src="" style="width:40px; height:40px; border-radius:6px; object-fit:cover; border:1px solid #cbd5e1;">
             <span style="font-size:12px; color:#64748b; font-weight:500;">Bao bì / Nhãn hiệu sản phẩm trong kho</span>
@@ -713,7 +655,6 @@
           </div>
         </div>
 
-        <!-- Auto Cost Preview Box for Fertilizer -->
         <div id="fertilizer-cost-preview-box" class="calc-breakdown-card" style="margin-bottom:14px; padding:10px 14px; background:linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border:1px solid #86efac; border-radius:10px;">
           <div style="font-size:11px; font-weight:700; color:#15803d; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:6px;">
             <i data-lucide="calculator" class="lucide-sm"></i> DỰ TOÁN CHI PHÍ PHÂN BÓN CHO CÂY
@@ -733,7 +674,6 @@
           </select>
         </div>
 
-        <!-- VietGAP Operator & Equipment Box -->
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; margin-bottom:14px;">
           <div style="font-size:11.5px; font-weight:700; color:#047857; margin-bottom:6px; display:flex; align-items:center; gap:5px;">
             <i data-lucide="user-check" class="lucide-sm"></i> Tiêu Chuẩn VietGAP: Người Thực Hiện &amp; Thiết Bị
@@ -773,7 +713,6 @@
   </div>
 </div>
 
-<!-- Pesticide Modal -->
 <div class="modal-overlay" id="modal-pesticide" onclick="closeModalOnOuterClick(event, 'modal-pesticide')">
   <div class="glass-panel modal">
     <div class="modal-header">
@@ -786,12 +725,10 @@
           <label><i data-lucide="shield-check" class="lucide-sm" style="color:var(--green-bright)"></i> Chọn Thuốc BVTV (Từ Kho Vật tư) *</label>
           <div class="custom-select-wrap">
             <select id="pesticide-supply-select" onchange="onPublicPesticideSelected(this)">
-              <!-- Loaded dynamically from farm supplies -->
             </select>
             <input type="text" id="pesticide-custom" placeholder="Tên thuốc..." style="display:none; width: 40%;">
           </div>
 
-          <!-- VietGAP Active Ingredient Notice -->
           <div id="pesticide-active-notice" style="margin-top:8px; padding:10px 12px; background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:10px; font-size:12px; color:#065f46;">
             <div style="font-weight:800; display:flex; align-items:center; gap:6px;">
               <i data-lucide="shield-check" class="lucide-sm" style="color:#059669;"></i> Tiêu Chuẩn VietGAP - Hoạt Chất &amp; Nguồn Gốc:
@@ -827,7 +764,6 @@
           <input type="number" step="any" id="pesticide-water" value="20" placeholder="Pha với bao nhiêu lít nước..." required>
         </div>
 
-        <!-- Auto Cost Preview Box for Pesticide -->
         <div id="pesticide-cost-preview-box" class="calc-breakdown-card" style="margin-bottom:14px; padding:10px 14px; background:linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border:1px solid #86efac; border-radius:10px;">
           <div style="font-size:11px; font-weight:700; color:#15803d; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:6px;">
             <i data-lucide="calculator" class="lucide-sm"></i> DỰ TOÁN CHI PHÍ THUỐC BVTV
@@ -849,7 +785,6 @@
           </select>
         </div>
 
-        <!-- VietGAP Operator & Equipment Box -->
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; margin-bottom:14px;">
           <div style="font-size:11.5px; font-weight:700; color:#047857; margin-bottom:6px; display:flex; align-items:center; gap:5px;">
             <i data-lucide="user-check" class="lucide-sm"></i> Tiêu Chuẩn VietGAP: Người Thực Hiện &amp; Thiết Bị
@@ -889,7 +824,6 @@
   </div>
 </div>
 
-<!-- 🍏 Fruit Audit / Kiểm toán quả Modal -->
 <div class="modal-overlay" id="modal-fruit-audit" onclick="closeModalOnOuterClick(event, 'modal-fruit-audit')">
   <div class="glass-panel modal">
     <div class="modal-header">
@@ -934,7 +868,6 @@
           </div>
         </div>
 
-        <!-- VietGAP Operator & Equipment Box -->
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; margin-bottom:14px;">
           <div style="font-size:11.5px; font-weight:700; color:#047857; margin-bottom:6px; display:flex; align-items:center; gap:5px;">
             <i data-lucide="user-check" class="lucide-sm"></i> Tiêu Chuẩn VietGAP: Người Kiểm Đếm &amp; Dụng Cụ
@@ -974,7 +907,6 @@
   </div>
 </div>
 
-<!-- Harvest Modal -->
 <div class="modal-overlay" id="modal-harvest" onclick="closeModalOnOuterClick(event, 'modal-harvest')">
   <div class="glass-panel modal">
     <div class="modal-header">
@@ -983,7 +915,6 @@
     </div>
     <form id="form-harvest" onsubmit="submitCareLog(event, 'Thu hoạch', 'modal-harvest', 'form-harvest')">
       <div class="modal-body">
-        <!-- VietGAP Batch Code Preview -->
         <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; margin-bottom:12px; font-size:12px;">
           <div style="color:#64748b; font-weight:600;"><i data-lucide="scan" class="lucide-sm" style="color:#0284c7; vertical-align:-2px;"></i> Mã Lô Nông Sản VietGAP (Batch Code) Tự Sinh:</div>
           <div style="font-family:monospace; font-weight:800; font-size:13px; color:#0369a1; margin-top:3px;" id="harvest-batch-code-preview">
@@ -1015,7 +946,6 @@
           <input type="number" id="harvest-tree-revenue" min="0" step="1000" value="3500000" placeholder="VD: 3500000" oninput="calculatePublicHarvestEconomics()" style="width:100%; font-weight:700; color:#065f46; background:#f0fdf4;">
         </div>
 
-        <!-- Khối tự động tính trung bình quân 1 quả -->
         <div id="public-harvest-calc-box" style="margin-bottom:12px; padding:10px 14px; background:#fffbeb; border:1.5px solid #fde68a; border-radius:10px;">
           <div id="public-harvest-audit-compare" style="display:none; margin-bottom:8px; padding-bottom:8px; border-bottom:1px dashed #fcd34d; font-size:12px; font-weight:700; color:#0f766e;"></div>
           <div style="font-size:11.5px; font-weight:700; color:#b45309; display:flex; justify-content:space-between; align-items:center;">
@@ -1029,7 +959,6 @@
           <input type="text" id="harvest-quality" placeholder="Ví dụ: Loại A (Brix 18%), Hàng xuất khẩu..." value="Loại A (Đạt chuẩn xuất khẩu)">
         </div>
 
-        <!-- VietGAP Operator & Equipment Box -->
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; margin-bottom:14px;">
           <div style="font-size:11.5px; font-weight:700; color:#047857; margin-bottom:6px; display:flex; align-items:center; gap:5px;">
             <i data-lucide="user-check" class="lucide-sm"></i> Tiêu Chuẩn VietGAP: Người Thực Hiện &amp; Thiết Bị
@@ -1069,7 +998,6 @@
   </div>
 </div>
 
-<!-- 👷 Labor / Thuê nhân công Modal -->
 <div class="modal-overlay" id="modal-labor" onclick="closeModalOnOuterClick(event, 'modal-labor')">
   <div class="glass-panel modal">
     <div class="modal-header">
@@ -1104,7 +1032,6 @@
           </div>
         </div>
 
-        <!-- VietGAP Operator & Equipment Box -->
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; margin-bottom:14px;">
           <div style="font-size:11.5px; font-weight:700; color:#047857; margin-bottom:6px; display:flex; align-items:center; gap:5px;">
             <i data-lucide="user-check" class="lucide-sm"></i> Tiêu Chuẩn VietGAP: Người Thực Hiện &amp; Dụng Cụ
@@ -1144,7 +1071,6 @@
   </div>
 </div>
 
-<!-- ✂️ Leaf Cut Modal -->
 <div class="modal-overlay" id="modal-leaf" onclick="closeModalOnOuterClick(event, 'modal-leaf')">
   <div class="glass-panel modal">
     <div class="modal-header">
@@ -1161,13 +1087,11 @@
           <label>Lý do cắt tỉa</label>
           <div class="custom-select-wrap">
             <select id="leaf-reason-select" onchange="toggleCustomInput('leaf-reason')">
-              <!-- Loaded dynamically -->
             </select>
             <input type="text" id="leaf-reason-custom" placeholder="Lý do khác..." style="display:none; width: 40%;">
           </div>
         </div>
 
-        <!-- VietGAP Operator & Equipment Box -->
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; margin-bottom:14px;">
           <div style="font-size:11.5px; font-weight:700; color:#047857; margin-bottom:6px; display:flex; align-items:center; gap:5px;">
             <i data-lucide="user-check" class="lucide-sm"></i> Tiêu Chuẩn VietGAP: Người Thực Hiện &amp; Thiết Bị
@@ -1207,7 +1131,6 @@
   </div>
 </div>
 
-<!-- Flower Prune Modal -->
 <div class="modal-overlay" id="modal-flower" onclick="closeModalOnOuterClick(event, 'modal-flower')">
   <div class="glass-panel modal">
     <div class="modal-header">
@@ -1224,13 +1147,11 @@
           <label>Lý do tỉa</label>
           <div class="custom-select-wrap">
             <select id="flower-reason-select" onchange="toggleCustomInput('flower-reason')">
-              <!-- Loaded dynamically -->
             </select>
             <input type="text" id="flower-reason-custom" placeholder="Lý do khác..." style="display:none; width: 40%;">
           </div>
         </div>
 
-        <!-- VietGAP Operator & Equipment Box -->
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; margin-bottom:14px;">
           <div style="font-size:11.5px; font-weight:700; color:#047857; margin-bottom:6px; display:flex; align-items:center; gap:5px;">
             <i data-lucide="user-check" class="lucide-sm"></i> Tiêu Chuẩn VietGAP: Người Thực Hiện &amp; Thiết Bị
@@ -1270,7 +1191,6 @@
   </div>
 </div>
 
-<!-- Disease Report Modal -->
 <div class="modal-overlay" id="modal-disease" onclick="closeModalOnOuterClick(event, 'modal-disease')">
   <div class="glass-panel modal">
     <div class="modal-header">
@@ -1296,7 +1216,6 @@
           </select>
         </div>
 
-        <!-- VietGAP Operator & Equipment Box -->
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; margin-bottom:14px;">
           <div style="font-size:11.5px; font-weight:700; color:#047857; margin-bottom:6px; display:flex; align-items:center; gap:5px;">
             <i data-lucide="user-check" class="lucide-sm"></i> Tiêu Chuẩn VietGAP: Người Khảo Sát &amp; Dụng Cụ
@@ -1318,7 +1237,6 @@
           <input type="datetime-local" id="disease-datetime" required>
         </div>
 
-        <!-- Image upload zone -->
         <div class="field">
           <label><i data-lucide="camera" class="lucide-sm" style="color:var(--color-disease)"></i> Chụp ảnh (tối đa 10 ảnh)</label>
           <div class="upload-zone" id="disease-img-zone">
@@ -1329,7 +1247,6 @@
           <div class="upload-preview-grid" id="disease-img-preview"></div>
         </div>
 
-        <!-- Video upload zone -->
         <div class="field">
           <label><i data-lucide="video" class="lucide-sm" style="color:var(--color-disease)"></i> Quay video (tối đa 2 video)</label>
           <div class="upload-zone" id="disease-vid-zone">
@@ -1360,7 +1277,6 @@
   </div>
 </div>
 
-<!-- Export Modal -->
 <div class="export-modal-overlay" id="export-modal" onclick="if(event.target===this)closeExportModal()">
   <div class="export-modal">
     <div class="export-modal-header">
@@ -1377,7 +1293,7 @@
           <input type="date" id="export-to-date" class="export-input">
         </div>
       </div>
-      
+
       <div class="export-field">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
           <label>Hạng mục nhật ký muốn xuất</label>
@@ -1388,7 +1304,6 @@
           </div>
         </div>
         <div class="export-categories-grid" id="export-categories-container">
-          <!-- Dynamic categories -->
         </div>
       </div>
     </div>
@@ -1402,13 +1317,11 @@
       </button>
     </div>
   </div>
-<!-- Official Certificate Viewer Modal (Chứng Thư Số VietGAP & Mã Số Vùng Trồng PUC) -->
 <div class="modal-overlay" id="cert-viewer-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(15,23,42,0.85); z-index:999999; align-items:center; justify-content:center; backdrop-filter:blur(8px); padding:16px; overflow-y:auto;" onclick="if(event.target===this)closeCertificateModal()">
   <div class="cert-modal-dialog">
     <button type="button" onclick="closeCertificateModal()" style="position:absolute; top:16px; right:16px; z-index:10; background:#f1f5f9; border:1px solid #cbd5e1; width:34px; height:34px; border-radius:50%; font-size:18px; font-weight:800; color:#475569; cursor:pointer; display:flex; align-items:center; justify-content:center;">×</button>
-    
+
     <div id="cert-modal-dynamic-content">
-      <!-- Injected dynamically via openCertificateModal(type) -->
     </div>
   </div>
 </div>

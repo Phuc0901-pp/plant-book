@@ -1,28 +1,18 @@
-/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/* ═══════════════════════════════════════════════════════════════
-   Plant Book – User Portal
-   modules/logs.js — Care log rendering, grouping, search & filters
-   ═══════════════════════════════════════════════════════════════ */
-
 import { esc, formatDate, toast } from '../core/utils.js';
 import { api, getCurrentUserRbac } from '../core/api.js';
 import { buildMediaThumbnailsHtml } from './media.js';
 import { getPlantsCache } from './plants.js';
 
-// ── State ─────────────────────────────────────────────────────
 let _logsCache = [];
 let _diseaseOnlyFilterActive = false;
 
-// ── State Phân trang Lịch sử (20 dòng / trang) ───────────────
 let _currentLogPage = 1;
 const _logPageSize = 20;
 let _currentFilteredLogs = [];
 
-// ── State Chọn nhiều & Xóa chọn lọc ───────────────────────────
 let _batchSelectMode = false;
 const _selectedLogIds = new Set();
 
-// ── Ngày trong tuần Tiếng Việt ────────────────────────────────
 const dayOfWeekArr = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
 const DAY_OF_WEEK_ARR = dayOfWeekArr;
 
@@ -35,7 +25,6 @@ function matchesUserLogCategory(selectedList, logType) {
   return false;
 }
 
-
 function _fmtViShortDateLog(dVal) {
   if (!dVal) return '';
   const s = String(dVal).slice(0, 10);
@@ -45,10 +34,6 @@ function _fmtViShortDateLog(dVal) {
   return !isNaN(d) ? d.toLocaleDateString('vi-VN') : s;
 }
 
-/**
- * Tính toán chuỗi đối chiếu biến động số quả (Đậu quả → Quả non → Quả chín → Thu hoạch)
- * độc lập theo từng cây theo đúng thứ tự thời gian thực.
- */
 export function enrichLogsWithFruitAuditChain(logs) {
   if (!Array.isArray(logs) || logs.length === 0) return logs || [];
   const byPlant = new Map();
@@ -134,25 +119,16 @@ function _buildFruitDeltaBadgeHtml(details, isHarvest = false) {
   return `<div style="margin-top:4px; display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:8px; font-size:11.5px; font-weight:700; background:${bg}; color:${color}; border:1px solid ${border};"><i data-lucide="git-compare" class="lucide-xs"></i> ${esc(text)}</div>`;
 }
 
-/**
- * Cập nhật cache nhật ký (30 ngày).
- * @param {Array} logs
- */
 export function setLogsCache(logs) {
   _logsCache = enrichLogsWithFruitAuditChain(logs || []);
   window._allLogsCache = _logsCache;
 }
 
-/** Lấy cache nhật ký hiện tại */
 export function getLogsCache() {
   return _logsCache;
 }
 window.getLogsCache = getLogsCache;
 
-/**
- * Nạp danh sách trang trại vào dropdown #user-log-filter-farm
- * @param {Array} farms
- */
 export function populateLogFarmFilter(farms) {
   const sel = document.getElementById('user-log-filter-farm');
   if (!sel) return;
@@ -160,7 +136,6 @@ export function populateLogFarmFilter(farms) {
     + (farms || []).map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join('');
 }
 
-/** Bật/tắt bộ lọc nhanh "Chỉ cây bệnh" */
 export function toggleDiseaseOnlyFilter() {
   _diseaseOnlyFilterActive = !_diseaseOnlyFilterActive;
   const btn = document.getElementById('user-log-disease-toggle');
@@ -181,15 +156,6 @@ export function toggleDiseaseOnlyFilter() {
 }
 window.toggleDiseaseOnlyFilter = toggleDiseaseOnlyFilter;
 
-// ── Grouping Algorithm ────────────────────────────────────────
-
-/**
- * Gom nhóm các nhật ký canh tác theo Ngày + Loại hoạt động + Nông trại + Vật tư.
- * - Tự động cộng dồn tổng dung tích/khối lượng vật tư cùng ngày.
- * - Tự động cộng dồn tổng chi phí & doanh thu.
- * - Tóm gọn chú thích theo các mốc thời gian không trùng lặp.
- * - Ngoại trừ 'Bệnh cây' (giữ nguyên từng dòng riêng biệt phục vụ dịch tễ).
- */
 export function groupCareLogs(logs) {
   if (!Array.isArray(logs) || logs.length === 0) return [];
   enrichLogsWithFruitAuditChain(logs);
@@ -198,10 +164,8 @@ export function groupCareLogs(logs) {
   const regularGroups = new Map();
 
   for (const rawLog of logs) {
-    // Clone log để không mutate cache gốc
     const log = JSON.parse(JSON.stringify(rawLog));
 
-    // Bệnh cây & Kiểm toán quả: Không gom nhóm, giữ nguyên dòng riêng biệt theo từng cây & mốc thời gian
     if (log.log_type === 'Bệnh cây' || log.log_type === 'Kiểm toán quả') {
       grouped.push({
         ...log,
@@ -215,11 +179,9 @@ export function groupCareLogs(logs) {
     const dateStr = log.log_date ? new Date(log.log_date).toISOString().slice(0, 10) : '';
     const farmId = log.farm_id || 0;
     const logType = log.log_type || 'Chăm sóc';
-    
-    // Tên vật tư hoặc hoạt chất chính
+
     const supplyName = (log.details?.supply_name || log.details?.fertilizer_name || log.details?.pesticide_name || log.details?.foliar_nutrition || log.details?.fertilizer || log.details?.pesticide || '').trim().toLowerCase();
-    
-    // Khóa gom nhóm chính: Cùng ngày + Cùng nông trại + Cùng loại hoạt động + Cùng vật tư
+
     const key = `${dateStr}__${farmId}__${logType}__${supplyName}`;
 
     if (!regularGroups.has(key)) {
@@ -242,19 +204,16 @@ export function groupCareLogs(logs) {
     const groupObj = regularGroups.get(key);
     groupObj.occurrenceCount += 1;
 
-    // Track plants
     if (log.plant_id) {
       groupObj.plantsMap.set(log.plant_id, log.tree_code || String(log.plant_id));
     }
 
-    // Accumulate Quantity
     const qVal = parseFloat(log.details?.quantity ?? log.details?.amount ?? log.details?.qty ?? log.details?.dosage ?? log.details?.volume ?? log.details?.yield_kg ?? 0) || 0;
     groupObj.totalQuantity += qVal;
     if (!groupObj.unit && (log.details?.unit || log.details?.package_unit)) {
       groupObj.unit = log.details?.unit || log.details?.package_unit;
     }
 
-    // Accumulate Cost & Revenue
     const cVal = parseFloat(log.details?.total_cost || 0) || 0;
     groupObj.totalCost += cVal;
 
@@ -264,13 +223,11 @@ export function groupCareLogs(logs) {
     const fVal = parseInt(log.details?.fruit_count || 0) || 0;
     groupObj.totalFruitCount += fVal;
 
-    // Track Time
     const logTime = log.details?.time || (log.log_date ? new Date(log.log_date).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '');
     if (logTime && !groupObj.timesList.includes(logTime)) {
       groupObj.timesList.push(logTime);
     }
 
-    // Track Notes
     if (log.note && log.note.trim() && !groupObj.notesList.includes(log.note.trim())) {
       groupObj.notesList.push(log.note.trim());
     }
@@ -304,7 +261,6 @@ export function groupCareLogs(logs) {
       targetDisplay = `Toàn vườn${groupObj.farmName ? ' (' + groupObj.farmName + ')' : ''}`;
     }
 
-    // Apply accumulated quantity and costs
     if (groupObj.totalQuantity > 0) {
       log.details.quantity = Number(groupObj.totalQuantity.toFixed(2));
       log.details.amount = Number(groupObj.totalQuantity.toFixed(2));
@@ -320,7 +276,6 @@ export function groupCareLogs(logs) {
       log.details.fruit_count = groupObj.totalFruitCount;
     }
 
-    // Format merged notes & times
     if (groupObj.occurrenceCount > 1) {
       const timesStr = groupObj.timesList.length > 0 ? `[${groupObj.timesList.join(', ')}] ` : '';
       const notesCombined = groupObj.notesList.length > 0 ? groupObj.notesList.join('; ') : 'Thực hiện định kỳ trong ngày';
@@ -349,12 +304,6 @@ export function groupCareLogs(logs) {
   return grouped;
 }
 
-// ── Daily Grouping for Dashboard ──────────────────────────────
-
-/**
- * Gom nhóm tất cả các nhật ký canh tác theo NGÀY (phục vụ bảng tóm tắt 3 ngày trên Trang chủ).
- * Trả về mảng các đối tượng Ngày (Tối đa 3 ngày gần nhất), trong đó mỗi ngày chứa mảng các thẻ tóm tắt công việc đã làm trong ngày.
- */
 export function groupCareLogsByDay(logs) {
   if (!Array.isArray(logs) || logs.length === 0) return [];
 
@@ -382,7 +331,7 @@ export function groupCareLogsByDay(logs) {
 
   for (const dateStr of recent3Dates) {
     const dayLogs = daysMap.get(dateStr) || [];
-    
+
     let dateTag = '';
     const dObj = new Date(dateStr);
     const dateFormatted = `${String(dObj.getDate()).padStart(2, '0')}/${String(dObj.getMonth() + 1).padStart(2, '0')}/${dObj.getFullYear()}`;
@@ -458,14 +407,6 @@ export function groupCareLogsByDay(logs) {
   return daySummaries;
 }
 
-// ── Render ────────────────────────────────────────────────────
-
-/**
- * Render tóm tắt Hoạt động Canh tác gần đây trên Trang chủ.
- * Gom cụm theo từng Ngày (tối đa 3 ngày gần nhất), hiển thị thanh tiêu đề Ngày,
- * bên dưới tách riêng từng loại hoạt động, hiển thị các mốc giờ [07:00, 16:00] và chi tiết/chú thích.
- * @param {Array} logs
- */
 export function renderUserLogsTable(logs) {
   const tbody   = document.getElementById('user-logs-table');
   const moreWrap = document.getElementById('user-logs-more-btn-wrap');
@@ -480,7 +421,6 @@ export function renderUserLogsTable(logs) {
   enrichLogsWithFruitAuditChain(logs);
   if (moreWrap) moreWrap.style.display = 'block';
 
-  // 1. Phân chia raw logs theo từng Ngày
   const daysMap = new Map();
   for (const log of logs) {
     const dateStr = log.log_date ? new Date(log.log_date).toISOString().slice(0, 10) : '';
@@ -493,7 +433,7 @@ export function renderUserLogsTable(logs) {
 
   const sortedDates = Array.from(daysMap.keys())
     .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
-    .slice(0, 3); // Lấy 3 ngày gần nhất
+    .slice(0, 3);
 
   const todayStr = new Date().toISOString().slice(0, 10);
   const yesterdayObj = new Date();
@@ -508,7 +448,7 @@ export function renderUserLogsTable(logs) {
     const dateFormatted = `${String(dObj.getDate()).padStart(2, '0')}/${String(dObj.getMonth() + 1).padStart(2, '0')}/${dObj.getFullYear()}`;
     const dayOfWeekStr = !isNaN(dObj) ? dayOfWeekArr[dObj.getDay()] : '';
     const dateHeaderTitle = dayOfWeekStr ? `${dayOfWeekStr}, Ngày ${dateFormatted}` : `Ngày ${dateFormatted}`;
-    
+
     let dateTag = '';
     if (dateStr === todayStr) {
       dateTag = '<span style="background:#dcfce7; color:#15803d; font-size:11px; font-weight:800; padding:2px 8px; border-radius:10px; margin-left:6px; border:1px solid #86efac;">Hôm nay</span>';
@@ -516,10 +456,8 @@ export function renderUserLogsTable(logs) {
       dateTag = '<span style="background:#e0f2fe; color:#0369a1; font-size:11px; font-weight:800; padding:2px 8px; border-radius:10px; margin-left:6px; border:1px solid #7dd3fc;">Hôm qua</span>';
     }
 
-    // Gom cụm hoạt động bên trong ngày (theo cùng loại + cùng vật tư + cùng cây/vườn)
     const dayGroupedItems = groupCareLogs(dayLogs);
 
-    // Render Date Group Header Row
     html += `
       <tr class="date-group-header-row" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-top: 2px solid #cbd5e1; border-bottom: 1.5px solid #e2e8f0;">
         <td colspan="6" style="padding: 10px 16px; font-weight: 800; font-size: 13px; color: #0f172a;">
@@ -539,9 +477,7 @@ export function renderUserLogsTable(logs) {
       </tr>
     `;
 
-    // Render từng dòng hoạt động đã gom cụm trong ngày
     dayGroupedItems.forEach(l => {
-      // 1. Mốc thời gian (Chips)
       let timeList = [];
       if (l.timesList && Array.isArray(l.timesList) && l.timesList.length > 0) {
         timeList = l.timesList;
@@ -553,15 +489,13 @@ export function renderUserLogsTable(logs) {
         if (!isNaN(d)) timeList.push(d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }));
       }
 
-      const timeChipsHtml = timeList.length > 0 
+      const timeChipsHtml = timeList.length > 0
         ? timeList.map(t => `<span class="log-time-chip" style="display:inline-flex; align-items:center; gap:3px; background:#ffffff; color:#0f172a; border:1px solid #cbd5e1; border-radius:6px; padding:2px 6px; font-family:monospace; font-size:11.5px; font-weight:700;"><i data-lucide="clock" class="lucide-sm" style="color:#059669; font-size:10px;"></i>${esc(t)}</span>`).join(' ')
         : `<span style="color:#94a3b8; font-size:12px;">Trong ngày</span>`;
 
-      // 2. Đối tượng Cây trồng / Toàn vườn
       const targetDisplay = l.targetDisplay || (l.plant_id ? `Cây #${l.tree_code || l.plant_id}` : 'Toàn vườn');
       const farmName = l.farm_name ? ` (${esc(l.farm_name)})` : '';
 
-      // 3. Activity Type Badge & Icon
       let badgeClass = 'badge-green';
       let icon = 'leaf';
       if (l.log_type === 'Tưới nước') {
@@ -590,7 +524,6 @@ export function renderUserLogsTable(logs) {
         icon = 'apple';
       }
 
-      // 4. Chi tiết, Vật tư, Khối lượng & Chú thích
       let detailsStr = esc(l.note || '');
       let auditDeltaHtml = '';
       if (l.details && Object.keys(l.details).length > 0) {
@@ -620,7 +553,7 @@ export function renderUserLogsTable(logs) {
         if (l.details.method) parts.push(`Cách thức: ${esc(l.details.method)}`);
         if (l.details.disease_name) parts.push(`Bệnh: <strong style="color:#dc2626;">${esc(l.details.disease_name)}</strong>`);
         if (l.details.severity) parts.push(`Mức độ: ${esc(l.details.severity)}`);
-        
+
         if (parts.length > 0) {
           detailsStr = parts.join(' · ') + (l.note ? ` — <span style="color:#64748b;">${esc(l.note)}</span>` : '');
         }
@@ -721,7 +654,6 @@ function _renderLogPage() {
   const endIndex = Math.min(startIndex + _logPageSize, totalLogs);
   const pageLogs = _currentFilteredLogs.slice(startIndex, endIndex);
 
-  // Group pageLogs by Date
   const groupedByDate = {};
   pageLogs.forEach(item => {
     const dObj = new Date(item.log_date || item.created_at);
@@ -934,20 +866,12 @@ function _renderLogPage() {
   if (window.lucide) lucide.createIcons();
 }
 
-/**
- * Render toàn bộ nhật ký với phân trang ở tab Lịch sử.
- * @param {Array} logs
- */
 export function renderUserLogsTableFull(logs) {
   _currentFilteredLogs = logs || [];
   _currentLogPage = 1;
   _renderLogPage();
 }
 
-/**
- * Tạo HTML một hàng nhật ký.
- * @private
- */
 function _logRow(l) {
   let detailsStr = esc(l.note || '');
   if (l.details && Object.keys(l.details).length > 0) {
@@ -1040,11 +964,6 @@ function _logRow(l) {
     </tr>`;
 }
 
-// ── Search / Filter / Sort ────────────────────────────────────
-
-/**
- * Điều chỉnh kiến trúc giao diện trang Lịch sử theo Role
- */
 export function applyLogsRoleArchitecture() {
   const rbac = getCurrentUserRbac();
   const btnSelectiveDelete = document.getElementById('btn-open-selective-log-delete');
@@ -1073,9 +992,6 @@ export function applyLogsRoleArchitecture() {
 }
 window.applyLogsRoleArchitecture = applyLogsRoleArchitecture;
 
-/**
- * Lọc và sắp xếp nhật ký canh tác ở tab Lịch sử.
- */
 export function filterUserLogs() {
   applyLogsRoleArchitecture();
 
@@ -1087,7 +1003,6 @@ export function filterUserLogs() {
 
   let filtered = [..._logsCache];
 
-  // 0. Lọc theo cây phụ trách nếu view_plants_scope === 'assigned'
   if (rbac.viewPlantsScope === 'assigned') {
     const assignedIds = new Set((rbac.assignedPlantIds || []).map(String));
     if (assignedIds.size > 0) {
@@ -1095,22 +1010,18 @@ export function filterUserLogs() {
     }
   }
 
-  // 1. Lọc theo Trang trại
   if (farmId !== 'all') {
     filtered = filtered.filter(l => String(l.farm_id) === farmId);
   }
 
-  // 2. Lọc theo Loại hoạt động (tương thích ngược cho nhóm Nhân công)
   if (filterType !== 'all') {
     filtered = filtered.filter(l => matchesUserLogCategory([filterType], l.log_type));
   }
 
-  // 3. Lọc nút nhanh "Chỉ Cây bệnh"
   if (_diseaseOnlyFilterActive) {
     filtered = filtered.filter(l => l.log_type === 'Bệnh cây');
   }
 
-  // 4. Tìm kiếm từ khóa
   if (query) {
     filtered = filtered.filter(l => {
       const detailsStr = l.details ? JSON.stringify(l.details).toLowerCase() : '';
@@ -1119,10 +1030,8 @@ export function filterUserLogs() {
     });
   }
 
-  // 5. Gom nhóm các nhật ký phù hợp
   let resultList = groupCareLogs(filtered);
 
-  // 6. Sắp xếp (Sorting)
   resultList.sort((a, b) => {
     if (sortBy === 'date_desc') {
       const tA = new Date(a.log_date).getTime();
@@ -1153,9 +1062,6 @@ export function filterUserLogs() {
   renderUserLogsTableFull(resultList);
 }
 
-// ── CRUD, Soft-Delete & Batch Selection Controllers ───────────
-
-/** Tải lại toàn bộ dữ liệu nhật ký canh tác từ server */
 export async function reloadUserLogs() {
   try {
     const freshLogs = await api('/plants/logs/recent?days=30');
@@ -1167,7 +1073,6 @@ export async function reloadUserLogs() {
 }
 window.reloadUserLogs = reloadUserLogs;
 
-/** Xóa mềm 1 bản ghi nhật ký */
 export async function deleteCareLog(logId, plantId) {
   if (!logId) return;
   const confirmed = confirm('Bạn có chắc chắn muốn xóa mềm nhật ký canh tác này?\n(Dữ liệu sẽ được ẩn và có thể được xem/khôi phục lại tại mục Lịch sử biến động)');
@@ -1185,7 +1090,6 @@ export async function deleteCareLog(logId, plantId) {
 }
 window.deleteCareLog = deleteCareLog;
 
-/** Xóa mềm toàn bộ nhật ký trong một ngày */
 export async function deleteDayLogs(dateFormatted) {
   if (!dateFormatted) return;
   const confirmed = confirm(`Bạn có chắc chắn muốn xóa mềm toàn bộ nhật ký canh tác trong ngày ${dateFormatted}?\n(Dữ liệu có thể được xem và khôi phục lại tại mục Lịch sử biến động)`);
@@ -1212,7 +1116,6 @@ export async function deleteDayLogs(dateFormatted) {
 }
 window.deleteDayLogs = deleteDayLogs;
 
-/** Bật/tắt chế độ Chọn nhiều (Batch Selection Mode) */
 export function toggleBatchSelectMode(forceState) {
   if (typeof forceState === 'boolean') {
     _batchSelectMode = forceState;
@@ -1246,7 +1149,6 @@ export function toggleBatchSelectMode(forceState) {
 }
 window.toggleBatchSelectMode = toggleBatchSelectMode;
 
-/** Chọn / bỏ chọn 1 dòng nhật ký */
 export function toggleLogSelection(logId, isChecked) {
   if (isChecked) {
     _selectedLogIds.add(logId);
@@ -1257,7 +1159,6 @@ export function toggleLogSelection(logId, isChecked) {
 }
 window.toggleLogSelection = toggleLogSelection;
 
-/** Chọn / bỏ chọn tất cả mục trong 1 ngày */
 export function toggleSelectAllDay(dateStr, isChecked) {
   const dayCheckboxes = document.querySelectorAll(`.log-cb-day-${CSS.escape(dateStr)}`);
   dayCheckboxes.forEach(cb => {
@@ -1272,7 +1173,6 @@ export function toggleSelectAllDay(dateStr, isChecked) {
 }
 window.toggleSelectAllDay = toggleSelectAllDay;
 
-/** Bỏ chọn tất cả */
 export function clearAllLogSelection() {
   _selectedLogIds.clear();
   document.querySelectorAll('.log-item-checkbox').forEach(cb => cb.checked = false);
@@ -1300,7 +1200,6 @@ function updateBatchSelectionUI() {
   }
 }
 
-/** Xóa mềm tất cả các mục đã tick chọn */
 export async function deleteSelectedBatchLogs() {
   const count = _selectedLogIds.size;
   if (count === 0) {
@@ -1326,13 +1225,10 @@ export async function deleteSelectedBatchLogs() {
 }
 window.deleteSelectedBatchLogs = deleteSelectedBatchLogs;
 
-// ── Modal Xóa Chọn Lọc (Selective Delete Modal) Controllers ──
-
 export function openSelectiveDeleteModal() {
   const modal = document.getElementById('selective-log-delete-modal');
   if (!modal) return;
 
-  // Populate farm dropdown
   const farmSel = document.getElementById('modal-del-farm');
   const allFarms = window._allFarmsCache || [];
   if (farmSel) {
@@ -1495,25 +1391,20 @@ export async function executeSelectiveDelete() {
 }
 window.executeSelectiveDelete = executeSelectiveDelete;
 
-// ── Export Modal & VietGAP Report Functions ───────────────────
-
 export function openUserExportLogsModal() {
   const farmSel = document.getElementById('modal-export-farm');
   const fromDateInput = document.getElementById('modal-export-date-from');
   const toDateInput = document.getElementById('modal-export-date-to');
   const catsContainer = document.getElementById('modal-export-categories-grid');
 
-  // Populate farm dropdown from user filter dropdown
   const filterFarmSel = document.getElementById('user-log-filter-farm');
   if (farmSel && filterFarmSel) {
     farmSel.innerHTML = filterFarmSel.innerHTML;
     farmSel.value = filterFarmSel.value || 'all';
   }
 
-  // Populate plant dropdown
   onModalExportFarmChange();
 
-  // Set default date range: Last 30 days up to today
   const today = new Date().toISOString().slice(0, 10);
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -1522,7 +1413,6 @@ export function openUserExportLogsModal() {
   if (fromDateInput) fromDateInput.value = fromDateStr;
   if (toDateInput) toDateInput.value = today;
 
-  // Populate Canonical SSOT categories checkboxes (bao gồm Kiểm toán quả)
   const standardCats = ["Tưới nước", "Bón phân", "Phun thuốc", "Nhân công", "Kiểm toán quả", "Bệnh cây", "Thu hoạch"];
   if (catsContainer) {
     catsContainer.innerHTML = standardCats.map(cat => {
@@ -1662,8 +1552,8 @@ export function exportLogsToCsv(logs, filename = 'NhatKyCanhTac.csv') {
 
   logs.forEach((log, index) => {
     const detailsStr = formatLogDetailsText(log);
-    const mediaUrls = (log.media_urls && Array.isArray(log.media_urls)) 
-      ? log.media_urls.map(m => m.url || m).join('; ') 
+    const mediaUrls = (log.media_urls && Array.isArray(log.media_urls))
+      ? log.media_urls.map(m => m.url || m).join('; ')
       : '';
 
     const d = log.details || {};
@@ -1720,7 +1610,7 @@ export async function executeUserExport(mode = 'csv') {
   const plantId = document.getElementById('modal-export-plant')?.value || 'all';
   const fromDate = document.getElementById('modal-export-date-from')?.value || '';
   const toDate = document.getElementById('modal-export-date-to')?.value || '';
-  
+
   const checkedCats = [];
   document.querySelectorAll('input[name="user_export_cat"]:checked').forEach(cb => {
     checkedCats.push(cb.value);
@@ -1731,7 +1621,6 @@ export async function executeUserExport(mode = 'csv') {
     return;
   }
 
-  // Fetch full logs or use cache
   let allLogs = enrichLogsWithFruitAuditChain([..._logsCache]);
   try {
     const freshRes = await api('/plants/logs/recent?days=all');
@@ -1793,9 +1682,6 @@ export async function executeUserExport(mode = 'csv') {
 }
 window.executeUserExport = executeUserExport;
 
-/**
- * Mở cửa sổ in Báo Cáo / Sổ Nhật Ký Canh Tác Chuẩn VietGAP (Print / PDF)
- */
 export function openPrintableVietGapReport(logs, meta = {}) {
   const printWindow = window.open('', '_blank');
   if (!printWindow) {
@@ -1994,4 +1880,3 @@ export function openPrintableVietGapReport(logs, meta = {}) {
   printWindow.document.close();
 }
 window.openPrintableVietGapReport = openPrintableVietGapReport;
-

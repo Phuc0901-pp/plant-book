@@ -1,8 +1,6 @@
 ﻿<div class="tab-pane" id="db-pane-history" style="display:none;">
 
-          <!-- TẦNG 1: EXECUTIVE AUDIT KPI & TELEMETRY -->
           <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:20px;">
-            <!-- KPI 1: Tổng Sự Kiện Biến Động -->
             <div class="card" style="padding:16px 20px; border-radius:14px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 2px 10px rgba(0,0,0,0.02); display:flex; align-items:center; gap:16px;">
               <div style="width:48px; height:48px; border-radius:12px; background:#f0fdf4; color:#059669; display:flex; align-items:center; justify-content:center; font-size:22px;">
                 <i data-lucide="history" class="lucide-sm"></i>
@@ -13,7 +11,6 @@
               </div>
             </div>
 
-            <!-- KPI 2: Lượt Cập Nhật (UPDATE) -->
             <div class="card" onclick="filterHistoryByChip('UPDATE')" style="padding:16px 20px; border-radius:14px; border:1px solid #fef3c7; background:#fffdfa; box-shadow:0 2px 10px rgba(217,119,6,0.05); display:flex; align-items:center; gap:16px; cursor:pointer;" title="Bấm để lọc các sự kiện chỉnh sửa">
               <div style="width:48px; height:48px; border-radius:12px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:22px;">
                 <i data-lucide="edit" class="lucide-sm"></i>
@@ -24,7 +21,6 @@
               </div>
             </div>
 
-            <!-- KPI 3: Lượt Xóa Dữ Liệu (DELETE) -->
             <div class="card" onclick="filterHistoryByChip('DELETE')" style="padding:16px 20px; border-radius:14px; border:1px solid #fecaca; background:#fffafb; box-shadow:0 2px 10px rgba(220,38,38,0.05); display:flex; align-items:center; gap:16px; cursor:pointer;" title="Bấm để lọc các sự kiện xóa dữ liệu">
               <div style="width:48px; height:48px; border-radius:12px; background:#fee2e2; color:#dc2626; display:flex; align-items:center; justify-content:center; font-size:22px;">
                 <i data-lucide="trash-2" class="lucide-sm"></i>
@@ -35,7 +31,6 @@
               </div>
             </div>
 
-            <!-- KPI 4: Nhân Sự Thao Tác Gần Nhất -->
             <div class="card" style="padding:16px 20px; border-radius:14px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 2px 10px rgba(0,0,0,0.02); display:flex; align-items:center; gap:16px;">
               <div style="width:48px; height:48px; border-radius:12px; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:22px;">
                 <i data-lucide="shield-check" class="lucide-sm"></i>
@@ -49,14 +44,11 @@
             </div>
           </div>
 
-          <!-- TẦNG 2: CONTROL BAR & SMART FILTER CHIPS -->
           <div class="card" style="margin-bottom:20px; border-radius:14px; border:1px solid #e2e8f0;">
             <div style="padding:16px 20px; background:#ffffff; display:flex; flex-direction:column; gap:14px;">
-              
-              <!-- Row 1: Dropdown Filters & Search & ERP Action Buttons -->
+
               <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-                
-                <!-- Left: 2-Level Filter & Search -->
+
                 <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; flex:1; min-width:280px;">
                   <div style="min-width:180px; flex:1;">
                     <select id="db-history-filter-action" onchange="loadHistoryTab()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:12.5px; font-weight:600; background:#f8fafc;">
@@ -83,7 +75,6 @@
                   </div>
                 </div>
 
-                <!-- Right: Action Buttons -->
                 <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
                   <button class="btn btn-secondary btn-sm" onclick="exportAuditPDF()" style="display:inline-flex; align-items:center; gap:6px; font-weight:700; background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:10px; padding:8px 14px; font-size:12.5px;">
                     <i data-lucide="file-text" class="lucide-sm" style="color:#dc2626;"></i> In / Xuất Báo Cáo Kiểm Toán
@@ -95,17 +86,14 @@
                 </div>
               </div>
 
-              <!-- Row 2: Smart Filter Chips Bar -->
               <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-top:1px solid #f1f5f9; padding-top:12px;">
                 <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;" id="db-history-chips-bar">
-                  <!-- Generated dynamically: Tất cả, Chỉnh sửa, Đã xóa, Vật tư, Canh tác, Media... -->
                 </div>
               </div>
 
             </div>
           </div>
 
-          <!-- TẦNG 3: ERP AUDIT MATRIX TABLE -->
           <div class="card" style="border-radius:14px; overflow:hidden; border:1px solid #e2e8f0; box-shadow:0 4px 16px rgba(0,0,0,0.02);">
             <div style="overflow-x:auto;">
               <table style="width:100%; border-collapse:collapse; text-align:left;">

@@ -1,8 +1,3 @@
-/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/**
- * Suite 19: Executive BI Financial Analytics, ML Yield Forecast & Export i18n (vi/en/zh)
- */
-
 const fs = require('fs');
 const path = require('path');
 const { describe, it, assert } = require('../test-framework');

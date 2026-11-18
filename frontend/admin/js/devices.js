@@ -1,13 +1,3 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/* ════════════════════════════════════════════════════════
-   Plant Book Admin — devices.js
-   Hệ thống Trạm Thời tiết & Cảm biến Đất IoT Canh tác Thông minh
-   1. Trạm Thời tiết & Dự báo (Weather Telemetry & Real 7-day Open-Meteo Forecasting)
-   2. Cảm biến Đất đa tầng (10, 20, 30cm) với Lucide Icons chuẩn quốc tế
-   3. Thuật toán Cảnh báo & Khuyến nghị Canh tác AI
-   4. Quản lý Thiết bị & Sổ Đăng Ký Phân Tầng
-   ════════════════════════════════════════════════════════ */
-
 let devicesCache = [];
 let iotMasterOnline = true;
 let currentSoilDepth = 10;
@@ -17,7 +7,6 @@ let _cachedWeatherFarmId = null;
 let _cachedWeatherData = null;
 let _selectedHourlyDayMode = 'live24';
 
-// WMO Weather Interpretation Codes Map to Lucide icons
 const WMO_WEATHER_MAP = {
   0: { label: 'Trời nắng trong xanh', icon: 'sun', color: '#f59e0b', bg: '#fef3c7' },
   1: { label: 'Trời quang, ít mây', icon: 'cloud-sun', color: '#0ea5e9', bg: '#e0f2fe' },
@@ -51,7 +40,6 @@ function getWindDirectionVietnamese(deg) {
   return directions[index];
 }
 
-// Multi-depth soil demo telemetry data
 const soilDepthData = {
   10: {
     ph: 6.5, phStatus: 'Đất hơi chua (Tối ưu sầu riêng)', phColor: '#10b981',
@@ -84,14 +72,12 @@ let _lastWeatherFetchTimestamp = 0;
 
 function setupWeatherAutoRefresh() {
   if (_weatherAutoRefreshTimer) clearInterval(_weatherAutoRefreshTimer);
-  // Auto refresh every 10 minutes in background
   _weatherAutoRefreshTimer = setInterval(() => {
     if (document.visibilityState === 'visible' && iotCurrentTab === 'weather') {
       fetchDeviceWeatherTelemetry();
     }
   }, 10 * 60 * 1000);
 
-  // Tab Wakeup / Focus listener: refresh if more than 10 minutes have elapsed
   if (!window._weatherVisibilityListenerBound) {
     window._weatherVisibilityListenerBound = true;
     document.addEventListener('visibilitychange', () => {
@@ -104,7 +90,6 @@ function setupWeatherAutoRefresh() {
   }
 }
 
-// Initialize IoT Devices Page
 async function initDevicesPage() {
   renderSoilMetrics(currentSoilDepth);
   setupWeatherAutoRefresh();
@@ -114,11 +99,10 @@ async function initDevicesPage() {
   ]);
 }
 
-// Fetch Real-time & 7-day Open-Meteo Weather Data
 async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
   _lastWeatherFetchTimestamp = Date.now();
   const farmVal = targetFarmId || document.getElementById('db-iot-filter-farm')?.value || 'all';
-  
+
   let lat = null;
   let lng = null;
   let farmDisplayName = 'Toàn hệ thống';
@@ -158,7 +142,6 @@ async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
       }
     }
   } else {
-    // "all" mode: use first farm with valid GPS
     const farmWithCoords = farms.find(f => f.latitude && f.longitude && !isNaN(parseFloat(f.latitude)) && !isNaN(parseFloat(f.longitude)));
     if (farmWithCoords) {
       lat = parseFloat(farmWithCoords.latitude);
@@ -171,7 +154,6 @@ async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
     }
   }
 
-  // Update Location Name
   const locEl = document.getElementById('iot-weather-location');
   if (locEl) {
     if (lat !== null && lng !== null) {
@@ -181,7 +163,6 @@ async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
     }
   }
 
-  // If GPS coordinates could not be retrieved, display null state
   if (lat === null || lng === null || isNaN(lat) || isNaN(lng)) {
     renderNullWeather(farmDisplayName);
     return;
@@ -203,7 +184,6 @@ async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
     const daily = data.daily || {};
     const hourly = data.hourly || {};
 
-    // Determine current hour index in hourly arrays
     let curHourIdx = 0;
     if (hourly.time && hourly.time.length > 0) {
       const nowIsoHour = new Date().toISOString().slice(0, 13);
@@ -217,12 +197,11 @@ async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
     const todayRainProb = (daily.precipitation_probability_max && daily.precipitation_probability_max.length > 0) ? daily.precipitation_probability_max[0] : null;
     const todayRainSum = (daily.precipitation_sum && daily.precipitation_sum.length > 0) ? daily.precipitation_sum[0] : (cur.precipitation || 0);
     const todayWindGusts = (daily.wind_gusts_10m_max && daily.wind_gusts_10m_max.length > 0) ? Math.round(daily.wind_gusts_10m_max[0]) : (cur.wind_gusts_10m ? Math.round(cur.wind_gusts_10m) : null);
-    
-    // AgTech Parameters from Hourly & Daily
+
     const curDewPoint = (hourly.dew_point_2m && hourly.dew_point_2m[curHourIdx] !== undefined)
       ? Math.round(hourly.dew_point_2m[curHourIdx] * 10) / 10
       : (cur.temperature_2m !== undefined && cur.relative_humidity_2m !== undefined ? Math.round((cur.temperature_2m - ((100 - cur.relative_humidity_2m) / 5)) * 10) / 10 : null);
-    
+
     const todayEt0 = (daily.et0_fao_evapotranspiration && daily.et0_fao_evapotranspiration.length > 0)
       ? Math.round(daily.et0_fao_evapotranspiration[0] * 10) / 10
       : (hourly.et0_fao_evapotranspiration && hourly.et0_fao_evapotranspiration[curHourIdx] !== undefined ? Math.round(hourly.et0_fao_evapotranspiration[curHourIdx] * 24 * 10) / 10 : 4.2);
@@ -239,10 +218,8 @@ async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
       ? Math.round(hourly.soil_temperature_0cm[curHourIdx] * 10) / 10
       : (hourly.soil_temperature_18cm && hourly.soil_temperature_18cm[curHourIdx] !== undefined ? Math.round(hourly.soil_temperature_18cm[curHourIdx] * 10) / 10 : 25.5);
 
-    // Irrigation recommendation calculation (FAO-56 durian standard: ET0 * Canopy ~30m2 * Kc ~0.85)
     const irrigationLiters = todayEt0 !== null ? Math.round(todayEt0 * 30 * 0.85) : 110;
 
-    // 1. Render Hero Card
     const tempEl = document.getElementById('iot-weather-temp');
     if (tempEl) tempEl.textContent = tempVal !== null ? `${tempVal}°C` : 'null';
 
@@ -263,7 +240,6 @@ async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
       }
     }
 
-    // 2. Render 6 Specialized AgTech Telemetry Cards
     const windEl = document.getElementById('iot-weather-wind');
     if (windEl) {
       windEl.innerHTML = cur.wind_speed_10m !== undefined && cur.wind_speed_10m !== null
@@ -372,7 +348,6 @@ async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
         : 'Áp suất: -- hPa';
     }
 
-    // 3. Render Smart AgTech Crop Advisory Box
     const sprayWindowEl = document.getElementById('iot-weather-spray-window');
     const advisoryDetailEl = document.getElementById('iot-weather-advisory-detail');
     const windSpeed = cur.wind_speed_10m || 0;
@@ -420,10 +395,8 @@ async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
       timeEl.textContent = `Cập nhật lúc ${new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`;
     }
 
-    // 4. Render Dynamic 24-Hour Continuous Hourly Timeline & Chart
     render24HourHourlySection(hourly, daily, _selectedHourlyDayMode);
 
-    // 5. Render 7-Day Forecast Cards
     render7DayForecast(daily);
 
   } catch (err) {
@@ -436,7 +409,6 @@ async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
   }
 }
 
-// Render 24-Hour Continuous Real-time Hourly Section (Filter Pills + Chart + Scrollable Cards)
 function render24HourHourlySection(hourlyData, dailyData, selectedMode = 'live24') {
   if (!hourlyData || !hourlyData.time || !Array.isArray(hourlyData.time) || hourlyData.time.length === 0) {
     const track = document.getElementById('iot-24h-hourly-track');
@@ -448,7 +420,6 @@ function render24HourHourlySection(hourlyData, dailyData, selectedMode = 'live24
 
   const daysOfWeek = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
 
-  // 1. Render Day Selector Pills
   const pillsContainer = document.getElementById('iot-hourly-day-pills');
   if (pillsContainer && dailyData && dailyData.time) {
     let pillsHtml = `
@@ -471,7 +442,6 @@ function render24HourHourlySection(hourlyData, dailyData, selectedMode = 'live24
     pillsContainer.innerHTML = pillsHtml;
   }
 
-  // 2. Determine 24-hour Slice Range
   let startIdx = 0;
   let viewTitleStr = '';
 
@@ -479,7 +449,6 @@ function render24HourHourlySection(hourlyData, dailyData, selectedMode = 'live24
     const nowIso = new Date().toISOString().slice(0, 13);
     let curIdx = hourlyData.time.findIndex(t => t.startsWith(nowIso));
     if (curIdx === -1) curIdx = 0;
-    // Start from immediate next hour forward (e.g. 4 PM -> 5 PM)
     startIdx = curIdx + 1;
     if (startIdx >= hourlyData.time.length) startIdx = curIdx;
 
@@ -509,10 +478,8 @@ function render24HourHourlySection(hourlyData, dailyData, selectedMode = 'live24
   const sliceWindGusts = hourlyData.wind_gusts_10m ? hourlyData.wind_gusts_10m.slice(startIdx, endIdx) : [];
   const sliceEt0s = hourlyData.et0_fao_evapotranspiration ? hourlyData.et0_fao_evapotranspiration.slice(startIdx, endIdx) : [];
 
-  // 3. Render Dual-Axis Chart.js
   renderWeatherHourlyChartData(sliceTimes, sliceTemps, sliceRainProbs, sliceWinds);
 
-  // 4. Render Scrollable 24-Hour Hourly Cards Track
   const track = document.getElementById('iot-24h-hourly-track');
   if (track) {
     let cardsHtml = '';
@@ -534,7 +501,6 @@ function render24HourHourlySection(hourlyData, dailyData, selectedMode = 'live24
       const gusts = sliceWindGusts[i] !== undefined ? Math.round(sliceWindGusts[i]) : null;
       const et0 = sliceEt0s[i] !== undefined ? (Math.round(sliceEt0s[i] * 10) / 10) : null;
 
-      // Spray Safety Assessment for this specific hour
       let sprayBadge = '<span style="font-size:10px; font-weight:800; background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:2px 6px; border-radius:6px; display:inline-block;">🟢 Phun tốt</span>';
       if (rainP >= 50 || wind >= 25 || (gusts && gusts >= 35)) {
         sprayBadge = '<span style="font-size:10px; font-weight:800; background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; padding:2px 6px; border-radius:6px; display:inline-block;">🔴 Không phun</span>';
@@ -587,7 +553,6 @@ function render24HourHourlySection(hourlyData, dailyData, selectedMode = 'live24
   }
 }
 
-// Select Hourly Forecast Day & Re-render
 function selectHourlyForecastDay(dayMode) {
   _selectedHourlyDayMode = dayMode;
   if (_cachedWeatherData && _cachedWeatherData.hourly && _cachedWeatherData.daily) {
@@ -596,7 +561,6 @@ function selectHourlyForecastDay(dayMode) {
   }
 }
 
-// Scroll Horizontal 24-Hour Hourly Cards Track
 function scrollHourlyTrack(direction) {
   const track = document.getElementById('iot-24h-hourly-track');
   if (!track) return;
@@ -604,7 +568,6 @@ function scrollHourlyTrack(direction) {
   track.scrollBy({ left: scrollAmount, behavior: 'smooth' });
 }
 
-// Render Weather Hourly Dual-Axis Line & Bar Chart (24 points)
 function renderWeatherHourlyChartData(times, temps, rainProbs, winds) {
   const canvas = document.getElementById('weather-hourly-chart');
   if (!canvas || typeof Chart === 'undefined') return;
@@ -699,7 +662,6 @@ function renderWeatherHourlyChartData(times, temps, rainProbs, winds) {
   });
 }
 
-// Render 7-Day Forecast Cards with AgTech metrics & interactive 24-hour hour trigger
 function render7DayForecast(dailyData) {
   const container = document.getElementById('iot-7day-forecast-list');
   if (!container) return;
@@ -732,7 +694,6 @@ function render7DayForecast(dailyData) {
 
     const isSelected = _selectedHourlyDayMode === `day_${i}`;
 
-    // Actionable Agri-Advisory Tag
     let agriActionChip = '';
     if (rainProb >= 60 || rainSum >= 15) {
       agriActionChip = `<span style="font-size:10px; font-weight:800; background:#fef2f2; color:#dc2626; border:1px solid #fecaca; padding:2px 7px; border-radius:10px;">Hoãn phun BVTV · Thoát nước</span>`;
@@ -777,7 +738,6 @@ function render7DayForecast(dailyData) {
   }
 }
 
-// Render Null State when GPS or weather data is not received
 function renderNullWeather(farmDisplayName = '') {
   const tempEl = document.getElementById('iot-weather-temp');
   if (tempEl) tempEl.innerHTML = '<span style="color:#94a3b8; font-size:32px;">null</span>';
@@ -887,7 +847,6 @@ function renderNullWeather(farmDisplayName = '') {
   }
 }
 
-// Master Toggle Switch Power Button
 function toggleIotMasterPower() {
   iotMasterOnline = !iotMasterOnline;
   const badge = document.getElementById('iot-status-badge');
@@ -924,7 +883,6 @@ function toggleIotMasterPower() {
   }
 }
 
-// Switch Sub-Tabs inside IoT Page
 function switchIotTab(tab) {
   iotCurrentTab = tab;
   ['weather', 'soil', 'ai', 'devices'].forEach(t => {
@@ -945,7 +903,6 @@ function switchIotTab(tab) {
   }
 }
 
-// Switch Multi-depth Soil Sensors (10, 20, 30 cm)
 function switchSoilDepth(depth) {
   currentSoilDepth = depth;
   [10, 20, 30].forEach(d => {
@@ -967,7 +924,6 @@ function switchSoilDepth(depth) {
   renderSoilMetrics(depth);
 }
 
-// Render Soil Telemetry Cards based on Depth with International Lucide Icons
 function renderSoilMetrics(depth) {
   const grid = document.getElementById('soil-metrics-grid');
   if (!grid) return;
@@ -1077,7 +1033,6 @@ function renderSoilMetrics(depth) {
   }
 }
 
-// Render Weather Hourly Temperature Trend Line Chart from Open-Meteo Hourly Data
 function renderWeatherHourlyChart(hourlyData = null) {
   const canvas = document.getElementById('weather-hourly-chart');
   if (!canvas || typeof Chart === 'undefined') return;
@@ -1086,7 +1041,7 @@ function renderWeatherHourlyChart(hourlyData = null) {
   let temps = [28, 28, 27, 27, 26, 26, 25, 25];
 
   if (hourlyData && hourlyData.time && hourlyData.temperature_2m) {
-    const nowIso = new Date().toISOString().slice(0, 13); // Match YYYY-MM-DDTHH
+    const nowIso = new Date().toISOString().slice(0, 13);
     let curIdx = hourlyData.time.findIndex(t => t.startsWith(nowIso));
     if (curIdx === -1) curIdx = 0;
 
@@ -1144,7 +1099,6 @@ function renderWeatherHourlyChart(hourlyData = null) {
   });
 }
 
-// Open Modal to Add Custom Warning Rule Condition
 function openAddRuleModal() {
   const ruleName = prompt('Nhập tên Quy tắc Thuật toán Cảnh báo AI mới:');
   if (!ruleName) return;
@@ -1174,7 +1128,6 @@ function openAddRuleModal() {
   toast('Đã thêm quy tắc thuật toán cảnh báo AI thành công!', 'success');
 }
 
-// Load devices table from backend PostgreSQL
 async function loadDevices() {
   const tbody = document.getElementById('devices-table');
   if (tbody) {
@@ -1288,8 +1241,8 @@ function filterDbDevices() {
     const matchesFarm = (farmVal === 'all') || (d.farm_id == farmVal);
     const matchesType = (typeVal === 'all') || (d.device_type === typeVal);
     const matchesStatus = (statusVal === 'all') || (d.status === statusVal);
-    const matchesSearch = !searchVal || 
-      (d.name && d.name.toLowerCase().includes(searchVal)) || 
+    const matchesSearch = !searchVal ||
+      (d.name && d.name.toLowerCase().includes(searchVal)) ||
       (d.ip_address && d.ip_address.toLowerCase().includes(searchVal)) ||
       (d.device_type && d.device_type.toLowerCase().includes(searchVal));
 
@@ -1299,7 +1252,6 @@ function filterDbDevices() {
   renderDevices(filtered);
   updateIotKpis(filtered);
 
-  // When user changes farm filter, fetch live weather for that farm if on weather tab
   if (farmVal !== _cachedWeatherFarmId) {
     _cachedWeatherFarmId = farmVal;
     fetchDeviceWeatherTelemetry(farmVal);
@@ -1325,4 +1277,3 @@ window.updateIotKpis = updateIotKpis;
 window.selectHourlyForecastDay = selectHourlyForecastDay;
 window.scrollHourlyTrack = scrollHourlyTrack;
 window.render24HourHourlySection = render24HourHourlySection;
-

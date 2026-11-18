@@ -5,20 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Cổng Định Danh Số Smart NFC · Tân Bảo AgTech</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <!-- Google Fonts: Be Vietnam Pro (Enterprise Vietnamese Standard) & JetBrains Mono (Codes/UID) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300;1,400;1,500;1,600;1,700;1,800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/sub.css">
-  <!-- Font Awesome & Lucide Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="/assets/js/lucide-auto-hydrator.js"></script>
   <script src="/assets/js/chibi-iso-icons.js"></script>
   <script src="/assets/js/enterprise-security-guard.js"></script>
   <script>
-    // Immediate fallback navigator for critical landing cards
-    window.switchSubView = function(viewId) {
+window.switchSubView = function(viewId) {
       if (window.SubGateway && typeof window.SubGateway.showView === 'function') {
         window.SubGateway.showView(viewId);
         if (viewId === 'view-register' && typeof window.SubGateway.autoCaptureFarmGps === 'function') {
@@ -34,10 +31,9 @@
       }
     };
 
-    // Native Form Submit Interceptors (Prevent GET /sub? reload loop & Standalone Resilient Login)
     window.handleSubLoginSubmit = async function(e) {
       if (e && e.preventDefault) e.preventDefault();
-      
+
       const emailEl = document.getElementById('login-email');
       const passEl = document.getElementById('login-password');
       const btn = document.getElementById('btn-submit-login');
@@ -77,7 +73,6 @@
           throw new Error(data.error || 'Đăng nhập không thành công.');
         }
 
-        // Lưu thông tin đăng nhập
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
 
@@ -89,7 +84,6 @@
           alertBox.innerText = '✓ Đăng nhập thành công! Đang chuyển sang Bước 2...';
         }
 
-        // Cập nhật URL nếu có token mã hóa
         const encId = data.encrypted_user_id || (data.user && data.user.encrypted_user_id);
         if (encId) {
           window.history.replaceState({ encrypted_user_id: encId }, '', `/sub/${encId}/set_up`);
@@ -97,7 +91,6 @@
           window.history.replaceState({}, '', window.location.pathname);
         }
 
-        // Đồng bộ dữ liệu vào SubGatewayApp nếu instance đã sẵn sàng
         if (window.SubGateway) {
           window.SubGateway.state.token = data.token;
           window.SubGateway.state.user = data.user;
@@ -105,7 +98,6 @@
           await window.SubGateway.loadUserFarms().catch(function() {});
           window.SubGateway.showView('view-farm-hub');
         } else {
-          // Fallback điều hướng trực tiếp
           window.switchSubView('view-farm-hub');
         }
       } catch (err) {
@@ -141,15 +133,13 @@
       }
       return false;
     };
-  </script>
+</script>
 </head>
 <body>
-  <!-- Animated Background Orbs -->
   <div class="bg-glow-orb orb-1"></div>
   <div class="bg-glow-orb orb-2"></div>
 
   <div class="app-container">
-    <!-- Header -->
     <header class="gateway-header">
       <div class="gateway-brand-badge">
         <div class="gateway-logo-container">
@@ -163,7 +153,6 @@
       </div>
     </header>
 
-    <!-- ================= 4-STEP ERP PROGRESS WIZARD ================= -->
     <div class="stepper-wizard" id="stepper-wizard">
       <div class="step-node active" id="step-node-1" data-step="1">
         <div class="step-circle">1</div>
@@ -186,7 +175,6 @@
       </div>
     </div>
 
-    <!-- ================= ACTIVE FARM & USER SUMMARY BANNER ================= -->
     <div id="active-farm-summary-bar" class="farm-summary-bar" style="display:none;">
       <div class="farm-summary-content">
         <div class="farm-summary-icon">
@@ -202,7 +190,6 @@
       </button>
     </div>
 
-    <!-- ================= VIEW 0: LANDING DUAL OPTIONS ================= -->
     <div id="view-landing" class="view-step active">
       <div class="option-card primary" id="btn-opt-existing" role="button" tabindex="0" onclick="window.switchSubView('view-login')">
         <div class="option-icon-box icon-box-green">
@@ -230,7 +217,6 @@
         </div>
       </div>
 
-      <!-- Quick Navigation Hub -->
       <div class="gateway-nav-links-grid">
         <a href="/" class="gateway-nav-link-item" title="Truy cập Cổng Quản trị & Sổ Nông Tân Bảo">
           <div class="nav-link-icon-wrap icon-app">
@@ -266,7 +252,6 @@
       </div>
     </div>
 
-    <!-- ================= VIEW 1A: LOGIN ================= -->
     <div id="view-login" class="view-step">
       <div class="glass-card">
         <div class="nav-header-row">
@@ -292,13 +277,12 @@
         </form>
 
         <div style="text-align:center; margin-top:18px; font-size:13px; color:#475569;">
-          Chưa có tài khoản? 
+          Chưa có tài khoản?
           <a href="javascript:void(0)" id="btn-switch-register" onclick="window.switchSubView('view-register')" style="color:#059669; font-weight:700; text-decoration:none;">Đăng ký ngay</a>
         </div>
       </div>
     </div>
 
-    <!-- ================= VIEW 1B: REGISTER & FARM SETUP ================= -->
     <div id="view-register" class="view-step">
       <div class="glass-card">
         <div class="nav-header-row">
@@ -356,7 +340,6 @@
       </div>
     </div>
 
-    <!-- ================= VIEW 2: FARM HUB (SELECT FARM & ACTION) ================= -->
     <div id="view-farm-hub" class="view-step">
       <div class="glass-card">
         <div class="nav-header-row">
@@ -375,13 +358,12 @@
           <button type="button" id="btn-action-new-plant" class="btn btn-primary" style="padding:16px;">
             <i data-lucide="plus-circle"></i> Khai Báo Cây Trồng Mới (1 Cây)
           </button>
-          
+
           <button type="button" id="btn-action-existing-plant" class="btn btn-secondary">
             <i data-lucide="list"></i> Gán Thẻ Cho Cây Đã Có Trong Vườn
           </button>
         </div>
 
-        <!-- Collapsible List of Existing Plants -->
         <div id="wrap-existing-plants-list" style="display:none; margin-top:18px;">
           <label class="form-label"><i data-lucide="list-filter" class="lucide-xs"></i> Chọn Cây Trong Danh Sách</label>
           <div id="list-existing-plants" class="tree-select-list"></div>
@@ -389,7 +371,6 @@
       </div>
     </div>
 
-    <!-- ================= VIEW 3: DETAILED SINGLE PLANT FORM ================= -->
     <div id="view-plant-form" class="view-step">
       <div class="glass-card">
         <div class="nav-header-row">
@@ -498,7 +479,6 @@
               </div>
             </div>
 
-          <!-- GIAI ĐOẠN SINH TRƯỞNG & ẢNH HIỆN TRƯỜNG KHỞI TẠO -->
           <div class="form-group">
             <label class="form-label"><i data-lucide="trending-up" class="lucide-xs"></i> Giai Đoạn Sinh Trưởng Khởi Tạo</label>
             <select id="input-growth-stage" class="form-select">
@@ -529,7 +509,6 @@
             </div>
           </div>
 
-          <!-- CÁC BỆNH / VẤN ĐỀ TRƯỚC ĐÂY CỦA CÂY -->
           <div class="past-diseases-container">
             <div class="past-diseases-header">
               <span class="form-label" style="margin:0; display:flex; align-items:center; gap:6px; color:#0f172a; font-weight:700;">
@@ -576,7 +555,6 @@
             <input type="text" id="input-other-disease" class="form-input" placeholder="Nhập tên bệnh khác..." style="display:none; margin-top:10px; font-size:13px;">
           </div>
 
-          <!-- SUB-1M HIGH-PRECISION GPS ENGINE BOX -->
           <div class="gps-precision-card">
             <div class="gps-precision-header">
               <div class="gps-status-indicator">
@@ -604,7 +582,6 @@
               Đang thu thập mẫu vệ tinh đa tầng...
             </div>
 
-            <!-- Manual Lat/Lng Fallback Toggle -->
             <div id="wrap-manual-gps" style="display:none; margin-top:12px;">
               <div class="form-row">
                 <input type="text" id="manual-lat-input" class="form-input" placeholder="Vĩ độ (Lat, ví dụ: 10.731153)">
@@ -634,16 +611,14 @@
       </div>
     </div>
 
-    <!-- ================= VIEW 4: PHYSICAL NFC WRITE STEP ================= -->
     <div id="view-nfc-write" class="view-step">
       <div class="glass-card" style="text-align:center;">
         <span class="step-title-badge">BƯỚC CUỐI: NẠP DỮ LIỆU VÀO THẺ VẬT LÝ</span>
-        
+
         <p id="write-tree-info-text" style="font-size:16px; font-weight:700; color:#059669; margin:12px 0;">
           Cây #C001 (Sầu riêng Ri6)
         </p>
 
-        <!-- Illustration -->
         <div class="nfc-touch-illustration">
           <i data-lucide="smartphone-nfc"></i>
         </div>
@@ -652,7 +627,6 @@
           Áp lưng điện thoại vào thẻ NFC gắn trên cây để truyền đường dẫn hồ sơ số công khai vào bộ nhớ thẻ.
         </p>
 
-        <!-- NFC UID Status & Input -->
         <div class="form-group" style="text-align:left; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px 14px; margin-bottom:14px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
             <label class="form-label" style="margin:0; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:6px;">
@@ -688,7 +662,6 @@
           <i data-lucide="radio"></i> Chạm Điện Thoại Vào Thẻ Để Ghi NDEF
         </button>
 
-        <!-- Success Banner Card -->
         <div id="nfc-write-success-card" style="display:none; margin-top:20px; padding:18px; border-radius:14px; background:#ecfdf5; border:1px solid #a7f3d0;">
           <i data-lucide="check-circle" style="width:40px; height:40px; color:#059669; margin-bottom:8px;"></i>
           <h4 style="color:#065f46; margin-bottom:6px; font-size:16px;">Định Danh Cây Thành Công!</h4>
@@ -706,7 +679,6 @@
     </div>
   </div>
 
-  <!-- Master Gateway Script -->
   <script type="module" src="/js/sub-gateway.js"></script>
 </body>
 </html>

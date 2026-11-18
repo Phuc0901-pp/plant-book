@@ -1,17 +1,5 @@
-/**
- * backend/services/beMamAgentEngine.js
- * ═══════════════════════════════════════════════════════════════════════════════
- * BÉ MẦM HYBRID AUTONOMOUS AGENT ENGINE v2.0
- * Standards: ISO/IEC 42001:2023 (AI Management), ISO/IEC 23053:2022 (AI Framework),
- *            ISO/IEC TR 24028 (AI Trustworthiness), OWASP LLM Top 10
- * ═══════════════════════════════════════════════════════════════════════════════
- */
-
 const memoryCache = require('../config/cache');
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 1. OWASP LLM01 GUARDRAIL: CHỐNG PROMPT INJECTION & MÃ ĐỘC
-// ─────────────────────────────────────────────────────────────────────────────
 const INJECTION_PATTERNS = [
   /ignore\s+(all\s+)?(previous|prior|above)\s+instructions/i,
   /bỏ\s+qua\s+(tất\s+cả\s+)?(hướng\s+dẫn|quy\s+tắc|lệnh)\s+trước/i,
@@ -35,11 +23,7 @@ function checkPromptInjection(rawMessage) {
   return { safe: true };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 2. TỪ ĐIỂN ĐỒNG NGHĨA NHÀ NÔNG TIẾNG VIỆT (AGRO-SYNONYM NORMALIZER)
-// ─────────────────────────────────────────────────────────────────────────────
 const AGRO_SYNONYM_MAP = [
-  // Sâu bệnh hại
   { variants: ['chảy nhựa', 'chảy mủ', 'xì nhựa', 'thối vỏ thân', 'loét thân'], canonical: 'xì mủ nứt thân phytophthora' },
   { variants: ['thối gốc', 'đen rễ', 'tuột vỏ rễ', 'vàng đọt thối rễ'], canonical: 'vàng lá thối rễ phytophthora fusarium' },
   { variants: ['cháy lá', 'khô chóp lá', 'cháy bìa lá', 'khô đầu lá', 'đốm cháy lá'], canonical: 'cháy lá thán thư rhizoctonia' },
@@ -48,19 +32,16 @@ const AGRO_SYNONYM_MAP = [
   { variants: ['sâu đục quả', 'sâu ăn bông'], canonical: 'sâu đục trái sâu ăn bông' },
   { variants: ['nấm hồng', 'đốm hồng cành'], canonical: 'bệnh nấm hồng corticium' },
   { variants: ['rong rêu', 'đốm rong'], canonical: 'bệnh đốm rong thân cành' },
-  // Sinh lý & Mùa vụ Sầu riêng / Cây ăn trái
   { variants: ['làm bông', 'ép bông', 'kích bông', 'tạo mầm hoa', 'xử lý ra hoa'], canonical: 'làm bông xiết nước tạo mầm hoa' },
   { variants: ['nhú mắt cua', 'ra mắt cua', 'rước mắt cua', 'nghẹn mắt cua'], canonical: 'mắt cua làm bông sầu riêng' },
   { variants: ['xổ nhụy', 'sổ nhụy', 'nở hoa', 'quét phấn'], canonical: 'sổ nhụy thụ phấn đậu trái' },
   { variants: ['rụng bông', 'rụng trái', 'rụng quả non', 'tháo khớp'], canonical: 'chống rụng trái non canxi bo' },
   { variants: ['cơm cứng', 'sượng trái', 'nhão cơm', 'múi trắng'], canonical: 'sượng cơm cháy múi sầu riêng' },
   { variants: ['đi đọt', 'xổ đọt', 'le mũi giáo', 'kéo đọt', 'chặn đọt', 'hãm đọt'], canonical: 'quản lý cơi đọt ức chế đọt non' },
-  // Phân bón & Thuốc BVTV
   { variants: ['tưới men', 'bón vi sinh', 'nấm đối kháng', 'men vi sinh'], canonical: 'chế phẩm vi sinh trichoderma bacillus' },
   { variants: ['xịt thuốc', 'phun xịt', 'thuốc trừ nấm', 'thuốc trừ sâu'], canonical: 'phun thuốc bvtv hóa học' },
   { variants: ['vô phân', 'rải phân', 'bón gốc'], canonical: 'bón phân npk hữu cơ' },
   { variants: ['cách ly', 'ngưng xịt thuốc', 'an toàn thu hoạch'], canonical: 'thời gian cách ly phi vietgap' },
-  // Thao tác App & Quản trị
   { variants: ['mướn công', 'thuê người', 'công làm cỏ', 'công cắt tỉa', 'tiền công'], canonical: 'thuê nhân công chăm sóc' },
   { variants: ['sài sao', 'dùng sao', 'xài sao', 'chưa biết dùng', 'chưa biết sài', 'cách dùng app'], canonical: 'hướng dẫn sử dụng sổ nông tân bảo' },
   { variants: ['quẹt thẻ', 'chạm thẻ', 'gắn chip', 'nạp thẻ'], canonical: 'quét thẻ nfc ntag213 định danh cây' }
@@ -98,9 +79,6 @@ function tokenizeVietnamese(text) {
     .filter(t => t.length >= 2 && !VIETNAMESE_STOPWORDS.has(t));
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 3. KHO ĐẠI TỪ ĐIỂN NÔNG HỌC MẶC ĐỊNH (BUILT-IN ENCYCLOPEDIA FALLBACK)
-// ─────────────────────────────────────────────────────────────────────────────
 const BUILTIN_ENCYCLOPEDIA_ARTICLES = [
   {
     id: 9001,
@@ -152,9 +130,6 @@ const BUILTIN_ENCYCLOPEDIA_ARTICLES = [
   }
 ];
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 4. HYBRID BM25 & FUZZY RAG ENGINE (TOÀN CỤC TRONG RAM, KHÔNG GIỚI HẠN 30 DÒNG)
-// ─────────────────────────────────────────────────────────────────────────────
 async function loadKnowledgeBaseCached(pool) {
   const cacheKey = 'ai_kb_full_cache_v2';
   const cached = memoryCache.get(cacheKey);
@@ -172,11 +147,9 @@ async function loadKnowledgeBaseCached(pool) {
       qaRows = qRes.rows || [];
       articleRows = aRes.rows || [];
     } catch (_) {
-      // Fallback to built-in encyclopedia if DB is unreachable
     }
   }
 
-  // Merge built-in encyclopedia articles if not already present by title
   const existingTitles = new Set(articleRows.map(a => String(a.title || '').toLowerCase()));
   for (const builtin of BUILTIN_ENCYCLOPEDIA_ARTICLES) {
     if (!existingTitles.has(builtin.title.toLowerCase())) {
@@ -205,12 +178,10 @@ function matchTrainingQA(rawQuery, qaList = []) {
 
     for (const variant of variants) {
       const normVariant = normalizeAgroQuery(variant).normalizedText;
-      // 1. Substring exact match
       if (normalizedText.includes(normVariant) || normVariant.includes(normalizedText)) {
         return { qa, score: 1.0, matchedVariant: variant };
       }
 
-      // 2. Token overlap / Jaccard + Keyword boost
       const varTokens = tokenizeVietnamese(normVariant);
       if (varTokens.length === 0) continue;
 
@@ -254,19 +225,16 @@ function rankKnowledgeArticles(rawQuery, articlesList = []) {
 
     let score = 0;
 
-    // Title phrase or token match
     if (normalizedText.includes(titleLower) || titleLower.includes(normalizedText)) {
       score += 8;
     }
 
-    // Topic keyword phrase match
     for (const kw of kwList) {
       if (kw && normalizedText.includes(kw)) {
         score += 4;
       }
     }
 
-    // BM25-style token scoring across title, keywords, and content (generic words already filtered)
     for (const tok of queryTokens) {
       if (tok.length < 2) continue;
       if (titleLower.includes(tok)) score += 2.0;
@@ -291,13 +259,6 @@ function rankKnowledgeArticles(rawQuery, articlesList = []) {
   };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 4B. TIỆN ÍCH CHUẨN HÓA SỐ LIỆU NÔNG NGHIỆP THEO CHUẨN ISO 80000 & GIS
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Chuẩn hóa diện tích nông nghiệp thông minh theo chuẩn ISO 80000
- */
 function formatSmartIsoArea(rawArea) {
   if (rawArea === null || rawArea === undefined || rawArea === '' || isNaN(Number(rawArea)) || Number(rawArea) <= 0) {
     return 'Chưa nhập';
@@ -311,9 +272,6 @@ function formatSmartIsoArea(rawArea) {
   return `${num.toLocaleString('vi-VN', { maximumFractionDigits: 2 })} ha`;
 }
 
-/**
- * Chuẩn hóa và khử trùng lặp danh mục cây trồng / giống cây trồng
- */
 function cleanAndDedupeCrops(rawCrops) {
   if (!rawCrops || !String(rawCrops).trim()) return 'Đang cập nhật';
   const parts = String(rawCrops).split(',');
@@ -337,9 +295,6 @@ function cleanAndDedupeCrops(rawCrops) {
   return cleaned.length > 0 ? cleaned.join(', ') : 'Đang cập nhật';
 }
 
-/**
- * Helper định dạng tóm tắt chi tiết nhật ký thực địa (Details JSON & Note) chuẩn ISO AgTech
- */
 function formatLogDetailSummary(log) {
   if (!log) return 'Ghi nhận thực địa';
 
@@ -408,17 +363,9 @@ function formatLogDetailSummary(log) {
   return result || 'Ghi nhận thực địa';
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 5. BỘ 12 AGENTIC TOOLS (TRUY VẤN SỐ LIỆU THẬT & TÍNH TOÁN CHÍNH XÁC 100%)
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Tool 7: Máy tính toán học liều lượng pha thuốc / bón phân chính xác 100%
- */
 function calculateAgroDosageTool(rawQuery) {
   const q = String(rawQuery || '').toLowerCase();
 
-  // Case A: Pha thuốc theo số phuy / bình (VD: "pha 25ml cho bình 20 lít, vậy 2 phuy 200 lít cần bao nhiêu?")
   const phuyMatch = q.match(/(\d+(?:[.,]\d+)?)\s*phuy\s*(\d+)?\s*(?:lít|l)?/i);
   const binhMatch = q.match(/(\d+(?:[.,]\d+)?)\s*bình\s*(\d+)?\s*(?:lít|l)?/i);
   const rateMlPerLitMatch = q.match(/(\d+(?:[.,]\d+)?)\s*(ml|g|gam|cc)\b[^0-9]{0,25}?(\d+)\s*(?:lít|l)\b/i);
@@ -451,7 +398,6 @@ function calculateAgroDosageTool(rawQuery) {
     };
   }
 
-  // Case B: Bón phân theo số gốc cây (VD: "150 gốc sầu riêng, mỗi gốc bón 0.8 kg")
   const treeCountMatch = q.match(/(\d+)\s*(?:gốc|cây)/i);
   const perTreeKgMatch = q.match(/(\d+(?:[.,]\d+)?)\s*(kg|kí|g|gam|lít|l)\s*(?:\/|\s+mỗi\s+|\s+trên\s+\d*\s*)(?:gốc|cây)/i);
   if (treeCountMatch && perTreeKgMatch) {
@@ -475,9 +421,6 @@ function calculateAgroDosageTool(rawQuery) {
   return null;
 }
 
-/**
- * Thực thi bộ 12 Agentic Tools dựa trên ngữ cảnh người dùng & câu hỏi
- */
 function executeAgentTools(rawQuery, context = {}) {
   const { normalizedText } = normalizeAgroQuery(rawQuery);
   const {
@@ -496,7 +439,6 @@ function executeAgentTools(rawQuery, context = {}) {
   const toolSections = [];
   const suggestedActions = [];
 
-  // Tool 11: Self-Correction & Full Farm Data Audit (Kích hoạt đầu tiên khi phát hiện phàn nàn / yêu cầu đối soát)
   const auditRegex = /(trả\s*lời\s*sai|sai\s*rồi|không\s*đúng|báo\s*sai|nhầm\s*rồi|kiểm\s*tra\s*lại|đối\s*soát|tổng\s*hợp\s*(lại|hết)|dữ\s*liệu\s*thật)/i;
   if (auditRegex.test(rawQuery) || auditRegex.test(normalizedText)) {
     triggeredTools.push('tool_self_correction_and_full_audit');
@@ -520,14 +462,12 @@ function executeAgentTools(rawQuery, context = {}) {
     };
   }
 
-  // 1. Tool 7: Agro-Dosage Calculator
   const dosageRes = calculateAgroDosageTool(rawQuery);
   if (dosageRes) {
     triggeredTools.push(dosageRes.toolName);
     toolSections.push(dosageRes.summary);
   }
 
-  // 2. Tool 6: Bio-Safety & PHI Inspector (10-15 days rule between chemical & microbial)
   if (
     (normalizedText.includes('vi sinh') || normalizedText.includes('trichoderma') || normalizedText.includes('bacillus') || normalizedText.includes('men em')) &&
     (normalizedText.includes('hóa học') || normalizedText.includes('thuốc') || normalizedText.includes('xịt') || normalizedText.includes('phun') || normalizedText.includes('pha chung') || normalizedText.includes('mấy ngày') || normalizedText.includes('khoảng cách'))
@@ -548,7 +488,6 @@ function executeAgentTools(rawQuery, context = {}) {
     );
   }
 
-  // 3. Tool 1: Lookup Specific Plant by Code (e.g., A-A-001, S-A-001, SR-LK-102, #SR-001)
   const codeMatch = rawQuery.match(/\b([A-Z0-9]{1,5}(?:-[A-Z0-9]{1,6}){1,3})\b/i);
   if (codeMatch && userPlants.length > 0) {
     const targetCode = codeMatch[1].toUpperCase();
@@ -574,7 +513,6 @@ function executeAgentTools(rawQuery, context = {}) {
     }
   }
 
-  // 4. Tool 2: Sick Plants Report
   const sickRegex = /(cây\s*bệnh|mấy\s*cây\s*bệnh|cây\s*nào\s*bệnh|bị\s*bệnh|ủ\s*bệnh|cây\s*yếu|cần\s*chú\s*ý|nguy\s*cấp|sức\s*khỏe(\s*toàn\s*bộ)?(\s*cây)?|sức\s*khỏe\s*vườn)/i;
   if (sickRegex.test(rawQuery) || sickRegex.test(normalizedText)) {
     triggeredTools.push('tool_get_sick_plants_report');
@@ -598,11 +536,9 @@ function executeAgentTools(rawQuery, context = {}) {
     }
   }
 
-  // Check if query targets a specific farm name in userFarms
   const matchedFarm = userFarms.find(f => f.name && rawQuery.toLowerCase().includes(f.name.toLowerCase()));
   const isSpecificPlantCountQuery = matchedFarm && /(bao\s*nhiêu\s*cây|mấy\s*cây)/i.test(rawQuery);
 
-  // 5. Tool 3: Farm Portfolio Overview
   const farmRegex = /(bao\s*nhiêu|mấy|danh\s*sách|các|những|tất\s*cả|có|tên)\s*(trang\s*trại|vườn|khu\s*vườn)|(trang\s*trại|vườn)\s*(của\s*tôi|của\s*mình|hiện\s*tại|nào)|trang\s*trại|diện\s*tích|trồng\s*cây\s*gì|trồng\s*giống\s*gì/i;
   if (!isSpecificPlantCountQuery && (farmRegex.test(normalizedText) || (matchedFarm && /(diện\s*tích|ở\s*đâu|trồng\s*gì|thông\s*tin)/i.test(rawQuery)))) {
     triggeredTools.push('tool_get_farm_portfolio');
@@ -632,7 +568,6 @@ function executeAgentTools(rawQuery, context = {}) {
     }
   }
 
-  // 5B. Tool 3B: Total Plants Inventory Summary (or farm-specific plant count)
   const plantCountRegex = /(bao\s*nhiêu\s*cây|mấy\s*cây|tổng\s*số\s*cây|cây\s*của\s*tôi|danh\s*sách\s*cây)/i;
   if (
     (plantCountRegex.test(normalizedText) || (matchedFarm && /(bao\s*nhiêu\s*cây|mấy\s*cây)/i.test(rawQuery))) &&
@@ -671,12 +606,10 @@ function executeAgentTools(rawQuery, context = {}) {
     }
   }
 
-  // 6. Tool 4: Supply & Financial Cost Analytics
   const supplyRegex = /(chi\s*phí|bao\s*nhiêu\s*tiền|tốn\s*bao\s*nhiêu|hết\s*bao\s*nhiêu|tiền\s*vật\s*tư|vật\s*tư|tiêu\s*hao|hạch\s*toán|phân\s*thuốc|trong\s*kho|tồn\s*kho|tối\s*ưu\s*chi\s*phí)/i;
   if (supplyRegex.test(rawQuery) || supplyRegex.test(normalizedText)) {
     triggeredTools.push('tool_get_supply_and_cost_analytics');
 
-    // 1. Tồn kho Vật tư (userSuppliesInventory)
     const physicalSupplies = userSuppliesInventory.filter(s => Number(s.stock_quantity) < 900000);
     const infiniteSupplies = userSuppliesInventory.filter(s => Number(s.stock_quantity) >= 900000);
     const orderedInventory = [...physicalSupplies, ...infiniteSupplies];
@@ -689,7 +622,6 @@ function executeAgentTools(rawQuery, context = {}) {
         }).join('\n')
       : '  - Kho vật tư hiện đang trống hoặc chưa ghi nhận phiếu nhập.';
 
-    // 2. Chi phí đã xuất dùng (userRecentSupplies gộp gọn)
     const aggregatedSupplies = [];
     const supplyGroupMap = new Map();
 
@@ -732,7 +664,6 @@ function executeAgentTools(rawQuery, context = {}) {
     );
   }
 
-  // 7. Tool 5: Recent Cultivation Logs
   const logRegex = /(nhật\s*ký|lịch\s*sử\s*chăm\s*sóc|chăm\s*sóc\s*gần\s*đây|mới\s*làm\s*gì|mới\s*tưới|mới\s*bón|mới\s*phun|hôm\s*nay\s*làm\s*gì|hoạt\s*động\s*gần\s*đây)/i;
   if (logRegex.test(rawQuery) || logRegex.test(normalizedText)) {
     triggeredTools.push('tool_get_recent_cultivation_logs');
@@ -746,7 +677,6 @@ function executeAgentTools(rawQuery, context = {}) {
     );
   }
 
-  // 8. Tool 9: NFC Tagging Status Report
   const nfcRegex = /(nfc|thẻ\s*từ|gắn\s*thẻ|chưa\s*gắn|định\s*danh\s*cây)/i;
   if (nfcRegex.test(rawQuery) || nfcRegex.test(normalizedText)) {
     triggeredTools.push('tool_get_nfc_status_report');
@@ -777,7 +707,6 @@ function executeAgentTools(rawQuery, context = {}) {
     }
   }
 
-  // 9. Tool 10: IoT Sensors & Agro-Weather Status
   const iotRegex = /(cảm\s*biến|iot|khí\s*tượng|thời\s*tiết|độ\s*ẩm\s*đất|nhiệt\s*độ|mưa\s*nắng|phun\s*thuốc\s*được\s*không)/i;
   if (iotRegex.test(rawQuery) || iotRegex.test(normalizedText)) {
     triggeredTools.push('tool_get_iot_and_weather_status');
@@ -815,7 +744,6 @@ function executeAgentTools(rawQuery, context = {}) {
     }
   }
 
-  // 10. Tool 8: App Navigation & Workflow Guide
   if (normalizedText.includes('hướng dẫn sử dụng') || normalizedText.includes('thuê nhân công') || normalizedText.includes('xuất vietgap')) {
     triggeredTools.push('tool_app_navigation_guide');
     suggestedActions.push(
@@ -824,7 +752,6 @@ function executeAgentTools(rawQuery, context = {}) {
     );
   }
 
-  // 11. Greeting & Account Summary Tool
   if (
     triggeredTools.length === 0 &&
     /^(xin\s*chào|chào(\s*bé\s*mầm)?|hello|hi|bạn\s*là\s*ai|em\s*là\s*ai|tôi\s*là\s*ai|thông\s*tin\s*tài\s*khoản)/i.test(rawQuery.trim())
@@ -845,9 +772,6 @@ function executeAgentTools(rawQuery, context = {}) {
   };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 6. GROUNDED AGENT SYNTHESIZER (TỔNG HỢP ĐÁP ÁN CHÍNH XÁC 100%, KHÔNG BAO GIỜ CỤT)
-// ─────────────────────────────────────────────────────────────────────────────
 function synthesizeGroundedAgentReply({
   rawQuery,
   isAdmin = false,
@@ -859,18 +783,14 @@ function synthesizeGroundedAgentReply({
   const greetingTitle = isAdmin ? 'Admin' : `Bác ${userName}`;
   const blocks = [];
 
-  // 1. Nếu khớp Cặp Q&A đã huấn luyện
   if (matchedQAResult && matchedQAResult.qa?.expected_answer) {
     blocks.push(matchedQAResult.qa.expected_answer);
   }
 
-  // 2. Nếu có kết quả từ 8 Agent Tools (Số liệu vườn thực tế / Máy tính liều lượng / Kiểm định an toàn)
   if (toolExecResult.toolSections && toolExecResult.toolSections.length > 0) {
     blocks.push(toolExecResult.toolSections.join('\n\n'));
   }
 
-  // 3. Nếu có bài viết chuyên môn từ Kho Tri Thức (BM25 Top Articles)
-  // Chống nhiễu: Nếu Personal Data Tool đã trả lời câu hỏi dữ liệu vườn/cây/chi phí/nhật ký thì chỉ đính kèm bài viết khi điểm khớp rất cao (>= 7.0)
   const PERSONAL_DATA_TOOLS = new Set([
     'tool_self_correction_and_full_audit',
     'tool_get_farm_portfolio',
@@ -902,7 +822,6 @@ function synthesizeGroundedAgentReply({
     }
   }
 
-  // 4. Tính toán điểm tin cậy (Confidence Score theo chuẩn ISO/IEC TR 24028)
   let confidenceScore = 0.25;
   if (matchedQAResult) {
     confidenceScore = Math.max(confidenceScore, matchedQAResult.score);
@@ -915,7 +834,6 @@ function synthesizeGroundedAgentReply({
   }
   confidenceScore = Number(confidenceScore.toFixed(2));
 
-  // 5. Nếu câu hỏi hoàn toàn nằm ngoài cả Q&A, Tools và Kho Tri Thức -> Trả lời định hướng có cấu trúc & đánh dấu Auto-Learning
   if (blocks.length === 0) {
     blocks.push(
       `Dạ chào ${greetingTitle}! Về câu hỏi **"${rawQuery}"**, Bé Mầm đã ghi nhận vào **Hệ thống Tự học (Auto-Learning Queue)** để cập nhật phác đồ chuyên sâu.\n\n` +

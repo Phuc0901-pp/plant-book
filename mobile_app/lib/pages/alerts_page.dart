@@ -21,7 +21,7 @@ class _AlertsPageState extends State<AlertsPage> {
 
   List<Farm> _farms = [];
   List<Plant> _plants = [];
-  Map<int, List<PlantLog>> _plantLogs = {}; // plantId -> logs
+  Map<int, List<PlantLog>> _plantLogs = {};
 
   List<Map<String, dynamic>> _diseaseAlerts = [];
   List<Map<String, dynamic>> _scheduleAlerts = [];
@@ -44,10 +44,9 @@ class _AlertsPageState extends State<AlertsPage> {
     try {
       final farms = await _apiService.fetchFarms();
       final plants = await _apiService.fetchPlants();
-      
+
       Map<int, List<PlantLog>> logsMap = {};
-      
-      // Load logs for all plants concurrently
+
       final logsResults = await Future.wait(
         plants.map((p) => _apiService.fetchPlantLogs(p.id))
       );
@@ -77,15 +76,12 @@ class _AlertsPageState extends State<AlertsPage> {
     List<Map<String, dynamic>> diseases = [];
     List<Map<String, dynamic>> schedules = [];
 
-    // 1. Compute Disease Alerts (Pin to top - Priority 1)
     for (var plant in _plants) {
       final logs = _plantLogs[plant.id] ?? [];
       if (logs.isNotEmpty) {
-        // Sort logs by date descending
         logs.sort((a, b) => b.logDate.compareTo(a.logDate));
         final latest = logs.first;
-        
-        // If the latest log type is "Bệnh cây", alert it immediately
+
         if (latest.logType == 'Bệnh cây') {
           final diseaseName = latest.details['disease'] ?? latest.details['value'] ?? 'Chưa xác định';
           diseases.add({
@@ -98,7 +94,6 @@ class _AlertsPageState extends State<AlertsPage> {
           });
         }
       } else if (plant.healthStatus == 'Bệnh' || plant.healthStatus == 'Cần chú ý') {
-        // Fallback check based on status
         diseases.add({
           'plant': plant,
           'title': plant.healthStatus == 'Bệnh' ? 'Cây có trạng thái Bệnh!' : 'Cây cần chú ý sức khỏe!',
@@ -109,7 +104,6 @@ class _AlertsPageState extends State<AlertsPage> {
       }
     }
 
-    // Sort disease alerts A-Z (1-n)
     diseases.sort((a, b) {
       final pA = a['plant'] as Plant?;
       final pB = b['plant'] as Plant?;
@@ -118,7 +112,6 @@ class _AlertsPageState extends State<AlertsPage> {
       return codeA.toLowerCase().compareTo(codeB.toLowerCase());
     });
 
-    // 2. Compute Schedule Alerts (Watering overdue -> Fertilizing overdue)
     final now = DateTime.now();
 
     for (var farm in _farms) {
@@ -127,14 +120,13 @@ class _AlertsPageState extends State<AlertsPage> {
 
       int unwateredCount = 0;
       List<Plant> unwateredPlants = [];
-      
+
       int unfertilizedCount = 0;
       List<Plant> unfertilizedPlants = [];
 
       for (var plant in farmPlants) {
         final logs = _plantLogs[plant.id] ?? [];
-        
-        // Check watering logs
+
         final waterLogs = logs.where((l) => l.logType == 'Tưới nước').toList();
         if (waterLogs.isNotEmpty) {
           waterLogs.sort((a, b) => b.logDate.compareTo(a.logDate));
@@ -144,12 +136,10 @@ class _AlertsPageState extends State<AlertsPage> {
             unwateredPlants.add(plant);
           }
         } else {
-          // Never watered
           unwateredCount++;
           unwateredPlants.add(plant);
         }
 
-        // Check fertilizing logs
         final fertLogs = logs.where((l) => l.logType == 'Bón phân').toList();
         if (fertLogs.isNotEmpty) {
           fertLogs.sort((a, b) => b.logDate.compareTo(a.logDate));
@@ -159,13 +149,11 @@ class _AlertsPageState extends State<AlertsPage> {
             unfertilizedPlants.add(plant);
           }
         } else {
-          // Never fertilized
           unfertilizedCount++;
           unfertilizedPlants.add(plant);
         }
       }
 
-      // Group by Farm if ALL plants are overdue
       if (unwateredCount == farmPlants.length) {
         schedules.add({
           'farm': farm,
@@ -174,7 +162,7 @@ class _AlertsPageState extends State<AlertsPage> {
           'title': 'Chậm tưới nước toàn vườn!',
           'desc': 'Tất cả các cây trồng tại nông trại "${farm.name}" chưa được tưới nước trong 3 ngày qua.',
           'severity': 'medium',
-          'priorityRank': 1, // Watering priority
+          'priorityRank': 1,
         });
       } else if (unwateredCount > 0) {
         for (var p in unwateredPlants) {
@@ -185,7 +173,7 @@ class _AlertsPageState extends State<AlertsPage> {
             'title': 'Cây chậm tưới nước',
             'desc': 'Cây #${p.displayName} tại "${farm.name}" chưa được tưới nước theo lịch.',
             'severity': 'medium',
-            'priorityRank': 1, // Watering priority
+            'priorityRank': 1,
           });
         }
       }
@@ -198,7 +186,7 @@ class _AlertsPageState extends State<AlertsPage> {
           'title': 'Chậm bón phân định kỳ!',
           'desc': 'Toàn bộ cây trồng tại nông trại "${farm.name}" đã quá hạn bón phân định kỳ (30 ngày).',
           'severity': 'low',
-          'priorityRank': 2, // Fertilizing priority
+          'priorityRank': 2,
         });
       } else if (unfertilizedCount > 0) {
         for (var p in unfertilizedPlants) {
@@ -209,13 +197,12 @@ class _AlertsPageState extends State<AlertsPage> {
             'title': 'Cây chậm bón phân',
             'desc': 'Cây #${p.displayName} tại "${farm.name}" đã quá hạn bón phân định kỳ.',
             'severity': 'low',
-            'priorityRank': 2, // Fertilizing priority
+            'priorityRank': 2,
           });
         }
       }
     }
 
-    // Sort schedule alerts: Watering first (priorityRank 1), then Fertilizing (priorityRank 2), then A-Z (1-n)
     schedules.sort((a, b) {
       int pA = (a['priorityRank'] as int?) ?? 99;
       int pB = (b['priorityRank'] as int?) ?? 99;
@@ -236,7 +223,6 @@ class _AlertsPageState extends State<AlertsPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Filter alerts by selected farm
     final filteredDiseases = _selectedFarmId == null
         ? _diseaseAlerts
         : _diseaseAlerts.where((a) => a['farmId']?.toString() == _selectedFarmId).toList();
@@ -266,7 +252,6 @@ class _AlertsPageState extends State<AlertsPage> {
                   child: ListView(
                     padding: const EdgeInsets.all(16),
                     children: [
-                      // Farm Filter Dropdown
                       if (_farms.isNotEmpty) ...[
                         DropdownButtonFormField<String>(
                           value: _selectedFarmId,
@@ -296,23 +281,20 @@ class _AlertsPageState extends State<AlertsPage> {
                         const SizedBox(height: 14),
                       ],
 
-                      // Alert statistics banner
                       _buildStatsBanner(totalAlerts),
                       const SizedBox(height: 16),
-                      
-                      // 1. High Priority Disease Alerts (Pinned to top - Priority 1)
+
                       if (filteredDiseases.isNotEmpty) ...[
                         _sectionTitle('⚠️ CẢNH BÁO SÂU BỆNH HẠI & SỨC KHỎE (ƯU TIÊN 1)', AppTheme.red),
                         ...filteredDiseases.map((a) => _buildAlertCard(a)),
                         const SizedBox(height: 20),
                       ],
-                      
-                      // 2. Schedule Alerts (Priority 2: Tưới nước -> Priority 3: Bón phân / Khác)
+
                       if (filteredSchedules.isNotEmpty) ...[
                         _sectionTitle('📅 LỊCH TRÌNH CANH TÁC CẦN XỬ LÝ (TƯỚI NƯỚC & BÓN PHÂN)', AppTheme.amber),
                         ...filteredSchedules.map((a) => _buildAlertCard(a)),
                       ],
-                      
+
                       if (totalAlerts == 0) _buildCleanStateView(),
                     ],
                   ),
@@ -389,7 +371,7 @@ class _AlertsPageState extends State<AlertsPage> {
     Color cardBorder;
     Color iconColor;
     IconData icon;
-    
+
     if (alert['severity'] == 'high') {
       cardBorder = AppTheme.red;
       iconColor = AppTheme.red;

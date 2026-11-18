@@ -1,10 +1,3 @@
-/**
- * ═══════════════════════════════════════════════════════════════════════════
- * Suite 18: Flutter Mobile App v1.3.5+19 Enterprise Security, Cryptography,
- *           5-Layer NTAG213 Verification & 2-Phase Offline Batch Sync Audit
- * ═══════════════════════════════════════════════════════════════════════════
- */
-
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');

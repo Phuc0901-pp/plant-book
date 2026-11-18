@@ -1,4 +1,3 @@
-﻿<!-- ════════════ QR CODE & NFC TAG MODAL ════════════ -->
 <div class="modal-overlay" id="qr-modal" style="display:none" onclick="if(event.target===this)closeQrModal()">
   <div class="modal" style="max-width: 460px; width: 92%; border-radius:14px; overflow:hidden; box-shadow:0 12px 36px rgba(0,0,0,0.2);">
     <div class="modal-header" style="background:#ffffff; border-bottom:1px solid #e2e8f0; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
@@ -18,7 +17,6 @@
         <div style="font-size:11px; color:#64748b; margin-top:2px;" id="qr-modal-gps-info">GPS: 106.3, 12.5</div>
       </div>
 
-      <!-- Public URL -->
       <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
         <input type="text" id="qr-modal-url-input" readonly style="flex:1; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:12px; background:#f8fafc; color:#334155;">
         <button onclick="copyQrUrl()" class="btn btn-secondary btn-sm" style="font-weight:700; padding:8px 12px; font-size:12px; cursor:pointer;">

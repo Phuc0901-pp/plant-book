@@ -1,16 +1,8 @@
-/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/* ════════════════════════════════════════════════════════
-   Plant Book Admin — database.js (Cơ sở dữ liệu & Nhật ký Canh tác)
-   Sub-tabs: 1. Dữ liệu canh tác, 2. Vật tư & Kho, 3. Thư viện media
-   Version: v1.0.1
-   ════════════════════════════════════════════════════════ */
-
 let dbUsersCache = [];
 let dbFarmsCache = [];
 let dbPlantsCache = [];
 let activeDbTab = 'cultivation';
 
-// Distinct Category Badge Styles & Colors
 const supplyCategoryConfigs = {
   'Bón phân': { bg: '#fef3c7', color: '#78350f', border: '#fde68a', icon: 'sprout', iconColor: '#92400e', label: '🧮 Bón phân' },
   'Phun thuốc': { bg: '#f3e8ff', color: '#6b21a8', border: '#ddd6fe', icon: 'spray-can', iconColor: '#8b5cf6', label: '🧪 Phun thuốc' },
@@ -54,35 +46,30 @@ async function initDatabasePage() {
 
     const normalUsers = dbUsersCache.filter(u => u.role === 'user');
 
-    // Populate Tab 1 Farm Filter (Primary Step)
     const fSelect = document.getElementById('db-filter-farm');
     if (fSelect) {
       fSelect.innerHTML = '<option value="">— Vui lòng chọn Trang trại trước —</option>' +
         dbFarmsCache.map(f => `<option value="${f.id}">${esc(f.name)} ${f.owner_name ? `(${esc(f.owner_name)})` : ''}</option>`).join('');
     }
 
-    // Populate Tab NFC Farm Filter
     const nfcFarmSelect = document.getElementById('db-nfc-filter-farm');
     if (nfcFarmSelect) {
       nfcFarmSelect.innerHTML = '<option value="">— Vui lòng chọn Trang trại —</option>' +
         dbFarmsCache.map(f => `<option value="${f.id}">${esc(f.name)} ${f.owner_name ? `(${esc(f.owner_name)})` : ''}</option>`).join('');
     }
 
-    // Populate Modal NFC Farm Filter
     const nfcModalSelect = document.getElementById('nfc-inv-farm-select');
     if (nfcModalSelect) {
       nfcModalSelect.innerHTML = '<option value="">— Vui lòng chọn Trang trại —</option>' +
         dbFarmsCache.map(f => `<option value="${f.id}">${esc(f.name)} ${f.owner_name ? `(${esc(f.owner_name)})` : ''}</option>`).join('');
     }
 
-    // Populate Tab IoT Farm Filter
     const iotFarmSelect = document.getElementById('db-iot-filter-farm');
     if (iotFarmSelect) {
       iotFarmSelect.innerHTML = '<option value="all">Tất cả Trang trại (Toàn bộ IoT)</option>' +
         dbFarmsCache.map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join('');
     }
 
-    // Populate Tab Supplies Filters
     const suUserSelect = document.getElementById('db-supply-filter-user');
     if (suUserSelect) {
       suUserSelect.innerHTML = '<option value="">— Tất cả Khách hàng —</option>' +
@@ -114,7 +101,6 @@ async function initDatabasePage() {
 function switchDatabaseTab(tab, syncUrl = true) {
   activeDbTab = tab;
 
-  // Update tabs active state
   ['cultivation', 'nfc', 'devices', 'schemas', 'supplies', 'media', 'history', 'check', 'version'].forEach(t => {
     const tabEl = document.getElementById(`db-tab-${t}`);
     const paneEl = document.getElementById(`db-pane-${t}`);
@@ -151,9 +137,6 @@ function switchDatabaseTab(tab, syncUrl = true) {
   }
 }
 
-
-
-// ── Tab 1: Dữ liệu Canh tác (Split-View Master-Detail AgTech ERP) ──
 let currentDbSelectedFarmId = null;
 let currentDbSelectedPlantId = null;
 let currentDbPlantLogsCache = [];
@@ -191,7 +174,6 @@ async function onDbFarmChange() {
     farmTitle.textContent = `${farm ? farm.name : 'Trang trại'} ${farm && farm.owner_name ? `· Nông hộ: ${farm.owner_name}` : ''}`;
   }
 
-  // 1. Gather Personnel (Owner + assigned users) - NO ROLE DISPLAYED
   const farmUsersMap = new Map();
   if (farm && farm.user_id) {
     const owner = dbUsersCache.find(u => u.id == farm.user_id);
@@ -242,20 +224,16 @@ async function onDbFarmChange() {
     }
   }
 
-  // 2. Filter Plants for this Farm
   currentDbFarmPlantsCache = dbPlantsCache.filter(p => p.farm_id == farmId);
   if (heroPlantsCount) heroPlantsCount.textContent = currentDbFarmPlantsCache.length;
   if (masterPlantBadge) masterPlantBadge.textContent = `${currentDbFarmPlantsCache.length} cây`;
 
-  // Show Split-view, hide placeholder
   if (heroBar) heroBar.style.display = 'flex';
   if (splitView) splitView.style.display = 'grid';
   if (emptyPlaceholder) emptyPlaceholder.style.display = 'none';
 
-  // Render Master list
   renderMasterPlantsList(currentDbFarmPlantsCache);
 
-  // Auto select first plant if available
   if (currentDbFarmPlantsCache.length > 0) {
     selectTreeForDetail(currentDbFarmPlantsCache[0].id);
   } else {
@@ -383,7 +361,7 @@ function filterMasterPlantList() {
   let filtered = currentDbFarmPlantsCache;
 
   if (query) {
-    filtered = filtered.filter(p => 
+    filtered = filtered.filter(p =>
       String(p.tree_code || p.id).toLowerCase().includes(query) ||
       String(p.plant_type || '').toLowerCase().includes(query) ||
       String(p.plant_variety || '').toLowerCase().includes(query) ||
@@ -403,7 +381,6 @@ async function selectTreeForDetail(plantId) {
   currentDbSelectedPlantId = plantId;
   currentDbActiveActivityFilter = 'all';
 
-  // Highlight card in left column
   document.querySelectorAll('.db-tree-card').forEach(card => {
     card.style.border = '1px solid #e2e8f0';
     card.style.background = '#ffffff';
@@ -428,7 +405,6 @@ async function selectTreeForDetail(plantId) {
 
   try {
     if (plantId === 'all') {
-      // Load entire farm logs
       const farm = dbFarmsCache.find(f => f.id == currentDbSelectedFarmId);
       const allLogs = await api(`/plants/logs/farm/${currentDbSelectedFarmId}`).catch(() => []);
       currentDbPlantLogsCache = enrichDbLogsWithFruitAuditChain(allLogs || []);
@@ -442,7 +418,6 @@ async function selectTreeForDetail(plantId) {
         location: 'Khuôn viên trang trại'
       };
 
-      // Calculate whole farm costs
       let totalConsumableCost = 0;
       let totalFixedCost = 0;
       (currentDbPlantLogsCache || []).forEach(l => {
@@ -580,12 +555,12 @@ async function selectTreeForDetail(plantId) {
           <!-- VietGAP Compliance Status Bar -->
           <div style="margin-top:14px; border-top:1px solid rgba(255,255,255,0.15); padding-top:12px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
             <div style="background:rgba(16,185,129,0.25); border:1px solid rgba(110,231,183,0.4); padding:5px 12px; border-radius:20px; font-size:11.5px; font-weight:800; color:#ffffff; display:inline-flex; align-items:center; gap:7px;">
-              <i data-lucide="shield-check" class="lucide-sm" style="color:#6ee7b7;"></i> 
+              <i data-lucide="shield-check" class="lucide-sm" style="color:#6ee7b7;"></i>
               TIÊU CHUẨN VIETGAP 100% · NHẬT KÝ TRUY XUẤT MINH BẠCH
             </div>
 
             <div style="font-size:12px; color:#d1fae5; display:inline-flex; align-items:center; gap:6px;">
-              <i data-lucide="scan" class="lucide-xs" style="color:#34d399;"></i> Mã Lô VietGAP thu hoạch: 
+              <i data-lucide="scan" class="lucide-xs" style="color:#34d399;"></i> Mã Lô VietGAP thu hoạch:
               <strong style="font-family:monospace; background:rgba(0,0,0,0.25); padding:2px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.12); color:#fde047; font-size:12px;">
                 ${pucCode}-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${(plant.tree_code || plant.id).toString().replace(/[^a-zA-Z0-9]/g,'')}
               </strong>
@@ -595,13 +570,11 @@ async function selectTreeForDetail(plantId) {
       }
     }
 
-    // Render Activity Filter Chips
     if (filterBar) {
       filterBar.style.display = 'flex';
       renderActivityFilterChips(currentDbPlantLogsCache || []);
     }
 
-    // Render Timeline Feed (Reset to page 1)
     currentDbTimelinePage = 1;
     currentDbTimelineWindowStart = 1;
     renderDetailTimeline();
@@ -614,7 +587,6 @@ async function selectTreeForDetail(plantId) {
 }
 window.selectTreeForDetail = selectTreeForDetail;
 
-// ── QR Code & NFC Modal Logic ──
 async function openQrModal(plantId) {
   let plant = (dbPlantsCache || []).find(p => p.id == plantId);
   if (!plant || !plant.tree_code) {
@@ -636,8 +608,8 @@ async function openQrModal(plantId) {
   document.getElementById('qr-modal-tree-title').textContent = `CÂY #${plant.tree_code || plant.id}`;
   document.getElementById('qr-modal-image').src = qrImgUrl;
   document.getElementById('qr-modal-variety-info').textContent = `${plant.plant_type || ''} ${plant.plant_variety ? `(${plant.plant_variety})` : ''} · Tuổi: ${plant.plant_age || '—'}`;
-  document.getElementById('qr-modal-gps-info').textContent = (plant.latitude && plant.longitude) 
-    ? `📍 GPS: ${parseFloat(plant.latitude).toFixed(6)}, ${parseFloat(plant.longitude).toFixed(6)}` 
+  document.getElementById('qr-modal-gps-info').textContent = (plant.latitude && plant.longitude)
+    ? `📍 GPS: ${parseFloat(plant.latitude).toFixed(6)}, ${parseFloat(plant.longitude).toFixed(6)}`
     : `📍 Vị trí: ${plant.location || 'Chưa định vị'}`;
 
   document.getElementById('qr-modal-url-input').value = url;
@@ -815,11 +787,11 @@ function renderActivityFilterChips(logs) {
 
     return `
       <button type="button" onclick="filterTimelineByActivity('${esc(t)}')"
-              style="padding:6px 14px; border-radius:20px; font-size:12px; font-weight:${isActive ? '800' : '700'}; cursor:pointer; transition:all 0.18s cubic-bezier(0.16, 1, 0.3, 1); 
-                     border:1.5px solid ${isActive ? '#059669' : st.inactBorder}; 
-                     background:${isActive ? '#059669' : st.inactBg}; 
-                     color:${isActive ? '#ffffff' : st.inactColor}; 
-                     box-shadow:${isActive ? '0 2px 8px rgba(5,150,105,0.3)' : 'none'}; 
+              style="padding:6px 14px; border-radius:20px; font-size:12px; font-weight:${isActive ? '800' : '700'}; cursor:pointer; transition:all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+                     border:1.5px solid ${isActive ? '#059669' : st.inactBorder};
+                     background:${isActive ? '#059669' : st.inactBg};
+                     color:${isActive ? '#ffffff' : st.inactColor};
+                     box-shadow:${isActive ? '0 2px 8px rgba(5,150,105,0.3)' : 'none'};
                      transform:${isActive ? 'scale(1.03)' : 'scale(1)'};
                      display:inline-flex; align-items:center; gap:6px;">
         <i data-lucide="${st.icon}" class="lucide-xs"></i> <span>${esc(label)}</span>
@@ -851,7 +823,6 @@ function changeDbTimelinePage(page) {
   if (page > totalPages) page = totalPages;
   if (page === currentDbTimelinePage) return;
 
-  // Scale up window logic: Trước 1 2 3 Sau -> Bấm 3 tăng dần Trước 3 4 5 Sau
   if (page >= currentDbTimelineWindowStart + 2 && page < totalPages) {
     currentDbTimelineWindowStart = page;
   } else if (page < currentDbTimelineWindowStart) {
@@ -901,7 +872,6 @@ function renderDetailTimeline() {
     return;
   }
 
-  // ── 5 records per page pagination ──
   const totalLogs = logs.length;
   const totalPages = Math.ceil(totalLogs / DB_TIMELINE_PAGE_SIZE) || 1;
   if (currentDbTimelinePage > totalPages) currentDbTimelinePage = totalPages;
@@ -1008,8 +978,8 @@ function renderDetailTimeline() {
         supplyBoxHtml = `
           <div style="margin-top:10px; background:#f8fafc; border:1px solid ${cfg.border}; border-radius:10px; padding:8px 12px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
             <div style="display:flex; align-items:center; gap:10px;">
-              ${supplyImg 
-                ? `<img src="${esc(supplyImg)}" alt="${esc(supplyName)}" style="width:42px; height:42px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1;">` 
+              ${supplyImg
+                ? `<img src="${esc(supplyImg)}" alt="${esc(supplyName)}" style="width:42px; height:42px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1;">`
                 : `<div style="width:40px; height:40px; border-radius:8px; background:${cfg.bg}; color:${cfg.iconColor}; display:flex; align-items:center; justify-content:center; font-size:18px;"><i data-lucide="${cfg.icon}" class="lucide-sm"></i></div>`
               }
               <div>
@@ -1068,9 +1038,8 @@ function renderDetailTimeline() {
     `;
   });
 
-  timelineHtml += `</div>`; // Close db-timeline-feed-page
+  timelineHtml += `</div>`;
 
-  // ── Scale Up Modern Pagination Strip ──
   if (totalPages > 1) {
     let windowPages = [];
     for (let i = 0; i < 3; i++) {
@@ -1083,14 +1052,14 @@ function renderDetailTimeline() {
     let pagesButtonsHtml = windowPages.map(p => {
       const isCur = p === currentDbTimelinePage;
       return `
-        <button type="button" onclick="changeDbTimelinePage(${p})" 
-                style="min-width:34px; height:34px; border-radius:8px; font-size:12.5px; font-weight:800; cursor:pointer; 
-                       border:${isCur ? '2px solid #059669' : '1px solid #cbd5e1'}; 
-                       background:${isCur ? '#059669' : '#ffffff'}; 
-                       color:${isCur ? '#ffffff' : '#334155'}; 
-                       box-shadow:${isCur ? '0 2px 6px rgba(5,150,105,0.3)' : 'none'}; 
-                       transform:${isCur ? 'scale(1.04)' : 'scale(1)'}; 
-                       transition:all 0.18s cubic-bezier(0.16, 1, 0.3, 1); 
+        <button type="button" onclick="changeDbTimelinePage(${p})"
+                style="min-width:34px; height:34px; border-radius:8px; font-size:12.5px; font-weight:800; cursor:pointer;
+                       border:${isCur ? '2px solid #059669' : '1px solid #cbd5e1'};
+                       background:${isCur ? '#059669' : '#ffffff'};
+                       color:${isCur ? '#ffffff' : '#334155'};
+                       box-shadow:${isCur ? '0 2px 6px rgba(5,150,105,0.3)' : 'none'};
+                       transform:${isCur ? 'scale(1.04)' : 'scale(1)'};
+                       transition:all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
                        display:inline-flex; align-items:center; justify-content:center; padding:0 8px;">
           ${p}
         </button>
@@ -1104,13 +1073,13 @@ function renderDetailTimeline() {
           Hiển thị <strong>${startIdx + 1} - ${endIdx}</strong> / <strong>${totalLogs}</strong> hoạt động (Trang ${currentDbTimelinePage}/${totalPages})
         </div>
         <div style="display:flex; align-items:center; gap:6px;">
-          <button type="button" onclick="changeDbTimelinePage(${currentDbTimelinePage - 1})" 
+          <button type="button" onclick="changeDbTimelinePage(${currentDbTimelinePage - 1})"
                   ${currentDbTimelinePage === 1 ? 'disabled style="opacity:0.4; cursor:not-allowed; pointer-events:none;"' : 'style="cursor:pointer;"'}
                   class="btn btn-sm btn-secondary" style="display:inline-flex; align-items:center; gap:4px; padding:6px 12px; height:34px; border-radius:8px; font-size:12px; font-weight:700; transition:all 0.15s ease;">
             <i data-lucide="chevron-left" class="lucide-xs"></i> Trước
           </button>
           ${pagesButtonsHtml}
-          <button type="button" onclick="changeDbTimelinePage(${currentDbTimelinePage + 1})" 
+          <button type="button" onclick="changeDbTimelinePage(${currentDbTimelinePage + 1})"
                   ${currentDbTimelinePage === totalPages ? 'disabled style="opacity:0.4; cursor:not-allowed; pointer-events:none;"' : 'style="cursor:pointer;"'}
                   class="btn btn-sm btn-secondary" style="display:inline-flex; align-items:center; gap:4px; padding:6px 12px; height:34px; border-radius:8px; font-size:12px; font-weight:700; transition:all 0.15s ease;">
             Sau <i data-lucide="chevron-right" class="lucide-xs"></i>
@@ -1173,7 +1142,6 @@ function onSupplyFilterChange() {
   loadSuppliesTab();
 }
 
-// ── Tab 2: Supplies Catalog & ERP Inventory Suite ──
 let allSuppliesCache = [];
 let supplyGroupMode = 'flat';
 let currentDbActiveSupplyChip = 'all';
@@ -1268,12 +1236,12 @@ function renderSupplyChipsBar(supplies) {
     const isActive = (currentDbActiveSupplyChip === c.id);
     let chipStyle = '';
     if (isActive) {
-      chipStyle = c.isAlert 
-        ? 'background:#dc2626; color:#ffffff; border:1.5px solid #dc2626;' 
+      chipStyle = c.isAlert
+        ? 'background:#dc2626; color:#ffffff; border:1.5px solid #dc2626;'
         : 'background:#059669; color:#ffffff; border:1.5px solid #059669;';
     } else {
-      chipStyle = c.isAlert 
-        ? 'background:#fffafb; color:#dc2626; border:1.5px solid #fecaca;' 
+      chipStyle = c.isAlert
+        ? 'background:#fffafb; color:#dc2626; border:1.5px solid #fecaca;'
         : 'background:#ffffff; color:#475569; border:1.5px solid #cbd5e1;';
     }
 
@@ -1424,7 +1392,6 @@ function renderSupplyCostChart() {
     }
   });
 
-  // Render Summary Cards Breakdown by Category
   const summary = document.getElementById('db-supply-chart-summary');
   if (summary) {
     const cardsHtml = Object.keys(monthlyTotals).map(cat => {
@@ -1514,7 +1481,6 @@ function renderSuppliesTable(supplies) {
     return;
   }
 
-  // Row Renderer Helper
   const renderRow = (s) => {
     const cat = s.category || s.type || 'Vật tư';
     const cfg = getSupplyCatConfig(cat);
@@ -1561,7 +1527,6 @@ function renderSuppliesTable(supplies) {
     `;
   };
 
-  // 1. Grid Cards View Mode
   if (supplyGroupMode === 'grid') {
     if (tableContainer) tableContainer.style.display = 'none';
     if (gridContainer) {
@@ -1583,8 +1548,8 @@ function renderSuppliesTable(supplies) {
               </div>
 
               <div style="display:flex; gap:12px; align-items:center; margin-bottom:12px;">
-                ${s.image_url 
-                  ? `<img src="${esc(s.image_url)}" alt="${esc(s.name)}" style="width:54px; height:54px; object-fit:cover; border-radius:10px; border:1px solid #cbd5e1; cursor:pointer;" onclick="openViewSupplyModal(${s.id})">` 
+                ${s.image_url
+                  ? `<img src="${esc(s.image_url)}" alt="${esc(s.name)}" style="width:54px; height:54px; object-fit:cover; border-radius:10px; border:1px solid #cbd5e1; cursor:pointer;" onclick="openViewSupplyModal(${s.id})">`
                   : `<div style="width:54px; height:54px; border-radius:10px; background:${cfg.bg}; color:${cfg.iconColor}; display:flex; align-items:center; justify-content:center; font-size:24px; cursor:pointer;" onclick="openViewSupplyModal(${s.id})"><i data-lucide="${cfg.icon}" class="lucide-sm"></i></div>`
                 }
                 <div style="flex:1;">
@@ -1617,18 +1582,15 @@ function renderSuppliesTable(supplies) {
     return;
   }
 
-  // Table Modes
   if (tableContainer) tableContainer.style.display = 'block';
   if (gridContainer) gridContainer.style.display = 'none';
 
-  // 2. Flat List View
   if (supplyGroupMode === 'flat') {
     tbody.innerHTML = supplies.map(renderRow).join('');
     if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
     return;
   }
 
-  // 3. Category Grouped View
   if (supplyGroupMode === 'category') {
     const groups = {};
     supplies.forEach(s => {
@@ -1668,7 +1630,6 @@ function renderSuppliesTable(supplies) {
     return;
   }
 
-  // 4. Farm / Customer Grouped View
   if (supplyGroupMode === 'farm') {
     const groups = {};
     supplies.forEach(s => {
@@ -1704,7 +1665,6 @@ function filterSupplies() {
   const q = (document.getElementById('supply-search')?.value || '').toLowerCase().trim();
   let filtered = allSuppliesCache;
 
-  // Filter by active chip
   if (currentDbActiveSupplyChip !== 'all') {
     if (currentDbActiveSupplyChip === 'low_stock') {
       filtered = filtered.filter(s => {
@@ -1719,7 +1679,6 @@ function filterSupplies() {
     }
   }
 
-  // Filter by query string
   if (q) {
     filtered = filtered.filter(s =>
       (s.name || '').toLowerCase().includes(q) ||
@@ -1736,8 +1695,6 @@ function exportSuppliesPDF() {
   window.print();
 }
 window.exportSuppliesPDF = exportSuppliesPDF;
-
-// ── Supply Action Modals (View & Edit) ──
 
 function openViewSupplyModal(supplyId) {
   const supply = allSuppliesCache.find(s => s.id == supplyId);
@@ -1758,8 +1715,8 @@ function openViewSupplyModal(supplyId) {
   if (modalBody) {
     modalBody.innerHTML = `
       <div style="display:flex; gap:16px; align-items:flex-start; margin-bottom:20px;">
-        ${supply.image_url 
-          ? `<img src="${esc(supply.image_url)}" alt="${esc(supply.name)}" style="width:110px; height:110px; object-fit:cover; border-radius:12px; border:2px solid #cbd5e1; box-shadow:0 4px 12px rgba(0,0,0,0.1);">` 
+        ${supply.image_url
+          ? `<img src="${esc(supply.image_url)}" alt="${esc(supply.name)}" style="width:110px; height:110px; object-fit:cover; border-radius:12px; border:2px solid #cbd5e1; box-shadow:0 4px 12px rgba(0,0,0,0.1);">`
           : `<div style="width:110px; height:110px; border-radius:12px; background:${cfg.bg}; color:${cfg.iconColor}; border:2px solid ${cfg.border}; display:flex; align-items:center; justify-content:center; font-size:42px;"><i data-lucide="${cfg.icon}" class="lucide-sm"></i></div>`
         }
         <div style="flex:1;">
@@ -1953,7 +1910,6 @@ async function saveSupplySubmit() {
   }
 }
 
-// ── Tab 4: Audit History (Enterprise Security Audit Trail & Visual Diff) ──
 let allHistoryCache = [];
 let currentDbActiveHistoryChip = 'all';
 
@@ -2049,8 +2005,8 @@ function updateHistoryKPICards(list) {
   if (updateEl) updateEl.textContent = updateCount;
   if (deleteEl) deleteEl.textContent = deleteCount;
   if (actorEl) {
-    actorEl.innerHTML = recentItem 
-      ? `<strong>👤 ${esc(actorName)}</strong> <div style="font-size:11px; color:#64748b; font-weight:600;">${formatRelativeTime(recentItem.created_at)}</div>` 
+    actorEl.innerHTML = recentItem
+      ? `<strong>👤 ${esc(actorName)}</strong> <div style="font-size:11px; color:#64748b; font-weight:600;">${formatRelativeTime(recentItem.created_at)}</div>`
       : 'Chưa có dữ liệu';
   }
 }
@@ -2246,7 +2202,6 @@ function filterHistoryTab() {
   const q = (document.getElementById('db-history-search')?.value || '').toLowerCase().trim();
   let filtered = allHistoryCache;
 
-  // Filter by active chip
   if (currentDbActiveHistoryChip !== 'all') {
     if (currentDbActiveHistoryChip === 'UPDATE') {
       filtered = filtered.filter(h => h.action_type === 'UPDATE');
@@ -2260,7 +2215,6 @@ function filterHistoryTab() {
     }
   }
 
-  // Filter by query string
   if (q) {
     filtered = filtered.filter(h =>
       (h.title || '').toLowerCase().includes(q) ||
@@ -2330,8 +2284,6 @@ async function clearAllAuditLogs() {
 }
 window.clearAllAuditLogs = clearAllAuditLogs;
 
-// ── Visual Diff Inspector Modal Logic ──
-
 function openViewHistoryModal(id) {
   const item = allHistoryCache.find(h => h.id == id);
   if (!item) return;
@@ -2362,14 +2314,13 @@ function openViewHistoryModal(id) {
   let diffContentHtml = '';
 
   if (isDelete) {
-    // Render Deleted Entity Inspector Card
     const keys = Object.keys(oldData);
     diffContentHtml = `
       <div style="background:#fff1f2; border:1.5px solid #fecdd3; border-radius:12px; padding:16px; margin-bottom:16px;">
         <div style="font-size:13px; font-weight:800; color:#dc2626; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
           <i data-lucide="alert-triangle" class="lucide-sm"></i> Bản ghi đã bị xóa khỏi hệ thống:
         </div>
-        
+
         <table style="width:100%; border-collapse:collapse; background:#ffffff; border-radius:8px; overflow:hidden; border:1px solid #fecdd3;">
           <thead>
             <tr style="background:#ffe4e6; text-align:left; font-size:11.5px; text-transform:uppercase; color:#9f1239;">
@@ -2394,7 +2345,6 @@ function openViewHistoryModal(id) {
       </div>
     `;
   } else {
-    // Render Visual Diff Matrix (Before vs After)
     const allKeys = Array.from(new Set([...Object.keys(oldData), ...Object.keys(newData)]));
     const noiseKeys = ['updated_at'];
     const filteredKeys = allKeys.filter(k => !noiseKeys.includes(k));
@@ -2537,14 +2487,12 @@ window.exportAuditPDF = exportAuditPDF;
 window.openViewHistoryModal = openViewHistoryModal;
 window.closeViewHistoryModal = closeViewHistoryModal;
 
-// ── TAB / PAGE: SCHEMA INSPECTOR & LIVE CRUD ───────────────────
 let schemaTelemetryCache = null;
 
 async function loadDbSchemaCheck() {
   const grid = document.getElementById('db-schema-tables-grid');
   if (!grid) return;
 
-  // Nạp thông tin hạ tầng CSDL & Máy chủ NAS
   const banner = document.getElementById('db-infrastructure-banner');
   if (banner) {
     try {
@@ -2781,10 +2729,8 @@ async function openAdminDbCheckView() {
   }
 }
 
-// ── Tab 9: Quản lý & Cập nhật Phiên bản Ứng dụng (App Versioning SSOT) ──
 async function loadVersionManagerData() {
   try {
-    // 1. Fetch current active version
     const activeData = await api('/version');
     if (activeData) {
       const tag = activeData.versionTag || activeData.version_tag || `v${activeData.version}`;
@@ -2806,7 +2752,6 @@ async function loadVersionManagerData() {
       const dateEl = document.getElementById('ver-active-date');
       if (dateEl) dateEl.textContent = updateDate;
 
-      // Fill form defaults
       const inputTag = document.getElementById('ver-input-tag');
       if (inputTag && !inputTag.value) inputTag.value = tag;
       const inputBuild = document.getElementById('ver-input-build');
@@ -2819,7 +2764,6 @@ async function loadVersionManagerData() {
       if (inputNotes && !inputNotes.value) inputNotes.value = notes;
     }
 
-    // 2. Fetch version release history
     const historyRes = await api('/version/history');
     const tbody = document.getElementById('ver-history-table-body');
     const countEl = document.getElementById('ver-history-count');
@@ -2946,4 +2890,3 @@ window.openAdminDbCheckView = openAdminDbCheckView;
 window.loadVersionManagerData = loadVersionManagerData;
 window.handlePushVersionToDB = handlePushVersionToDB;
 window.activateVersionInDB = activateVersionInDB;
-

@@ -4,24 +4,22 @@ const pool = require('../config/db');
 const auth = require('../middleware/auth');
 const admin = require('../middleware/admin');
 
-// GET all devices (requires auth)
 router.get('/', auth, async (req, res) => {
   try {
     let query = `
-      SELECT d.*, f.name as farm_name 
+      SELECT d.*, f.name as farm_name
       FROM devices d
       LEFT JOIN farms f ON d.farm_id = f.id
     `;
     const params = [];
-    
-    // Non-admin can only see devices in their assigned farms
+
     if (req.user.role !== 'admin') {
       query += ` WHERE f.user_id = $1`;
       params.push(req.user.id);
     }
-    
+
     query += ` ORDER BY d.created_at DESC`;
-    
+
     const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {
@@ -30,7 +28,6 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-// GET single device (requires auth)
 router.get('/:id', auth, async (req, res) => {
   try {
     const result = await pool.query(`
@@ -39,21 +36,20 @@ router.get('/:id', auth, async (req, res) => {
       LEFT JOIN farms f ON d.farm_id = f.id
       WHERE d.id = $1
     `, [req.params.id]);
-    
+
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Không tìm thấy thiết bị.' });
     }
-    
+
     const device = result.rows[0];
-    
-    // Check permission
+
     if (req.user.role !== 'admin') {
       const farmCheck = await pool.query('SELECT user_id FROM farms WHERE id = $1', [device.farm_id]);
       if (farmCheck.rows.length === 0 || farmCheck.rows[0].user_id !== req.user.id) {
         return res.status(403).json({ error: 'Bạn không có quyền truy cập thiết bị này.' });
       }
     }
-    
+
     res.json(device);
   } catch (err) {
     console.error('Error getting device detail:', err);
@@ -61,29 +57,27 @@ router.get('/:id', auth, async (req, res) => {
   }
 });
 
-// POST create device (Admin only)
 router.post('/', auth, admin, async (req, res) => {
   try {
     const { name, device_type, status, farm_id, ip_address, battery_level } = req.body;
-    
+
     if (!name || !device_type) {
       return res.status(400).json({ error: 'Tên thiết bị và loại thiết bị là bắt buộc.' });
     }
-    
+
     const result = await pool.query(`
       INSERT INTO devices (name, device_type, status, farm_id, ip_address, battery_level)
       VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
     `, [
-      name, 
-      device_type, 
-      status || 'Hoạt động', 
-      farm_id ? parseInt(farm_id) : null, 
-      ip_address || null, 
+      name,
+      device_type,
+      status || 'Hoạt động',
+      farm_id ? parseInt(farm_id) : null,
+      ip_address || null,
       battery_level !== undefined ? parseInt(battery_level) : 100
     ]);
-    
-    // Broadcast WebSocket event
+
     const broadcast = req.app.get('broadcast');
     if (broadcast) broadcast('device_status_changed');
 
@@ -94,35 +88,33 @@ router.post('/', auth, admin, async (req, res) => {
   }
 });
 
-// PUT update device (Admin only)
 router.put('/:id', auth, admin, async (req, res) => {
   try {
     const { name, device_type, status, farm_id, ip_address, battery_level } = req.body;
-    
+
     if (!name || !device_type) {
       return res.status(400).json({ error: 'Tên thiết bị và loại thiết bị là bắt buộc.' });
     }
-    
+
     const result = await pool.query(`
-      UPDATE devices 
-      SET name = $1, device_type = $2, status = $3, farm_id = $4, ip_address = $5, battery_level = $6, last_connection = NOW(), updated_at = NOW() 
-      WHERE id = $7 
+      UPDATE devices
+      SET name = $1, device_type = $2, status = $3, farm_id = $4, ip_address = $5, battery_level = $6, last_connection = NOW(), updated_at = NOW()
+      WHERE id = $7
       RETURNING *
     `, [
-      name, 
-      device_type, 
-      status || 'Hoạt động', 
-      farm_id ? parseInt(farm_id) : null, 
-      ip_address || null, 
+      name,
+      device_type,
+      status || 'Hoạt động',
+      farm_id ? parseInt(farm_id) : null,
+      ip_address || null,
       battery_level !== undefined ? parseInt(battery_level) : 100,
       req.params.id
     ]);
-    
+
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Không tìm thấy thiết bị.' });
     }
-    
-    // Broadcast WebSocket event
+
     const broadcast = req.app.get('broadcast');
     if (broadcast) broadcast('device_status_changed');
 
@@ -133,16 +125,14 @@ router.put('/:id', auth, admin, async (req, res) => {
   }
 });
 
-// DELETE device (Admin only)
 router.delete('/:id', auth, admin, async (req, res) => {
   try {
     const result = await pool.query('DELETE FROM devices WHERE id = $1 RETURNING id', [req.params.id]);
-    
+
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Không tìm thấy thiết bị.' });
     }
-    
-    // Broadcast WebSocket event
+
     const broadcast = req.app.get('broadcast');
     if (broadcast) broadcast('device_status_changed');
 

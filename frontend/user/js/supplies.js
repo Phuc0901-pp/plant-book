@@ -1,9 +1,3 @@
-/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/* ═══════════════════════════════════════════════════════════════
-   Plant Book – User Portal
-   supplies.js — Quản lý & Giám sát Vật tư (Bón phân, Tiền nước, Phun thuốc, Nhân công)
-   ═══════════════════════════════════════════════════════════════ */
-
 import { api, getCurrentUserRbac } from './core/api.js';
 import { toast, esc } from './core/utils.js';
 
@@ -13,7 +7,6 @@ let currentSearchQuery = '';
 let currentPeriodFilter = 'day';
 let cachedSupplies = [];
 
-// ── State Bộ Lọc ERP Cockpit (Trang trại & Năm) ──
 let currentCockpitFarmId = 'all';
 let currentCockpitYear = 'all';
 
@@ -42,7 +35,6 @@ export async function populateCockpitFarms() {
     }
   }
 
-  // Cập nhật scope text
   const farmName = farmSelect && farmSelect.selectedIndex > 0 ? farmSelect.options[farmSelect.selectedIndex].text : 'Tất cả trang trại';
   const yearText = yearSelect && yearSelect.value !== 'all' ? `Năm ${yearSelect.value}` : 'Tất cả các năm';
   const scopeStock = document.getElementById('erp-scope-text-stock');
@@ -56,7 +48,6 @@ export function onSuppliesCockpitFilterChange() {
   if (farmSelect) currentCockpitFarmId = farmSelect.value;
   if (yearSelect) currentCockpitYear = yearSelect.value;
 
-  // Cập nhật scope text
   const farmName = farmSelect && farmSelect.selectedIndex > 0 ? farmSelect.options[farmSelect.selectedIndex].text : 'Tất cả trang trại';
   const yearText = yearSelect && yearSelect.value !== 'all' ? `Năm ${yearSelect.value}` : 'Tất cả các năm';
   const scopeStock = document.getElementById('erp-scope-text-stock');
@@ -66,13 +57,10 @@ export function onSuppliesCockpitFilterChange() {
 }
 window.onSuppliesCockpitFilterChange = onSuppliesCockpitFilterChange;
 
-// ── State Phân trang Lịch sử Tiêu hao Vật tư (20 đợt / trang) ──
 let currentUsageLogPage = 1;
 let usageLogPageSize = 20;
 let cachedUsageLogs = [];
 
-
-// ─── Formatting helpers ──────────────────────────────────────────
 function formatVND(amount) {
   try {
     const rbac = getCurrentUserRbac();
@@ -250,8 +238,6 @@ function getCategoryBadge(category) {
   }
 }
 
-// ─── TAB 1: QUẢN LÝ VẬT TƯ (CRUD) ───────────────────────────────
-
 export function normalizeSupplyCategory(cat, name = '') {
   const text = `${cat || ''} ${name || ''}`.toLowerCase();
   if (/thuốc|bvtv|trừ\s*sâu|trừ\s*bệnh|trị\s*nấm|diệt|anvil|score|amistar|ridomil|tilt|antracol|mancozeb|nativo|pes|fungi|hoạt chất|phun|kháng\s*sinh|rầy|sâu/i.test(text)) {
@@ -281,7 +267,6 @@ export function normalizePackageUnit(rawUnit) {
   return 'khác';
 }
 
-// ─── Live Unit Auto-Calculation ──────────────────────────────────
 export function autoCalculateSupplyUnits() {
   const rawCategory = document.getElementById('sp-category')?.value || 'Bón phân';
   const category = ['Bón phân', 'Tiền nước', 'Phun thuốc', 'Nhân công'].includes(rawCategory) ? rawCategory : normalizeSupplyCategory(rawCategory);
@@ -290,7 +275,6 @@ export function autoCalculateSupplyUnits() {
   }
   const isWaterOrLabor = (category === 'Tiền nước' || category === 'Nhân công');
 
-  // Toggle DOM visibility based on Category
   const fieldPkgUnit = document.getElementById('field-package-unit');
   const fieldName = document.getElementById('field-name');
   const fieldPkgQty = document.getElementById('field-package-qty');
@@ -330,7 +314,6 @@ export function autoCalculateSupplyUnits() {
       }
     }
 
-    // Set defaults for water & labor
     const pkgPrice = parseFloat(document.getElementById('sp-package-price')?.value) || 0;
     const pkgQty = 1;
     const pkgUnit = (category === 'Tiền nước' ? 'm3' : 'ngày công');
@@ -347,7 +330,6 @@ export function autoCalculateSupplyUnits() {
     if (document.getElementById('sp-unit-price-small')) document.getElementById('sp-unit-price-small').value = priceSmall;
 
   } else {
-    // Normal Bón phân / Phun thuốc flow
     if (fieldPkgUnit) fieldPkgUnit.style.display = '';
     if (fieldName) fieldName.style.display = '';
     if (fieldPkgQty) fieldPkgQty.style.display = '';
@@ -425,13 +407,11 @@ export function autoCalculateSupplyUnits() {
       priceSmall = priceLarge;
     }
 
-    // Update hidden form inputs
     if (document.getElementById('sp-unit')) document.getElementById('sp-unit').value = unitLarge;
     if (document.getElementById('sp-unit-price')) document.getElementById('sp-unit-price').value = priceLarge;
     if (document.getElementById('sp-package-size')) document.getElementById('sp-package-size').value = `${pkgQty} ${pkgUnit}`;
     if (document.getElementById('sp-unit-price-small')) document.getElementById('sp-unit-price-small').value = priceSmall;
 
-    // Update live preview UI
     const largeLabel = document.getElementById('calc-unit-large-name');
     const smallLabel = document.getElementById('calc-unit-small-name');
     const largeVal = document.getElementById('calc-price-large');
@@ -510,7 +490,6 @@ export async function loadSupplies() {
 
   applySuppliesRoleArchitecture();
 
-  // Tự động load danh sách farm vào select bộ lọc nếu chưa có
   await populateCockpitFarms();
 
   try {
@@ -524,16 +503,12 @@ export async function loadSupplies() {
 
     cachedSupplies = await api(`/supplies?${params.toString()}`);
 
-    // 1. Lọc theo Stock Status và Search Query
     const filtered = applySuppliesFilters(cachedSupplies);
 
-    // 2. Render Enterprise Data Grid Table
     renderSuppliesTable(filtered);
 
-    // 3. Tính toán và cập nhật Executive ERP Cockpit KPI theo Trang trại & Năm đã chọn
     await updateSuppliesProfitCockpit();
 
-    // 4. Đồng bộ Executive BI & ML Predictive Yield theo bộ lọc Trang trại & Năm
     if (typeof window.loadExecutiveBiAnalytics === 'function') {
       window.loadExecutiveBiAnalytics(currentCockpitFarmId, currentCockpitYear);
     }
@@ -548,7 +523,6 @@ function applySuppliesFilters(supplies) {
   if (!supplies || !Array.isArray(supplies)) return [];
 
   return supplies.filter(sp => {
-    // 1. Stock Status Filter
     const isPermanent = (sp.category === 'Tiền nước' || sp.category === 'Nhân công');
     const stock = parseFloat(sp.stock_quantity) || 0;
     const pkgQty = parseFloat(sp.package_qty) || 1;
@@ -563,7 +537,6 @@ function applySuppliesFilters(supplies) {
       if (!isPermanent) return false;
     }
 
-    // 2. Search Query Filter
     if (currentSearchQuery) {
       const q = currentSearchQuery.toLowerCase().trim();
       const sku = `VT-${String(sp.id).padStart(3, '0')}`.toLowerCase();
@@ -672,7 +645,6 @@ export async function updateSuppliesProfitCockpit() {
       };
     }
 
-    // Client-side fallback bổ trợ cho Khối 2 & 3 CHỈ khi tài khoản được phép xem tài chính
     if (!isFinanceRedacted && (!data.total_spent || data.total_spent === 0)) {
       if (!Array.isArray(cachedUsageLogs) || cachedUsageLogs.length === 0) {
         try {
@@ -712,7 +684,6 @@ export async function updateSuppliesProfitCockpit() {
     const harvestCount = parseInt(data.harvest_count) || 0;
 
     if (isFinanceRedacted || data.finance_redacted) {
-      // ── KIẾN TRÚC KỸ THUẬT THỰC ĐỊA (ẨN HOÀN TOÀN DOANH THU & GIÁ VỐN) ──
       const fertSkus = data.fertilizer_sku_count !== undefined
         ? data.fertilizer_sku_count
         : (cachedSupplies || []).filter(s => s.category === 'Bón phân').length;
@@ -720,7 +691,6 @@ export async function updateSuppliesProfitCockpit() {
         ? data.pesticide_sku_count
         : (cachedSupplies || []).filter(s => s.category === 'Phun thuốc').length;
 
-      // Khối 1: Danh mục vật tư kỹ thuật
       if (card1TitleEl) card1TitleEl.innerHTML = `<i data-lucide="package-check" class="lucide-sm" style="color: #38bdf8;"></i> DANH MỤC VẬT TƯ KỸ THUẬT`;
       if (totalValuationEl) totalValuationEl.textContent = `${skuCount} mặt hàng`;
       if (card1SubEl) card1SubEl.textContent = 'Vật tư phân bón & BVTV khả dụng thực địa';
@@ -729,7 +699,6 @@ export async function updateSuppliesProfitCockpit() {
       }
       if (skuCountEl) skuCountEl.textContent = 'Chuẩn VietGAP';
 
-      // Khối 2: Định mức & Lượt sử dụng thực địa
       const catCounts = data.category_usage_count || {};
       if (card2TitleEl) card2TitleEl.innerHTML = `<i data-lucide="flask-conical" class="lucide-sm" style="color: #059669;"></i> ĐỊNH MỨC &amp; LƯỢT SỬ DỤNG VẬT TƯ`;
       if (totalConsumedEl) totalConsumedEl.textContent = `${usageCount} đợt thực địa`;
@@ -744,7 +713,6 @@ export async function updateSuppliesProfitCockpit() {
           : 'Thống kê kỹ thuật tại trang trại';
       }
 
-      // Khối 3: Sản lượng thu hoạch kỹ thuật (Ẩn doanh thu VNĐ, ROI, Lợi nhuận ròng)
       if (card3TitleEl) card3TitleEl.innerHTML = `<i data-lucide="trees" class="lucide-sm" style="color: #6ee7b7;"></i> SẢN LƯỢNG THU HOẠCH PHỤ TRÁCH`;
       if (harvestRevEl) harvestRevEl.textContent = `${Number(totalWeight.toFixed(1))} kg`;
       if (harvestYieldEl) {
@@ -776,7 +744,6 @@ export async function updateSuppliesProfitCockpit() {
       }
 
     } else {
-      // ── KIẾN TRÚC CHỦ VƯỜN / QUẢN ĐỐC CÓ QUYỀN TÀI CHÍNH (FULL ERP) ──
       let totalInflow = parseFloat(data.total_stock_inflow) || 0;
       const curStockVal = parseFloat(data.current_stock_valuation) || 0;
       if (totalInflow === 0 && data.total_spent > 0) {
@@ -804,8 +771,8 @@ export async function updateSuppliesProfitCockpit() {
       if (scopeTextUsageEl) scopeTextUsageEl.textContent = 'Hạch toán thực tế trên cây';
 
       const totalRev = parseFloat(data.total_revenue) || 0;
-      const netProfit = (data && data.net_profit !== undefined && !isNaN(Number(data.net_profit))) 
-        ? Number(data.net_profit) 
+      const netProfit = (data && data.net_profit !== undefined && !isNaN(Number(data.net_profit)))
+        ? Number(data.net_profit)
         : (totalRev - totalSpent);
       const roi = (data && data.roi_percentage !== undefined && !isNaN(Number(data.roi_percentage)))
         ? Number(data.roi_percentage)
@@ -911,7 +878,6 @@ export function renderSuppliesTable(supplies) {
     const pkgPrice = parseFloat(sp.package_price) || (priceLarge * pkgQty);
     const valuation = isPermanent ? 0 : (stock * priceLarge);
 
-    // 1. SKU & Icon
     let sku = `VT-${String(sp.id).padStart(3, '0')}`;
     let categoryIcon = 'flask-conical';
     let categoryColor = '#059669';
@@ -940,9 +906,8 @@ export function renderSuppliesTable(supplies) {
       </div>
     `;
 
-    // 2. Name & Specs
-    const activeIngDisplay = sp.active_ingredient 
-      ? `<div style="font-size:11px; color:#047857; font-weight:600; margin-top:2px;"><i data-lucide="flask-round" class="lucide-sm"></i> Hoạt chất: ${esc(sp.active_ingredient)}</div>` 
+    const activeIngDisplay = sp.active_ingredient
+      ? `<div style="font-size:11px; color:#047857; font-weight:600; margin-top:2px;"><i data-lucide="flask-round" class="lucide-sm"></i> Hoạt chất: ${esc(sp.active_ingredient)}</div>`
       : (sp.fertilizer_type ? `<div style="font-size:11px; color:#64748b; font-weight:600; margin-top:2px;">${esc(sp.fertilizer_type)}</div>` : '');
     const phiBadge = sp.phi_days && parseInt(sp.phi_days) > 0
       ? `<div style="font-size:11px; color:#b45309; font-weight:700; margin-top:2px;"><i data-lucide="clock" class="lucide-xs"></i> Cách ly PHI: ${sp.phi_days} ngày</div>`
@@ -950,8 +915,8 @@ export function renderSuppliesTable(supplies) {
 
     const nameHtml = `
       <div style="display:flex; align-items:center; gap:10px;">
-        ${sp.image_url 
-          ? `<img src="${esc(sp.image_url)}" style="width:42px; height:42px; border-radius:10px; object-fit:cover; border:1.5px solid #e2e8f0; box-shadow:0 2px 5px rgba(0,0,0,0.04); flex-shrink:0;" onclick="openLightbox('${esc(sp.image_url)}', 'image')" class="clickable" title="Xem ảnh bao bì">` 
+        ${sp.image_url
+          ? `<img src="${esc(sp.image_url)}" style="width:42px; height:42px; border-radius:10px; object-fit:cover; border:1.5px solid #e2e8f0; box-shadow:0 2px 5px rgba(0,0,0,0.04); flex-shrink:0;" onclick="openLightbox('${esc(sp.image_url)}', 'image')" class="clickable" title="Xem ảnh bao bì">`
           : `<div style="width:42px; height:42px; border-radius:10px; background:#f8fafc; border:1.5px solid #e2e8f0; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:18px; flex-shrink:0;"><i data-lucide="package" class="lucide-sm"></i></div>`}
         <div>
           <strong style="font-size:13.5px; color:#0f172a; display:block;">${esc(sp.name)}</strong>
@@ -964,7 +929,6 @@ export function renderSuppliesTable(supplies) {
       </div>
     `;
 
-    // 3. Stock Level & Progress Bar
     let stockProgressHtml = '';
     if (isPermanent) {
       stockProgressHtml = `
@@ -982,10 +946,10 @@ export function renderSuppliesTable(supplies) {
     } else {
       const benchmark = Math.max(stock + (parseFloat(sp.total_used_qty) || 0), pkgQty);
       const pct = benchmark > 0 ? Math.min(100, Math.round((stock / benchmark) * 100)) : 0;
-      
+
       let barColor = 'linear-gradient(90deg, #34d399, #10b981)';
       let statusBadge = `<span class="badge" style="background:#dcfce7; color:#15803d; font-size:10px; font-weight:800; border-radius:8px; padding:1px 6px;"><i data-lucide="check" class="lucide-xs"></i> Còn hàng</span>`;
-      
+
       if (stock <= 0) {
         barColor = '#ef4444';
         statusBadge = `<span class="badge" style="background:#fee2e2; color:#dc2626; font-size:10px; font-weight:800; border-radius:8px; padding:1px 6px; border:1px solid #fca5a5;"><i data-lucide="ban" class="lucide-xs"></i> HẾT HÀNG</span>`;
@@ -1023,7 +987,6 @@ export function renderSuppliesTable(supplies) {
       `;
     }
 
-    // 4. Prices (Only rendered if finance is NOT redacted)
     const priceTd = isFinanceRedacted ? '' : `
       <td style="padding: 12px 14px;">
         <div>
@@ -1036,32 +999,29 @@ export function renderSuppliesTable(supplies) {
       </td>
     `;
 
-    // 5. Valuation (Only rendered if finance is NOT redacted)
     const valuationTd = isFinanceRedacted ? '' : `
       <td style="padding: 12px 14px;">
-        ${isPermanent 
+        ${isPermanent
           ? `<span style="font-size:12px; color:#64748b; font-style:italic;">Theo thực tế</span>`
           : `<strong style="font-size:13.5px; color:#0284c7;">${formatVND(valuation)}</strong>`}
       </td>
     `;
 
-    // 6. VietGAP / Tiêu chuẩn kỹ thuật
     let vietgapHtml = '';
     if (sp.category === 'Phun thuốc') {
-      vietgapHtml = sp.active_ingredient 
+      vietgapHtml = sp.active_ingredient
         ? `<span class="badge" style="background:#f5f3ff; color:#6d28d9; border:1px solid #ddd6fe; font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:8px; display:inline-flex; align-items:center; gap:4px;" title="Hoạt chất: ${sp.active_ingredient}"><i data-lucide="shield-check" class="lucide-xs"></i> ${esc(sp.active_ingredient)}</span>`
         : `<span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:8px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="check-circle-2" class="lucide-sm"></i> Đạt chuẩn</span>`;
     } else if (sp.category === 'Bón phân') {
       vietgapHtml = sp.fertilizer_composition
         ? `<span class="badge" style="background:#f0fdf4; color:#15803d; border:1px solid #86efac; font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:8px; display:inline-flex; align-items:center; gap:4px;" title="Thành phần: ${sp.fertilizer_composition}"><i data-lucide="sprout" class="lucide-xs"></i> ${esc(sp.fertilizer_composition)}</span>`
-        : (sp.fertilizer_type 
+        : (sp.fertilizer_type
             ? `<span class="badge" style="background:#f0fdf4; color:#15803d; border:1px solid #86efac; font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:8px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="check-circle-2" class="lucide-sm"></i> ${esc(sp.fertilizer_type)}</span>`
             : `<span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:8px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="check-circle-2" class="lucide-sm"></i> Đạt chuẩn</span>`);
     } else {
       vietgapHtml = `<span class="badge" style="background:#f8fafc; color:#64748b; border:1px solid #e2e8f0; font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:8px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="check-circle-2" class="lucide-sm"></i> Đạt chuẩn</span>`;
     }
 
-    // 7. Role-Adaptive Actions
     let actionsHtml = '';
     if (isReadonlyAuditor) {
       actionsHtml = `
@@ -1072,7 +1032,7 @@ export function renderSuppliesTable(supplies) {
         <button type="button" class="btn btn-secondary btn-xs" onclick="openStockLedgerModal(${sp.id})" title="Xem sổ thẻ kho kỹ thuật" style="padding:4px 8px; font-size:11.5px; font-weight:700; border-radius:6px;"><i data-lucide="bookmark" class="lucide-sm" style="color:#0284c7;"></i> Thẻ kho</button>
       `;
     } else {
-      const restockBtn = !isPermanent 
+      const restockBtn = !isPermanent
         ? `<button type="button" class="btn btn-primary btn-xs" onclick="openRestockModal(${sp.id})" title="Nhập thêm hàng vào kho" style="padding:4px 8px; font-size:11.5px; font-weight:700; border-radius:6px; background:#059669; border-color:#059669;"><i data-lucide="truck" class="lucide-sm"></i> Nhập</button>`
         : '';
       actionsHtml = `
@@ -1109,7 +1069,6 @@ export function openSupplyModal(id = null) {
   const title = document.getElementById('modal-supply-title');
   if (!modal) return;
 
-  // Load danh sách trang trại vào dropdown chọn trang trại sở hữu
   const farmSelect = document.getElementById('sp-farm-id');
   if (farmSelect) {
     const farms = (typeof window.getFarmsCache === 'function' ? window.getFarmsCache() : window._allFarmsCache) || [];
@@ -1298,8 +1257,6 @@ export async function deleteSupply(id) {
   }
 }
 
-// ─── MODAL NHẬP THÊM KHO (RESTOCK / NHẬP KHO VẬT TƯ) ──────────────────
-
 export function openRestockModal(id = null) {
   const modal = document.getElementById('modal-restock-supply');
   if (!modal) return;
@@ -1323,7 +1280,6 @@ export function openRestockModal(id = null) {
     return;
   }
 
-  // Cập nhật danh sách vật tư vào select trong modal nhập kho
   const supplySelect = document.getElementById('restock-supply-select');
   if (supplySelect) {
     supplySelect.innerHTML = cachedSupplies.map(item => `
@@ -1333,7 +1289,6 @@ export function openRestockModal(id = null) {
     `).join('') + `<option value="__NEW__">+ Khai báo mặt hàng mới...</option>`;
   }
 
-  // Load danh sách trang trại vào dropdown chọn trang trại tiếp nhận lô hàng
   const farmSelect = document.getElementById('restock-farm-id');
   if (farmSelect) {
     const farms = (typeof window.getFarmsCache === 'function' ? window.getFarmsCache() : window._allFarmsCache) || [];
@@ -1352,7 +1307,7 @@ export function openRestockModal(id = null) {
   if (specEl) specEl.textContent = `Hạng mục: ${sp.category} • Quy cách: ${sp.package_qty} ${sp.package_unit || sp.unit}`;
   const stockEl = document.getElementById('restock-current-stock');
   if (stockEl) stockEl.textContent = `${sp.stock_quantity || 0} ${sp.unit}`;
-  
+
   const unitLabel = document.getElementById('restock-unit-label');
   if (unitLabel) unitLabel.textContent = `${sp.package_unit || sp.unit}`;
 
@@ -1443,8 +1398,6 @@ export async function submitRestockSupply() {
   }
 }
 
-// ─── MODAL SỔ THẺ KHO (STOCK LEDGER) ─────────────────────────────
-
 export async function openStockLedgerModal(id) {
   const modal = document.getElementById('modal-stock-ledger');
   const title = document.getElementById('ledger-modal-title');
@@ -1494,7 +1447,6 @@ export async function openStockLedgerModal(id) {
 
     let timelineHtml = '<div class="stock-timeline" style="display:flex; flex-direction:column; gap:14px; position:relative; padding-left:24px; border-left:2px solid #e2e8f0; margin-left:10px;">';
 
-    // 1. Initial creation entry
     const createdDate = sp.created_at ? new Date(sp.created_at).toLocaleDateString('vi-VN') : 'Đầu kỳ';
     timelineHtml += `
       <div class="stock-timeline-item" style="position:relative;">
@@ -1512,7 +1464,6 @@ export async function openStockLedgerModal(id) {
       </div>
     `;
 
-    // 2. Usage Entries
     if (supplyUsages.length > 0) {
       supplyUsages.forEach(u => {
         const uDate = u.usage_date ? new Date(u.usage_date).toLocaleDateString('vi-VN') : '—';
@@ -1537,7 +1488,6 @@ export async function openStockLedgerModal(id) {
       });
     }
 
-    // 3. Current Balance
     timelineHtml += `
       <div class="stock-timeline-item" style="position:relative;">
         <div style="position:absolute; left:-31px; top:2px; width:14px; height:14px; border-radius:50%; background:#0284c7; border:3px solid #fff; box-shadow:0 0 0 2px #0284c7;"></div>
@@ -1568,8 +1518,6 @@ export function closeStockLedgerModal() {
   const modal = document.getElementById('modal-stock-ledger');
   if (modal) modal.style.display = 'none';
 }
-
-// ─── TAB SWITCHER ────────────────────────────────────────────────
 
 export function switchSuppliesTab(tab) {
   const tabManage = document.getElementById('supplies-tab-manage');
@@ -1634,9 +1582,6 @@ export function switchSuppliesMonitorSubTab(mode) {
   }
 }
 window.switchSuppliesMonitorSubTab = switchSuppliesMonitorSubTab;
-
-
-// ─── TAB 2: GIÁM SÁT VẬT TƯ & CHI PHÍ ────────────────────────────
 
 function toIsoDateStr(date) {
   const d = new Date(date);
@@ -1766,7 +1711,6 @@ export async function loadSuppliesAnalytics() {
   try {
     const data = await api(`/supplies/analytics?${params.toString()}`);
 
-    // Update Stats Cards
     const totalEl = document.getElementById('cost-stat-total');
     const fertEl = document.getElementById('cost-stat-fertilizer');
     const waterEl = document.getElementById('cost-stat-water');
@@ -1786,13 +1730,10 @@ export async function loadSuppliesAnalytics() {
       if (pestLaborEl) pestLaborEl.textContent = formatVND(combinedPestLabor);
     }
 
-    // Render Cost Heatmap Chart
     renderCostHeatmap(data.time_breakdown, data.summary.total_expenditure);
 
-    // Render Breakdown Table
     renderBreakdownTable(data.time_breakdown, data.summary.total_expenditure);
 
-    // Also load recent usages log table
     loadSupplyUsagesLog();
 
   } catch (err) {
@@ -1814,7 +1755,6 @@ function renderCostHeatmap(breakdown, grandTotal) {
     return;
   }
 
-  // Gom nhóm tổng chi phí theo period_label
   const periodCostsMap = new Map();
   breakdown.forEach(row => {
     const label = row.period_label || 'Khác';
@@ -1829,7 +1769,6 @@ function renderCostHeatmap(breakdown, grandTotal) {
   const values = periodEntries.map(e => e[1]);
   const maxVal = Math.max(...values, 100);
 
-  // Kích thước khung hình vẽ SVG Biểu Đồ Đường
   const svgWidth = 800;
   const svgHeight = 220;
   const paddingX = 55;
@@ -1838,21 +1777,18 @@ function renderCostHeatmap(breakdown, grandTotal) {
   const chartW = svgWidth - paddingX * 2;
   const chartH = svgHeight - paddingTop - paddingBottom;
 
-  // Tính toán tọa độ các điểm dữ liệu (Points)
   const points = values.map((val, idx) => {
     const x = paddingX + (periodEntries.length > 1 ? (idx / (periodEntries.length - 1)) * chartW : chartW / 2);
     const y = paddingTop + chartH - (val / maxVal) * chartH;
     return { x, y, val, label: labels[idx] };
   });
 
-  // Dựng đường dẫn gấp khúc / uốn đường
   const linePathD = points.reduce((acc, p, idx) => {
     return idx === 0 ? `M ${p.x} ${p.y}` : `${acc} L ${p.x} ${p.y}`;
   }, '');
 
   const areaPathD = `${linePathD} L ${points[points.length - 1].x} ${paddingTop + chartH} L ${points[0].x} ${paddingTop + chartH} Z`;
 
-  // Trục tọa độ và đường lưới định mức (Grid lines)
   const gridRatios = [0, 0.33, 0.66, 1];
   const gridLines = gridRatios.map(r => {
     const y = paddingTop + chartH - r * chartH;
@@ -1864,7 +1800,6 @@ function renderCostHeatmap(breakdown, grandTotal) {
     `;
   }).join('');
 
-  // Render nút tròn dữ liệu (Data Dots) & Nhãn trục X
   const dotsSvg = points.map(p => `
     <g class="chart-point-group" style="cursor:pointer;">
       <circle cx="${p.x}" cy="${p.y}" r="5" fill="#22c55e" stroke="#ffffff" stroke-width="2.5">
@@ -1951,8 +1886,6 @@ function renderBreakdownTable(breakdown, grandTotal) {
   if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
 }
 
-// ─── GHI NHẬN TIÊU HAO VẬT TƯ (USAGE LOGS) ─────────────────────
-
 export async function openRecordUsageModal() {
   const modal = document.getElementById('modal-supply-usage');
   const select = document.getElementById('su-supply-id');
@@ -1965,7 +1898,6 @@ export async function openRecordUsageModal() {
   document.getElementById('su-quantity').value = '1';
   document.getElementById('su-note').value = '';
 
-  // Load supplies into dropdown
   try {
     cachedSupplies = await api('/supplies');
     if (!cachedSupplies || cachedSupplies.length === 0) {
@@ -1992,7 +1924,6 @@ export async function openRecordUsageModal() {
       }).join('');
     }
 
-    // Load farms into dropdown
     const farms = await api('/farms');
     if (farmSelect) {
       farmSelect.innerHTML = '<option value="">Toàn bộ trang trại (Không chọn)</option>' +
@@ -2132,7 +2063,6 @@ function renderSupplyUsagesPage() {
   const endIndex = Math.min(startIndex + usageLogPageSize, totalLogs);
   const pageLogs = cachedUsageLogs.slice(startIndex, endIndex);
 
-  // Group pageLogs by Date
   const groupedByDate = {};
   pageLogs.forEach(item => {
     const dObj = new Date(item.usage_date || item.created_at);
@@ -2146,7 +2076,6 @@ function renderSupplyUsagesPage() {
     const dayItems = groupedByDate[dateStr];
     const dayTotalCost = dayItems.reduce((s, i) => s + (parseFloat(i.total_cost || (i.quantity * i.unit_price)) || 0), 0);
 
-    // Group by Category within the Date
     const groupedByCat = {};
     dayItems.forEach(item => {
       const cat = item.category || 'Vật tư khác';
@@ -2189,7 +2118,6 @@ function renderSupplyUsagesPage() {
           <div style="display:flex; flex-direction:column; gap:8px;">
       `;
 
-      // Aggregate identical supplies (e.g. Tiền nước across multiple trees on the same day)
       const aggregatedSupplies = {};
       catItems.forEach(l => {
         const supplyKey = (l.supply_name || `Supply_${l.supply_id || '0'}`).trim();
@@ -2303,7 +2231,6 @@ function renderSupplyUsagesPage() {
   }
 }
 
-
 export async function loadSupplyUsagesLog() {
   const container = document.getElementById('supplies-usages-grouped-container');
   if (!container) return;
@@ -2327,7 +2254,6 @@ export async function loadSupplyUsagesLog() {
     container.innerHTML = `<div class="empty-state" style="color:red; padding:20px;">Lỗi tải lịch sử: ${err.message}</div>`;
   }
 }
-
 
 export async function deleteSupplyUsage(id) {
   if (!confirm('Bạn có chắc chắn muốn xóa lịch sử tiêu hao này?')) return;
@@ -2370,7 +2296,6 @@ export function parseAgriculturalProductText(rawText) {
   let target_pests = '';
   let phi_days = 0;
 
-  // 1. Detect Category (Robust against instruction texts mentioning "phân bón" on pesticide bottles)
   const hasPesticideKeyword = /thuốc|bvtv|trừ\s*sâu|trừ\s*bệnh|trị\s*nấm|diệt|5sc|250ec|750wg|sl|wp|ec|sc|kháng\s*sinh|bảo vệ thực vật|anvil|score|amistar|ridomil|tilt|antracol|mancozeb|nativo|rầy|sâu|nhện\s*đỏ|bọ\s*trĩ/i.test(lowerText);
   const isDedicatedFertilizer = /phân bón npk|phân hữu cơ|đầu trâu|đạm cà mau|đạm phú mỹ|phân bón lá|npk \d+|dap|hữu cơ vi sinh|trùn quế/i.test(lowerText);
 
@@ -2384,7 +2309,6 @@ export function parseAgriculturalProductText(rawText) {
     package_unit = 'kg';
   }
 
-  // 2. Detect Package Quantity & Unit
   const qtyMatch = lowerText.match(/(\d+(\.\d+)?)\s*(kg|kí|ký|g|gam|lít|lit|l|ml|chai|gói|can|m3)/i);
   if (qtyMatch) {
     package_qty = parseFloat(qtyMatch[1]) || (category === 'Phun thuốc' ? 1 : 50);
@@ -2398,7 +2322,6 @@ export function parseAgriculturalProductText(rawText) {
     else package_unit = rawUnit;
   }
 
-  // 3. Detect Fertilizer Type & Quantitative Composition (Nghị định 84/2019/NĐ-CP)
   if (category === 'Bón phân') {
     if (/npk|\d{1,2}[-:\s]+\d{1,2}[-:\s]+\d{1,2}|ure|dap|kali|lân/i.test(lowerText)) {
       fertilizer_type = 'Phân vô cơ (NPK / Hóa học)';
@@ -2412,7 +2335,6 @@ export function parseAgriculturalProductText(rawText) {
       fertilizer_type = 'Phân chuồng / Hoai mục';
     }
 
-    // Extract NPK Formula or Organic Content
     const npkMatch = text.match(/(?:NPK\s*)?(\d{1,2})[-/:](\d{1,2})[-/:](\d{1,2})(?:\s*\+\s*([a-zA-Z0-9+,\s]+))?/i);
     if (npkMatch) {
       fertilizer_composition = `Đạm (N): ${npkMatch[1]}%, Lân (P2O5): ${npkMatch[2]}%, Kali (K2O): ${npkMatch[3]}%`;
@@ -2428,7 +2350,6 @@ export function parseAgriculturalProductText(rawText) {
   } else {
     fertilizer_type = null;
     fertilizer_composition = null;
-    // Common VietGAP Pesticide Specs
     if (/anvil/i.test(lowerText)) {
       active_ingredient = 'Hexaconazole 50g/l';
       target_pests = 'Nấm rỉ sắt, đốm vằn, thán thư';
@@ -2452,15 +2373,14 @@ export function parseAgriculturalProductText(rawText) {
     }
   }
 
-  // 4. Detect Product Name from text lines
   const noiseKeywords = [
-    'iso 9001', 'iso 14001', 'tel:', 'fax:', 'website:', 'email:', 'đ/c:', 'lô a', 
+    'iso 9001', 'iso 14001', 'tel:', 'fax:', 'website:', 'email:', 'đ/c:', 'lô a',
     'sản xuất:', 'công ty cổ phần', 'bình điền - mekong', 'bạn đồng hành', 'bảo vệ bộ rễ',
     'phát triển mạnh', 'cho canh tác', 'bền vững', 'wena', 'hcmk 7', 'phân bón'
   ];
 
   const brandKeywords = [
-    'đầu trâu', 'bio power', 'trichoderma', 'yaravila', 'yara', 'anvil', 'til super', 'tilt super', 'ridomil', 
+    'đầu trâu', 'bio power', 'trichoderma', 'yaravila', 'yara', 'anvil', 'til super', 'tilt super', 'ridomil',
     'mancozeb', 'antracol', 'score', 'amistar', 'filia', 'bình điền', 'đạm cà mau', 'đạm phú mỹ',
     'humic', 'bimat', 'nativo', 'physan', 'coc 85', 'trùn quế', 'npk', 'super', 'hữu cơ', 'aliette', 'regent', 'confidor',
     'actara', 'kasumin', 'validacin', 'previcur'
@@ -2491,7 +2411,6 @@ export function parseAgriculturalProductText(rawText) {
     }
   }
 
-  // Clean up punctuation and formatting
   name = name.replace(/[^\w\s\u00C0-\u024F\u1E00-\u1EFF+.-]/gi, ' ').replace(/\s+/g, ' ').trim();
   if (name.length > 60) name = name.substring(0, 60);
 
@@ -2567,10 +2486,8 @@ export async function handleAiScanImageUpload(event) {
     let isGeminiUsed = false;
     let isCached = false;
 
-    // Compress image client-side to reduce payload & token consumption by 80%
     const compressedFile = await compressImageForAi(file);
 
-    // 1. Try Backend Cloud Vision API first
     try {
       const formData = new FormData();
       formData.append('file', compressedFile);
@@ -2590,7 +2507,6 @@ export async function handleAiScanImageUpload(event) {
       console.warn('Backend Gemini Vision call failed, switching to client-side OCR fallback:', err);
     }
 
-    // 2. If Backend Gemini is rate-limited or not configured, run Client-Side Tesseract.js OCR
     if (!d && typeof Tesseract !== 'undefined') {
       if (textEl) textEl.innerHTML = '<i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang quét bằng OCR thiết bị...';
       try {
@@ -2602,7 +2518,6 @@ export async function handleAiScanImageUpload(event) {
       }
     }
 
-    // 3. Automatically upload scanned packaging photo to storage & set form image preview
     try {
       const uploadFormData = new FormData();
       uploadFormData.append('file', compressedFile);
@@ -2685,7 +2600,6 @@ export async function handleAiScanImageUpload(event) {
   }
 }
 
-// ─── EXPOSE TO WINDOW FOR HTML ONCLICK ───────────────────────────
 window.autoCalculateSupplyUnits = autoCalculateSupplyUnits;
 window.loadSupplies = loadSupplies;
 window.filterSupplyCategory = filterSupplyCategory;

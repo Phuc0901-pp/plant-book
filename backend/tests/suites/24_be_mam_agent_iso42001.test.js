@@ -201,19 +201,16 @@ describe('Suite 24: Be Mam Hybrid Autonomous Agent v2.0 (ISO/IEC 42001, ISO/IEC 
   });
 
   it('24.13 [ISO-80000 & ISO-26514] Area normalization, crop deduplication, 4-tier KPI headers and supply consolidation', () => {
-    // 1. Kiểm tra formatSmartIsoArea(6717.325471320856) chứa ha và 6.717 m² (không chứa .325471320856)
     const formattedArea = formatSmartIsoArea(6717.325471320856);
     expect(formattedArea).toContain('ha');
     expect(formattedArea).toContain('6.717 m²');
     expect(formattedArea.includes('.325471320856')).toBe(false);
 
-    // 2. Kiểm tra cleanAndDedupeCrops('Sầu riêng(durian) - Dona, Sầu riêng (durian) - Dona, Sầu riêng(durian) - RI6') chỉ còn 1 lần Dona và chứa RI6
     const cleanedCrops = cleanAndDedupeCrops('Sầu riêng(durian) - Dona, Sầu riêng (durian) - Dona, Sầu riêng(durian) - RI6');
     const donaMatches = (cleanedCrops.match(/Dona/g) || []).length;
     expect(donaMatches).toBe(1);
     expect(cleanedCrops).toContain('RI6');
 
-    // 3. Kiểm tra tool_get_farm_portfolio chứa [KPI: và tool_get_supply_and_cost_analytics gộp gọn dòng trùng nhau
     const farmTools = executeAgentTools('Tôi có những trang trại nào?', {
       userFarms: [
         { name: 'Vườn Long Khánh', area: 6717.325471320856, crops: 'Sầu riêng(durian) - Dona, Sầu riêng - Dona', total: 100 }
@@ -244,7 +241,6 @@ describe('Suite 24: Be Mam Hybrid Autonomous Agent v2.0 (ISO/IEC 42001, ISO/IEC 
   });
 
   it('24.14 [FULL-INTENT-COVERAGE] Full intent coverage for self-correction audit, log details, supply inventory, NFC, IoT, sick plants and farm-specific query', () => {
-    // 1. "bạn trả lời sai rồi" -> kích hoạt tool_self_correction_and_full_audit (không rơi vào needsAutoLearning = true!)
     const auditRes = executeAgentTools('bạn trả lời sai rồi', {
       userFarms: [{ name: 'Vườn Bình Phước', area: 3.0, crops: 'Sầu riêng Dona', total: 150 }],
       userPlants: [
@@ -264,7 +260,6 @@ describe('Suite 24: Be Mam Hybrid Autonomous Agent v2.0 (ISO/IEC 42001, ISO/IEC 
     expect(auditSynth.reply).toContain('Bảng Đối Soát Dữ Liệu Thực Tế Toàn Vườn');
     expect(auditSynth.reply).toContain('Vườn Bình Phước');
 
-    // 2. "Nhật ký chăm sóc gần đây của vườn tôi" với details ({ work_content: 'Tỉa hoa/nụ non', cost: 200000 }) -> output phải chứa 'Tỉa hoa/nụ non' và '200.000'
     const testLog = {
       log_date: new Date().toISOString(),
       log_type: 'Cắt tỉa',
@@ -284,7 +279,6 @@ describe('Suite 24: Be Mam Hybrid Autonomous Agent v2.0 (ISO/IEC 42001, ISO/IEC 
     expect(logJoined).toContain('Tỉa hoa/nụ non');
     expect(logJoined).toContain('200.000');
 
-    // 3. "Trong kho tôi đang có những vật tư phân thuốc gì?" -> hiển thị tên vật tư từ userSuppliesInventory
     const supplyExec = executeAgentTools('Trong kho tôi đang có những vật tư phân thuốc gì?', {
       userSuppliesInventory: [
         { name: 'Phân bón NPK 20-20-15', category: 'Phân bón', stock_quantity: 15, unit: 'bao', unit_price: 650000 }
@@ -294,7 +288,6 @@ describe('Suite 24: Be Mam Hybrid Autonomous Agent v2.0 (ISO/IEC 42001, ISO/IEC 
     expect(supplyExec.triggeredTools).toContain('tool_get_supply_and_cost_analytics');
     expect(supplyExec.toolSections.join('\n')).toContain('Phân bón NPK 20-20-15');
 
-    // 4. "Cây nào chưa gắn thẻ NFC?" -> kích hoạt tool_get_nfc_status_report
     const nfcExec = executeAgentTools('Cây nào chưa gắn thẻ NFC?', {
       userPlants: [
         { id: 10, tree_code: 'SR-001', nfc_uid: '04A1B2C3', farm_name: 'Vườn A' },
@@ -304,7 +297,6 @@ describe('Suite 24: Be Mam Hybrid Autonomous Agent v2.0 (ISO/IEC 42001, ISO/IEC 
     expect(nfcExec.triggeredTools).toContain('tool_get_nfc_status_report');
     expect(nfcExec.toolSections.join('\n')).toContain('SR-002');
 
-    // 5. "Kiểm tra trạng thái cảm biến IoT đất và khí tượng" -> kích hoạt tool_get_iot_and_weather_status
     const iotExec = executeAgentTools('Kiểm tra trạng thái cảm biến IoT đất và khí tượng', {
       userIotSensors: [
         { device_name: 'Trạm Cảm Biến Khu A', soil_data: { moisture: 68, ph: 6.5 }, air_data: { temp: '31°C' } }
@@ -313,7 +305,6 @@ describe('Suite 24: Be Mam Hybrid Autonomous Agent v2.0 (ISO/IEC 42001, ISO/IEC 
     expect(iotExec.triggeredTools).toContain('tool_get_iot_and_weather_status');
     expect(iotExec.toolSections.join('\n')).toContain('68%');
 
-    // 6. "Tóm tắt sức khỏe toàn bộ cây trồng hôm nay" -> kích hoạt tool_get_sick_plants_report
     const sickExec = executeAgentTools('Tóm tắt sức khỏe toàn bộ cây trồng hôm nay', {
       userPlants: [
         { id: 1, tree_code: 'SR-01', health_status: 'Khỏe mạnh' },
@@ -323,7 +314,6 @@ describe('Suite 24: Be Mam Hybrid Autonomous Agent v2.0 (ISO/IEC 42001, ISO/IEC 
     expect(sickExec.triggeredTools).toContain('tool_get_sick_plants_report');
     expect(sickExec.toolSections.join('\n')).toContain('SR-02');
 
-    // 7. "Vườn Nông trại Demo có mấy cây?" -> lọc đúng số cây của Nông trại Demo
     const farmDemoExec = executeAgentTools('Vườn Nông trại Demo có mấy cây?', {
       userFarms: [
         { name: 'Nông trại Demo', area: 1.8, crops: 'Sầu riêng Musang King', total: 2 },

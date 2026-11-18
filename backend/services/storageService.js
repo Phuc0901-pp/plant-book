@@ -1,9 +1,3 @@
-/* ═══════════════════════════════════════════════════════════════
-   Plant Book – Backend
-   services/storageService.js — Universal Cloud Storage Adapter
-   Supports: Cloudflare R2, AWS S3, Supabase Storage, and Local Disk Fallback
-   ═══════════════════════════════════════════════════════════════ */
-
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
@@ -21,7 +15,6 @@ class StorageService {
       } catch (_) {}
     }
 
-    // Initialize driver
     if (this.driver === 'supabase') {
       try {
         const { supabase, ensureBucket, uploadFile, deleteFile } = require('../config/supabase');
@@ -36,19 +29,11 @@ class StorageService {
     }
   }
 
-  /**
-   * Upload file buffer to cloud or local storage
-   * @param {string} objectName - Relative object path / file name
-   * @param {Buffer} buffer - File binary buffer
-   * @param {string} mimeType - MIME type (e.g. image/jpeg, video/mp4)
-   * @returns {Promise<string>} Public URL of uploaded file
-   */
   async uploadFile(objectName, buffer, mimeType) {
     if (!objectName) {
       objectName = `upload_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     }
 
-    // 1. Cloudflare R2 / AWS S3 via standard endpoint if configured
     if (this.driver === 'r2' || this.driver === 's3') {
       const endpoint = process.env.STORAGE_ENDPOINT;
       const accessKey = process.env.STORAGE_ACCESS_KEY_ID;
@@ -78,7 +63,6 @@ class StorageService {
       }
     }
 
-    // 2. Supabase Storage Driver
     if (this.driver === 'supabase' && typeof this._supabaseUpload === 'function') {
       try {
         return await this._supabaseUpload(objectName, buffer, mimeType);
@@ -87,7 +71,6 @@ class StorageService {
       }
     }
 
-    // 3. Local Disk Driver (Guaranteed fallback)
     try {
       const sanitizedName = objectName.replace(/[^a-zA-Z0-9._-]/g, '_');
       const targetPath = path.join(this.localUploadDir, sanitizedName);
@@ -103,10 +86,6 @@ class StorageService {
     }
   }
 
-  /**
-   * Delete file from cloud or local storage
-   * @param {string} objectName
-   */
   async deleteFile(objectName) {
     if (!objectName) return;
 

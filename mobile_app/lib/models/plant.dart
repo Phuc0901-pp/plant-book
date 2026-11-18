@@ -1,11 +1,5 @@
 import 'dart:math';
 
-/// Mô hình Thực thể Cây trồng / Lô Canh tác Chuẩn Quốc tế `v1.3.5`
-/// Đồng bộ 100% với Web App (`user_dashboard.js` / `admin.js`) & PostgreSQL Schema:
-/// - GS1 / W3C DID (`global_did`, `entity_class`, `plot_name`, `row_number`)
-/// - Gallagher 8.30 & FIPS 201 PIV CHUID (`issue_level`, `card_type`, `chuid_hash`, `nfc_uid`)
-/// - IPCC Tier-2 & Chave et al. (2014) Carbon MRV (`biomass_dbh_cm`, `canopy_height_m`, `estimatedAgbKg`, `estimatedCo2eKg`)
-/// - VietGAP / GlobalG.A.P. PHI Lock (`phi_status`, `phi_until_date`, `phi_remaining_days`)
 class Plant {
   final int id;
   final String? treeCode;
@@ -24,7 +18,6 @@ class Plant {
   final String? lastFertilized;
   final int? phiRemainingDays;
 
-  // Các trường chuẩn hóa Enterprise v1.3.5
   final String? globalDid;
   final String entityClass;
   final String? plotName;
@@ -175,20 +168,12 @@ class Plant {
 
   String get displayName => treeCode ?? id.toString();
 
-  /// Trạng thái đang trong thời gian cách ly thuốc BVTV (Pre-Harvest Interval Lock).
   bool get isUnderPhiQuarantine {
     if ((phiRemainingDays ?? 0) > 0) return true;
     final String status = (phiStatus ?? '').toUpperCase();
     return status == 'LOCKED' || status == 'QUARANTINE' || status == 'WARNING';
   }
 
-  /// Phương trình Sinh khối Quốc tế Chave et al. (2014) Pan-Tropical Allometric Equation
-  /// & IPCC Tier-2:
-  /// `AGB (kg) = 0.0673 * (rho * D^2 * H)^0.976`
-  /// Trong đó:
-  /// - `rho`: Mật độ gỗ đặc trưng cây ăn quả nhiệt đới (`0.58 g/cm3`)
-  /// - `D`: Đường kính ngang ngực `biomassDbhCm` (mặc định ước tính theo tuổi cây nếu chưa đo trực tiếp)
-  /// - `H`: Chiều cao vòm tán `canopyHeightM`
   double get estimatedAgbKg {
     const double woodDensityRho = 0.58;
     final double parsedAge =
@@ -205,11 +190,6 @@ class Plant {
     return double.parse((0.0673 * pow(compound, 0.976)).toStringAsFixed(2));
   }
 
-  /// Tổng Sinh khối quy đổi sang Tín chỉ Carbon hấp thụ (`kg CO2e`)
-  /// Theo chuẩn IPCC 2006 / 2019 Refinement:
-  /// - Below-Ground Biomass (BGB) = `0.24 * AGB`
-  /// - Carbon Fraction (CF) = `0.47`
-  /// - Hệ số chuyển đổi phân tử `CO2 / C` = `44 / 12 = 3.6667`
   double get estimatedCo2eKg {
     final double totalBiomassKg = estimatedAgbKg * 1.24;
     final double carbonStockKg = totalBiomassKg * 0.47;

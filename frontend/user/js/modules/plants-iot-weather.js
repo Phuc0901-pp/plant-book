@@ -1,4 +1,3 @@
-/* Modular Farmer Portal IoT Soil Depth & Open-Meteo 24h Weather Module */
 import { esc, toast } from '../core/utils.js';
 import { api } from '../core/api.js';
 import { getFarmsCache, getActiveFarmId } from './plants.js';
@@ -66,7 +65,6 @@ export async function refreshIoTDemoData() {
 }
 window.refreshIoTDemoData = refreshIoTDemoData;
 
-// ── Real Open-Meteo 6-Day Agricultural Weather Forecast ─────────────
 const WMO_FORECAST_CONFIG = {
   0: { icon: 'sun', color: '#f59e0b', bg: '#fffbeb', border: '#fde68a', label: 'Trời nắng trong xanh', advice: 'Nắng ấm: Rất thích hợp bón phân rễ & tưới nước buổi sáng sớm.' },
   1: { icon: 'sun-medium', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0', label: 'Quang mây, ít mây', advice: 'Mát mẻ: Thời điểm lý tưởng để tỉa cành, tạo tán và làm cỏ vườn.' },
@@ -153,7 +151,6 @@ export async function fetchLiveOpenMeteoForecast(lat, lng) {
       });
     }
 
-    // Render 24-Hour Continuous Timeline for User Portal
     renderUser24HourHourlySection(data.hourly, data.daily, _userSelectedHourlyDayMode);
 
     return forecastList;
@@ -170,7 +167,6 @@ export function renderUser24HourHourlySection(hourlyData, dailyData, selectedMod
   _userSelectedHourlyDayMode = selectedMode;
   const daysOfWeek = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
 
-  // 1. Render Day Selector Pills
   const pillsContainer = document.getElementById('user-iot-hourly-day-pills');
   if (pillsContainer && dailyData && dailyData.time) {
     let pillsHtml = `
@@ -193,7 +189,6 @@ export function renderUser24HourHourlySection(hourlyData, dailyData, selectedMod
     pillsContainer.innerHTML = pillsHtml;
   }
 
-  // 2. Determine 24-hour Slice Range
   let startIdx = 0;
   let viewTitleStr = '';
 
@@ -201,7 +196,6 @@ export function renderUser24HourHourlySection(hourlyData, dailyData, selectedMod
     const nowIso = new Date().toISOString().slice(0, 13);
     let curIdx = hourlyData.time.findIndex(t => t.startsWith(nowIso));
     if (curIdx === -1) curIdx = 0;
-    // Start from next hour forward (e.g. 4 PM -> 5 PM)
     startIdx = curIdx + 1;
     if (startIdx >= hourlyData.time.length) startIdx = curIdx;
 
@@ -230,7 +224,6 @@ export function renderUser24HourHourlySection(hourlyData, dailyData, selectedMod
   const sliceWindGusts = hourlyData.wind_gusts_10m ? hourlyData.wind_gusts_10m.slice(startIdx, endIdx) : [];
   const sliceEt0s = hourlyData.et0_fao_evapotranspiration ? hourlyData.et0_fao_evapotranspiration.slice(startIdx, endIdx) : [];
 
-  // 3. Render Scrollable 24-Hour Hourly Cards Track
   const track = document.getElementById('user-iot-24h-hourly-track');
   if (track) {
     let cardsHtml = '';
@@ -251,7 +244,6 @@ export function renderUser24HourHourlySection(hourlyData, dailyData, selectedMod
       const gusts = sliceWindGusts[i] !== undefined ? Math.round(sliceWindGusts[i]) : null;
       const et0 = sliceEt0s[i] !== undefined ? (Math.round(sliceEt0s[i] * 10) / 10) : null;
 
-      // Spray Safety Assessment (Clean Lucide Icons)
       let sprayBadge = '<span style="font-size:9.5px; font-weight:800; background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:2px 6px; border-radius:6px; display:inline-flex; align-items:center; gap:3px;"><i data-lucide="check-circle-2" class="lucide-xs"></i> Phun tốt</span>';
       if (rainP >= 50 || wind >= 25 || (gusts && gusts >= 35)) {
         sprayBadge = '<span style="font-size:9.5px; font-weight:800; background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; padding:2px 6px; border-radius:6px; display:inline-flex; align-items:center; gap:3px;"><i data-lucide="x-circle" class="lucide-xs"></i> Không phun</span>';
@@ -322,7 +314,6 @@ export async function renderIoTDemoData(farmId, forceRefresh = false) {
       _currentFarmIoTData = res;
       _applyIoTDemoDataToUI(res);
 
-      // Asynchronously fetch 100% real-time Open-Meteo 7-day & 24h weather forecast based on farm GPS coordinates
       const farmObj = (getFarmsCache() && getFarmsCache().length) ? getFarmsCache().find(f => String(f.id) === String(farmId)) : null;
       let lat = null;
       let lng = null;
@@ -374,11 +365,8 @@ window.renderIoTDemoData = renderIoTDemoData;
 function _cleanUtf8Mojibake(str) {
   if (!str || typeof str !== 'string') return str || '';
   return str
-    // Strip broken emoji mojibake artifacts
     .replace(/ã˜Ë¡|ðŸŒ¦ï¸|ã€\.\.\.|ðŸŒ¤ï¸|ðŸ[^\s]*|ã[^\s]*/gu, '')
-    // Fix degrees
     .replace(/Â°/g, '°')
-    // Fix days
     .replace(/Thá»©\s*Hai/g, 'Thứ Hai')
     .replace(/Thá»©\s*Ba/g, 'Thứ Ba')
     .replace(/Thá»©\s*TÆ°/g, 'Thứ Tư')
@@ -387,7 +375,6 @@ function _cleanUtf8Mojibake(str) {
     .replace(/Thá»©\s*Bảy|Thá»©\s*By/g, 'Thứ Bảy')
     .replace(/Chá»§\s*Nháº­t|Chá»§\s*Nháºt/g, 'Chủ Nhật')
     .replace(/HÃ´m\s*nay|Hm\s*nay/g, 'Hôm nay')
-    // Fix common words in advisory
     .replace(/Náº¯ng/g, 'Nắng')
     .replace(/áº¥m/g, 'ấm')
     .replace(/Thích\s*há»£p/g, 'Thích hợp')
@@ -416,7 +403,6 @@ function _cleanUtf8Mojibake(str) {
     .replace(/rá»¡/g, 'rỡ')
     .replace(/há»‡\s*thá»‘ng/g, 'hệ thống')
     .replace(/tá»±\s*Ä'á»™ng/g, 'tự động')
-    // General vowels
     .replace(/Thá»©/g, 'Thứ')
     .replace(/TÆ°/g, 'Tư')
     .replace(/NÄƒm/g, 'Năm')
@@ -552,7 +538,6 @@ function _applyIoTDemoDataToUI(res) {
 
   const windDirClean = _cleanUtf8Mojibake(air.wind_direction || 'Đông Nam');
 
-  // Update Air Environment
   if (document.getElementById('iot-air-temp')) document.getElementById('iot-air-temp').textContent = `${air.temperature || 28.5} °C`;
   if (document.getElementById('iot-air-humidity')) document.getElementById('iot-air-humidity').textContent = `${air.humidity || 74} %`;
   if (document.getElementById('iot-air-pressure')) document.getElementById('iot-air-pressure').textContent = `${air.pressure || 1012} hPa`;
@@ -561,21 +546,16 @@ function _applyIoTDemoDataToUI(res) {
   if (document.getElementById('iot-air-uv')) document.getElementById('iot-air-uv').innerHTML = `${air.uv_index || 4.2} <span style="font-size:11px; color:#64748b;">(Vừa)</span>`;
   if (document.getElementById('iot-air-solar')) document.getElementById('iot-air-solar').textContent = `${air.solar_radiation || 650} W/m²`;
 
-  // Update Soil Multi-Depth
   selectSoilDepth(_selectedSoilDepth || '20cm');
 
-  // Update Water Environment
   if (document.getElementById('iot-water-ph')) document.getElementById('iot-water-ph').textContent = water.ph || 6.8;
   if (document.getElementById('iot-water-do')) document.getElementById('iot-water-do').innerHTML = `${water.do || 6.5} <span style="font-size:11px;">mg/L</span>`;
   if (document.getElementById('iot-water-turbidity')) document.getElementById('iot-water-turbidity').innerHTML = `${water.turbidity || 12} <span style="font-size:11px;">NTU</span>`;
   if (document.getElementById('iot-water-level')) document.getElementById('iot-water-level').textContent = `${water.level || 85} %`;
 
-  // Initial render of 6-Day Weather Forecast from DB cache
   _renderForecastGrid(forecast);
 
   if (window.lucide) {
     try { lucide.createIcons(); } catch (_) {}
   }
 }
-
-// ── Web Audio Feedback API for NFC Scan (Ding & Beep-beep) ─────────

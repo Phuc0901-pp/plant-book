@@ -1,14 +1,3 @@
-/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/* ═══════════════════════════════════════════════════════════════
-   Plant Book – User Portal
-   core/utils.js — Shared UI utilities
-   ═══════════════════════════════════════════════════════════════ */
-
-/**
- * Hiển thị thông báo toast tạm thời chuẩn Apple/ERP với Lucide icon.
- * @param {string} msg   — nội dung thông báo
- * @param {'success'|'error'|'info'|'warning'} type
- */
 export function toast(msg, type = 'success') {
   let container = document.getElementById('toast-container');
   if (!container) {
@@ -35,11 +24,10 @@ export function toast(msg, type = 'success') {
   const el = document.createElement('div');
   el.className = `toast ${type}`;
   el.style.cssText = `display:inline-flex; align-items:center; gap:8px; padding:10px 18px; border-radius:30px; font-size:13px; font-weight:700; box-shadow:0 8px 24px rgba(0,0,0,0.22); transition:all 0.3s cubic-bezier(0.16, 1, 0.3, 1); opacity:0; transform:translateY(10px); pointer-events:auto; ${bgStyles[type] || bgStyles.info}`;
-  
+
   el.innerHTML = `${iconMap[type] || iconMap.info} <span>${msg}</span>`;
   container.appendChild(el);
 
-  // Trigger smooth entrance
   requestAnimationFrame(() => {
     el.style.opacity = '1';
     el.style.transform = 'translateY(0)';
@@ -58,11 +46,6 @@ if (typeof window !== 'undefined') {
   window.showToast = toast;
 }
 
-/**
- * Escape ký tự HTML đặc biệt để tránh XSS.
- * @param {*} str
- * @returns {string}
- */
 export function esc(str) {
   if (!str) return '';
   return str.toString()
@@ -73,11 +56,6 @@ export function esc(str) {
     .replace(/'/g, '&#039;');
 }
 
-/**
- * Trả về HTML badge màu theo trạng thái sức khoẻ cây.
- * @param {string} status
- * @returns {string} HTML string
- */
 export function healthBadge(status) {
   if (status === 'Tốt') {
     return '<span class="badge badge-green" style="display:inline-flex;align-items:center;gap:4px;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg> Tốt</span>';
@@ -94,11 +72,6 @@ export function healthBadge(status) {
   return `<span class="badge badge-gray">${esc(status)}</span>`;
 }
 
-/**
- * Format ngày theo định dạng Việt Nam (DD/MM/YYYY).
- * @param {string} dateStr — ISO date string
- * @returns {string}
- */
 export function formatDate(dateStr) {
   if (!dateStr) return '—';
   return new Date(dateStr).toLocaleDateString('vi-VN', {
@@ -106,20 +79,11 @@ export function formatDate(dateStr) {
   });
 }
 
-/**
- * Lấy chuỗi ngày hôm nay dạng YYYY-MM-DD (local time).
- * @returns {string}
- */
 export function todayString() {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
 
-/**
- * Format diện tích thông minh (ha nếu >= 10.000 m2, m2 nếu < 10.000 m2)
- * @param {number|string} areaVal
- * @returns {string}
- */
 export function formatSmartArea(areaVal) {
   if (!areaVal && areaVal !== 0) return '0 m²';
   const num = parseFloat(areaVal);
@@ -131,11 +95,6 @@ export function formatSmartArea(areaVal) {
   return `${Math.round(num).toLocaleString('vi-VN')} m²`;
 }
 
-/**
- * Robust Multi-dimensional GeoJSON Polygon coordinates parser and sanitizer
- * @param {*} rawCoords
- * @returns {Array<[number, number]>} Array of [lng, lat]
- */
 export function sanitizeCoordinates(rawCoords) {
   let coords = [];
   try {
@@ -165,7 +124,6 @@ export function sanitizeCoordinates(rawCoords) {
   return validPts;
 }
 
-// ── Crop Asset Mappings ─────────────────────────────────────
 export const CROP_NAME_TO_ENGLISH = {
   'sau_rieng': 'durian', 'sau rieng': 'durian', 'saurieng': 'durian', 'durian': 'durian',
   'ri6': 'durian', 'ri 6': 'durian', 'dona': 'durian', 'musang_king': 'durian', 'musang king': 'durian', 'chuong_bo': 'durian', 'black_thorn': 'durian', 'sau': 'durian',
@@ -231,7 +189,7 @@ export function resolveCropEnglishName(term, variety = '') {
   const combined = `${term || ''} ${variety || ''}`.trim();
   if (!combined) return 'durian';
   const raw = combined.toLowerCase();
-  
+
   const clean = raw
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
@@ -240,12 +198,10 @@ export function resolveCropEnglishName(term, variety = '') {
     .replace(/\s+/g, " ")
     .trim();
 
-  // 1. Direct match
   if (CROP_NAME_TO_ENGLISH[clean]) return CROP_NAME_TO_ENGLISH[clean];
   const under = clean.replace(/\s+/g, '_');
   if (CROP_NAME_TO_ENGLISH[under]) return CROP_NAME_TO_ENGLISH[under];
 
-  // 2. Substring search
   for (const [k, v] of Object.entries(CROP_NAME_TO_ENGLISH)) {
     if (clean.includes(k) || under.includes(k)) return v;
   }
@@ -290,7 +246,7 @@ export function getCropImageSrc(plantOrType, plantVariety = '') {
     }
     return `/assets/crop/${eng}.png`;
   }
-  
+
   const eng = resolveCropEnglishName(plantOrType, plantVariety);
   if (LOCAL_CROP_ICONS.has(eng)) {
     return `/assets/crop/${eng}.png`;

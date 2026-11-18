@@ -14,12 +14,6 @@ import '../components/log_edit_dialog.dart';
 import '../components/audit_history_view.dart';
 import '../components/video_player_view.dart';
 
-/// Hồ sơ Cây trồng 4 Phân lớp Chuẩn Quốc tế `v1.3.5` (4-Tab Enterprise Tree Profile)
-/// Đồng bộ 100% với giao diện Web App (`user_dashboard.js` / `admin.js`):
-/// - Tab 1: Hồ sơ Sinh học & Định danh GS1/W3C DID (`globalDid`, `plotName`, `rowNumber`, `PHI Quarantine`)
-/// - Tab 2: Nhật ký VietGAP & Sổ cái Chuỗi Băm SHA-256 Bất biến (`prevLogHash`, `recordHash`, `ISO/IEC 27001`)
-/// - Tab 3: Bảo mật Thẻ NFC NTAG213, Gallagher `IssueLevel`, `HMAC-SHA256`, `PIV CHUID` & Geofence `<= 8.0m`
-/// - Tab 4: Đo đếm Tín chỉ Carbon MRV (`IPCC Tier-2 / Chave et al. 2014`) & Kinh tế Mùa vụ (Bảo mật RBAC `isFinanceRedacted`)
 class PlantDetailPage extends StatefulWidget {
   final Plant plant;
 
@@ -280,7 +274,6 @@ class _PlantDetailPageState extends State<PlantDetailPage>
     );
   }
 
-  // ── TAB 1: HỒ SƠ SINH HỌC & ĐỊNH DANH GS1/W3C DID ─────────────────────────
   Widget _buildTab1BioAndGs1(Color healthColor) {
     final Plant p = widget.plant;
     return RefreshIndicator(
@@ -445,7 +438,6 @@ class _PlantDetailPageState extends State<PlantDetailPage>
     );
   }
 
-  // ── TAB 2: NHẬT KÝ VIETGAP & SỔ CÁI CHUỖI BĂM SHA-256 (ISO/IEC 27001) ────
   Widget _buildTab2VietGapAndHashChain() {
     final List<Map<String, dynamic>> rawMaps =
         _logs.map((PlantLog l) => l.toJson()).toList();
@@ -461,7 +453,6 @@ class _PlantDetailPageState extends State<PlantDetailPage>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            // Banner Sổ cái Bất biến ISO/IEC 27001 SHA-256
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
@@ -635,7 +626,6 @@ class _PlantDetailPageState extends State<PlantDetailPage>
                           ),
                           const SizedBox(height: 8),
 
-                          // Huy hiệu Niêm phong Chuỗi Băm SHA-256 (ISO 27001 Badge)
                           Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 4),
@@ -805,7 +795,6 @@ class _PlantDetailPageState extends State<PlantDetailPage>
     );
   }
 
-  // ── TAB 3: BẢO MẬT VẬT LÝ - SỐ NTAG213, GALLAGHER 8.30 & GEOFENCE 8M ──────
   Widget _buildTab3Ntag213Security() {
     final Plant p = widget.plant;
     final String cleanUid =
@@ -954,7 +943,6 @@ class _PlantDetailPageState extends State<PlantDetailPage>
     );
   }
 
-  // ── TAB 4: TÍN CHỈ CARBON MRV (IPCC TIER-2 / CHAVE 2014) & KINH TẾ MÙA VỤ ──
   Widget _buildTab4CarbonMrvAndEconomics() {
     final Plant p = widget.plant;
     final bool financeRedacted = RbacPolicy.isFinanceRedacted(_currentUser);
@@ -971,7 +959,6 @@ class _PlantDetailPageState extends State<PlantDetailPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          // Card 1: Carbon MRV (IPCC Tier-2 / Chave et al. 2014)
           Card(
             elevation: 0,
             color: Colors.white,
@@ -1041,7 +1028,6 @@ class _PlantDetailPageState extends State<PlantDetailPage>
           ),
           const SizedBox(height: 16),
 
-          // Card 2: Kinh tế Mùa vụ & Phân quyền RBAC (isFinanceRedacted)
           Card(
             elevation: 0,
             color: Colors.white,

@@ -46,8 +46,6 @@ class ApiService {
     };
   }
 
-  // ── Authentication ───────────────────────────────────────────
-  
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       final response = await http.post(
@@ -65,11 +63,10 @@ class ApiService {
       final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
         _token = data['token'] as String;
-        
+
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('pb_token', _token!);
 
-        // Lưu tức thì hồ sơ người dùng vào bộ nhớ đệm an toàn AES-256 ngay khi nhận phản hồi đăng nhập
         if (data['user'] != null && data['user'] is Map) {
           await CacheService().cacheUserProfile(Map<String, dynamic>.from(data['user'] as Map));
         }
@@ -78,8 +75,6 @@ class ApiService {
       return {'success': false, 'message': data['error'] ?? 'Đăng nhập thất bại.'};
     } catch (e) {
       print('Login error: $e');
-      // KIỂM TRA ĐĂNG NHẬP NGOẠI TUYẾN (Offline Authentication Fallback):
-      // Nếu thiết bị mất mạng nhưng trước đó tài khoản này đã đăng nhập và được mã hóa trong máy:
       try {
         final cachedProfile = CacheService().getCachedUserProfile();
         final savedToken = await token;
@@ -135,16 +130,14 @@ class ApiService {
     }
   }
 
-
   Future<void> logout() async {
     try {
-      // Call backend logout endpoint to switch online flag offline
       final headers = await _getHeaders();
       await http.post(Uri.parse('$baseUrl/auth/logout'), headers: headers);
     } catch (e) {
       print('API logout error: $e');
     }
-    
+
     _token = null;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('pb_token');
@@ -155,7 +148,6 @@ class ApiService {
     final pendingMutations = CacheService().getPendingFieldMutations();
     if (pendingLogs.isEmpty && pendingMutations.isEmpty) return;
 
-    // Pha 1: Ưu tiên đồng bộ lô nguyên tử qua /plants/offline-batch-sync
     try {
       final batchCareLogs = pendingLogs.map((item) {
         final details = item['details'] is Map
@@ -195,7 +187,6 @@ class ApiService {
       print('Batch sync phase 1 failed, trying fallback: $e');
     }
 
-    // Pha 2: Đồng bộ từng bản ghi và bảo toàn các bản ghi thất bại (Zero Data Loss)
     final List<Map<String, dynamic>> remaining = [];
     for (final log in pendingLogs) {
       try {
@@ -221,7 +212,6 @@ class ApiService {
     await CacheService().replacePendingLogs(remaining);
   }
 
-  /// Tự động kiểm tra và đồng bộ các tác vụ ngoại tuyến ngay khi máy có kết nối mạng
   void _triggerAutoSyncIfPending() {
     try {
       final pendingCount = CacheService().getPendingLogs().length + CacheService().getPendingFieldMutations().length;
@@ -234,33 +224,26 @@ class ApiService {
   Future<bool> isLoggedIn() async {
     final t = await token;
     if (t == null) return false;
-    
-    // Nếu thiết bị đã có token và đã có hồ sơ người dùng trong bộ nhớ đệm an toàn (Hive AES-256),
-    // cho phép truy cập tức thì (Instant Launch < 50ms) không để nông dân chờ 4-10 giây rớt mạng!
+
     final cachedProfile = CacheService().getCachedUserProfile();
     if (cachedProfile != null) {
-      // Xác thực ngầm với server (asynchronous background check), không block UI
       _verifyTokenInBackground();
       return true;
     }
 
-    // Verify token validity by calling /auth/me
     try {
       final headers = await _getHeaders();
       final response = await http.get(Uri.parse('$baseUrl/auth/me'), headers: headers).timeout(const Duration(milliseconds: 2500));
       if (response.statusCode == 200) {
         final userMap = jsonDecode(response.body) as Map<String, dynamic>;
         await CacheService().cacheUserProfile(userMap);
-        // Trigger offline queue sync in the background since we are online!
         syncOfflineLogs();
         return true;
       }
-      // If server returns invalid token error, wipe it
       await logout();
       return false;
     } catch (e) {
-      // Network timeout/error, return true if we have local token to let user see dashboard
-      return true; 
+      return true;
     }
   }
 
@@ -280,8 +263,6 @@ class ApiService {
     });
   }
 
-  /// Nạp trước toàn bộ dữ liệu nông trại, lô cây, vật tư, nhật ký vào bộ nhớ đệm ngoại tuyến (Offline Warm-up)
-  /// Được gọi tự động ngay sau khi đăng nhập thành công lần đầu hoặc khi người dùng bấm "Đồng bộ ngoại tuyến"
   Future<void> warmUpOfflineCache({Function(String status, double progress)? onProgress}) async {
     try {
       onProgress?.call('Đang lưu thông tin tài khoản người dùng...', 0.15);
@@ -302,7 +283,6 @@ class ApiService {
       onProgress?.call('Đang lưu lịch sử nhật ký 90 ngày gần nhất...', 0.90);
       await fetchRecentLogs(days: 90);
 
-      // Caching logs for each plant if count is reasonable
       if (plants.isNotEmpty && plants.length <= 50) {
         for (final plant in plants.take(20)) {
           try {
@@ -319,8 +299,6 @@ class ApiService {
     }
   }
 
-  // ── Data Fetching ─────────────────────────────────────────────
-  
   Future<List<Farm>> fetchFarms() async {
     try {
       final headers = await _getHeaders();
@@ -335,7 +313,6 @@ class ApiService {
         throw Exception('Failed to load farms');
       }
     } catch (e) {
-      // Fallback to offline Hive cache
       final cached = CacheService().getCachedFarms();
       if (cached.isNotEmpty) {
         return cached.map((item) => Farm.fromJson(item)).toList();
@@ -358,7 +335,6 @@ class ApiService {
         throw Exception('Failed to load plants');
       }
     } catch (e) {
-      // Fallback to offline Hive cache
       final cached = CacheService().getCachedPlants();
       if (cached.isNotEmpty) {
         return cached.map((item) => Plant.fromJson(item)).toList();
@@ -382,8 +358,6 @@ class ApiService {
     }
   }
 
-  // ── Log Fetching & Modifying ──────────────────────────────────
-
   Future<List<PlantLog>> fetchPlantLogs(int plantId) async {
     try {
       final headers = await _getHeaders();
@@ -398,7 +372,6 @@ class ApiService {
         throw Exception('Failed to load logs');
       }
     } catch (e) {
-      // Fallback to offline Hive cache
       final cached = CacheService().getCachedPlantLogs(plantId);
       if (cached.isNotEmpty) {
         return cached.map((item) => PlantLog.fromJson(item)).toList();
@@ -442,18 +415,17 @@ class ApiService {
 
       if (response.statusCode == 201) {
         if (!isSyncing) {
-          syncOfflineLogs(); // Sync any other pending logs
+          syncOfflineLogs();
         }
         return true;
       }
       return false;
     } catch (e) {
       if (!isSyncing) {
-        // Cache the log locally for offline queue sync
         await CacheService().addPendingLog(plantId, logType, note, details);
-        return true; // Return true to indicate it was successfully cached offline
+        return true;
       }
-      rethrow; // Rethrow to let the sync loop know we are still offline
+      rethrow;
     }
   }
 
@@ -476,8 +448,6 @@ class ApiService {
       return false;
     }
   }
-
-  // ── User Management ─────────────────────────────────────────────
 
   Future<Map<String, dynamic>?> fetchUserInfo() async {
     try {
@@ -515,8 +485,6 @@ class ApiService {
       return {'success': false, 'message': 'Không thể kết nối đến máy chủ.'};
     }
   }
-
-  // ── Public Plant (No Auth required) ───────────────────────────
 
   Future<Map<String, dynamic>?> fetchPublicPlant(String slug) async {
     try {
@@ -593,8 +561,6 @@ class ApiService {
       return false;
     }
   }
-
-  // ── Admin-Only Services ─────────────────────────────────────────
 
   Future<List<Map<String, dynamic>>> fetchUsers() async {
     try {
@@ -692,8 +658,6 @@ class ApiService {
       print('Error fetching mapbox token: $e');
     }
 
-    // OWASP MASVS-STORAGE-2: Không lưu khóa bí mật / token cứng trong mã nguồn client.
-    // Khi ngoại tuyến hoặc chưa cấu hình Mapbox, trả về chuỗi rỗng để bản đồ tự chuyển sang Esri Satellite / OpenStreetMap.
     return '';
   }
 
@@ -714,8 +678,6 @@ class ApiService {
       return [];
     }
   }
-
-  // ─── Supplies API Services ───────────────────────────────────────────
 
   Future<List<Supply>> fetchSupplies({String? category, String? search}) async {
     try {
@@ -914,8 +876,6 @@ class ApiService {
     }
   }
 
-  // ── Cost Management API Endpoints ────────────────────────────
-
   Future<List<Map<String, dynamic>>> fetchCostConsumables({int? farmId, int? userId}) async {
     try {
       final headers = await _getHeaders();
@@ -960,8 +920,6 @@ class ApiService {
     }
   }
 
-  // ── AI Bé Mầm Services ───────────────────────────────────────────
-
   Future<String?> sendAiChatMessage(String message, {List<Map<String, String>>? history}) async {
     try {
       final headers = await _getHeaders();
@@ -988,7 +946,6 @@ class ApiService {
     }
   }
 
-  // ── NFC & Geofence 5-Layer Security Verification (Gallagher 8.30 / NTAG213 HMAC-SHA256) ──
   Future<Map<String, dynamic>?> verifyNfcScan({
     required String nfcUid,
     int? plantId,
@@ -1050,7 +1007,6 @@ class ApiService {
     }
   }
 
-  // ── Atomic 2-Phase Offline Batch Sync (`POST /api/plants/offline-batch-sync`) ──
   Future<Map<String, dynamic>?> syncOfflineBatch({
     required List<Map<String, dynamic>> careLogs,
     required List<Map<String, dynamic>> fieldMutations,
@@ -1088,7 +1044,6 @@ class ApiService {
     }
   }
 
-  // ── ISO/IEC 27001 Immutable SHA-256 Hash-Chain Audit Ledger (`GET /api/plants/audit-ledger/:farmId`) ──
   Future<Map<String, dynamic>?> fetchFarmAuditLedger(int farmId) async {
     try {
       final headers = await _getHeaders(
@@ -1111,7 +1066,6 @@ class ApiService {
     }
   }
 
-  // ── Nearby GPS Plant Discovery (`GET /api/plants/nearby/gps`) ──
   Future<List<Plant>> fetchNearbyPlantsByGps(
     double latitude,
     double longitude, {
@@ -1150,7 +1104,6 @@ class ApiService {
     }
   }
 
-  // ── Batch Soft-Delete Plant Logs (`POST /api/plants/logs/batch-soft-delete`) ──
   Future<bool> batchSoftDeleteLogs(List<int> logIds, {String? reason}) async {
     if (logIds.isEmpty) return false;
     final String bodyJson = jsonEncode({
@@ -1177,7 +1130,6 @@ class ApiService {
     }
   }
 
-  // ── Open-Meteo High-Resolution Real GPS Weather Forecast & Agronomy Engine ──
   Future<List<Map<String, dynamic>>> fetchRealWeatherForecast(double lat, double lng) async {
     try {
       final url = Uri.parse(
@@ -1211,7 +1163,6 @@ class ApiService {
             final hum = (humidities.length > i ? humidities[i] : 75).round();
             final code = (codes.length > i ? codes[i] : 0).toInt();
 
-            // Interpret weather condition, icon, agronomy advice
             String condition = 'Nắng ráo';
             String iconEmoji = '☀️';
             String advice = 'Nắng ấm: Thích hợp bón phân rễ & tưới nước buổi sáng.';
@@ -1266,14 +1217,13 @@ class ApiService {
       print('Open-Meteo live API fallback: $e');
     }
 
-    // High quality agricultural fallback if offline
     final now = DateTime.now();
     final weekdays = ['Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ Nhật'];
     return List.generate(6, (i) {
       final dt = now.add(Duration(days: i));
       final dayName = i == 0 ? 'Hôm nay' : weekdays[dt.weekday - 1];
       final dateFormatted = '${dt.day}/${dt.month}';
-      
+
       final defaultList = [
         {'day_name': dayName, 'date_formatted': dateFormatted, 'temp_range': '25°C - 33°C', 'rain_prob': 10, 'humidity': 73, 'wind_speed': 16, 'condition': 'Nắng ấm', 'icon': '☀️', 'advice': 'Nắng ấm: Thích hợp bón phân rễ & tưới nước buổi sáng.', 'color_val': 0xFF10B981},
         {'day_name': dayName, 'date_formatted': dateFormatted, 'temp_range': '24°C - 31°C', 'rain_prob': 65, 'humidity': 82, 'wind_speed': 15, 'condition': 'Mưa rào', 'icon': '🌦️', 'advice': 'Mưa rào rải rác: Hạn chế phun thuốc sâu vì dễ bị rửa trôi.', 'color_val': 0xFF3B82F6},
@@ -1286,6 +1236,3 @@ class ApiService {
     });
   }
 }
-
-
-

@@ -1,9 +1,3 @@
-/**
- * ═══════════════════════════════════════════════════════════════
- * Test Framework (Zero-Dependency Async Unit & Integration Test Runner)
- * ═══════════════════════════════════════════════════════════════
- */
-
 class TestFramework {
   constructor() {
     this.suites = [];
@@ -181,7 +175,6 @@ class TestFramework {
       this.currentSuite = suite;
       const suiteStartTime = Date.now();
 
-      // Register tests in suite
       try {
         suite.fn();
       } catch (err) {
@@ -192,7 +185,6 @@ class TestFramework {
         console.log(`📦 [SUITE] ${suite.name}`);
       }
 
-      // Run beforeAll hooks
       for (const beforeFn of suite.beforeAllFns) {
         try {
           await beforeFn();
@@ -245,7 +237,6 @@ class TestFramework {
         });
       }
 
-      // Run afterAll hooks
       for (const afterFn of suite.afterAllFns) {
         try {
           await afterFn();
@@ -271,7 +262,6 @@ class TestFramework {
   }
 }
 
-// Global singleton runner instance
 const globalRunner = new TestFramework();
 
 const assert = require('assert');

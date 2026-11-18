@@ -1,5 +1,4 @@
       <div class="page-section" id="page-settings">
-        <!-- Executive Royal AgTech Header -->
         <div class="royal-page-header">
           <div style="display:flex; align-items:center; gap:16px; position:relative; z-index:1;">
             <div style="width:44px; height:44px; border-radius:12px; background:#ecfdf5; border:1.5px solid #a7f3d0; display:flex; align-items:center; justify-content:center; color:#059669; font-size:20px;">
@@ -19,10 +18,8 @@
           </div>
         </div>
 
-        <!-- Thẻ Thông Tin Phân Quyền dành cho Tài Khoản Cấp Dưới (Sub-Account Privilege Card) -->
         <div id="settings-subaccount-privilege-card" style="display:none;"></div>
 
-        <!-- Sub-Tabs Navigation Bar -->
         <div class="user-subtabs-nav" style="display:flex; gap:12px; margin-bottom:20px; border-bottom:2px solid #e2e8f0; padding-bottom:2px; flex-wrap:wrap;">
           <button id="subtab-btn-thresholds" class="user-subtab-btn active" onclick="switchSettingsSubtab('thresholds')" style="padding:10px 20px; border:none; background:transparent; border-bottom:3px solid #059669; font-weight:800; color:#059669; font-size:14px; cursor:pointer; display:inline-flex; align-items:center; gap:8px;">
             <i data-lucide="sliders" class="lucide-sm"></i> Cài đặt ngưỡng giá trị
@@ -35,7 +32,6 @@
           </button>
         </div>
 
-        <!-- SUB-TAB 1: CÀI ĐẶT NGƯỠNG GIÁ TRỊ (AUTOMATED SENSOR ALERT RULES) -->
         <div id="subtab-pane-thresholds" class="subtab-pane" style="display:block;">
           <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:16px; padding:20px; margin-bottom:20px; box-shadow:0 4px 16px rgba(0,0,0,0.03); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
             <div>
@@ -51,15 +47,12 @@
             </button>
           </div>
 
-          <!-- Rules List Container -->
           <div id="threshold-rules-list" style="display:flex; flex-direction:column; gap:14px;">
             <div style="text-align:center; padding:30px; color:#64748b; font-size:13px;"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải danh sách quy tắc...</div>
           </div>
         </div>
 
-        <!-- SUB-TAB 2: PHÂN QUYỀN TÀI KHOẢN NHÂN SỰ DƯỚI QUYỀN CHỦ VƯỜN (FARMER SUB-ACCOUNT RBAC) -->
         <div id="subtab-pane-team" class="subtab-pane" style="display:none;">
-          <!-- Banner & Action Bar -->
           <div style="background:#ffffff; border:1.5px solid #a7f3d0; border-radius:16px; padding:20px; margin-bottom:18px; box-shadow:0 4px 16px rgba(5,150,105,0.05);">
             <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:14px; margin-bottom:16px;">
               <div style="max-width:700px;">
@@ -80,7 +73,6 @@
               </div>
             </div>
 
-            <!-- 3 Role Cards Matrix -->
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:12px; padding-top:14px; border-top:1px solid #f1f5f9;">
               <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:12px 14px;">
                 <div style="font-size:12.5px; font-weight:800; color:#065f46; display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
@@ -114,7 +106,6 @@
             </div>
           </div>
 
-          <!-- Team Members List -->
           <div id="farmer-team-members-list" style="display:flex; flex-direction:column; gap:12px;">
             <div style="text-align:center; padding:30px; color:#64748b; font-size:13px;">
               <i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải danh sách tài khoản nhân sự dưới quyền...
@@ -122,9 +113,7 @@
           </div>
         </div>
 
-        <!-- SUB-TAB 3: THÔNG TIN CÁ NHÂN & BẢO MẬT -->
         <div id="subtab-pane-profile" class="subtab-pane" style="display:none;">
-          <!-- Quick Banner to Team RBAC Management right inside Profile Subtab -->
           <div style="background:linear-gradient(135deg, #ecfdf5 0%, #eff6ff 100%); border:1.5px solid #a7f3d0; border-radius:16px; padding:16px 20px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; box-shadow:0 4px 14px rgba(5,150,105,0.06);">
             <div style="display:flex; align-items:center; gap:12px; max-width:660px;">
               <div style="width:42px; height:42px; border-radius:12px; background:#059669; color:#ffffff; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
@@ -152,10 +141,8 @@
 
           <div class="settings-grid">
 
-            <!-- ── Cột 1: Avatar + Hồ sơ cá nhân ── -->
             <div class="settings-card settings-card--profile">
 
-              <!-- Avatar Section -->
               <div class="settings-avatar-section">
                 <div class="settings-avatar-wrap" id="settings-avatar-wrap" title="Nhấp để thay ảnh đại diện">
                   <img id="settings-avatar-img" src="" alt="Avatar" class="settings-avatar-img hidden" />
@@ -175,7 +162,6 @@
 
               <div class="settings-divider"></div>
 
-              <!-- Profile Form -->
               <div class="settings-section-title">
                 <i data-lucide="user-check" class="lucide-sm"></i> Thông tin cá nhân
               </div>
@@ -235,7 +221,6 @@
               </button>
             </div>
 
-            <!-- ── Cột 2: Bảo mật ── -->
             <div class="settings-card settings-card--security">
 
               <div class="settings-security-badge">
@@ -287,7 +272,6 @@
                 </button>
               </form>
 
-              <!-- Security tips -->
               <div class="settings-tips">
                 <div class="settings-tip"><i data-lucide="check-circle-2" class="lucide-sm"></i> Sử dụng ít nhất 8 ký tự</div>
                 <div class="settings-tip"><i data-lucide="check-circle-2" class="lucide-sm"></i> Kết hợp chữ hoa, chữ thường và số</div>
@@ -295,10 +279,9 @@
               </div>
             </div>
 
-          </div><!-- end settings-grid -->
-        </div><!-- end subtab-pane-profile -->
+          </div>
+        </div>
 
-        <!-- Mobile & General Logout Action Box -->
         <div style="margin-top: 24px; padding: 20px; background:#ffffff; border: 1.5px solid #fecaca; border-radius: 16px; text-align: center; box-shadow: 0 4px 14px rgba(239,68,68,0.06);">
           <h4 style="margin:0 0 6px 0; color:#991b1b; font-size:14px; font-weight:800;"><i data-lucide="alert-triangle" class="lucide-sm"></i> Đăng xuất khỏi hệ thống</h4>
           <p style="margin:0 0 14px 0; color:#64748b; font-size:12.5px;">Bấm nút dưới đây để kết thúc phiên làm việc và đăng xuất tài khoản an toàn.</p>
@@ -307,6 +290,3 @@
           </button>
         </div>
       </div>
-
-
-      <!-- ── PAGE 5: BÁCH KHOA (ENCYCLOPEDIA & GUIDES) ── -->

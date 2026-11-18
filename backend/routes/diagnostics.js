@@ -5,10 +5,6 @@ const admin = require('../middleware/admin');
 const { runAllTests } = require('../tests/run-all-tests');
 const os = require('os');
 
-/**
- * GET /api/diagnostics/health
- * Public system health check endpoint
- */
 router.get('/health', (req, res) => {
   const memoryUsage = process.memoryUsage();
   res.json({
@@ -30,11 +26,6 @@ router.get('/health', (req, res) => {
   });
 });
 
-/**
- * POST /api/diagnostics/run-tests
- * Trigger all 7 automated test suites and return structured report
- * Protected: Requires Admin authentication
- */
 router.post('/run-tests', auth, admin, async (req, res) => {
   try {
     const results = await runAllTests();
@@ -50,11 +41,6 @@ router.post('/run-tests', auth, admin, async (req, res) => {
   }
 });
 
-/**
- * POST /api/diagnostics/seed-durian-lk
- * Initialize sample dataset for Durian Ri6 STT 1 (20 years old) at Long Khanh Farm
- * Protected: Requires Admin authentication
- */
 router.post('/seed-durian-lk', auth, admin, async (req, res) => {
   try {
     const { seedDurianRi6LK } = require('../scripts/seed_durian_ri6_lk');

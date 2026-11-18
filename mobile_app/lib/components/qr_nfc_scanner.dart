@@ -11,8 +11,6 @@ import '../utils/theme.dart';
 import '../pages/plant_detail_page.dart';
 import '../pages/public_plant_profile_page.dart';
 
-// ─── QR Scanner Page (real camera) ──────────────────────────────────────────
-
 class QrScannerPage extends StatefulWidget {
   final List<Plant> availablePlants;
   const QrScannerPage({super.key, required this.availablePlants});
@@ -38,7 +36,6 @@ class _QrScannerPageState extends State<QrScannerPage>
       facing: CameraFacing.back,
     );
 
-    // Scanning line animation
     _lineController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -61,7 +58,6 @@ class _QrScannerPageState extends State<QrScannerPage>
     setState(() => _hasScanned = true);
     await _controller?.stop();
 
-    // Vibrate/feedback
     await Future.delayed(const Duration(milliseconds: 100));
 
     if (!mounted) return;
@@ -90,7 +86,6 @@ class _QrScannerPageState extends State<QrScannerPage>
       ),
       body: Stack(
         children: [
-          // Camera preview
           MobileScanner(
             controller: _controller!,
             onDetect: (capture) {
@@ -102,10 +97,8 @@ class _QrScannerPageState extends State<QrScannerPage>
             },
           ),
 
-          // Dark overlay with cutout
           _buildOverlay(),
 
-          // Bottom hint
           Positioned(
             bottom: 60,
             left: 0,
@@ -135,7 +128,6 @@ class _QrScannerPageState extends State<QrScannerPage>
     final double cutoutSize = MediaQuery.of(context).size.width * 0.72;
     return Stack(
       children: [
-        // Dark dimmed areas
         Column(
           children: [
             Expanded(child: Container(color: Colors.black.withOpacity(0.65))),
@@ -150,7 +142,6 @@ class _QrScannerPageState extends State<QrScannerPage>
                   height: cutoutSize,
                   child: Stack(
                     children: [
-                      // Scanning line
                       AnimatedBuilder(
                         animation: _lineAnimation,
                         builder: (context, _) => Positioned(
@@ -181,7 +172,6 @@ class _QrScannerPageState extends State<QrScannerPage>
                         ),
                       ),
 
-                      // Corner brackets
                       ..._buildCornerBrackets(cutoutSize),
                     ],
                   ),
@@ -204,13 +194,9 @@ class _QrScannerPageState extends State<QrScannerPage>
     const length = 28.0;
     const Color bracketColor = AppTheme.green;
     return [
-      // Top-left
       Positioned(top: 0, left: 0, child: _corner(length, thick, bracketColor, true, true)),
-      // Top-right
       Positioned(top: 0, right: 0, child: _corner(length, thick, bracketColor, true, false)),
-      // Bottom-left
       Positioned(bottom: 0, left: 0, child: _corner(length, thick, bracketColor, false, true)),
-      // Bottom-right
       Positioned(bottom: 0, right: 0, child: _corner(length, thick, bracketColor, false, false)),
     ];
   }
@@ -259,8 +245,6 @@ class _CornerPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-// ─── NFC Scanner Page ────────────────────────────────────────────────────────
-
 class NfcScannerPage extends StatefulWidget {
   final List<Plant> availablePlants;
   const NfcScannerPage({super.key, required this.availablePlants});
@@ -277,12 +261,10 @@ class _NfcScannerPageState extends State<NfcScannerPage>
   bool _isReading = false;
   bool _nfcAvailable = false;
 
-  // Ring ripple animation
   late AnimationController _rippleController;
   late Animation<double> _rippleScale;
   late Animation<double> _rippleOpacity;
 
-  // Success check animation
   late AnimationController _successController;
   late Animation<double> _successScale;
 
@@ -340,20 +322,18 @@ class _NfcScannerPageState extends State<NfcScannerPage>
     });
 
     NfcManager.instance.startSession(onDiscovered: (NfcTag tag) async {
-      // 1. Get physical UID of the tag
-      final List<dynamic>? identifier = 
+      final List<dynamic>? identifier =
           tag.data['isodep']?['identifier'] ??
           tag.data['nfca']?['identifier'] ??
           tag.data['mifare']?['identifier'] ??
           tag.data['mifareultralight']?['identifier'] ??
           tag.data['ndef']?['identifier'];
-      
+
       String? scannedUid;
       if (identifier != null) {
         scannedUid = identifier.map((e) => e.toRadixString(16).padLeft(2, '0').toUpperCase()).join(':');
       }
 
-      // 2. Try to extract URL/text from NDEF records
       final ndef = Ndef.from(tag);
       String? readValue;
 
@@ -529,7 +509,6 @@ class _NfcScannerPageState extends State<NfcScannerPage>
             ),
             const SizedBox(height: 32),
 
-            // Status message
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
               child: Text(
@@ -591,15 +570,12 @@ class _NfcScannerPageState extends State<NfcScannerPage>
   }
 }
 
-// ─── Shared routing logic ────────────────────────────────────────────────────
-
 void _routeToPlant(BuildContext context, String code, String scannedUid) async {
   final apiService = ApiService();
 
   final cleanScannedUid = scannedUid.trim();
   final cleanCode = code.trim();
 
-  // Extract components from URL if code contains URL/path
   String pathNfcUid = '';
   String pathPlantId = '';
   String pathSlug = '';
@@ -610,8 +586,7 @@ void _routeToPlant(BuildContext context, String code, String scannedUid) async {
   if (cleanCode.startsWith('http://') || cleanCode.startsWith('https://') || cleanCode.contains('/')) {
     final uri = Uri.tryParse(cleanCode);
     final segments = uri?.pathSegments ?? cleanCode.split('/').where((s) => s.isNotEmpty).toList();
-    
-    // Extract NTAG213 & Gallagher 8.30 dynamic query parameters if present
+
     if (uri != null) {
       scannedCounter = uri.queryParameters['ctr'];
       scannedToken = uri.queryParameters['sig'] ?? uri.queryParameters['token'];
@@ -638,7 +613,6 @@ void _routeToPlant(BuildContext context, String code, String scannedUid) async {
   final searchUid = cleanScannedUid.isNotEmpty ? cleanScannedUid : pathNfcUid;
   final searchPlantId = pathPlantId;
 
-  // 1. Fetch user's plants list (with AES-256 Hive offline fallback)
   List<Plant> allPlants = [];
   try {
     allPlants = await apiService.fetchPlants();
@@ -653,7 +627,6 @@ void _routeToPlant(BuildContext context, String code, String scannedUid) async {
   Plant? matched;
 
   if (allPlants.isNotEmpty) {
-    // Match by physical or URL NFC UID (colon & case insensitive)
     if (searchUid.isNotEmpty) {
       final normalizedSearchUid = CryptoSecurityService.normalizeNfcUid(searchUid);
       try {
@@ -663,7 +636,6 @@ void _routeToPlant(BuildContext context, String code, String scannedUid) async {
       } catch (_) {}
     }
 
-    // Match by plant ID from path (e.g. /0/2/1/04:17:...)
     if (matched == null && searchPlantId.isNotEmpty) {
       try {
         matched = allPlants.firstWhere(
@@ -672,7 +644,6 @@ void _routeToPlant(BuildContext context, String code, String scannedUid) async {
       } catch (_) {}
     }
 
-    // Match by publicSlug or treeCode or last path segment
     if (matched == null && pathSlug.isNotEmpty) {
       try {
         matched = allPlants.firstWhere(
@@ -685,7 +656,6 @@ void _routeToPlant(BuildContext context, String code, String scannedUid) async {
       } catch (_) {}
     }
 
-    // Match by cleanCode as fallback
     if (matched == null && cleanCode.isNotEmpty) {
       try {
         matched = allPlants.firstWhere(
@@ -698,7 +668,6 @@ void _routeToPlant(BuildContext context, String code, String scannedUid) async {
     }
   }
 
-  // If found in allPlants -> Execute 5-Layer Physical-Digital Verification and Open PlantDetailPage
   if (matched != null) {
     final pos = await GeoFenceService().getCurrentPositionSafe();
     final effectiveUid = searchUid.isNotEmpty ? searchUid : (matched.nfcUid ?? 'NTAG213-${matched.id}');
@@ -716,7 +685,6 @@ void _routeToPlant(BuildContext context, String code, String scannedUid) async {
       plantLng: matched.longitude,
     );
 
-    // Asynchronously report scan + GPS coordinates to server for 5-Layer Security Audit
     if (searchUid.isNotEmpty || scannedCounter != null || scannedToken != null) {
       apiService.verifyNfcScan(
         nfcUid: effectiveUid,
@@ -762,7 +730,6 @@ void _routeToPlant(BuildContext context, String code, String scannedUid) async {
     }
   }
 
-  // 2. If not found in user's list, query plant via Public API (by UID or plantId or slug)
   final fetchQuery = searchUid.isNotEmpty
       ? searchUid
       : (searchPlantId.isNotEmpty ? searchPlantId : (pathSlug.isNotEmpty ? pathSlug : cleanCode));
@@ -782,7 +749,6 @@ void _routeToPlant(BuildContext context, String code, String scannedUid) async {
       }
     } catch (_) {}
 
-    // Secondary API query by searchPlantId if searchUid returned null
     if (searchPlantId.isNotEmpty && searchPlantId != fetchQuery) {
       try {
         final publicData = await apiService.fetchPublicPlant(searchPlantId);
@@ -800,7 +766,6 @@ void _routeToPlant(BuildContext context, String code, String scannedUid) async {
     }
   }
 
-  // 3. Fallback: Open public profile page if slug exists
   if (pathSlug.isNotEmpty || fetchQuery.isNotEmpty) {
     if (context.mounted) {
       Navigator.pushReplacement(
@@ -813,7 +778,6 @@ void _routeToPlant(BuildContext context, String code, String scannedUid) async {
     }
   }
 
-  // 4. Alert user if plant not found
   if (context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -826,9 +790,6 @@ void _routeToPlant(BuildContext context, String code, String scannedUid) async {
     );
   }
 }
-
-// ─── Legacy compatibility wrapper (bottom sheet) ─────────────────────────────
-// Keep this for backward compatibility with existing dashboard trigger code
 
 class QrNfcScanner extends StatelessWidget {
   final bool isNfcMode;

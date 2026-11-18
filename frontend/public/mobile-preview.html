@@ -6,7 +6,7 @@
   <title>Plant Book Mobile — Microsoft Fluent 2 Interactive Preview</title>
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
   <style>
-    .fluent-shadow {
+.fluent-shadow {
       box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.03);
     }
     .fluent-shadow-lg {
@@ -47,11 +47,10 @@
     .nfc-ring {
       animation: pulseRing 1.8s cubic-bezier(0.24, 0, 0.38, 1) infinite;
     }
-  </style>
+</style>
 </head>
 <body class="bg-[var(--background)] text-[var(--foreground)] antialiased p-4 md:p-6 select-none">
 
-  <!-- TOP CONTROL HEADER -->
   <div class="max-w-5xl mx-auto mb-5 bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 fluent-shadow">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div class="flex items-center gap-3">
@@ -71,7 +70,6 @@
         </div>
       </div>
 
-      <!-- Mode Switcher: Fluent 2 vs Legacy -->
       <div class="flex items-center gap-1.5 bg-[var(--background)] p-1 rounded-xl border border-[var(--border)]">
         <button id="btn-mode-fluent" onclick="setDesignMode('fluent')" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-emerald-600 text-white shadow-sm">
           ✨ Giao diện Mới (Microsoft Fluent 2)
@@ -83,10 +81,8 @@
     </div>
   </div>
 
-  <!-- MAIN WORKSPACE -->
   <div class="max-w-5xl mx-auto flex flex-col lg:flex-row items-start justify-center gap-6">
 
-    <!-- LEFT COLUMN: LEGACY PHONE (ONLY VISIBLE IN COMPARE MODE) -->
     <div id="legacy-phone-col" class="hidden w-full lg:w-[360px] flex-shrink-0 mx-auto">
       <div class="text-center mb-2.5">
         <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/15 text-rose-600 border border-rose-500/30">
@@ -95,19 +91,16 @@
       </div>
       <div class="w-[350px] h-[720px] mx-auto rounded-[40px] bg-slate-900 p-3 phone-bezel relative overflow-hidden">
         <div class="w-full h-full rounded-[30px] bg-[#F8FAFC] overflow-hidden flex flex-col text-slate-900">
-          <!-- Heavy Dark Green AppBar -->
           <div class="bg-[#064E3B] text-white px-4 py-3.5 flex items-center justify-between shadow">
             <div class="font-bold text-sm">Sổ Nông Tân Bảo v1.2.8</div>
             <div class="text-xs bg-white/20 px-2 py-0.5 rounded">PRO 👑</div>
           </div>
           <div class="p-3.5 space-y-3 flex-1 overflow-y-auto">
-            <!-- Heavy gradient box -->
             <div class="bg-gradient-to-br from-[#064E3B] to-[#15803D] text-white p-4 rounded-xl shadow">
               <div class="text-xs opacity-80">Plant Book · Cổng Nông Hộ</div>
               <div class="font-bold text-base mt-1">Xin chào, Anh Phúc 👋</div>
               <div class="text-xs opacity-80 mt-1">Hệ thống quản lý & chăm sóc cây trồng thông minh.</div>
             </div>
-            <!-- Rigid bordered boxes -->
             <div class="bg-white border-2 border-slate-200 rounded-xl p-3">
               <div class="text-xs font-bold text-slate-500 uppercase">TỔNG SỐ CÂY TRỒNG</div>
               <div class="text-xl font-bold text-slate-900 mt-1">1.250 cây</div>
@@ -125,7 +118,6 @@
               QUÉT MÃ QR / THẺ NFC
             </button>
           </div>
-          <!-- Old Bottom Bar -->
           <div class="bg-white border-t-2 border-slate-200 py-2 px-3 flex justify-between text-xs font-semibold text-slate-500">
             <div class="text-[#064E3B] font-bold">Tổng quan</div>
             <div>Vùng trồng</div>
@@ -137,7 +129,6 @@
       </div>
     </div>
 
-    <!-- CENTER COLUMN: MICROSOFT FLUENT 2 MOBILE APP -->
     <div class="w-full lg:w-[390px] flex-shrink-0 mx-auto">
       <div id="fluent-badge-top" class="text-center mb-2.5 hidden">
         <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-600 border border-emerald-500/30">
@@ -145,20 +136,15 @@
         </span>
       </div>
 
-      <!-- PHONE HARDWARE FRAME -->
       <div class="w-[376px] h-[740px] mx-auto rounded-[46px] bg-[#1E293B] p-3 phone-bezel relative">
-        <!-- Dynamic Island -->
         <div class="w-24 h-5 bg-black rounded-full mx-auto absolute top-5 left-1/2 -translate-x-1/2 z-30 flex items-center justify-end px-2">
           <span class="w-2 h-2 rounded-full bg-emerald-500/80"></span>
         </div>
 
-        <!-- PHONE SCREEN (MICROSOFT FLUENT 2 ALABASTER SURFACE #FAF9F8) -->
         <div class="w-full h-full rounded-[36px] bg-[#FAF9F8] text-[#1F1F1F] overflow-hidden flex flex-col relative">
 
-          <!-- STATUS BAR + FLUENT MICA HEADER -->
           <div class="mica-header pt-8 pb-2.5 px-5 border-b border-[#EDEBE9] z-20">
             <div class="flex items-center justify-between">
-              <!-- User Avatar + Greeting -->
               <div class="flex items-center gap-2.5">
                 <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-[#107C41] to-[#21A366] text-white flex items-center justify-center font-bold text-xs shadow-sm">
                   TB
@@ -172,7 +158,6 @@
                 </div>
               </div>
 
-              <!-- Right Quick Pills (Language + Notification) -->
               <div class="flex items-center gap-1.5">
                 <button onclick="cycleLang()" id="btn-lang-pill" class="px-2.5 py-1 rounded-xl bg-white border border-[#E1DFDD] text-xs font-semibold text-[#242424] fluent-shadow hover:bg-[#F3F2F1] transition">
                   🇻🇳 VI
@@ -184,18 +169,14 @@
             </div>
           </div>
 
-          <!-- SCROLLABLE SCREEN CONTENT AREA -->
           <div id="phone-viewport" class="flex-1 overflow-y-auto no-scrollbar px-4 pt-3.5 pb-24 space-y-4">
 
-            <!-- ==================== TAB 0: HOME (TỔNG QUAN) ==================== -->
             <div id="tab-view-0" class="space-y-4">
 
-              <!-- Cute Fluent Mascot Greeting Card (Microsoft Viva style) -->
               <div class="bg-gradient-to-br from-[#E6F4EA] via-[#F0FDF4] to-[#FEF9C3] border border-[#CEEAD6] rounded-3xl p-4 fluent-shadow relative overflow-hidden">
                 <div class="flex items-center justify-between gap-3">
                   <div class="space-y-1.5 flex-1">
                     <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/95 text-[#107C41] text-xs font-bold shadow-sm">
-                      <!-- Cute Chibi Sun with Rosy Cheeks -->
                       <svg class="w-4 h-4 animate-spin-slow" viewBox="0 0 32 32" style="animation: spin 18s linear infinite;">
                         <circle cx="16" cy="16" r="10" fill="#FBBF24"/>
                         <ellipse cx="11.5" cy="18" rx="2" ry="1.2" fill="#FB7185" opacity="0.85"/>
@@ -217,33 +198,25 @@
                     </p>
                   </div>
 
-                  <!-- Cute SVG Sprout Mascot "Bé Mầm" -->
                   <div onclick="openAiSheet()" class="w-16 h-16 flex-shrink-0 cursor-pointer mascot-float" title="Bấm để trò chuyện với Bé Mầm AI">
                     <svg viewBox="0 0 80 80" class="w-full h-full drop-shadow-sm">
-                      <!-- Soft glow circle -->
                       <circle cx="40" cy="42" r="30" fill="#FFFFFF" fill-opacity="0.85"/>
-                      <!-- Cute Sprout Leaves -->
                       <path d="M40 22 C40 12, 54 10, 56 18 C58 25, 45 26, 40 22 Z" fill="#10B981"/>
                       <path d="M40 22 C40 13, 26 11, 24 19 C22 25, 35 26, 40 22 Z" fill="#34D399"/>
                       <path d="M40 21 L40 28" stroke="#059669" stroke-width="3" stroke-linecap="round"/>
-                      <!-- Cute Chibi Body -->
                       <circle cx="40" cy="46" r="19" fill="#A7F3D0" stroke="#10B981" stroke-width="2.2"/>
-                      <!-- Blush cheeks -->
                       <ellipse cx="30" cy="49" rx="3.2" ry="1.8" fill="#FB7185" fill-opacity="0.55"/>
                       <ellipse cx="50" cy="49" rx="3.2" ry="1.8" fill="#FB7185" fill-opacity="0.55"/>
-                      <!-- Eyes -->
                       <circle cx="33.5" cy="44" r="2.3" fill="#064E3B"/>
                       <circle cx="46.5" cy="44" r="2.3" fill="#064E3B"/>
                       <circle cx="34.2" cy="43.2" r="0.8" fill="#FFFFFF"/>
                       <circle cx="47.2" cy="43.2" r="0.8" fill="#FFFFFF"/>
-                      <!-- Happy smile -->
                       <path d="M36 49.5 Q40 53 44 49.5" fill="none" stroke="#064E3B" stroke-width="2.2" stroke-linecap="round"/>
                     </svg>
                   </div>
                 </div>
               </div>
 
-              <!-- Fluent Search / Command Bar -->
               <div onclick="switchMobileTab(1)" class="bg-white border border-[#E1DFDD] rounded-2xl px-3.5 py-2.5 flex items-center gap-2.5 fluent-shadow cursor-pointer hover:border-[#107C41] transition">
                 <svg class="w-4 h-4 text-[#616161]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path>
@@ -252,9 +225,7 @@
                 <span class="text-xs px-2 py-0.5 rounded-lg bg-[#F3F2F1] text-[#424242] font-medium">Lô A1</span>
               </div>
 
-              <!-- BENTO GRID 2x2 (MICROSOFT FLUENT CARDS) -->
               <div class="grid grid-cols-2 gap-3">
-                <!-- Card 1: Total Trees -->
                 <div onclick="switchMobileTab(1)" class="bg-white border border-[#EDEBE9] rounded-3xl p-3.5 fluent-shadow cursor-pointer hover:border-[#107C41]/50 transition">
                   <div class="flex items-center justify-between mb-2">
                     <div class="w-9 h-9 rounded-2xl bg-[#E6F4EA] text-[#107C41] flex items-center justify-center">
@@ -269,7 +240,6 @@
                   <div class="text-xs text-[#107C41] font-medium mt-0.5">1,42 ha · 9 lô canh tác</div>
                 </div>
 
-                <!-- Card 2: Executive BI & ROI -->
                 <div onclick="switchMobileTab(3)" class="bg-white border border-[#EDEBE9] rounded-3xl p-3.5 fluent-shadow cursor-pointer hover:border-[#1967D2]/50 transition">
                   <div class="flex items-center justify-between mb-2">
                     <div class="w-9 h-9 rounded-2xl bg-[#E8F0FE] text-[#1967D2] flex items-center justify-center">
@@ -285,7 +255,6 @@
                 </div>
               </div>
 
-              <!-- QUICK ACTIONS (PASTEL SQUIRCLE ICONS) -->
               <div>
                 <div class="flex items-center justify-between mb-2 px-0.5">
                   <span class="text-xs font-bold text-[#424242]">Thao tác nhanh ngoài vườn</span>
@@ -330,20 +299,17 @@
                 </div>
               </div>
 
-              <!-- RECENT ACTIVITY FEED (MICROSOFT TO-DO / PLANNER STYLE) -->
               <div>
                 <div class="flex items-center justify-between mb-2 px-0.5">
                   <span class="text-xs font-bold text-[#424242]">Nhật ký canh tác gần đây</span>
                   <button onclick="switchMobileTab(2)" class="text-xs text-[#107C41] font-semibold hover:underline">Xem tất cả →</button>
                 </div>
                 <div id="home-recent-logs" class="space-y-2.5">
-                  <!-- Populated by JS -->
                 </div>
               </div>
 
             </div>
 
-            <!-- ==================== TAB 1: PLANTS & PLOTS (VÙNG TRỒNG) ==================== -->
             <div id="tab-view-1" class="hidden space-y-3.5">
               <div class="flex items-center justify-between">
                 <div>
@@ -355,7 +321,6 @@
                 </button>
               </div>
 
-              <!-- Plot Filter Pills -->
               <div class="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
                 <button onclick="filterPlants('all', this)" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#107C41] text-white whitespace-nowrap">Tất cả (10 cây)</button>
                 <button onclick="filterPlants('Lô A1', this)" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white border border-[#E1DFDD] text-[#424242] whitespace-nowrap">Lô A1 · Ri6 (6)</button>
@@ -363,11 +328,9 @@
               </div>
 
               <div id="mobile-plants-list" class="space-y-2.5">
-                <!-- Populated by JS -->
               </div>
             </div>
 
-            <!-- ==================== TAB 2: CARE LOGS (NHẬT KÝ CANH TÁC) ==================== -->
             <div id="tab-view-2" class="hidden space-y-3.5">
               <div class="flex items-center justify-between">
                 <div>
@@ -379,7 +342,6 @@
                 </button>
               </div>
 
-              <!-- Filter Chips -->
               <div class="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
                 <button onclick="filterLogs('all', this)" class="px-3 py-1 rounded-xl text-xs font-semibold bg-[#107C41] text-white whitespace-nowrap">Tất cả</button>
                 <button onclick="filterLogs('Nhân công', this)" class="px-3 py-1 rounded-xl text-xs font-semibold bg-white border border-[#E1DFDD] text-[#424242] whitespace-nowrap">👥 Nhân công</button>
@@ -388,18 +350,15 @@
               </div>
 
               <div id="mobile-logs-list" class="space-y-2.5">
-                <!-- Populated by JS -->
               </div>
             </div>
 
-            <!-- ==================== TAB 3: SUPPLIES & BI (VẬT TƯ & BI) ==================== -->
             <div id="tab-view-3" class="hidden space-y-3.5">
               <div>
                 <h2 class="text-base font-bold text-[#1F1F1F]">Tài chính BI & Kho Vật tư</h2>
                 <p class="text-xs text-[#616161]">Tự động hạch toán từ Nhật ký & Nhân công</p>
               </div>
 
-              <!-- Executive BI Summary Card -->
               <div class="bg-gradient-to-br from-[#0F172A] to-[#1E293B] text-white rounded-3xl p-4 fluent-shadow space-y-3">
                 <div class="flex items-center justify-between">
                   <span class="text-xs font-semibold text-emerald-300 bg-emerald-500/20 px-2.5 py-0.5 rounded-full">
@@ -421,7 +380,6 @@
                 </div>
               </div>
 
-              <!-- 4 Cost Pillars Breakdown -->
               <div class="bg-white border border-[#EDEBE9] rounded-3xl p-4 fluent-shadow space-y-3">
                 <div class="text-xs font-bold text-[#242424]">Cơ cấu 4 Nhóm Chi phí Canh tác</div>
 
@@ -461,10 +419,8 @@
 
           </div>
 
-          <!-- ==================== SLIDE-UP BOTTOM SHEET: CARE LOG (NHÂN CÔNG) ==================== -->
           <div id="sheet-care-modal" class="hidden absolute inset-0 bg-black/40 backdrop-blur-[2px] z-30 flex flex-col justify-end">
             <div class="bg-white rounded-t-[32px] p-4 pb-6 fluent-shadow-lg max-h-[86%] overflow-y-auto space-y-3.5 animate-slide-up">
-              <!-- Drag Handle -->
               <div class="w-10 h-1 bg-[#D2D0CE] rounded-full mx-auto"></div>
 
               <div class="flex items-center justify-between">
@@ -480,7 +436,6 @@
                 <button onclick="closeSheets()" class="w-7 h-7 rounded-full bg-[#F3F2F1] text-[#616161] flex items-center justify-center text-xs font-bold">✕</button>
               </div>
 
-              <!-- Activity Type Pills (Pruned Cắt lá & Tỉa hoa into Nhân công!) -->
               <div>
                 <label class="text-xs font-bold text-[#424242] block mb-1.5">Loại hoạt động *</label>
                 <div class="grid grid-cols-3 gap-1.5">
@@ -496,7 +451,6 @@
                 </div>
               </div>
 
-              <!-- 1. Nội dung thuê nhân công + Quick Chips -->
               <div>
                 <label class="text-xs font-bold text-[#424242] block mb-1">Nội dung thuê nhân công là gì *</label>
                 <input id="m-labor-content" type="text" value="" placeholder="Nhập hoặc bấm chọn gợi ý bên dưới..." class="w-full px-3 py-2 rounded-xl border border-[#E1DFDD] text-xs font-semibold focus:outline-none focus:border-[#107C41]" />
@@ -508,7 +462,6 @@
                 </div>
               </div>
 
-              <!-- 2. Số người làm & Chi phí thuê (CÙNG 1 HÀNG NGANG THẲNG TẮP) -->
               <div class="grid grid-cols-12 gap-2 items-start">
                 <div class="col-span-5">
                   <label class="text-xs font-bold text-[#424242] block h-5 mb-1 truncate">Số người làm *</label>
@@ -529,7 +482,6 @@
                 </div>
               </div>
 
-              <!-- 3. Làm từ mấy giờ đến mấy giờ -->
               <div class="grid grid-cols-2 gap-2">
                 <div>
                   <label class="text-xs font-bold text-[#424242] block mb-1">Làm từ mấy giờ</label>
@@ -541,7 +493,6 @@
                 </div>
               </div>
 
-              <!-- Live BI Cost Preview Box -->
               <div class="bg-[#EFF6FF] border border-[#BFDBFE] rounded-2xl p-3 flex items-center justify-between">
                 <div>
                   <div class="text-xs font-bold text-[#1E40AF]">Tự động hạch toán BI</div>
@@ -559,7 +510,6 @@
             </div>
           </div>
 
-          <!-- ==================== SLIDE-UP BOTTOM SHEET: NFC SCANNER ==================== -->
           <div id="sheet-nfc-modal" class="hidden absolute inset-0 bg-black/40 backdrop-blur-[2px] z-30 flex flex-col justify-end">
             <div class="bg-white rounded-t-[32px] p-5 pb-7 text-center space-y-4 fluent-shadow-lg">
               <div class="w-10 h-1 bg-[#D2D0CE] rounded-full mx-auto"></div>
@@ -588,7 +538,6 @@
             </div>
           </div>
 
-          <!-- ==================== SLIDE-UP BOTTOM SHEET: BÉ MẦM AI ==================== -->
           <div id="sheet-ai-modal" class="hidden absolute inset-0 bg-black/40 backdrop-blur-[2px] z-30 flex flex-col justify-end">
             <div class="bg-white rounded-t-[32px] p-4 pb-6 space-y-3.5 fluent-shadow-lg">
               <div class="w-10 h-1 bg-[#D2D0CE] rounded-full mx-auto"></div>
@@ -612,7 +561,6 @@
             </div>
           </div>
 
-          <!-- FLUENT FROSTED BOTTOM NAVIGATION BAR -->
           <div class="mica-nav border-t border-[#EDEBE9] px-3 py-2 flex items-center justify-around absolute bottom-0 inset-x-0 z-20">
             <button onclick="switchMobileTab(0)" id="nav-btn-0" class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-2xl text-[#107C41]">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
@@ -628,7 +576,6 @@
               <span class="text-xs font-medium">Vùng trồng</span>
             </button>
 
-            <!-- Center Floating Action Pill -->
             <button onclick="openCareSheet('Nhân công')" class="w-11 h-11 -mt-4 rounded-2xl bg-gradient-to-br from-[#107C41] to-[#059669] text-white flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                 <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
@@ -654,7 +601,6 @@
       </div>
     </div>
 
-    <!-- RIGHT COLUMN: MICROSOFT FLUENT 2 DESIGN HIGHLIGHTS -->
     <div id="design-notes-col" class="flex-1 space-y-3.5 w-full">
       <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 fluent-shadow space-y-3">
         <div class="flex items-center gap-2">
@@ -687,7 +633,6 @@
           </div>
         </div>
 
-        <!-- Quick Interactive Triggers -->
         <div class="pt-1 flex flex-wrap gap-2">
           <button onclick="openCareSheet('Nhân công')" class="px-3 py-2 rounded-xl bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition">
             👉 Bấm thử Form Nhân công trên Mobile
@@ -705,7 +650,7 @@
   </div>
 
   <script>
-    const plantsData = [
+const plantsData = [
       { code: 'RI6-001', name: 'Sầu riêng Ri6 · Cây #01', plot: 'Lô A1', row: 'Hàng 1', age: '4 năm 2 tháng', status: 'Tốt', nfc: 'NFC-04A92B' },
       { code: 'RI6-002', name: 'Sầu riêng Ri6 · Cây #02', plot: 'Lô A1', row: 'Hàng 1', age: '4 năm 2 tháng', status: 'Tốt', nfc: 'NFC-04A92C' },
       { code: 'RI6-003', name: 'Sầu riêng Ri6 · Cây #03', plot: 'Lô A1', row: 'Hàng 2', age: '4 năm 2 tháng', status: 'Đang ra hoa', nfc: 'NFC-04A92D' },
@@ -951,6 +896,6 @@
 
     renderHomeLogs();
     renderPlants('all');
-  </script>
+</script>
 </body>
 </html>

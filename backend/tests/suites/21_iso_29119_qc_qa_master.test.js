@@ -1,14 +1,3 @@
-/**
- * ═══════════════════════════════════════════════════════════════════════════════
- * Suite 21: ISO/IEC 29119 & ISO/IEC 25010 Enterprise QC/QA Master Verification
- * ═══════════════════════════════════════════════════════════════════════════════
- * Covers Line-by-Line Code QC, Module/Ticket Traceability & Operational QA:
- *  - [21.1 - 21.4] Code-Level QC: Every function, trigger, constraint, index in Migration 009
- *  - [21.5 - 21.6] Backend Operational QA: Runtime execution of Append-Only 403 & RESTRICT 409 handlers
- *  - [21.7 - 21.9] ISO Standards Operational QA: ISO 6709, ISO 4217, ISO/IEC 15459, ISO 8601, SHA-256 Tamper Detection
- *  - [21.10 - 21.11] Mobile App Resilience & Anti-Freeze QC: Hive recovery, 1.5s auth timeout, GIS map value equality
- */
-
 const { describe, it, expect } = require('../test-framework');
 const fs = require('fs');
 const path = require('path');
@@ -18,8 +7,6 @@ describe('Suite 21: ISO/IEC 29119 & ISO/IEC 25010 Enterprise QC/QA Master Suite'
   const rootDir = path.join(__dirname, '../../..');
   const mig009Path = path.join(rootDir, 'backend/db/migrations/009_enterprise_iso_hardening.sql');
   const mig009 = fs.readFileSync(mig009Path, 'utf8');
-
-  // ── SECTION A: CODE-LEVEL QC (LINE-BY-LINE & TICKET-BY-TICKET) ───────────
 
   it('21.1 [QC][DB-SEC-01..04] Every SQL function in Migration 009 enforces explicit SET search_path & no deprecated auth.role()', () => {
     const fnMatches = mig009.match(/CREATE OR REPLACE FUNCTION[\s\S]*?AS \$\$[\s\S]*?\$\$;/g) || [];
@@ -61,8 +48,6 @@ describe('Suite 21: ISO/IEC 29119 & ISO/IEC 25010 Enterprise QC/QA Master Suite'
     expect(mig009.includes('DROP INDEX IF EXISTS public.idx_plants_gps;')).toBe(true);
   });
 
-  // ── SECTION B: BACKEND OPERATIONAL QA (RUNTIME HANDLER EXECUTION) ─────────
-
   it('21.5 [QA][OP-API-01] history.js DELETE /:id and DELETE / reject mutation with HTTP 403 ISO Append-Only', async () => {
     const historyRouter = require('../../routes/history');
     const findHandler = (method, routePath) => {
@@ -70,7 +55,6 @@ describe('Suite 21: ISO/IEC 29119 & ISO/IEC 25010 Enterprise QC/QA Master Suite'
         l => l.route && l.route.path === routePath && l.route.methods[method]
       );
       expect(layer !== undefined).toBe(true);
-      // Last handler in stack is the route handler (after auth middleware)
       return layer.route.stack[layer.route.stack.length - 1].handle;
     };
 
@@ -99,7 +83,6 @@ describe('Suite 21: ISO/IEC 29119 & ISO/IEC 25010 Enterprise QC/QA Master Suite'
     const suppliesCode = fs.readFileSync(path.join(rootDir, 'backend/routes/supplies.js'), 'utf8');
     const usersCode = fs.readFileSync(path.join(rootDir, 'backend/routes/users.js'), 'utf8');
 
-    // Inside isHardDelete transaction, farms.js must record HARD_DELETE instead of deleting audit logs
     const hdStart = farmsCode.indexOf('if (isHardDelete)');
     const hdEnd = farmsCode.indexOf("await client.query('COMMIT')", hdStart);
     const hardDeleteSection = farmsCode.slice(hdStart, hdEnd);
@@ -109,8 +92,6 @@ describe('Suite 21: ISO/IEC 29119 & ISO/IEC 25010 Enterprise QC/QA Master Suite'
     expect(suppliesCode.includes("err.code === '23503'") && suppliesCode.includes('res.status(409)')).toBe(true);
     expect(usersCode.includes("err.code === '23503'") && usersCode.includes('res.status(409)')).toBe(true);
   });
-
-  // ── SECTION C: ISO STANDARDS & CRYPTOGRAPHIC ENGINE OPERATIONAL QA ─────────
 
   it('21.7 [QA][ISO-6709 & ISO-4217 & W3C-DID] Boundary & negative validation matches DB CHECK constraints', () => {
     const isValidWgs84 = (lat, lng) => lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
@@ -160,17 +141,13 @@ describe('Suite 21: ISO/IEC 29119 & ISO/IEC 25010 Enterprise QC/QA Master Suite'
       prev = log.record_hash;
     }
 
-    // Verify intact chain
     for (let i = 0; i < logs.length; i++) {
       expect(computeHash(logs[i], logs[i].prev_log_hash)).toBe(logs[i].record_hash);
     }
 
-    // Tamper 1 character in log[1] and verify chain breaks
     const tampered = { ...logs[1], note: 'NPK 20-20-16' };
     expect(computeHash(tampered, tampered.prev_log_hash) === logs[1].record_hash).toBe(false);
   });
-
-  // ── SECTION D: MOBILE APP RESILIENCE & ANTI-FREEZE QC ────────────────────
 
   it('21.10 [QC][MOBILE-ANTI-FREEZE] CacheService recovers corrupted Hive boxes & main.dart bounds startup auth check', () => {
     const cacheDart = fs.readFileSync(path.join(rootDir, 'mobile_app/lib/services/cache_service.dart'), 'utf8');
@@ -187,8 +164,6 @@ describe('Suite 21: ISO/IEC 29119 & ISO/IEC 25010 Enterprise QC/QA Master Suite'
     expect(mapDart.includes('_areFarmsEqual') && mapDart.includes('_arePlantsEqual')).toBe(true);
   });
 
-  // ── SECTION E: ENTERPRISE 10/10 HARDENING (OWASP HEADERS, KEYSTORE, SSOT) ──
-
   it('21.12 [QA][BE-SEC-01/02] OWASP securityHeaders middleware & CORS whitelist runtime check', () => {
     const { securityHeaders, isOriginAllowed } = require('../../middleware/securityHeaders');
     const serverJs = fs.readFileSync(path.join(rootDir, 'backend/server.js'), 'utf8');
@@ -197,7 +172,6 @@ describe('Suite 21: ISO/IEC 29119 & ISO/IEC 25010 Enterprise QC/QA Master Suite'
     expect(serverJs.includes('securityHeaders')).toBe(true);
     expect(serverJs.includes('buildCorsOptions')).toBe(true);
 
-    // Runtime middleware header injection check
     const headers = {};
     const mockReq = { headers: { 'x-forwarded-proto': 'https' }, secure: true };
     const mockRes = { setHeader: (k, v) => { headers[k] = v; } };
@@ -210,7 +184,6 @@ describe('Suite 21: ISO/IEC 29119 & ISO/IEC 25010 Enterprise QC/QA Master Suite'
     expect(headers['Referrer-Policy']).toBe('strict-origin-when-cross-origin');
     expect(typeof headers['Permissions-Policy']).toBe('string');
 
-    // Runtime CORS whitelist check (allows native mobile with no Origin, rejects rogue origin)
     expect(isOriginAllowed(undefined)).toBe(true);
     expect(isOriginAllowed('http://localhost:3000')).toBe(true);
     expect(isOriginAllowed('https://evil-attacker.example.com')).toBe(false);

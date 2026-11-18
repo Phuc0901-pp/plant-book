@@ -5,10 +5,6 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/security/crypto_security_service.dart';
 
-/// Dịch vụ Lưu trữ Ngoại tuyến Mã hóa Chuẩn Quốc tế (AES-256 Encrypted Vault & SHA-256 Client Ledger)
-/// Tuân thủ OWASP MASVS-STORAGE-1 & ISO/IEC 27001:
-/// - Toàn bộ dữ liệu trang trại, cây trồng, vật tư, nhật ký và hàng đợi ngoại tuyến được mã hóa AES-256 (`HiveAesCipher`).
-/// - Mỗi bản ghi ngoại tuyến (`pending_logs` và `pending_field_mutations`) đều được đóng dấu niêm phong Chuỗi Băm `SHA-256` & `HMAC-SHA256` ngay tại thời điểm phát sinh ở hiện trường (`createClientIntegrityEnvelope`).
 class CacheService {
   static final CacheService _instance = CacheService._internal();
   factory CacheService() => _instance;
@@ -34,7 +30,6 @@ class CacheService {
   );
 
   Future<Uint8List> _getOrCreateEncryptionKey() async {
-    // 1. Ưu tiên đọc khóa AES-256 từ Hardware Keystore / iOS Keychain
     try {
       final String? secureKey = await _secureStorage.read(key: _hiveKeyName);
       if (secureKey != null && secureKey.isNotEmpty) {
@@ -44,10 +39,8 @@ class CacheService {
         }
       }
     } catch (_) {
-      // Fallback sang SharedPreferences nếu môi trường test/platform không hỗ trợ Keystore
     }
 
-    // 2. Zero-data-loss migration: Kiểm tra khóa cũ ở SharedPreferences
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final String? legacyKey = prefs.getString(_hiveKeyName);
     if (legacyKey != null && legacyKey.isNotEmpty) {
@@ -63,7 +56,6 @@ class CacheService {
       } catch (_) {}
     }
 
-    // 3. Khởi tạo khóa AES-256 (32 bytes = 256 bits) an toàn và lưu vào SecureStorage
     final List<int> key = Hive.generateSecureKey();
     final String encoded = base64Encode(key);
     try {
@@ -111,7 +103,6 @@ class CacheService {
     }
   }
 
-  // --- User Profile & RBAC Cache (Hỗ trợ kiểm tra sub_role khi Offline) ---
   Map<String, dynamic>? getCachedUserProfile() {
     if (!_isInitialized) return null;
     final dynamic raw = _metaBox.get('user_profile');
@@ -126,7 +117,6 @@ class CacheService {
     await _metaBox.put('user_profile', user);
   }
 
-  // --- Supply Analytics Cache ---
   Map<String, dynamic>? getCachedSupplyAnalytics() {
     if (!_isInitialized) return null;
     final dynamic raw = _metaBox.get('supply_analytics');
@@ -141,7 +131,6 @@ class CacheService {
     await _metaBox.put('supply_analytics', analytics);
   }
 
-  // --- Farms Cache ---
   List<Map<String, dynamic>> getCachedFarms() {
     if (!_isInitialized) return <Map<String, dynamic>>[];
     try {
@@ -160,7 +149,6 @@ class CacheService {
     await _farmsBox.put('list', jsonFarms);
   }
 
-  // --- Plants Cache ---
   List<Map<String, dynamic>> getCachedPlants() {
     if (!_isInitialized) return <Map<String, dynamic>>[];
     try {
@@ -179,7 +167,6 @@ class CacheService {
     await _plantsBox.put('list', jsonPlants);
   }
 
-  // --- Logs Cache (per plant) ---
   List<Map<String, dynamic>> getCachedPlantLogs(int plantId) {
     if (!_isInitialized) return <Map<String, dynamic>>[];
     try {
@@ -198,7 +185,6 @@ class CacheService {
     await _logsBox.put(plantId.toString(), jsonLogs);
   }
 
-  // --- Recent All Logs Cache ---
   List<Map<String, dynamic>> getCachedRecentLogs() {
     if (!_isInitialized) return <Map<String, dynamic>>[];
     try {
@@ -217,7 +203,6 @@ class CacheService {
     await _recentLogsBox.put('list', jsonLogs);
   }
 
-  // --- Supplies Cache ---
   List<Map<String, dynamic>> getCachedSupplies() {
     if (!_isInitialized) return <Map<String, dynamic>>[];
     try {
@@ -236,7 +221,6 @@ class CacheService {
     await _suppliesBox.put('list', jsonSupplies);
   }
 
-  // --- Offline Metadata ---
   bool isCacheWarmed() {
     if (!_isInitialized) return false;
     return (_metaBox.get('is_cache_warmed') as bool?) ?? false;
@@ -284,7 +268,6 @@ class CacheService {
     };
   }
 
-  // --- Offline Queue Phase 1: Pending Care Logs (Nhật ký chăm sóc VietGAP) ---
   List<Map<String, dynamic>> getPendingLogs() {
     if (!_isInitialized) return <Map<String, dynamic>>[];
     final List<dynamic> list =
@@ -373,7 +356,6 @@ class CacheService {
     });
     await _pendingLogsBox.put('queue', queue);
 
-    // Đồng bộ tức thì (Optimistic UI) vào bộ nhớ đệm nhật ký gần đây
     final List<dynamic> recent = List<dynamic>.from(getCachedRecentLogs());
     recent.insert(0, <String, dynamic>{
       'id': -DateTime.now().millisecondsSinceEpoch,
@@ -406,7 +388,6 @@ class CacheService {
     await _pendingLogsBox.put('queue', <dynamic>[]);
   }
 
-  // --- Offline Queue Phase 2: Pending Field Mutations (Cập nhật GPS, NFC UID, Sức khỏe cây, Sinh khối) ---
   List<Map<String, dynamic>> getPendingFieldMutations() {
     if (!_isInitialized) return <Map<String, dynamic>>[];
     final List<dynamic> list = _pendingMutationsBox

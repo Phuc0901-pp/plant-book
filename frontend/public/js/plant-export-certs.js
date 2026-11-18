@@ -1,4 +1,3 @@
-// Modular Public Plant VietGAP Export, Certificates, Contour Lines & A4 Map Export
 const LEGACY_LABOR_ALIASES = ['Nhân công', 'Cắt lá', 'Cắt tỉa', 'Cắt cành', 'Tỉa cành/lá', 'Tỉa hoa', 'Tỉa quả', 'Tỉa quả/hoa', 'Thụ phấn', 'Làm cỏ'];
 
 function matchesExportCategory(checkedCats, logType) {
@@ -8,21 +7,18 @@ function matchesExportCategory(checkedCats, logType) {
   return false;
 }
 
-// Export report functionality
 function openExportModal() {
   if (!currentPlantData) {
     alert("Dữ liệu cây trồng chưa được tải xong.");
     return;
   }
-  
+
   const fromDateInput = document.getElementById('export-from-date');
   const toDateInput = document.getElementById('export-to-date');
-  
-  // Default to Date: Today
+
   const today = new Date().toISOString().split('T')[0];
   toDateInput.value = today;
-  
-  // Default From Date: 1 year ago or plant creation date
+
   if (currentPlantData.created_at) {
     const createdDate = new Date(currentPlantData.created_at).toISOString().split('T')[0];
     fromDateInput.value = createdDate;
@@ -31,18 +27,16 @@ function openExportModal() {
     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
     fromDateInput.value = oneYearAgo.toISOString().split('T')[0];
   }
-  
-  // Populate Canonical SSOT Categories (bao gồm Kiểm toán quả)
+
   const categories = ["Tưới nước", "Bón phân", "Phun thuốc", "Nhân công", "Kiểm toán quả", "Bệnh cây", "Thu hoạch"];
-  
-  // Append any extra unique category present in logs (skip legacy labor aliases merged into Nhân công)
+
   const logs = currentPlantData.logs || [];
   logs.forEach(l => {
     if (l.log_type && !categories.includes(l.log_type) && !LEGACY_LABOR_ALIASES.includes(l.log_type)) {
       categories.push(l.log_type);
     }
   });
-  
+
   const container = document.getElementById('export-categories-container');
   container.innerHTML = categories.map(cat => {
     const label = cat === 'Nhân công' ? 'Thuê nhân công' : cat;
@@ -53,7 +47,7 @@ function openExportModal() {
       </label>
     `;
   }).join('');
-  
+
   document.getElementById('export-modal').classList.add('active');
   document.body.style.overflow = 'hidden';
 }
@@ -71,17 +65,17 @@ function toggleAllExportCategories(select) {
 function generateExportReport() {
   const fromDate = document.getElementById('export-from-date')?.value || '';
   const toDate = document.getElementById('export-to-date')?.value || '';
-  
+
   const checkedCats = [];
   document.querySelectorAll('#export-categories-container input[name="export-cat"]:checked').forEach(cb => {
     checkedCats.push(cb.value);
   });
-  
+
   if (checkedCats.length === 0) {
     alert("Vui lòng chọn ít nhất một hạng mục nhật ký để xuất.");
     return;
   }
-  
+
   const targetId = currentPlantData?.nfc_uid || currentPlantData?.public_slug || currentPlantData?.id || (typeof slugInfo !== 'undefined' ? (slugInfo.slug || slugInfo.plantId) : slug);
   if (!targetId) {
     alert("Không xác định được mã cây trồng để xuất báo cáo.");
@@ -101,12 +95,12 @@ function exportPublicLogsCsv() {
 
   const fromDate = document.getElementById('export-from-date')?.value || '';
   const toDate = document.getElementById('export-to-date')?.value || '';
-  
+
   const checkedCats = [];
   document.querySelectorAll('#export-categories-container input[name="export-cat"]:checked').forEach(cb => {
     checkedCats.push(cb.value);
   });
-  
+
   if (checkedCats.length === 0) {
     alert("Vui lòng chọn ít nhất một hạng mục nhật ký để xuất.");
     return;
@@ -174,8 +168,8 @@ function exportPublicLogsCsv() {
       detailsText = d.method || d.amount || '';
     }
 
-    const mediaUrls = (log.media_urls && Array.isArray(log.media_urls)) 
-      ? log.media_urls.map(m => m.url || m).join('; ') 
+    const mediaUrls = (log.media_urls && Array.isArray(log.media_urls))
+      ? log.media_urls.map(m => m.url || m).join('; ')
       : '';
 
     const row = [
@@ -209,7 +203,6 @@ function exportPublicLogsCsv() {
   URL.revokeObjectURL(url);
   closeExportModal();
 }
-// Global Collapsible Toggles for Section II (Extended Info) & Section III (Timeline)
 window.toggleExtendedSection = function(forceOpen) {
   const previewBox = document.getElementById('extended-preview-box');
   const detailBox = document.getElementById('extended-detail-content');
@@ -228,7 +221,6 @@ window.toggleExtendedSection = function(forceOpen) {
     if (btnIcon) btnIcon.setAttribute('data-lucide', 'chevron-up');
     if (btn) btn.classList.add('active');
 
-    // Trigger Mapbox/Leaflet resize when container becomes visible
     setTimeout(() => {
       if (window._publicPlantMap && typeof window._publicPlantMap.resize === 'function') {
         window._publicPlantMap.resize();
@@ -274,7 +266,6 @@ window.toggleTimelineSection = function(forceOpen) {
   if (window.lucide) window.lucide.createIcons();
 };
 
-// Copy Passport Text Helper
 function copyPassportText(text, btnEl) {
   if (!text) return;
   navigator.clipboard.writeText(text).then(() => {
@@ -296,7 +287,6 @@ function copyPassportText(text, btnEl) {
   });
 }
 
-// Open Certificate Viewer Modal (PUC / VietGAP)
 function openCertificateModal(certType) {
   if (!currentPlantData) {
     alert('Dữ liệu chứng thư chưa được nạp xong. Vui lòng thử lại sau giây lát.');
@@ -438,7 +428,6 @@ function closeCertificateModal() {
   }
 }
 
-// Render Media Items Helper for Extended Info Tab
 window.renderMediaItemsHtml = function(list) {
   if (!list || list.length === 0) {
     return `
@@ -470,7 +459,7 @@ window.renderMediaItemsHtml = function(list) {
     return `
       <div class="media-card-item" onclick="openLightbox('${esc(m.url)}', '${isVideo ? 'video' : 'image'}')">
         <div class="media-card-thumb-wrap">
-          ${isVideo 
+          ${isVideo
             ? `<video src="${esc(m.url)}" muted preload="metadata"></video><div class="media-card-play-icon"><i data-lucide="play" class="lucide-sm" style="fill:currentColor; margin-left:2px;"></i></div>`
             : `<img src="${esc(m.url)}" alt="${esc(m.caption || '')}" loading="lazy" onerror="this.src='/assets/logo.png'">`
           }
@@ -522,13 +511,6 @@ window.openExportModal = openExportModal;
 window.closeExportModal = closeExportModal;
 window.toggleAllExportCategories = toggleAllExportCategories;
 
-
-/**
- * Thêm đường đồng mức siêu dày mật độ 1m (1-Meter High-Density Contour Lines),
- * dải màu cao độ quang phổ (Elevation Spectrum Gradient) và Bảng chú giải cao độ.
- * @param {mapboxgl.Map} map - Mapbox map instance
- * @param {Object} options - { defaultVisible: true, showControl: true }
- */
 function addContourLinesToMap(map, options = {}) {
   if (!map) return;
   const defaultVisible = options.defaultVisible !== false;
@@ -536,7 +518,6 @@ function addContourLinesToMap(map, options = {}) {
 
   const initContours = () => {
     try {
-      // 1. Thêm nguồn Terrain DEM cho 3D địa hình
       if (!map.getSource('mapbox-dem')) {
         map.addSource('mapbox-dem', {
           type: 'raster-dem',
@@ -547,7 +528,6 @@ function addContourLinesToMap(map, options = {}) {
         map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
       }
 
-      // 2. Thêm nguồn Vector Đường Đồng Mức tiêu chuẩn Mapbox Terrain v2
       if (!map.getSource('mapbox-terrain-contours')) {
         map.addSource('mapbox-terrain-contours', {
           type: 'vector',
@@ -555,25 +535,23 @@ function addContourLinesToMap(map, options = {}) {
         });
       }
 
-      // Dải màu dốc cao độ quang phổ (Spectrum Elevation Color Ramp)
       const contourColorRamp = [
         'interpolate',
         ['linear'],
         ['get', 'ele'],
-        0,    '#1d4ed8', // 0m: Xanh dương đậm
-        100,  '#0284c7', // 100m: Xanh biển
-        300,  '#06b6d4', // 300m: Xanh lam sáng
-        450,  '#10b981', // 450m: Xanh lá cây
-        490,  '#22c55e', // 490m: Xanh lá mạ
-        500,  '#84cc16', // 500m: Xanh đọt chuối
-        504,  '#eab308', // 504m: Vàng tươi
-        508,  '#f97316', // 508m: Cam
-        512,  '#ef4444', // 512m: Đỏ tươi
-        800,  '#dc2626', // 800m: Đỏ sẫm
-        1500, '#991b1b'  // 1500m: Đỏ đậm
+        0,    '#1d4ed8',
+        100,  '#0284c7',
+        300,  '#06b6d4',
+        450,  '#10b981',
+        490,  '#22c55e',
+        500,  '#84cc16',
+        504,  '#eab308',
+        508,  '#f97316',
+        512,  '#ef4444',
+        800,  '#dc2626',
+        1500, '#991b1b'
       ];
 
-      // 3. Lớp Đường Đồng Mức Tiêu Chuẩn
       if (!map.getLayer('contour-lines')) {
         map.addLayer({
           id: 'contour-lines',
@@ -629,7 +607,6 @@ function addContourLinesToMap(map, options = {}) {
         });
       }
 
-      // 2-Pass 3x3 Gaussian Spatial Grid Smoothing Filter
       const smoothGrid = (rawGrid, passes = 2) => {
         const ny = rawGrid.length;
         const nx = rawGrid[0].length;
@@ -661,17 +638,13 @@ function addContourLinesToMap(map, options = {}) {
         return current;
       };
 
-      // 4. Hàm Sinh Đường Đồng Mức Mật Độ Biến Thiên Năng Động Theo Zoom
       const updateDense1mContours = () => {
         try {
           const bbox = getFarmBoundingBox();
           if (!bbox) return;
 
-          // Khoảng cách đường đồng mức cố định 1m (Bình độ cái % 5 === 0, Bình độ con 1m còn lại)
           const interval = 1.0;
 
-          // Chỉ lấy mẫu DEM khi zoom đủ cao để có tile độ phân giải cao và ổn định
-          // Nếu zoom < 13, giữ nguyên dữ liệu cũ tránh sai số datum khi zoom out
           const currentZoom = map.getZoom();
           if (currentZoom < 13 && map.getSource('dense-1m-contours')) return;
 
@@ -706,10 +679,8 @@ function addContourLinesToMap(map, options = {}) {
 
           if (!hasTerrainData || minEle === Infinity || maxEle === -Infinity) return;
 
-          // Lọc mịn lưới DEM bằng Gaussian Blur 3 pass để loại bỏ hoàn toàn nhiễu và lặp đường
           const grid = smoothGrid(rawGrid, 3);
 
-          // Dữ liệu cao độ THỰC tế 100% từ Mapbox DEM (so với mực nước biển ASL)
           const eleOffset = 0;
           const displayMin = Math.round(minEle);
           const displayMax = Math.round(maxEle);
@@ -801,7 +772,6 @@ function addContourLinesToMap(map, options = {}) {
               data: geoData
             });
 
-            // ─── Bình độ cái (% 5 === 0): Nét đậm 7px | Bình độ con: Nét 2.5px ───
             const isMajor = ['==', ['%', ['to-number', ['get', 'ele']], 5], 0];
 
             map.addLayer({
@@ -825,7 +795,6 @@ function addContourLinesToMap(map, options = {}) {
               }
             });
 
-            // ─── Nhãn số cao độ: Nhét trực tiếp vào tất cả các đường đồng mức (có nhãn cho cả 2 loại) ───
             map.addLayer({
               id: 'dense-1m-contour-labels',
               type: 'symbol',
@@ -858,7 +827,6 @@ function addContourLinesToMap(map, options = {}) {
         }
       };
 
-      // Cập nhật Bảng Chú Giải Cao Độ Dạng Thanh Dải Màu Sang Trọng (Hiển thị khoảng cách mét)
       const updateLegendWidget = (minEle, maxEle, interval) => {
         const legendContainer = map.getContainer().querySelector('.elevation-legend-widget-container');
         if (!legendContainer) return;
@@ -891,7 +859,7 @@ function addContourLinesToMap(map, options = {}) {
                 width: 12px;
                 height: 140px;
                 border-radius: 6px;
-                background: linear-gradient(to top, 
+                background: linear-gradient(to top,
                   #000080, #0000cd, #0000ff, #0066ff, #0099ff,
                   #00c8ff, #00f0ff, #00ffc8, #00ff99, #00ff33,
                   #66ff00, #a6ff00, #ccff00, #ffff00, #ffcc00,
@@ -920,7 +888,6 @@ function addContourLinesToMap(map, options = {}) {
       map.on('idle', debouncedUpdate);
       setTimeout(updateDense1mContours, 1000);
 
-      // 5. Nút Bật/Tắt đường đồng mức & Nút Xuất Bản Vẽ A4 Nằm Ngang
       if (showControl && !map._contourControlAdded) {
         map._contourControlAdded = true;
 
@@ -929,7 +896,7 @@ function addContourLinesToMap(map, options = {}) {
             this._map = m;
             this._container = document.createElement('div');
             this._container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group';
-            
+
             const btnContour = document.createElement('button');
             btnContour.className = 'mapboxgl-ctrl-icon mapbox-ctrl-contour-btn';
             btnContour.type = 'button';
@@ -1008,7 +975,6 @@ function addContourLinesToMap(map, options = {}) {
 
         map.addControl(new ContourToggleControl(), 'top-right');
 
-        // 6. Thêm Bảng Chú Giải Cao Độ Widget Container
         const mapContainer = map.getContainer();
         if (mapContainer && !mapContainer.querySelector('.elevation-legend-widget-container')) {
           const legendContainer = document.createElement('div');
@@ -1071,7 +1037,7 @@ function openPublicFarmA4ExportModal(map) {
 
   if (farmCoords.length === 0 && map.getStyle()) {
     const styleLayers = map.getStyle().layers || [];
-    const farmLayers = styleLayers.filter(l => 
+    const farmLayers = styleLayers.filter(l =>
       l.id.includes('farm') || l.id.includes('polygon') || (l.type === 'fill' && !l.id.includes('mapbox'))
     );
     farmLayers.forEach(layer => {
@@ -1087,7 +1053,6 @@ function openPublicFarmA4ExportModal(map) {
     });
   }
 
-  // Lật trang trại lại THẲNG ĐỨNG
   const getMajorAxisBearing = (coords) => {
     if (!coords || coords.length < 2) return 0;
     let maxDistSq = 0;
@@ -1559,7 +1524,6 @@ function openPublicFarmA4ExportModal(map) {
   };
 }
 
-// Sync dynamic version badge on public page
 (async function() {
   try {
     const res = await fetch('/api/version');
@@ -1573,8 +1537,6 @@ function openPublicFarmA4ExportModal(map) {
   } catch (_) {}
 })();
 
-
-// ── Export Multi-Language (i18n: VI | EN | ZH) Live Dossier Adapter ──────────
 (function initPublicExportI18nAdapter() {
   function ensureHeaderLanguageSwitcher() {
     const slot = document.getElementById('erp-header-actions-slot');
@@ -1602,4 +1564,3 @@ function openPublicFarmA4ExportModal(map) {
 
   setInterval(ensureHeaderLanguageSwitcher, 1200);
 })();
-

@@ -1,32 +1,15 @@
-/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/**
- * ══════════════════════════════════════════════════════════════════════
- * SỔ NÔNG NHÀN — ENTERPRISE FRONTEND SECURITY GUARD & ANTI-INSPECT SUITE
- * Bản quyền sở hữu: CÔNG TY TNHH CÔNG NGHỆ NÔNG NGHIỆP TÂN BẢO SÀI GÒN
- * Standards: OWASP Top 10 | ISO/IEC 27001 | Defense-in-Depth Level 3
- * ══════════════════════════════════════════════════════════════════════
- * Features:
- *  1. Shortcut & Context Menu Protection (F12, Right-click, Ctrl+Shift+I/J/C, Ctrl+U, Ctrl+S)
- *  2. Elements Inspection Lock via Non-Intrusive Dynamic Debugger Trap
- *  3. Zero False-Positive Engine (Không gây khóa nhầm khi lướt web bình thường)
- *  4. Official Copyright Banner & Anti-Bot Warning Console Engine
- * ══════════════════════════════════════════════════════════════════════
- */
-
 (function (global) {
   'use strict';
 
-  // Cấu hình an ninh toàn hệ sinh thái Sổ Nông Nhàn
   const SECURITY_CONFIG = {
     enabled: true,
     blockContextMenu: true,
     blockShortcuts: true,
     blockTextDrag: true,
-    antiDebugging: true, // Kích hoạt bẫy debugger khi có công cụ thanh tra mở
-    sanitizeConsole: false // Không xóa trắng console để luôn hiển thị banner bản quyền
+    antiDebugging: true,
+    sanitizeConsole: false
   };
 
-  // ── 1. CORPORATE SECURITY BANNER & CONSOLE WARNING ────────────────────
   function printSecurityBanner() {
     if (!global.console) return;
     try {
@@ -64,11 +47,10 @@
     } catch (_) {}
   }
 
-  // ── 2. TOAST NOTIFICATION HELPER ─────────────────────────────────────
   let _lastToastTime = 0;
   function showSecurityToast(message) {
     const now = Date.now();
-    if (now - _lastToastTime < 2000) return; // Debounce toast
+    if (now - _lastToastTime < 2000) return;
     _lastToastTime = now;
 
     if (typeof global.toast === 'function') {
@@ -117,14 +99,11 @@
     }, 2400);
   }
 
-  // ── 3. SHORTCUT & CONTEXT MENU INTERCEPTION ──────────────────────────
   function initShortcutInterception() {
     if (!SECURITY_CONFIG.blockContextMenu && !SECURITY_CONFIG.blockShortcuts) return;
 
-    // 1. Chặn chuột phải (Context Menu)
     if (SECURITY_CONFIG.blockContextMenu) {
       document.addEventListener('contextmenu', function (e) {
-        // Cho phép chuột phải nếu đang ở thẻ input hoặc textarea để thuận tiện dán dữ liệu
         const targetTag = (e.target && e.target.tagName) ? e.target.tagName.toUpperCase() : '';
         if (targetTag === 'INPUT' || targetTag === 'TEXTAREA' || (e.target && e.target.isContentEditable)) {
           return true;
@@ -136,7 +115,6 @@
       }, true);
     }
 
-    // 2. Chặn phím tắt DevTools, Elements Picker & View Source
     if (SECURITY_CONFIG.blockShortcuts) {
       document.addEventListener('keydown', function (e) {
         const key = e.key || '';
@@ -145,7 +123,6 @@
         const shift = e.shiftKey;
         const alt = e.altKey;
 
-        // F12
         if (key === 'F12' || keyCode === 123) {
           e.preventDefault();
           e.stopPropagation();
@@ -154,7 +131,6 @@
           return false;
         }
 
-        // Ctrl + Shift + I (Inspect)
         if (ctrl && shift && (key === 'I' || key === 'i' || keyCode === 73)) {
           e.preventDefault();
           e.stopPropagation();
@@ -163,7 +139,6 @@
           return false;
         }
 
-        // Ctrl + Shift + J (Console)
         if (ctrl && shift && (key === 'J' || key === 'j' || keyCode === 74)) {
           e.preventDefault();
           e.stopPropagation();
@@ -172,7 +147,6 @@
           return false;
         }
 
-        // Ctrl + Shift + C (Element Inspector)
         if (ctrl && shift && (key === 'C' || key === 'c' || keyCode === 67)) {
           e.preventDefault();
           e.stopPropagation();
@@ -181,7 +155,6 @@
           return false;
         }
 
-        // Ctrl + Shift + K (Firefox Console)
         if (ctrl && shift && (key === 'K' || key === 'k' || keyCode === 75)) {
           e.preventDefault();
           e.stopPropagation();
@@ -189,7 +162,6 @@
           return false;
         }
 
-        // Ctrl + Shift + E (Firefox Network)
         if (ctrl && shift && (key === 'E' || key === 'e' || keyCode === 69)) {
           e.preventDefault();
           e.stopPropagation();
@@ -197,7 +169,6 @@
           return false;
         }
 
-        // Ctrl + U (View Source)
         if (ctrl && (key === 'U' || key === 'u' || keyCode === 85)) {
           e.preventDefault();
           e.stopPropagation();
@@ -205,7 +176,6 @@
           return false;
         }
 
-        // Ctrl + S (Save Page As)
         if (ctrl && (key === 'S' || key === 's' || keyCode === 83)) {
           e.preventDefault();
           e.stopPropagation();
@@ -213,7 +183,6 @@
           return false;
         }
 
-        // macOS: Cmd + Option + I / J / U / C
         if (ctrl && alt && (key === 'i' || key === 'I' || key === 'j' || key === 'J' || key === 'u' || key === 'U' || key === 'c' || key === 'C')) {
           e.preventDefault();
           e.stopPropagation();
@@ -223,7 +192,6 @@
       }, true);
     }
 
-    // 3. Chặn kéo thả hình ảnh / tài nguyên
     if (SECURITY_CONFIG.blockTextDrag) {
       document.addEventListener('dragstart', function (e) {
         if (e.target && e.target.tagName && e.target.tagName.toUpperCase() === 'IMG') {
@@ -234,9 +202,6 @@
     }
   }
 
-  // ── 4. CHUẨN XÁC: BẪY DEBUGGER KHÓA ELEMENTS (CHỈ CHẠY KHI DEVTOOLS MỞ) ────
-  // Khi DevTools ĐÓNG: Hàm này thực thi trong 0.0001ms và hoàn toàn vô hại, không làm mờ, không đơ web!
-  // Khi DevTools MỞ: Trình duyệt lập tức ngắt luồng tại lệnh debugger, đóng băng mọi thao tác soi Elements!
   function triggerInstantDebuggerTrap() {
     if (!SECURITY_CONFIG.antiDebugging) return;
     try {
@@ -249,15 +214,11 @@
   function initDynamicAntiDebugEngine() {
     if (!SECURITY_CONFIG.antiDebugging) return;
 
-    // Chạy ngầm bẫy kiểm tra định kỳ mỗi 800ms
-    // Nếu không mở DevTools: Không có gì xảy ra, website mượt mà 100%
-    // Nếu mở DevTools: Trình duyệt bị bắt giữ tại điểm debugger, tab Elements bị khóa cứng
     setInterval(function () {
       triggerInstantDebuggerTrap();
     }, 800);
   }
 
-  // ── 5. INITIALIZE ENTERPRISE SECURITY SUITE ───────────────────────────
   function initEnterpriseSecurity() {
     if (!SECURITY_CONFIG.enabled) return;
 
@@ -272,7 +233,6 @@
     initEnterpriseSecurity();
   }
 
-  // Cung cấp giao diện tra cứu nội bộ an toàn
   global.__TBSG_SECURITY_GUARD__ = {
     version: '3.6.0',
     app: 'Sổ Nông Nhàn',

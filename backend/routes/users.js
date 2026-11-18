@@ -6,26 +6,14 @@ const auth = require('../middleware/auth');
 const admin = require('../middleware/admin');
 const { delCacheByPattern } = require('../config/redis');
 
-// Apply auth to all routes in this file
 router.use(auth);
 
-/**
- * ISO/IEC 11558 & ISO 3309 Standard 8-Digit Obfuscation Hash Generator
- */
 function generateIsoPublicId(role, numId) {
   const prefix = role === 'admin' ? 'adm' : 'usr';
   const id = parseInt(numId) || 0;
   const val = Math.abs(((id * 1664525 + 1013904223) ^ 0x5B9A4C21) % 90000000) + 10000000;
   return `${prefix}-${val}`;
 }
-
-// ═══════════════════════════════════════════════════════════════════════════
-// FARMER SUB-ACCOUNT RBAC API (QUẢN LÝ & PHÂN QUYỀN TÀI KHOẢN DƯỚI QUYỀN CHỦ VƯỜN)
-// Cho phép Chủ trang trại (farm_owner) tạo & phân quyền:
-// - manager (Quản đốc / Kỹ sư trưởng)
-// - care_worker (Nhân công chăm sóc - Tự động ẩn giá vật tư, chi phí & doanh thu)
-// - auditor_readonly (Kiểm định viên VietGAP/GlobalGAP - Chỉ xem kỹ thuật, ẩn tài chính)
-// ═══════════════════════════════════════════════════════════════════════════
 
 function ensureFarmOwnerPrivilege(req, res, next) {
   const subRole = req.user.sub_role || 'farm_owner';
@@ -37,12 +25,10 @@ function ensureFarmOwnerPrivilege(req, res, next) {
   next();
 }
 
-// GET /api/users/my-team - Lấy danh sách tài khoản nhân sự dưới quyền của Chủ vườn
 router.get('/my-team', async (req, res) => {
   try {
     const ownerId = req.user.parent_user_id || req.user.id;
 
-    // Lấy danh sách trang trại của chủ vườn
     const farmsRes = await pool.query(
       `SELECT id, name, puc_code, global_did
        FROM farms
@@ -52,7 +38,6 @@ router.get('/my-team', async (req, res) => {
     );
     const farmIds = farmsRes.rows.map(f => f.id);
 
-    // Lấy danh sách tài khoản cấp dưới
     const teamRes = await pool.query(
       `SELECT u.id, u.email, u.phone, u.full_name, u.role,
               COALESCE(u.sub_role, 'care_worker') as sub_role,
@@ -74,7 +59,6 @@ router.get('/my-team', async (req, res) => {
       [ownerId, farmIds.length > 0 ? farmIds : [0]]
     );
 
-    // Lấy danh sách cây trồng trong các trang trại của chủ vườn để phục vụ giao cây phụ trách
     const plantsRes = await pool.query(
       `SELECT p.id, p.farm_id, p.tree_code, p.plant_type, p.plant_variety,
               p.location, p.plot_code, p.row_number, p.health_status,
@@ -115,7 +99,6 @@ router.get('/my-team', async (req, res) => {
   }
 });
 
-// POST /api/users/my-team - Chủ vườn tạo tài khoản nhân sự dưới quyền
 router.post('/my-team', ensureFarmOwnerPrivilege, async (req, res) => {
   try {
     const {
@@ -144,7 +127,6 @@ router.post('/my-team', ensureFarmOwnerPrivilege, async (req, res) => {
       trimmedEmail = `${trimmedPhone.replace(/[^0-9a-zA-Z]/g, '')}@staff.tanbaocorp.vn`;
     }
 
-    // Kiểm tra trùng Email / SĐT
     if (trimmedEmail) {
       const exEmail = await pool.query('SELECT id FROM users WHERE LOWER(email) = $1', [trimmedEmail]);
       if (exEmail.rows.length > 0) {
@@ -158,7 +140,6 @@ router.post('/my-team', ensureFarmOwnerPrivilege, async (req, res) => {
       }
     }
 
-    // Xác định farm_id hợp lệ của chủ vườn
     const farmsRes = await pool.query(
       `SELECT id FROM farms WHERE (user_id = $1 OR id = COALESCE($2, 0)) AND (is_deleted IS NOT TRUE) ORDER BY id ASC`,
       [req.user.id, req.user.farm_id || null]
@@ -169,7 +150,6 @@ router.post('/my-team', ensureFarmOwnerPrivilege, async (req, res) => {
       targetFarmId = req.user.farm_id || ownedFarmIds[0] || null;
     }
 
-    // Tự động ẩn tài chính đối với care_worker và auditor_readonly nếu không bật rõ ràng
     const financeAllowed = allow_view_finance !== undefined
       ? Boolean(allow_view_finance)
       : (cleanSubRole === 'manager');
@@ -199,7 +179,6 @@ router.post('/my-team', ensureFarmOwnerPrivilege, async (req, res) => {
 
     const newMember = insertRes.rows[0];
 
-    // Giao cây cụ thể nếu có
     if (Array.isArray(assigned_plant_ids) && assigned_plant_ids.length > 0) {
       const validIds = assigned_plant_ids.map(x => parseInt(x)).filter(x => !isNaN(x));
       if (validIds.length > 0) {
@@ -227,7 +206,6 @@ router.post('/my-team', ensureFarmOwnerPrivilege, async (req, res) => {
   }
 });
 
-// PUT /api/users/my-team/:id - Chủ vườn cập nhật phân quyền / mật khẩu tài khoản cấp dưới
 router.put('/my-team/:id', ensureFarmOwnerPrivilege, async (req, res) => {
   try {
     const memberId = parseInt(req.params.id);
@@ -238,7 +216,6 @@ router.put('/my-team/:id', ensureFarmOwnerPrivilege, async (req, res) => {
       approved, assigned_plant_ids
     } = req.body;
 
-    // Kiểm tra tài khoản cấp dưới có thuộc quyền quản lý của Chủ vườn này không
     const checkRes = await pool.query(
       `SELECT * FROM users WHERE id = $1 AND role <> 'admin' AND (
          parent_user_id = $2
@@ -328,7 +305,6 @@ router.put('/my-team/:id', ensureFarmOwnerPrivilege, async (req, res) => {
   }
 });
 
-// DELETE /api/users/my-team/:id - Chủ vườn xóa tài khoản nhân sự cấp dưới
 router.delete('/my-team/:id', ensureFarmOwnerPrivilege, async (req, res) => {
   try {
     const memberId = parseInt(req.params.id);
@@ -369,10 +345,8 @@ router.delete('/my-team/:id', ensureFarmOwnerPrivilege, async (req, res) => {
   }
 });
 
-// Apply admin check to all remaining routes in this file
 router.use(admin);
 
-// GET /api/users - List all users (with aggregated managed farms & permissions & assigned plants & parent lineage)
 router.get('/', async (req, res) => {
   try {
     const result = await pool.query(
@@ -387,9 +361,9 @@ router.get('/', async (req, res) => {
               COALESCE((
                 SELECT json_agg(json_build_object('id', fa.id, 'name', fa.name, 'puc_code', fa.puc_code))
                 FROM (
-                  SELECT DISTINCT id, name, puc_code 
-                  FROM farms 
-                  WHERE (id = u.farm_id OR user_id = u.id OR created_by = u.id OR (u.parent_user_id IS NOT NULL AND user_id = u.parent_user_id)) 
+                  SELECT DISTINCT id, name, puc_code
+                  FROM farms
+                  WHERE (id = u.farm_id OR user_id = u.id OR created_by = u.id OR (u.parent_user_id IS NOT NULL AND user_id = u.parent_user_id))
                     AND (is_deleted IS NOT TRUE)
                   ORDER BY name ASC
                 ) fa
@@ -427,7 +401,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-// PUT /api/users/:id/tier - Update user account tier & custom expiration date (Admin only)
 router.put('/:id/tier', async (req, res) => {
   try {
     const { account_tier, tier_expires_at, tier_admin_note } = req.body;
@@ -442,8 +415,8 @@ router.put('/:id/tier', async (req, res) => {
       : null;
 
     const result = await pool.query(
-      `UPDATE users 
-       SET account_tier = $1, tier_expires_at = $2, tier_admin_note = $3 
+      `UPDATE users
+       SET account_tier = $1, tier_expires_at = $2, tier_admin_note = $3
        WHERE id = $4 RETURNING id, email, phone, address, full_name, role, account_tier, tier_expires_at, tier_admin_note`,
       [account_tier, expiresValue, tier_admin_note || null, userId]
     );
@@ -452,7 +425,6 @@ router.put('/:id/tier', async (req, res) => {
       return res.status(404).json({ error: 'Không tìm thấy người dùng.' });
     }
 
-    // Record admin activity log
     try {
       await pool.query(
         `INSERT INTO user_activities (user_id, activity_type, description)
@@ -468,13 +440,12 @@ router.put('/:id/tier', async (req, res) => {
   }
 });
 
-// GET /api/users/:id/activities - Get activity history of a specific user
 router.get('/:id/activities', async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT * FROM user_activities 
-       WHERE user_id = $1 
-       ORDER BY created_at DESC 
+      `SELECT * FROM user_activities
+       WHERE user_id = $1
+       ORDER BY created_at DESC
        LIMIT 100`,
       [req.params.id]
     );
@@ -485,9 +456,8 @@ router.get('/:id/activities', async (req, res) => {
   }
 });
 
-// POST /api/users - Create a new user (farmer account with assigned farm & permissions)
 router.post('/', async (req, res) => {
-  const { 
+  const {
     email, phone, address, password, full_name, role, farm_id,
     view_plants_scope, view_history_from_date, allow_shared_history, allow_view_supplies,
     assigned_plant_ids
@@ -496,7 +466,7 @@ router.post('/', async (req, res) => {
   if (!full_name || !full_name.trim() || !password || !password.trim()) {
     return res.status(400).json({ error: 'Vui lòng nhập đầy đủ thông tin: họ và tên và mật khẩu.' });
   }
-  
+
   const trimmedEmail = email && email.trim() ? email.trim().toLowerCase() : null;
   const trimmedPhone = phone && phone.trim() ? phone.trim() : null;
   const trimmedAddress = address && address.trim() ? address.trim() : null;
@@ -509,7 +479,6 @@ router.post('/', async (req, res) => {
   const assignedFarmId = farm_id && parseInt(farm_id) ? parseInt(farm_id) : null;
 
   try {
-    // Check if email already exists
     if (trimmedEmail) {
       const existingEmail = await pool.query('SELECT id FROM users WHERE LOWER(email)=$1', [trimmedEmail]);
       if (existingEmail.rows.length > 0) {
@@ -517,7 +486,6 @@ router.post('/', async (req, res) => {
       }
     }
 
-    // Check if phone already exists
     if (trimmedPhone) {
       const existingPhone = await pool.query('SELECT id FROM users WHERE phone=$1', [trimmedPhone]);
       if (existingPhone.rows.length > 0) {
@@ -544,7 +512,6 @@ router.post('/', async (req, res) => {
 
     const newUser = result.rows[0];
 
-    // Synchronize farm's primary user_id if not set or set to admin
     if (assignedFarmId && newUser.role !== 'admin') {
       try {
         await pool.query(
@@ -554,7 +521,6 @@ router.post('/', async (req, res) => {
       } catch (_) {}
     }
 
-    // Assign specific plants to new user if provided
     if (Array.isArray(assigned_plant_ids) && assigned_plant_ids.length > 0) {
       const validIds = assigned_plant_ids.map(x => parseInt(x)).filter(x => !isNaN(x));
       if (validIds.length > 0) {
@@ -574,10 +540,9 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT /api/users/:id - Update user details (including assigned farm_id & permissions & assigned plants)
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
-  const { 
+  const {
     email, phone, address, password, full_name, role, farm_id,
     view_plants_scope, view_history_from_date, allow_shared_history, allow_view_supplies,
     assigned_plant_ids
@@ -600,13 +565,11 @@ router.put('/:id', async (req, res) => {
   const targetUserId = parseInt(id);
 
   try {
-    // Check if user exists
     const userRes = await pool.query('SELECT * FROM users WHERE id=$1', [targetUserId]);
     if (userRes.rows.length === 0) {
       return res.status(404).json({ error: 'Không tìm thấy người dùng.' });
     }
 
-    // Check if email is taken by another user
     if (trimmedEmail) {
       const existingEmail = await pool.query('SELECT id FROM users WHERE LOWER(email)=$1 AND id<>$2', [trimmedEmail, targetUserId]);
       if (existingEmail.rows.length > 0) {
@@ -614,7 +577,6 @@ router.put('/:id', async (req, res) => {
       }
     }
 
-    // Check if phone is taken by another user
     if (trimmedPhone) {
       const existingPhone = await pool.query('SELECT id FROM users WHERE phone=$1 AND id<>$2', [trimmedPhone, targetUserId]);
       if (existingPhone.rows.length > 0) {
@@ -623,7 +585,7 @@ router.put('/:id', async (req, res) => {
     }
 
     let query = `
-      UPDATE users 
+      UPDATE users
       SET email=$1, phone=$2, address=$3, full_name=$4, role=$5, farm_id=$6,
           view_plants_scope=$7, view_history_from_date=$8, allow_shared_history=$9, allow_view_supplies=$10,
           updated_at=NOW()
@@ -651,19 +613,17 @@ router.put('/:id', async (req, res) => {
     }
 
     await pool.query(query, params);
-    
-    // Sync farm ownership if assigned farm has no primary owner or is assigned to admin
+
     if (assignedFarmId && trimmedRole !== 'admin') {
       try {
         await pool.query(`
-          UPDATE farms 
-          SET user_id = $1 
+          UPDATE farms
+          SET user_id = $1
           WHERE id = $2 AND (user_id IS NULL OR user_id IN (SELECT id FROM users WHERE role = 'admin'))
         `, [targetUserId, assignedFarmId]);
       } catch (_) {}
     }
 
-    // Update specific assigned plants for this user
     if (Array.isArray(assigned_plant_ids)) {
       await pool.query('UPDATE plants SET assigned_to_user_id = NULL WHERE assigned_to_user_id = $1', [targetUserId]);
       const validIds = assigned_plant_ids.map(x => parseInt(x)).filter(x => !isNaN(x));
@@ -692,12 +652,10 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// DELETE /api/users/:id - Delete a user with full cascade & foreign-key safety
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
   const userId = parseInt(id);
-  
-  // Prevent admin from deleting themselves
+
   if (userId === req.user.id) {
     return res.status(400).json({ error: 'Bạn không thể tự xóa tài khoản của chính mình.' });
   }
@@ -713,7 +671,6 @@ router.delete('/:id', async (req, res) => {
 
     await client.query('BEGIN');
 
-    // 1. Unlink & Set NULL on all nullable foreign key references
     await client.query('UPDATE plant_schemas SET created_by = NULL WHERE created_by = $1', [userId]);
     await client.query('UPDATE plants SET created_by = NULL WHERE created_by = $1', [userId]);
     await client.query('UPDATE plants SET assigned_to_user_id = NULL WHERE assigned_to_user_id = $1', [userId]);
@@ -722,7 +679,6 @@ router.delete('/:id', async (req, res) => {
     await client.query('UPDATE farms SET user_id = NULL WHERE user_id = $1', [userId]);
     await client.query('UPDATE users SET farm_id = NULL WHERE id = $1', [userId]);
 
-    // Optional tables (if present in database schema)
     try { await client.query('UPDATE nfc_tags_inventory SET created_by = NULL WHERE created_by = $1', [userId]); } catch (_) {}
     try { await client.query('UPDATE data_audit_logs SET user_id = NULL WHERE user_id = $1', [userId]); } catch (_) {}
     try { await client.query('UPDATE ai_knowledge_articles SET created_by = NULL WHERE created_by = $1', [userId]); } catch (_) {}
@@ -730,7 +686,6 @@ router.delete('/:id', async (req, res) => {
     try { await client.query('UPDATE ai_training_logs SET admin_id = NULL WHERE admin_id = $1', [userId]); } catch (_) {}
     try { await client.query('UPDATE ai_unanswered_queries SET user_id = NULL WHERE user_id = $1', [userId]); } catch (_) {}
 
-    // 2. Delete user-owned notifications, alert rules, activities, password reset requests, usages & private supplies
     try { await client.query('DELETE FROM user_notifications WHERE user_id = $1', [userId]); } catch (_) {}
     try { await client.query('DELETE FROM user_alert_rules WHERE user_id = $1', [userId]); } catch (_) {}
     try { await client.query('DELETE FROM user_activities WHERE user_id = $1', [userId]); } catch (_) {}
@@ -739,7 +694,6 @@ router.delete('/:id', async (req, res) => {
     try { await client.query('DELETE FROM fixed_assets WHERE user_id = $1', [userId]); } catch (_) {}
     try { await client.query('DELETE FROM supplies WHERE user_id = $1', [userId]); } catch (_) {}
 
-    // 3. Record in data_audit_logs before deletion
     try {
       await client.query(`
         INSERT INTO data_audit_logs (user_id, user_name, action_type, target_type, record_id, title, old_data, note)
@@ -747,28 +701,25 @@ router.delete('/:id', async (req, res) => {
       `, [req.user.id, req.user.full_name || 'Quản trị viên', userId, `Xóa tài khoản ${targetUser.full_name} (${targetUser.email || targetUser.phone})`, JSON.stringify(targetUser)]);
     } catch (_) {}
 
-    // 4. Delete the User record
     await client.query('DELETE FROM users WHERE id=$1', [userId]);
 
     await client.query('COMMIT');
 
-    // Invalidate Redis caches
     try {
       await delCacheByPattern('users_');
       await delCacheByPattern('farms_');
       await delCacheByPattern('plants_');
     } catch (_) {}
 
-    // Broadcast WebSocket event
     const broadcast = req.app.get('broadcast');
     if (broadcast) {
       broadcast('user_deleted', { id: userId });
       broadcast('farms_updated');
     }
 
-    res.json({ 
-      success: true, 
-      message: `Đã xóa tài khoản "${targetUser.full_name}" thành công!` 
+    res.json({
+      success: true,
+      message: `Đã xóa tài khoản "${targetUser.full_name}" thành công!`
     });
   } catch (err) {
     await client.query('ROLLBACK');
@@ -779,7 +730,6 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// GET /api/users/pending - List pending farmer registrations
 router.get('/pending', async (req, res) => {
   try {
     const result = await pool.query(
@@ -796,7 +746,6 @@ router.get('/pending', async (req, res) => {
   }
 });
 
-// PUT /api/users/:id/approve - Approve pending farmer account
 router.put('/:id/approve', async (req, res) => {
   try {
     const { id } = req.params;
@@ -814,7 +763,6 @@ router.put('/:id/approve', async (req, res) => {
       );
     } catch (_) {}
 
-    // Broadcast approval WebSocket event
     const broadcast = req.app.get('broadcast');
     if (broadcast) {
       broadcast('user_approved', { id: parseInt(id), approved: true });

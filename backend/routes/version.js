@@ -6,16 +6,12 @@ const admin = require('../middleware/admin');
 const fs = require('fs');
 const path = require('path');
 
-// In-memory cache for latest version info
 let cachedVersion = null;
 let lastCacheTime = 0;
-const CACHE_TTL_MS = 30000; // 30 seconds
+const CACHE_TTL_MS = 30000;
 
 const CONFIG_PATH = path.join(__dirname, '../../config/app.config.json');
 
-/**
- * Helper to get fallback configuration from app.config.json
- */
 function getFallbackConfig() {
   try {
     if (fs.existsSync(CONFIG_PATH)) {
@@ -35,9 +31,6 @@ function getFallbackConfig() {
   };
 }
 
-/**
- * Helper to fetch active version from DB with caching
- */
 async function getActiveVersionFromDB() {
   const now = Date.now();
   if (cachedVersion && (now - lastCacheTime < CACHE_TTL_MS)) {
@@ -71,7 +64,6 @@ async function getActiveVersionFromDB() {
     console.warn('[version] Error querying app_versions table, falling back:', err.message);
   }
 
-  // Fallback to app.config.json
   const fallback = getFallbackConfig();
   cachedVersion = {
     id: 0,
@@ -90,7 +82,6 @@ async function getActiveVersionFromDB() {
   return cachedVersion;
 }
 
-// ─── GET /api/version (Public - Current active app version) ───────────────────
 router.get('/', async (req, res) => {
   try {
     const versionInfo = await getActiveVersionFromDB();
@@ -105,7 +96,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-// ─── GET /api/version/check (Public - Check for update from Mobile/Web client) ─
 router.get('/check', async (req, res) => {
   try {
     const clientVer = (req.query.version || '').replace(/^v/i, '').trim();
@@ -115,8 +105,7 @@ router.get('/check', async (req, res) => {
     const latestVer = (latest.version || '').replace(/^v/i, '').trim();
 
     const isUpdateAvailable = clientVer ? (clientVer !== latestVer) : false;
-    
-    // Compare versions (semver naive split)
+
     let needsForceUpdate = false;
     if (latest.forceUpdate && isUpdateAvailable) {
       needsForceUpdate = true;
@@ -153,7 +142,6 @@ router.get('/check', async (req, res) => {
   }
 });
 
-// ─── GET /api/version/history (Public/Admin - List all version releases) ──────
 router.get('/history', async (req, res) => {
   try {
     const result = await pool.query(
@@ -170,7 +158,6 @@ router.get('/history', async (req, res) => {
   }
 });
 
-// ─── POST /api/version (Admin Auth Required - Push new version to Database) ───
 router.post('/', auth, admin, async (req, res) => {
   try {
     let {
@@ -211,11 +198,9 @@ router.post('/', auth, admin, async (req, res) => {
       await client.query('BEGIN');
 
       if (activateNow) {
-        // Deactivate all previous versions
         await client.query(`UPDATE app_versions SET is_active = false WHERE is_active = true`);
       }
 
-      // Insert or update version record
       const insertQuery = `
         INSERT INTO app_versions (
           version_tag, version_number, build_number, platform,
@@ -250,7 +235,6 @@ router.post('/', auth, admin, async (req, res) => {
 
       savedVersion = dbRes.rows[0];
 
-      // Update system_configs SSOT key
       await client.query(`
         INSERT INTO system_configs (key, value, updated_at)
         VALUES ('app_version', $1, NOW())
@@ -267,7 +251,6 @@ router.post('/', auth, admin, async (req, res) => {
       client.release();
     }
 
-    // Invalidate local cache immediately
     cachedVersion = {
       id: savedVersion.id,
       version: savedVersion.version_number,
@@ -283,7 +266,6 @@ router.post('/', auth, admin, async (req, res) => {
     };
     lastCacheTime = Date.now();
 
-    // Synchronize app.config.json on disk if possible
     try {
       if (fs.existsSync(CONFIG_PATH)) {
         const raw = fs.readFileSync(CONFIG_PATH, 'utf8');
@@ -303,7 +285,6 @@ router.post('/', auth, admin, async (req, res) => {
         }
         fs.writeFileSync(CONFIG_PATH, JSON.stringify(cfg, null, 2), 'utf8');
 
-        // Rebuild modular HTML in background
         const { buildAll } = require('../scripts/build-html');
         buildAll();
       }
@@ -311,7 +292,6 @@ router.post('/', auth, admin, async (req, res) => {
       console.warn('[version] Warning syncing app.config.json or building HTML:', fsErr.message);
     }
 
-    // Broadcast version update event to all connected Web & Mobile clients via WebSocket
     if (global.broadcastWS) {
       global.broadcastWS('version_updated', {
         version_tag: savedVersion.version_tag,
@@ -337,7 +317,6 @@ router.post('/', auth, admin, async (req, res) => {
   }
 });
 
-// ─── PUT /api/version/:id/activate (Admin - Switch active version) ─────────────
 router.put('/:id/activate', auth, admin, async (req, res) => {
   try {
     const versionId = parseInt(req.params.id, 10);
@@ -369,7 +348,7 @@ router.put('/:id/activate', auth, admin, async (req, res) => {
       client.release();
     }
 
-    cachedVersion = null; // force reload
+    cachedVersion = null;
 
     if (global.broadcastWS) {
       global.broadcastWS('version_updated', activated);

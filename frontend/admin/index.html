@@ -1,8 +1,3 @@
-﻿<!-- ====================================================================
-     PLANT BOOK ENTERPRISE ERP — ADMIN PORTAL
-     Auto-assembled via backend/scripts/build-html.js
-     DO NOT edit index.html directly; edit modular files in src/
-     ==================================================================== -->
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -16,8 +11,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <script>
-  // 1. window.onerror explicitly suppresses console printing in Chrome when returning true
-  window.onerror = function(message, source, lineno, colno, error) {
+window.onerror = function(message, source, lineno, colno, error) {
     const msg = String(message || '');
     const src = String(source || '');
     const stack = String(error?.stack || '');
@@ -31,12 +25,11 @@
       src.includes('moz-extension://') ||
       src.includes('web-vitals')
     ) {
-      return true; // Suppress from console
+      return true;
     }
     return false;
   };
 
-  // 2. Global error event listener
   window.addEventListener('error', function(event) {
     const msg = String(event.message || '');
     const src = String(event.filename || '');
@@ -57,7 +50,6 @@
     }
   }, true);
 
-  // 3. Unhandled promise rejections
   window.addEventListener('unhandledrejection', function(event) {
     const reason = String(event.reason?.message || event.reason || '');
     const stack = String(event.reason?.stack || '');
@@ -79,7 +71,6 @@
 <link rel="shortcut icon" type="image/png" href="/assets/favicon.png">
 
 <link rel="apple-touch-icon" href="/assets/favicon.png">
-<!-- Google Fonts: Be Vietnam Pro (Enterprise Vietnamese Standard) & JetBrains Mono (Codes/UID) -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://api.mapbox.com">
@@ -104,8 +95,7 @@
   <link rel="stylesheet" href="/admin/css/admin-dashboard.css?v=v1.3.7">
   <link rel="stylesheet" href="/admin/css/admin-gis.css?v=v1.3.7">
 <style>
-  /* ════ Universal +4px Icon System Enhancement ════ */
-  .lucide {
+.lucide {
     width: calc(1.15em + 4px) !important;
     height: calc(1.15em + 4px) !important;
     display: inline-block;
@@ -143,7 +133,6 @@
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
   }
-/* FORCE HIGH-CONTRAST DARK TEXT AND CLEAR BORDERS FOR MODALS ON DARK LOGIN PAGE */
 #register-modal .modal, #forgot-modal .modal {
   background: #ffffff !important;
   color: #0f172a !important;
@@ -243,7 +232,6 @@
   flex-shrink: 0 !important;
 }
 
-/* ════════ Multi-Scale Adaptive GIS Farm Markers ════════ */
 .farm-dashboard-pin {
   cursor: pointer;
   position: relative;
@@ -251,9 +239,7 @@
   display: flex !important;
   align-items: center;
   justify-content: center;
-  /* Never put transition: transform or all on this root marker element */
 }
-/* Dot mode (Zoom < 12) */
 .farm-dashboard-pin.is-dot .farm-pin-badge {
   display: none !important;
 }
@@ -297,7 +283,6 @@
   100% { transform: scale(1.9); opacity: 0; }
 }
 
-/* Full Badge mode (Zoom >= 12) */
 .farm-dashboard-pin.is-full .farm-pin-dot-wrap {
   display: none !important;
 }
@@ -327,7 +312,6 @@
   font-size: 10.5px;
 }
 
-/* Dashboard Fiori Responsive & Progress meter styles */
 @media (max-width: 1024px) {
   .dashboard-split-layout {
     grid-template-columns: 1fr !important;
@@ -372,16 +356,12 @@
 
 <body>
 
-
-<!-- ════════════════ LOGIN ════════════════ -->
 <div id="login-page">
 
-  <!-- CỘT TRÁI: Hero Image -->
   <div class="login-hero">
     <img src="/assets/login-hero.jpg" alt="Vườn cây Tanbao Corp" class="login-hero-img">
     <div class="login-hero-overlay"></div>
 
-    <!-- Particles lá cây -->
     <div class="login-particles">
       <div class="leaf-particle"></div>
       <div class="leaf-particle"></div>
@@ -391,13 +371,11 @@
       <div class="leaf-particle"></div>
     </div>
 
-    <!-- NFC badge -->
     <div class="hero-nfc-badge">
       <i data-lucide="wifi" class="lucide-sm"></i>
       <span>NFC Ready</span>
     </div>
 
-    <!-- Nội dung hero -->
     <div class="login-hero-content">
       <div class="login-hero-tag">
         <span class="dot-live"></span> Hệ thống đang hoạt động
@@ -410,7 +388,6 @@
         và bản đồ GIS của từng cây trồng trong trang trại Tanbao Corp.
       </p>
 
-      <!-- Floating stats -->
       <div class="login-stats">
         <div class="stat-float">
           <div class="stat-float-icon"><i data-lucide="sprout" class="lucide-sm"></i></div>
@@ -437,9 +414,7 @@
     </div>
   </div>
 
-  <!-- CỘT PHẢI: Form đăng nhập -->
   <div class="login-form-panel">
-    <!-- Decorative orbs -->
     <div class="lf-orb lf-orb--1" aria-hidden="true"></div>
     <div class="lf-orb lf-orb--2" aria-hidden="true"></div>
 
@@ -486,7 +461,6 @@
         </button>
       </form>
 
-      <!-- Register Account Link -->
       <div style="text-align:center; margin-top:16px;">
         <span style="font-size:13px; color:var(--text-muted);">Chưa có tài khoản Nông hộ?</span>
         <a href="javascript:void(0)" onclick="openRegisterModal()" style="font-size:13px; font-weight:700; color:var(--green); margin-left:6px; text-decoration:none;">
@@ -503,7 +477,6 @@
 
 </div>
 
-<!-- ════════════ FORGOT PASSWORD MODAL ════════════ -->
 <div class="modal-overlay" id="forgot-modal" style="display:none" onclick="if(event.target===this)closeForgotPasswordModal()">
   <div class="modal" style="max-width:440px; width:92%; max-height:90vh; max-height:90dvh; display:flex; flex-direction:column; border-radius:16px; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.3);">
     <div class="modal-header" style="background:linear-gradient(135deg, #064e3b, #047857); padding:16px 20px; color:#fff; flex-shrink:0;">
@@ -536,7 +509,6 @@
   </div>
 </div>
 
-<!-- ════════════ 3-STEP FARMER REGISTRATION MODAL ════════════ -->
 <div class="modal-overlay" id="register-modal" style="display:none" onclick="if(event.target===this)closeRegisterModal()">
   <div class="modal" style="max-width:500px; width:92%; max-height:90vh; max-height:90dvh; display:flex; flex-direction:column; border-radius:16px; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.35);">
     <div class="modal-header" style="background:linear-gradient(135deg, #064e3b, #047857); border-bottom:none; padding:16px 20px; color:#ffffff; flex-shrink:0;">
@@ -545,9 +517,8 @@
       </h2>
       <button class="modal-close" onclick="closeRegisterModal()" style="color:#ffffff; opacity:0.9; font-size:22px;">×</button>
     </div>
-    
+
     <div class="modal-body" style="padding:22px; background:#ffffff; overflow-y:auto; flex:1 1 auto; max-height:calc(90vh - 130px); max-height:calc(90dvh - 130px); -webkit-overflow-scrolling:touch;">
-      <!-- Step Indicator Bar -->
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; padding:10px 14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; flex-shrink:0;">
         <div style="flex:1; text-align:center;">
           <div id="step-dot-1" style="width:30px; height:30px; border-radius:50%; background:#059669; color:white; font-size:13px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; margin-bottom:4px; box-shadow:0 2px 6px rgba(5,150,105,0.3);">1</div>
@@ -571,7 +542,6 @@
       </div>
 
       <form id="reg-form" onsubmit="return false;">
-      <!-- BƯỚC 1: TÀI KHOẢN & MẬT KHẨU (BẮT BUỘC) -->
       <div id="reg-step-1">
         <div class="form-group" style="margin-bottom:16px;">
           <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i data-lucide="phone" class="lucide-sm" style="color:#059669"></i> Số điện thoại đăng ký *</label>
@@ -587,7 +557,6 @@
         </div>
       </div>
 
-      <!-- BƯỚC 2: THÔNG TIN CÁ NHÂN & CÂY TRỒNG (KHÔNG BẮT BUỘC) -->
       <div id="reg-step-2" style="display:none;">
         <p style="font-size:12px; color:#065f46; margin-bottom:14px; background:#ecfdf5; padding:10px 14px; border-radius:10px; border:1px solid #a7f3d0; font-weight:600; line-height:1.4;">
            Các thông tin dưới đây là tùy chọn, giúp Admin hỗ trợ và cấu hình trang trại chuẩn xác hơn.
@@ -631,7 +600,6 @@
       </div>
       </form>
 
-      <!-- BƯỚC 3: XÁC NHẬN & GỬI YÊU CẦU -->
       <div id="reg-step-3" style="display:none;">
         <div style="background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:12px; padding:16px; margin-bottom:16px;">
           <h4 style="font-size:13px; margin:0 0 12px 0; color:#0f172a; font-weight:800; text-transform:uppercase; letter-spacing:0.5px;"><i data-lucide="clipboard-check" class="lucide-sm" style="color:#059669"></i> Kiểm tra lại thông tin đăng ký</h4>
@@ -658,14 +626,9 @@
   </div>
 </div>
 
-
-
-<!-- ════════════════ APP ════════════════ -->
-
-<!-- ════════════════ APP ════════════════ -->
 <div id="app" style="display:none;flex-direction:row">
   <div class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
-  
+
   ﻿  <aside class="sidebar">
     <div class="sidebar-header">
       <div class="brand">
@@ -675,7 +638,6 @@
         <span class="brand-subtitle">Hệ thống quản lý cây trồng</span>
       </div>
     </div>
-    <!-- Thanh menu quan tri -->
     <div class="sidebar-user">
       <div class="user-name" id="sb-user-name">—</div>
       <div class="user-email" id="sb-user-email">—</div>
@@ -710,7 +672,6 @@
 
   </aside>
 
-  <!-- Main -->
   <main class="main">
         <div class="topbar">
       <div style="display:flex;align-items:center;">
@@ -720,7 +681,6 @@
         <h1 id="page-title" style="margin:0;"><i data-lucide="layers" class="lucide-sm" style="color:#059669; font-size:16px;"></i> Dashboard</h1>
       </div>
       <div class="topbar-actions" id="topbar-actions" style="display:flex; align-items:center; gap:10px;">
-        <!-- Export Multi-Language Switcher (VI | EN | ZH) -->
         <div style="display:inline-flex; align-items:center; gap:2px; background:#f1f5f9; border:1.5px solid #cbd5e1; border-radius:10px; padding:2px;" title="Chuyển đổi ngôn ngữ (Tiếng Việt / English / 中文)">
           <i data-lucide="globe" class="lucide-xs" style="color:#059669; margin:0 4px;"></i>
           <button type="button" data-lang-btn="vi" onclick="if(window.switchExportLanguage)window.switchExportLanguage('vi')" style="border:none; border-radius:7px; padding:4px 7px; font-size:11px; font-weight:800; cursor:pointer; background:#059669; color:#ffffff;">VI</button>
@@ -730,19 +690,13 @@
       </div>
     </div>
 
-
     <div class="content">
-      <!-- ── 1. DASHBOARD & GIS COCKPIT ── -->
-            <!-- ── Dashboard (STRIPE / LINEAR ULTRA-CLEAN ENTERPRISE COCKPIT) ── -->
-      <div class="page-section active" id="page-dashboard">
-        
-        <!-- ── HEADER: EXECUTIVE ENTERPRISE ERP COMMAND CENTER ── -->
+            <div class="page-section active" id="page-dashboard">
+
         <div class="admin-executive-banner">
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; width:100%;">
-            
-            <!-- Left Column: Command Center Identity & Subtext -->
+
             <div style="max-width:720px; flex:1; min-width:280px;">
-              <!-- System Health Badge & Live Telemetry Ping -->
               <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
                 <span style="background:#ecfdf5; color:#065f46; font-size:11.5px; font-weight:700; padding:4px 12px; border-radius:20px; border:1px solid #a7f3d0; display:inline-flex; align-items:center; gap:6px; box-shadow:0 1px 2px rgba(16,185,129,0.06);">
                   <span style="width:7px; height:7px; border-radius:50%; background:#10b981; display:inline-block; box-shadow:0 0 6px #10b981;"></span>
@@ -753,7 +707,6 @@
                 </span>
               </div>
 
-              <!-- Main Heading with Icon Box -->
               <div style="display:flex; align-items:center; gap:12px; margin-bottom:4px;">
                 <div style="width:42px; height:42px; border-radius:12px; background:linear-gradient(135deg, #ecfdf5, #d1fae5); border:1px solid #a7f3d0; display:flex; align-items:center; justify-content:center; color:#059669; flex-shrink:0; box-shadow:0 2px 6px rgba(5,150,105,0.12);">
                   <i data-lucide="layers" class="lucide-md"></i>
@@ -769,10 +722,8 @@
               </div>
             </div>
 
-            <!-- Right Column: Live Digital Clock & Control Actions -->
             <div class="dashboard-header-controls" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-              
-              <!-- Live Telemetry Digital Clock Card -->
+
               <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:8px 16px; display:flex; align-items:center; gap:12px; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
                 <div style="width:34px; height:34px; border-radius:8px; background:#f0fdf4; border:1px solid #bbf7d0; display:flex; align-items:center; justify-content:center; color:#16a34a;">
                   <i data-lucide="clock" class="lucide-sm"></i>
@@ -787,7 +738,6 @@
                 </div>
               </div>
 
-              <!-- Refresh Data Button -->
               <button onclick="loadDashboard()" class="btn btn-primary" style="background:linear-gradient(135deg, #059669, #047857); color:#ffffff; border:none; padding:10px 18px; border-radius:12px; font-weight:700; font-size:13px; display:inline-flex; align-items:center; gap:7px; box-shadow:0 3px 10px rgba(4,120,87,0.22); cursor:pointer; height:42px; transition:all 0.2s ease;">
                 <i data-lucide="refresh-cw" class="lucide-sm"></i> Làm mới dữ liệu
               </button>
@@ -797,9 +747,7 @@
           </div>
         </div>
 
-        <!-- TẦNG 1: 4 THẺ METRIC TILES TỐI GIẢN CHUẨN STRIPE / LINEAR -->
         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px; margin-bottom:20px;">
-          <!-- 1. Số Nông Hộ -->
           <div class="enterprise-stat-tile" style="padding:18px 20px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
               <div style="width:38px; height:38px; border-radius:10px; background:#eff6ff; border:1px solid #dbeafe; display:flex; align-items:center; justify-content:center; color:#2563eb;">
@@ -817,7 +765,6 @@
             </div>
           </div>
 
-          <!-- 2. Tổng Số Trang Trại -->
           <div class="enterprise-stat-tile" style="padding:18px 20px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
               <div style="width:38px; height:38px; border-radius:10px; background:#ecfdf5; border:1px solid #a7f3d0; display:flex; align-items:center; justify-content:center; color:#059669;">
@@ -835,7 +782,6 @@
             </div>
           </div>
 
-          <!-- 3. Loại Cây & Giống -->
           <div class="enterprise-stat-tile" style="padding:18px 20px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
               <div style="width:38px; height:38px; border-radius:10px; background:#fef3c7; border:1px solid #fde68a; display:flex; align-items:center; justify-content:center; color:#d97706;">
@@ -853,7 +799,6 @@
             </div>
           </div>
 
-          <!-- 4. Địa Bàn Chính -->
           <div class="enterprise-stat-tile" style="padding:18px 20px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
               <div style="width:38px; height:38px; border-radius:10px; background:#f5f3ff; border:1px solid #ddd6fe; display:flex; align-items:center; justify-content:center; color:#7c3aed;">
@@ -872,7 +817,6 @@
           </div>
         </div>
 
-        <!-- TẦNG 1.5: BẢNG ĐIỀU KHIỂN TÀI CHÍNH DOANH NGHIỆP (EXECUTIVE BI ANALYTICS) & DỰ BÁO MÙA VỤ HỌC MÁY -->
         <div class="card" id="executive-bi-analytics-root" style="border-radius:18px; border:1.5px solid #e2e8f0; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,0.04); background:#ffffff; margin-bottom:20px;">
           <div style="padding:18px 22px; display:flex; align-items:center; gap:10px; color:#64748b; font-size:13px; font-weight:700;">
             <i data-lucide="loader-2" class="lucide-spin lucide-sm" style="color:#059669;"></i>
@@ -880,7 +824,6 @@
           </div>
         </div>
 
-        <!-- TẦNG 2: THANH TRẠNG THÁI GIÁM SÁT RỦI RO & THIẾT BỊ TỐI GIẢN (MINIMAL STATUS STRIP) -->
         <div class="dashboard-status-strip">
           <div class="status-strip-header">
             <div class="status-strip-title">
@@ -891,25 +834,21 @@
           </div>
 
           <div class="status-strip-grid">
-            <!-- Cây Bệnh -->
             <button type="button" onclick="showPage('plants')" class="status-strip-btn status-btn-sick">
               <span class="status-btn-label"><i data-lucide="bug" class="lucide-xs"></i> Cây bệnh:</span>
               <strong class="status-btn-val" id="stat-sick-plants">0</strong>
             </button>
 
-            <!-- Thiết Bị Offline -->
             <button type="button" onclick="showPage('devices')" class="status-strip-btn status-btn-offline">
               <span class="status-btn-label"><i data-lucide="unplug" class="lucide-xs"></i> Thiết bị offline:</span>
               <strong class="status-btn-val" id="stat-broken-devices">0</strong>
             </button>
 
-            <!-- Thiết Bị Cần Bảo Trì -->
             <button type="button" onclick="showPage('devices')" class="status-strip-btn status-btn-maintenance">
               <span class="status-btn-label"><i data-lucide="wrench" class="lucide-xs"></i> Cần bảo dưỡng:</span>
               <strong class="status-btn-val" id="stat-maintenance-devices">0</strong>
             </button>
 
-            <!-- Cảm Biến Hiệu Chuẩn -->
             <button type="button" onclick="showPage('devices')" class="status-strip-btn status-btn-calibration">
               <span class="status-btn-label"><i data-lucide="sliders" class="lucide-xs"></i> Cần hiệu chuẩn:</span>
               <strong class="status-btn-val" id="stat-calibration-devices">0</strong>
@@ -917,11 +856,8 @@
           </div>
         </div>
 
-        <!-- TẦNG 3: TRUNG TÂM KHÔNG GIAN GIS HỢP NHẤT (MASTER GIS COCKPIT) -->
         <div class="gis-container" style="min-height:640px; height:660px; margin-bottom:20px;">
-          <!-- GIS Sidebar -->
           <div class="gis-sidebar">
-            <!-- Dark Gradient Header -->
             <div class="gis-sidebar-header">
               <button class="gis-back-btn" id="gis-back-btn" style="display:none;" onclick="backToFarmsList()">
                 <i data-lucide="arrow-left" class="lucide-sm"></i>
@@ -934,10 +870,8 @@
               </div>
             </div>
 
-            <!-- Scrollable Content -->
             <div class="gis-sidebar-content" id="gis-sidebar-content">
 
-              <!-- ── Farm list view ── -->
               <div id="gis-view-list">
                 <div class="gis-section-card" style="animation-delay:0.05s;">
                   <div class="gis-section-label">
@@ -952,7 +886,6 @@
                 </div>
               </div>
 
-              <!-- ── Farm create/edit form ── -->
               <div id="gis-view-form" style="display:none;">
                 <div class="gis-section-card">
                   <div class="field">
@@ -960,7 +893,6 @@
                     <input type="text" id="farm-name" placeholder="VD: Nông trại Tây Nguyên, Farm A...">
                   </div>
 
-                  <!-- VietGAP Production Unit Code (PUC) & Certification -->
                   <div style="background:#ecfdf5; border:1px solid #a7f3d0; border-radius:8px; padding:10px; margin-bottom:12px; box-sizing:border-box;">
                     <div style="font-size:11.5px; font-weight:800; color:#047857; margin-bottom:6px;">
                       <i data-lucide="shield-check" class="lucide-sm"></i> Thông Tin Chứng Nhận VietGAP:
@@ -992,7 +924,6 @@
                     </select>
                   </div>
 
-                  <!-- ── Định vị GPS & Nhập Tọa độ (Smart GPS Tool) ── -->
                   <div style="background:linear-gradient(135deg, #f0fdf4 0%, #ecfeff 100%); border:1.5px solid #a7f3d0; border-radius:10px; padding:12px; margin-bottom:14px; box-shadow:0 2px 6px rgba(0,0,0,0.03); box-sizing:border-box;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                       <div style="font-size:12px; font-weight:800; color:#065f46; display:flex; align-items:center; gap:6px;">
@@ -1001,7 +932,6 @@
                       <span class="badge" style="background:#dcfce7; color:#15803d; font-size:10px; font-weight:700; padding:2px 6px; border-radius:6px;">Máy GPS / Google Maps</span>
                     </div>
 
-                    <!-- Ô nhập thông minh 1 dòng -->
                     <div class="field" style="margin-bottom:6px;">
                       <label style="font-size:11px; color:#047857; font-weight:700; margin-bottom:3px; display:flex; justify-content:space-between;">
                         <span>Dán tọa độ (Lat, Long) hoặc link Google Maps:</span>
@@ -1014,7 +944,6 @@
                       </div>
                     </div>
 
-                    <!-- Toggle nhập chi tiết 2 ô (Vĩ độ / Kinh độ) -->
                     <div style="display:flex; gap:6px; margin-bottom:8px;">
                       <div style="flex:1; min-width:0;">
                         <label style="font-size:10.5px; color:#475569; font-weight:600; margin-bottom:2px; display:block;">Vĩ độ (Latitude)</label>
@@ -1026,7 +955,6 @@
                       </div>
                     </div>
 
-                    <!-- Hàng nút tiện ích thực địa -->
                     <div style="display:flex; gap:5px; flex-wrap:wrap;">
                       <button type="button" class="btn btn-secondary btn-sm" style="flex:1; min-width:105px; font-size:11px; padding:5px 8px; font-weight:700; background:#ffffff;" onclick="getCurrentDeviceGpsLocation()" title="Lấy tọa độ thực tế của thiết bị">
                         <i data-lucide="navigation" class="lucide-xs" style="color:#0284c7;"></i> Lấy GPS máy
@@ -1067,16 +995,13 @@
                 </div>
               </div>
 
-              <!-- ── Farm detail view ── -->
               <div id="gis-view-details" style="display:none;">
 
-                <!-- Farm info -->
                 <div class="gis-section-card" style="animation-delay:0.05s;">
                   <p id="farm-details-desc" class="gis-farm-info" style="font-style:italic; min-height:16px;"></p>
                   <p id="farm-details-area" class="gis-farm-area-badge"><i data-lucide="trending-up" class="lucide-sm"></i> 0 m²</p>
                 </div>
 
-                <!-- Cấp & Quản lý Live API Dữ liệu Trang trại (Chuẩn Quốc Tế) -->
                 <div class="gis-section-card" style="animation-delay:0.08s; border:1.5px solid #a7f3d0; background:linear-gradient(180deg, #f0fdf4 0%, #ffffff 100%);">
                   <div class="gis-section-label" style="color:#047857; display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
                     <span style="display:inline-flex; align-items:center; gap:5px; font-weight:800;">
@@ -1102,7 +1027,6 @@
                   </button>
                 </div>
 
-                <!-- Thêm cây -->
                 <div class="gis-section-card" style="animation-delay:0.10s;">
                   <div class="gis-section-label" style="color:#047857;">
                     <i data-lucide="sprout" class="lucide-sm" style="color:#10b981;"></i> Thêm cây vào trang trại
@@ -1126,7 +1050,6 @@
                   </button>
                 </div>
 
-                <!-- Hồ sơ bản vẽ CAD -->
                 <div class="gis-section-card" style="animation-delay:0.15s;">
                   <div class="gis-section-label" style="color:#1d4ed8;">
                     <i data-lucide="compass" class="lucide-sm" style="color:#3b82f6;"></i> Hồ sơ Bản vẽ (CAD / Overlay)
@@ -1136,7 +1059,6 @@
                   </button>
                 </div>
 
-                <!-- Danh sách cây -->
                 <div class="gis-section-card" style="animation-delay:0.20s;">
                   <div class="gis-section-label" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
                     <span style="display:inline-flex; align-items:center; gap:5px;">
@@ -1147,7 +1069,6 @@
                       <i data-lucide="arrow-down-a-z" class="lucide-xs"></i> A→Z · 1→99
                     </span>
                   </div>
-                  <!-- Ô tìm kiếm thông minh (Smart Search) -->
                   <div style="position:relative; margin-bottom:8px;">
                     <i data-lucide="search" class="lucide-xs" style="position:absolute; left:9px; top:50%; transform:translateY(-50%); color:#64748b; pointer-events:none;"></i>
                     <input type="text" id="gis-sidebar-plant-search" placeholder="Tìm số cây (VD: 1 → 1, 10, 11...), loại, giống..." oninput="filterGisSidebarPlantsList(this.value)" style="width:100%; padding:6px 26px 6px 28px; font-size:11.5px; border:1.5px solid #e2e8f0; border-radius:8px; background:#f8fafc; color:#0f172a; outline:none; box-sizing:border-box; transition:all 0.2s;" onfocus="this.style.borderColor='#10b981'; this.style.background='#ffffff';" onblur="this.style.borderColor='#e2e8f0'; this.style.background='#f8fafc';">
@@ -1156,27 +1077,23 @@
                     </button>
                   </div>
                   <div id="farm-details-plants-list" style="max-height:240px; overflow-y:auto; display:flex; flex-direction:column; gap:5px; scrollbar-width:thin; scrollbar-color:#cbd5e1 transparent;">
-                    <!-- Filled by JS -->
                   </div>
                 </div>
 
-              </div><!-- /gis-view-details -->
-            </div><!-- /gis-sidebar-content -->
+              </div>
+            </div>
 
-            <!-- Footer: Sửa / Xóa -->
             <div class="gis-footer-actions" id="gis-detail-footer" style="display:none;">
               <button class="btn btn-secondary btn-sm" onclick="editFarm()"><i data-lucide="edit-3" class="lucide-sm"></i> Sửa</button>
               <button class="btn btn-danger btn-sm" onclick="deleteFarm()"><i data-lucide="trash-2" class="lucide-sm"></i> Xóa</button>
             </div>
           </div>
-          <!-- GIS Map Container -->
           <div class="gis-map-container" style="position: relative;">
             <div id="gis-import-active-banner" style="display:none; position:absolute; top:14px; left:50%; transform:translateX(-50%); z-index:12; background:linear-gradient(135deg, #059669, #10b981); color:#fff; padding:10px 18px; border-radius:30px; font-size:12.5px; font-weight:700; box-shadow:0 8px 24px rgba(0,0,0,0.35); border:1.5px solid rgba(255,255,255,0.4); pointer-events:auto; align-items:center; gap:10px;">
               <span id="gis-import-banner-text"><i data-lucide="crosshair" class="lucide-sm"></i> Đang bật Chế độ Import GIS: Click chọn vị trí cây trên bản đồ để nhập GPS &amp; Thông tin!</span>
               <button class="btn btn-sm" style="background:rgba(0,0,0,0.3); border:none; color:#fff; border-radius:20px; padding:3px 10px; font-size:11px; cursor:pointer;" onclick="cancelAllGisPinModes()">Tắt Chế Độ</button>
             </div>
             <div id="gis-map" class="gis-map"></div>
-            <!-- Satellite Provider Switcher Floating Controls -->
             <div id="gis-satellite-switcher" class="gis-satellite-switcher" style="position:absolute; bottom:28px; left:16px; z-index:15; display:flex; gap:6px; background:rgba(15,23,42,0.88); backdrop-filter:blur(8px); padding:4px 6px; border-radius:10px; border:1px solid rgba(255,255,255,0.15); box-shadow:0 8px 24px rgba(0,0,0,0.35);">
               <span style="display:flex; align-items:center; gap:4px; font-size:11px; font-weight:800; color:#94a3b8; padding:0 6px;">
                 <i data-lucide="layers" class="lucide-xs" style="color:#34d399;"></i> Vệ tinh:
@@ -1195,11 +1112,7 @@
         </div>
       </div>
 
-      <!-- ── DATABASE (CƠ SỞ DỮ LIỆU) ── -->
-
-      <!-- ── 2. DATABASE & AGRONOMIC MASTER DATA (8 SUB-VIEWS) ── -->
       <div class="page-section" id="page-database">
-        <!-- Executive Royal AgTech Header -->
         <div class="royal-page-header">
           <div style="position:relative; z-index:1;">
             <div style="font-size:11px; color:#059669; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; margin-bottom:4px; display:inline-flex; align-items:center; gap:6px; background:#ecfdf5; border:1px solid #a7f3d0; padding:2px 8px; border-radius:6px;">
@@ -1220,7 +1133,6 @@
           </div>
         </div>
 
-        <!-- 8 Sub-tabs in Database section -->
         <div class="tabs" style="margin-bottom: 20px;">
           <div class="tab active" id="db-tab-cultivation" onclick="switchDatabaseTab('cultivation')">
             <i data-lucide="sprout" class="lucide-sm"></i> Dữ liệu canh tác
@@ -1252,7 +1164,6 @@
         </div>
 
         <div class="tab-pane active" id="db-pane-cultivation">
-          <!-- TOP BAR: FARM SELECTOR & HERO BANNER -->
           <div class="card" style="margin-bottom:20px; border-radius:16px; overflow:hidden; border:1px solid #cbd5e1; box-shadow:0 6px 20px rgba(0,0,0,0.03);">
             <div style="background:linear-gradient(135deg, #064e3b 0%, #047857 100%); padding:20px 24px; color:#ffffff; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
               <div>
@@ -1264,7 +1175,6 @@
                 </h2>
               </div>
 
-              <!-- Farm Selector Dropdown -->
               <div style="min-width:300px; max-width:440px; flex:1;">
                 <label style="font-size:11px; font-weight:800; color:#d1fae5; display:block; margin-bottom:6px;"> CHỌN TRANG TRẠI CANH TÁC *</label>
                 <select id="db-filter-farm" onchange="onDbFarmChange()" style="width:100%; padding:10px 14px; border:2px solid #34d399; border-radius:10px; font-size:13.5px; font-weight:700; color:#064e3b; background:#ffffff; box-shadow:0 4px 12px rgba(0,0,0,0.12); cursor:pointer;">
@@ -1273,19 +1183,15 @@
               </div>
             </div>
 
-            <!-- Farm Overview Hero Bar (Personnel & Quick Stats) -->
             <div id="db-farm-hero-bar" class="db-farm-hero-bar" style="display:none; background:#f8fafc; border-top:1px solid #e2e8f0; padding:14px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
-              <!-- Personnel Pills (Name & Phone only - No Role) -->
               <div class="db-farm-personnel-wrap" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; flex:1;">
                 <span style="font-size:12.5px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:6px;">
                   <i data-lucide="users" class="lucide-sm" style="color:#059669;"></i> Người tham gia:
                 </span>
                 <div id="db-farm-personnel-list" style="display:flex; flex-wrap:wrap; gap:8px;">
-                  <!-- Populated dynamically with name & phone pills -->
                 </div>
               </div>
 
-              <!-- Quick Stats & Actions -->
               <div class="db-farm-actions-grid" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                 <button class="btn btn-secondary btn-sm" onclick="openNfcInventoryModal()" style="background:#f0fdf4; border:1.5px solid #86efac; color:#166534; font-weight:700; font-size:12.5px; padding:7px 12px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; gap:6px; cursor:pointer;" title="Quản lý kho thẻ NFC và quét liên tục">
                   <i data-lucide="package" class="lucide-sm" style="color:#059669;"></i> Kho Thẻ NFC
@@ -1303,10 +1209,8 @@
             </div>
           </div>
 
-          <!-- MASTER-DETAIL SPLIT-VIEW CONTAINER -->
           <div id="db-cultivation-split-view" style="display:none; grid-template-columns: 340px minmax(0, 1fr); gap: 20px; align-items: start; max-width: 100%; box-sizing: border-box;">
-            
-            <!-- LEFT COLUMN: MASTER LIST (Danh mục Cây trồng & Tìm kiếm nhanh) -->
+
             <div class="card" style="border-radius:12px; overflow:hidden; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; flex-direction:column; max-height: calc(100vh - 180px); position:sticky; top:20px;">
               <div style="padding:14px 16px; background:#f8fafc; border-bottom:1px solid #e2e8f0; display:flex; flex-direction:column; gap:8px;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -1315,8 +1219,7 @@
                   </h4>
                   <span id="db-master-plant-count-badge" class="badge" style="background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; font-weight:800; font-size:11px; padding:2px 8px; border-radius:6px;">0 cây</span>
                 </div>
-                
-                <!-- Search Input & Health Filter -->
+
                 <div style="display:flex; gap:6px;">
                   <input type="text" id="db-plant-search-input" placeholder=" Tìm mã (#101), giống..." oninput="filterMasterPlantList()" style="flex:1; min-width:120px; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:12px; font-weight:600; outline:none; background:#ffffff;">
                   <select id="db-plant-filter-health" onchange="filterMasterPlantList()" style="width:105px; padding:8px 6px; border:1px solid #cbd5e1; border-radius:8px; font-size:11.5px; font-weight:600; background:#ffffff; outline:none; cursor:pointer;">
@@ -1328,38 +1231,28 @@
                 </div>
               </div>
 
-              <!-- Scrollable Tree Cards List -->
               <div id="db-master-plants-list" style="overflow-y:auto; padding:10px; display:flex; flex-direction:column; gap:8px; flex:1;">
-                <!-- Populated dynamically with plant cards -->
               </div>
             </div>
 
-            <!-- RIGHT COLUMN: DETAIL VIEW (Hồ sơ cây, Chi phí đầu tư & Dòng thời gian canh tác) -->
             <div id="db-detail-view-container" style="display:flex; flex-direction:column; gap:16px; min-width:0; max-width:100%; box-sizing:border-box;">
-              <!-- Cost & Profile Header Box -->
               <div id="db-plant-cost-summary" style="display:none; background:linear-gradient(135deg, #064e3b 0%, #047857 100%); border-radius:16px; padding:20px; color:#ffffff; box-shadow:0 8px 24px rgba(4,120,87,0.25);">
-                <!-- Populated dynamically with tree profile, cost stats & Print button -->
               </div>
 
-              <!-- Activity Filter Chips Bar -->
               <div id="db-activity-filter-bar" style="display:none; background:#ffffff; border:1.5px solid #e2e8f0; border-radius:14px; padding:12px 18px; box-shadow:0 2px 8px rgba(0,0,0,0.02); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
                 <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;" id="db-activity-chips-container">
-                  <!-- Chips: Tất cả, Tưới nước, Bón phân, Phun thuốc, Cắt tỉa, Bệnh cây, Thu hoạch -->
                 </div>
                 <button class="btn btn-secondary btn-sm" onclick="exportCultivationPDF()" style="display:inline-flex; align-items:center; gap:6px; font-weight:700; background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:8px; padding:6px 12px; font-size:12px;">
                   <i data-lucide="file-text" class="lucide-sm" style="color:#dc2626;"></i> In / Xuất Hồ sơ
                 </button>
               </div>
 
-              <!-- Timeline Feed Container -->
               <div id="db-cultivation-timeline-container" style="min-width:0; max-width:100%; box-sizing:border-box;">
-                <!-- Populated dynamically by database.js -->
               </div>
             </div>
 
           </div>
 
-          <!-- Empty Initial State (Shown when no farm is selected) -->
           <div id="db-farm-empty-placeholder" class="empty-state" style="padding:60px 20px; background:#ffffff; border-radius:16px; border:1.5px solid #e2e8f0; text-align:center; box-shadow:0 4px 16px rgba(0,0,0,0.02);">
             <i data-lucide="home" class="lucide-sm" style="font-size:54px; color:#94a3b8; margin-bottom:16px; display:inline-block;"></i>
             <h3 style="font-size:17px; font-weight:800; color:#0f172a; margin:0 0 8px 0;">Vui lòng chọn Trang trại để mở Bảng điều khiển Split-View</h3>
@@ -1369,11 +1262,8 @@
           </div>
         </div>
 
-        <!-- ── TAB 2: THIẾT BỊ IOT & CẢM BIẾN (ENTERPRISE AGTECH IOT SUITE) ── -->
-        <!-- ── TAB 2 (SUB-TAB): KHO THẺ NFC (ADMIN NFC INVENTORY SUITE) ── -->
-<div class="tab-pane" id="db-pane-nfc" style="display:none;">
-  
-  <!-- 1. TOP HERO CARD: FARM SELECTOR & ACTIONS -->
+        <div class="tab-pane" id="db-pane-nfc" style="display:none;">
+
   <div class="card" style="margin-bottom:20px; border-radius:16px; overflow:hidden; border:1px solid #cbd5e1; box-shadow:0 6px 20px rgba(0,0,0,0.03);">
     <div style="background:linear-gradient(135deg, #064e3b 0%, #047857 100%); padding:20px 24px; color:#ffffff; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
       <div>
@@ -1385,7 +1275,6 @@
         </h2>
       </div>
 
-      <!-- Farm Selector Dropdown -->
       <div style="min-width:300px; max-width:440px; flex:1;">
         <label style="font-size:11px; font-weight:800; color:#d1fae5; display:block; margin-bottom:6px;"> CHỌN TRANG TRẠI QUẢN LÝ KHO THẺ *</label>
         <select id="db-nfc-filter-farm" onchange="onAdminNfcFarmChange(this.value)" style="width:100%; padding:10px 14px; border:2px solid #34d399; border-radius:10px; font-size:13.5px; font-weight:700; color:#064e3b; background:#ffffff; box-shadow:0 4px 12px rgba(0,0,0,0.12); cursor:pointer;">
@@ -1394,7 +1283,6 @@
       </div>
     </div>
 
-    <!-- Quick Stats & Controls Bar -->
     <div style="background:#f8fafc; border-top:1px solid #e2e8f0; padding:14px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
       <div class="db-nfc-stats-grid" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
         <span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:12.5px; font-weight:800; padding:6px 14px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; gap:5px;">
@@ -1432,7 +1320,6 @@
     </div>
   </div>
 
-  <!-- 1.5. NTAG213 MASTER TEMPLATE PUBLIC URL BAR (Theo Nông Trại) -->
   <div class="card" id="db-nfc-template-card" style="margin-bottom:20px; border-radius:16px; border:1.5px solid #10b981; background:linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); padding:18px 22px; box-shadow:0 4px 16px rgba(16,185,129,0.08);">
     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:12px;">
       <div style="display:flex; align-items:center; gap:10px;">
@@ -1452,10 +1339,9 @@
       </button>
     </div>
 
-    <!-- URL Display & Copy Box -->
     <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
       <div style="position:relative; flex:1; min-width:280px;">
-        <input type="text" id="db-nfc-template-url-input" readonly 
+        <input type="text" id="db-nfc-template-url-input" readonly
                value="https://plant-book.onrender.com/1/public/"
                style="width:100%; padding:11px 14px; border:1.5px solid #10b981; border-radius:10px; font-size:13.5px; font-family:monospace; font-weight:800; color:#064e3b; background:#ffffff; box-shadow:inset 0 1px 3px rgba(0,0,0,0.05); outline:none;">
       </div>
@@ -1473,7 +1359,6 @@
     </div>
   </div>
 
-  <!-- ════════════ NTAG213 UID MIRRORING GUIDE MODAL ════════════ -->
   <div class="modal-overlay" id="ntag213-guide-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(15,23,42,0.65); z-index:99999; align-items:center; justify-content:center;" onclick="if(event.target===this)closeNtag213GuideModal()">
     <div class="modal" style="max-width:620px; width:90%; background:#ffffff; border-radius:18px; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.3); border:1.5px solid #10b981;">
       <div class="modal-header" style="background:linear-gradient(135deg, #064e3b 0%, #047857 100%); color:#ffffff; padding:18px 24px; display:flex; justify-content:space-between; align-items:center;">
@@ -1484,7 +1369,7 @@
         <button class="modal-close" onclick="closeNtag213GuideModal()" style="color:#ffffff; background:none; border:none; font-size:20px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center;"><i data-lucide="x" class="lucide-sm"></i></button>
       </div>
       <div class="modal-body" style="padding:22px 24px; font-size:13px; color:#334155; line-height:1.6;">
-        
+
         <div style="background:#f0fdf4; border:1.5px solid #86efac; border-radius:12px; padding:14px 16px; margin-bottom:18px;">
           <div style="font-weight:800; color:#065f46; font-size:14px; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
             <i data-lucide="zap" class="lucide-sm" style="color:#10b981;"></i> Nạp 1 Link Mẫu Dùng Cho Hàng Nghìn Thẻ
@@ -1517,7 +1402,6 @@
     </div>
   </div>
 
-  <!-- 2. BATCH SCANNING & QUICK INPUT STRIP -->
   <div class="card db-nfc-scan-card" style="margin-bottom:20px; border-radius:16px; border:1.5px solid #a7f3d0; background:#ecfdf5; padding:18px 22px; box-shadow:0 4px 16px rgba(16,185,129,0.08);">
     <div class="db-nfc-scan-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
       <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
@@ -1533,11 +1417,10 @@
       </button>
     </div>
 
-    <!-- Quick Text Input Bar (Keyboard / USB Reader / Manual) -->
     <div class="db-nfc-input-row" style="display:flex; gap:10px;">
       <div style="position:relative; flex:1;">
         <i data-lucide="scan" class="lucide-sm" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#059669; font-size:16px;"></i>
-        <input type="text" id="db-nfc-quick-input" placeholder="Quẹt đầu đọc USB hoặc nhập mã UID (vd: 04:20:CF:5A:25:20:91) rồi bấm Enter..." 
+        <input type="text" id="db-nfc-quick-input" placeholder="Quẹt đầu đọc USB hoặc nhập mã UID (vd: 04:20:CF:5A:25:20:91) rồi bấm Enter..."
                onkeydown="if(event.key==='Enter') handleAdminPageQuickNfcInput(event)"
                style="width:100%; padding:11px 14px 11px 42px; border:1.5px solid #6ee7b7; border-radius:10px; font-size:13px; font-family:monospace; font-weight:700; color:#0f172a; outline:none; background:#ffffff; box-shadow:inset 0 1px 3px rgba(0,0,0,0.05);">
       </div>
@@ -1547,7 +1430,6 @@
     </div>
   </div>
 
-  <!-- 3. EXCEL-STYLE INVENTORY DATA TABLE -->
   <div class="card" style="border-radius:16px; overflow:hidden; border:1px solid #cbd5e1; background:#ffffff; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
     <div style="padding:16px 20px; background:#f8fafc; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
       <div style="display:flex; align-items:center; gap:10px;">
@@ -1557,15 +1439,12 @@
         <span id="db-nfc-table-count-badge" class="badge" style="background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; font-weight:800; font-size:11.5px; padding:3px 10px; border-radius:6px;">0 thẻ</span>
       </div>
 
-      <!-- Filters & Sorting Controls Bar -->
       <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-        <!-- Search Input -->
         <div style="position:relative;">
           <i data-lucide="search" class="lucide-sm" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:12px;"></i>
           <input type="text" id="db-nfc-table-search" placeholder="Lọc mã UID, số cây, loại cây..." oninput="filterAdminNfcTable()" style="padding:7px 12px 7px 30px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12px; font-weight:600; outline:none; background:#ffffff; width:210px;">
         </div>
 
-        <!-- Status Filter Select -->
         <select id="db-nfc-status-filter" onchange="filterAdminNfcTable()" style="padding:7px 10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12px; font-weight:700; color:#334155; outline:none; background:#ffffff; cursor:pointer;">
           <option value="all">Tất cả trạng thái</option>
           <option value="unassigned">Còn trống (Sẵn sàng)</option>
@@ -1574,7 +1453,6 @@
           <option value="no_gps">Chưa có GPS</option>
         </select>
 
-        <!-- Sort Select -->
         <select id="db-nfc-sort-select" onchange="onAdminNfcSortDropdownChange(this.value)" style="padding:7px 10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12px; font-weight:700; color:#334155; outline:none; background:#ffffff; cursor:pointer;">
           <option value="time_desc">Mới nhập nhất</option>
           <option value="time_asc">Cũ nhất trước</option>
@@ -1624,13 +1502,11 @@
       </table>
     </div>
 
-    <!-- 4. PAGINATION BAR (10 BẢN GHI / TRANG) -->
     <div id="db-nfc-pagination-bar" style="background:#f8fafc; border-top:1px solid #e2e8f0; padding:12px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
       <div id="db-nfc-pagination-info" style="font-size:12.5px; font-weight:600; color:#64748b;">
         Hiển thị 0 - 0 trong 0 thẻ
       </div>
       <div id="db-nfc-pagination-btns" style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
-        <!-- Filled dynamically by JS -->
       </div>
     </div>
   </div>
@@ -1639,7 +1515,6 @@
 
         <div class="tab-pane" id="db-pane-devices" style="display:none;">
 
-          <!-- TẦNG 1: EXECUTIVE KPI SUMMARY -->
           <div class="db-iot-kpi-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:20px;">
             <div class="card stat-card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
               <div style="width:44px; height:44px; border-radius:10px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">
@@ -1682,21 +1557,17 @@
             </div>
           </div>
 
-          <!-- TẦNG 2: CONTROL BAR & SMART FILTERING -->
           <div class="card" style="margin-bottom:20px; border-radius:12px; border:1px solid #e2e8f0;">
             <div style="padding:16px 20px; background:#ffffff; display:flex; flex-direction:column; gap:12px;">
               <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-                
-                <!-- Filters -->
+
                 <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; flex:1; min-width:280px;" class="db-iot-filters-wrap">
-                  <!-- Farm Selector -->
                   <div style="min-width:220px; flex:1.2;" class="db-filter-item">
                     <select id="db-iot-filter-farm" onchange="filterDbDevices()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:700; color:#064e3b; background:#f8fafc;">
                       <option value="all"> Tất cả Trang trại (Toàn bộ IoT)</option>
                     </select>
                   </div>
 
-                  <!-- Category Selector -->
                   <div style="min-width:170px; flex:1;" class="db-filter-item">
                     <select id="db-iot-filter-type" onchange="filterDbDevices()" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:600; background:#ffffff;">
                       <option value="all">Tất cả phân loại</option>
@@ -1706,7 +1577,6 @@
                     </select>
                   </div>
 
-                  <!-- Status Selector -->
                   <div style="min-width:140px; flex:0.8;" class="db-filter-item">
                     <select id="db-iot-filter-status" onchange="filterDbDevices()" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:600; background:#ffffff;">
                       <option value="all">Tất cả trạng thái</option>
@@ -1716,13 +1586,11 @@
                     </select>
                   </div>
 
-                  <!-- Search Input -->
                   <div style="min-width:180px; flex:1;" class="db-filter-item">
                     <input type="text" id="db-iot-search-input" placeholder=" Tìm theo IP, tên, mã..." oninput="filterDbDevices()" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:12.5px; outline:none; background:#ffffff;">
                   </div>
                 </div>
 
-                <!-- Right Action Buttons -->
                 <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;" class="db-iot-actions-wrap">
                   <button class="btn btn-secondary btn-sm" onclick="loadDbDevicesTab()" style="display:inline-flex; align-items:center; gap:6px; font-weight:700; background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-size:12px; cursor:pointer;">
                     <i data-lucide="refresh-cw" class="lucide-sm" style="color:#059669;"></i> Làm mới
@@ -1736,7 +1604,6 @@
             </div>
           </div>
 
-          <!-- TẦNG 3: TELEMETRY TRỰC QUAN & DANH SÁCH THIẾT BỊ PHÂN TẦNG -->
           <div class="card" style="margin-bottom:20px; overflow:hidden; border-radius:12px; border:1px solid #e2e8f0;">
             <div class="tabs" style="padding:0 20px; border-bottom:1px solid #e2e8f0; background:#f8fafc; display:flex; gap:10px; overflow-x:auto;">
               <div class="tab active" id="iot-tab-weather" onclick="switchIotTab('weather')" style="padding:12px 16px; font-weight:700; font-size:13px; display:inline-flex; align-items:center; gap:6px;">
@@ -1753,11 +1620,9 @@
               </div>
             </div>
 
-            <!-- Sub-tab 1: Weather Station -->
             <div id="iot-pane-weather" style="padding:20px; display:block;">
               <div class="iot-weather-grid" style="display:flex; flex-direction:column; gap:18px;">
-                
-                <!-- TOP ROW: Hero Weather Summary Card -->
+
                 <div class="iot-weather-hero-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
                   <div>
                     <div style="font-size:12px; color:#64748b; font-weight:600; display:flex; align-items:center; gap:6px;">
@@ -1782,9 +1647,7 @@
                   </div>
                 </div>
 
-                <!-- 6 Specialized AgTech Telemetry Cards -->
                 <div class="iot-weather-metrics-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:12px;">
-                  <!-- Card 1: Gió & Gió giật -->
                   <div class="iot-metric-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:12px 14px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
                     <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
                       <i data-lucide="wind" class="lucide-sm" style="color:#0284c7;"></i> Tốc độ &amp; Hướng gió
@@ -1794,7 +1657,6 @@
                     <div id="iot-weather-wind-gusts" style="font-size:10.5px; color:#64748b; margin-top:2px;">Gió giật max: -- km/h</div>
                   </div>
 
-                  <!-- Card 2: Mưa & Khả năng mưa -->
                   <div class="iot-metric-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:12px 14px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
                     <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
                       <i data-lucide="cloud-rain" class="lucide-sm" style="color:#059669;"></i> Lượng mưa &amp; Xác suất
@@ -1804,7 +1666,6 @@
                     <div id="iot-weather-rain-sum" style="font-size:10.5px; color:#64748b; margin-top:2px;">Tổng mưa 24h: -- mm</div>
                   </div>
 
-                  <!-- Card 3: Độ ẩm & Điểm sương -->
                   <div class="iot-metric-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:12px 14px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
                     <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
                       <i data-lucide="droplet" class="lucide-sm" style="color:#0284c7;"></i> Độ ẩm &amp; Điểm sương
@@ -1814,7 +1675,6 @@
                     <div id="iot-weather-dewpoint" style="font-size:10.5px; color:#64748b; margin-top:2px;">Điểm sương: --°C</div>
                   </div>
 
-                  <!-- Card 4: Bốc thoát hơi nước ET0 -->
                   <div class="iot-metric-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:12px 14px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
                     <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
                       <i data-lucide="sprout" class="lucide-sm" style="color:#16a34a;"></i> Bốc thoát hơi nước (ET₀)
@@ -1824,7 +1684,6 @@
                     <div id="iot-weather-irrigation-rec" style="font-size:10.5px; color:#64748b; margin-top:2px;">Tưới bù: ~-- Lít/cây</div>
                   </div>
 
-                  <!-- Card 5: Chỉ số UV & Bức xạ -->
                   <div class="iot-metric-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:12px 14px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
                     <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
                       <i data-lucide="sun" class="lucide-sm" style="color:#d97706;"></i> Chỉ số UV &amp; Bức xạ
@@ -1834,7 +1693,6 @@
                     <div id="iot-weather-solar-rad" style="font-size:10.5px; color:#64748b; margin-top:2px;">Bức xạ: -- W/m²</div>
                   </div>
 
-                  <!-- Card 6: Độ ẩm & Nhiệt độ đất vệ tinh -->
                   <div class="iot-metric-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:12px 14px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
                     <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
                       <i data-lucide="layers" class="lucide-sm" style="color:#8b5cf6;"></i> Đất Vệ Tinh (0-30cm)
@@ -1845,7 +1703,6 @@
                   </div>
                 </div>
 
-                <!-- Smart AgTech Crop Advisory Box -->
                 <div id="iot-weather-agri-advisory-box" style="background:#f0fdf4; border:1px solid #bbf7d0; border-left:4px solid #059669; border-radius:12px; padding:14px 18px; display:flex; flex-direction:column; gap:6px;">
                   <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <span style="font-weight:800; font-size:13px; color:#15803d; display:inline-flex; align-items:center; gap:6px;">
@@ -1860,7 +1717,6 @@
                   </div>
                 </div>
 
-                <!-- MIDDLE SECTION: 24-HOUR REAL-TIME CONTINUOUS HOURLY FORECAST (DYNAMIC TIMELINE & CHART) -->
                 <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; flex-direction:column; gap:14px;">
                   <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; padding-bottom:10px; border-bottom:1px solid #f1f5f9;">
                     <div>
@@ -1869,13 +1725,10 @@
                       </h4>
                       <p id="iot-hourly-view-title" style="margin:2px 0 0; font-size:12px; color:#64748b;">Bắt đầu từ giờ kế tiếp theo thời gian thực (Trải dài 24 tiếng)</p>
                     </div>
-                    <!-- Day Selector Filter Pills -->
                     <div id="iot-hourly-day-pills" style="display:flex; gap:6px; overflow-x:auto; max-width:100%; padding-bottom:4px;" class="scroll-pills">
-                      <!-- Dynamically rendered day filter pills (Live 24h, Hôm nay, Ngày mai, Thứ 7...) -->
                     </div>
                   </div>
 
-                  <!-- 24-Hour Temperature & Rain Curve Chart -->
                   <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px 16px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                       <span style="font-size:11px; font-weight:700; color:#475569; text-transform:uppercase;">Biểu đồ Nhiệt độ (°C) &amp; Xác suất mưa (%) theo 24 khung giờ</span>
@@ -1886,7 +1739,6 @@
                     </div>
                   </div>
 
-                  <!-- Horizontal Scrollable 24-Hour Hourly Cards Strip -->
                   <div>
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                       <span style="font-size:11.5px; font-weight:800; color:#334155; text-transform:uppercase;">Chi tiết từng giờ (Kéo ngang để xem trọn vẹn 24h)</span>
@@ -1907,7 +1759,6 @@
                   </div>
                 </div>
 
-                <!-- BOTTOM ROW: 7-Day Agricultural Forecast Grid -->
                 <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; flex-direction:column; gap:12px;">
                   <div style="font-size:13.5px; font-weight:800; color:#0f172a; display:flex; align-items:center; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid #f1f5f9; flex-wrap:wrap; gap:8px;">
                     <span style="display:inline-flex; align-items:center; gap:6px;">
@@ -1927,7 +1778,6 @@
               </div>
             </div>
 
-            <!-- Sub-tab 2: Soil Telemetry -->
             <div id="iot-pane-soil" style="padding:20px; display:none;">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:12px;">
                 <div>
@@ -1949,7 +1799,6 @@
               <div class="iot-soil-metrics-grid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:14px;" id="soil-metrics-grid"></div>
             </div>
 
-            <!-- Sub-tab 3: AI Advisory -->
             <div id="iot-pane-ai" style="padding:20px; display:none;">
               <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:16px; margin-bottom:18px;">
                 <div style="display:flex; align-items:center; gap:8px; font-size:14px; font-weight:800; color:#15803d; margin-bottom:6px;">
@@ -1965,7 +1814,6 @@
               </div>
             </div>
 
-            <!-- Sub-tab 4: Device Table Registry -->
             <div id="iot-pane-devices" style="padding:20px; display:none;">
               <div class="table-responsive" style="overflow-x:auto;">
                 <table style="width:100%; border-collapse:collapse;">
@@ -1989,10 +1837,8 @@
           </div>
         </div>
 
-        <!-- ── TAB 3: CẤU HÌNH LOẠI CÂY & QUY TRÌNH CANH TÁC CHUẨN (SCHEMAS & SOPS) ── -->
         ﻿<div class="tab-pane" id="db-pane-schemas" style="display:none;">
 
-          <!-- TẦNG 1: EXECUTIVE KPI SUMMARY -->
           <div class="schema-kpi-grid" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; margin-bottom:20px;">
             <div class="card schema-kpi-card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
               <div style="width:44px; height:44px; border-radius:10px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">
@@ -2025,7 +1871,6 @@
             </div>
           </div>
 
-          <!-- TẦNG 2: CONTROL BAR & SUB-TABS -->
           <div class="card" style="margin-bottom:20px; overflow:hidden; border-radius:12px; border:1px solid #e2e8f0;">
             <div class="schema-tabs-container tabs" style="padding:0 20px; border-bottom:1px solid #e2e8f0; background:#f8fafc; display:flex; justify-content:space-between; align-items:center; flex-wrap:nowrap; overflow-x:auto; gap:12px;">
               <div style="display:flex; gap:10px; flex-shrink:0;">
@@ -2037,7 +1882,6 @@
                 </div>
               </div>
 
-              <!-- Top Action Button -->
               <div style="padding:8px 0; flex-shrink:0;" id="schema-top-actions">
                 <button class="btn btn-primary btn-sm" onclick="openSchemaModal()" style="background:#059669; border:none; border-radius:8px; padding:7px 14px; font-size:12px; font-weight:800; box-shadow:0 1px 2px rgba(5,150,105,0.2); cursor:pointer; white-space:nowrap;">
                   <i data-lucide="plus" class="lucide-sm"></i> + Tạo Loại Cây Mới
@@ -2045,7 +1889,6 @@
               </div>
             </div>
 
-            <!-- Sub-pane 1: Schema Catalog Table & Grid -->
             <div class="tab-pane active" id="pane-config-schema" style="padding:20px; display:block;">
               <div style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                 <div style="font-size:13px; color:#64748b;">
@@ -2072,7 +1915,6 @@
               </table>
             </div>
 
-            <!-- Sub-pane 2: Care SOP Procedures Configuration -->
             <div class="tab-pane" id="pane-config-care" style="padding:20px; display:none;">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
                 <div>
@@ -2090,7 +1932,6 @@
               </div>
 
               <div class="care-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">
-                <!-- Card 1: Tưới nước -->
                 <div class="care-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
                   <div class="care-card-header" style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
                     <i data-lucide="droplet" class="lucide-sm" style="color:#3b82f6; font-size:18px;"></i>
@@ -2102,7 +1943,6 @@
                   </div>
                 </div>
 
-                <!-- Card 2: Bón phân -->
                 <div class="care-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
                   <div class="care-card-header" style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
                     <i data-lucide="flask-conical" class="lucide-sm" style="color:#8b5cf6; font-size:18px;"></i>
@@ -2114,7 +1954,6 @@
                   </div>
                 </div>
 
-                <!-- Card 3: Phun thuốc -->
                 <div class="care-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
                   <div class="care-card-header" style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
                     <i data-lucide="shield-alert" class="lucide-sm" style="color:#ef4444; font-size:18px;"></i>
@@ -2126,7 +1965,6 @@
                   </div>
                 </div>
 
-                <!-- Card 4: Cắt cành / Cắt lá -->
                 <div class="care-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
                   <div class="care-card-header" style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
                     <i data-lucide="scissors" class="lucide-sm" style="color:#f59e0b; font-size:18px;"></i>
@@ -2138,7 +1976,6 @@
                   </div>
                 </div>
 
-                <!-- Card 5: Tỉa hoa -->
                 <div class="care-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
                   <div class="care-card-header" style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
                     <i data-lucide="sprout" class="lucide-sm" style="color:#10b981; font-size:18px;"></i>
@@ -2155,12 +1992,9 @@
           </div>
         </div>
 
-        <!-- ── TAB 4: VẬT TƯ & KHO (ENTERPRISE AGTECH ERP INVENTORY SUITE) ── -->
         ﻿<div class="tab-pane" id="db-pane-supplies" style="display:none;">
 
-          <!-- TẦNG 1: EXECUTIVE KPI & WAREHOUSE TELEMETRY -->
           <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:20px;">
-            <!-- KPI 1: Tổng Mặt Hàng -->
             <div class="card" style="padding:16px 20px; border-radius:14px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 2px 10px rgba(0,0,0,0.02); display:flex; align-items:center; gap:16px;">
               <div style="width:48px; height:48px; border-radius:12px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:22px;">
                 <i data-lucide="package" class="lucide-sm"></i>
@@ -2171,7 +2005,6 @@
               </div>
             </div>
 
-            <!-- KPI 2: Tổng Giá Trị Tồn Kho -->
             <div class="card" style="padding:16px 20px; border-radius:14px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 2px 10px rgba(0,0,0,0.02); display:flex; align-items:center; gap:16px;">
               <div style="width:48px; height:48px; border-radius:12px; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:22px;">
                 <i data-lucide="coins" class="lucide-sm"></i>
@@ -2182,7 +2015,6 @@
               </div>
             </div>
 
-            <!-- KPI 3: Cảnh Báo Sắp Hết Hàng (Low Stock) -->
             <div class="card" onclick="filterSuppliesByChip('low_stock')" style="padding:16px 20px; border-radius:14px; border:1px solid #fecaca; background:#fffafb; box-shadow:0 2px 10px rgba(220,38,38,0.05); display:flex; align-items:center; gap:16px; cursor:pointer;" title="Bấm để lọc ngay các mặt hàng sắp hết">
               <div style="width:48px; height:48px; border-radius:12px; background:#fee2e2; color:#dc2626; display:flex; align-items:center; justify-content:center; font-size:22px;">
                 <i data-lucide="alert-triangle" class="lucide-sm"></i>
@@ -2193,7 +2025,6 @@
               </div>
             </div>
 
-            <!-- KPI 4: Phân Loại Danh Mục -->
             <div class="card" style="padding:16px 20px; border-radius:14px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 2px 10px rgba(0,0,0,0.02); display:flex; align-items:center; gap:16px;">
               <div style="width:48px; height:48px; border-radius:12px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:22px;">
                 <i data-lucide="layers" class="lucide-sm"></i>
@@ -2207,14 +2038,11 @@
             </div>
           </div>
 
-          <!-- TẦNG 2: CONTROL BAR & SMART FILTER CHIPS -->
           <div class="card" style="margin-bottom:20px; border-radius:14px; border:1px solid #e2e8f0;">
             <div style="padding:16px 20px; background:#ffffff; display:flex; flex-direction:column; gap:14px;">
-              
-              <!-- Row 1: Dropdown Filters & Search & ERP Action Buttons -->
+
               <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-                
-                <!-- Left: 2-Level Filter & Search -->
+
                 <div class="db-supply-filter-grid" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; flex:1; min-width:280px;">
                   <div style="min-width:180px; flex:1;">
                     <select id="db-supply-filter-user" onchange="onSupplyFilterChange()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:12.5px; font-weight:600; background:#f8fafc;">
@@ -2233,7 +2061,6 @@
                   </div>
                 </div>
 
-                <!-- Right: Action Buttons -->
                 <div class="db-supply-action-btns" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
                   <button class="btn btn-secondary btn-sm" onclick="exportSuppliesPDF()" style="display:inline-flex; align-items:center; justify-content:center; gap:6px; font-weight:700; background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:10px; padding:8px 14px; font-size:12.5px;">
                     <i data-lucide="file-text" class="lucide-sm" style="color:#dc2626;"></i> In / Xuất Báo Cáo
@@ -2245,14 +2072,10 @@
                 </div>
               </div>
 
-              <!-- Row 2: Smart Filter Chips Bar & View Switcher -->
               <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-top:1px solid #f1f5f9; padding-top:12px;">
-                <!-- Filter Chips -->
                 <div class="db-supply-chips-scrollable" id="db-supply-chips-bar" style="display:flex; align-items:center; gap:8px; overflow-x:auto; white-space:nowrap; max-width:100%; flex:1;">
-                  <!-- Generated dynamically: Tất cả, Phân bón, Thuốc BVTV, Tồn thấp, Vô hạn... -->
                 </div>
 
-                <!-- View Mode Switcher -->
                 <div class="db-supply-view-switcher" style="display:flex; background:#f1f5f9; padding:3px; border-radius:10px; gap:4px; border:1px solid #e2e8f0; flex-wrap:wrap;">
                   <button type="button" id="btn-supply-group-flat" onclick="setSupplyGroupMode('flat')" style="padding:6px 12px; border-radius:8px; border:none; font-size:12px; font-weight:800; cursor:pointer; background:#059669; color:#ffffff;">
                     <i data-lucide="table" class="lucide-sm"></i> Bảng ERP
@@ -2275,10 +2098,8 @@
             </div>
           </div>
 
-          <!-- TẦNG 3: ERP DATA MATRIX TABLE & GRID CONTAINER & CHART SUITE -->
           <div class="card" style="border-radius:14px; overflow:hidden; border:1px solid #e2e8f0; box-shadow:0 4px 16px rgba(0,0,0,0.02);">
-            
-            <!-- Table View Container -->
+
             <div id="supplies-table-container" style="overflow-x:auto;">
               <table style="width:100%; border-collapse:collapse; text-align:left;">
                 <thead>
@@ -2299,12 +2120,9 @@
               </table>
             </div>
 
-            <!-- Grid Cards View Container (Shown when mode is 'grid') -->
             <div id="supplies-grid-container" style="display:none; padding:20px; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:16px; background:#f8fafc;">
-              <!-- Populated dynamically by database.js -->
             </div>
 
-            <!-- Chart View Container (Shown when mode is 'chart') -->
             <div id="supplies-chart-container" style="display:none; padding:24px; background:#ffffff;">
               <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:20px;">
                 <div>
@@ -2331,22 +2149,17 @@
                 </div>
               </div>
 
-              <!-- Main Canvas Chart -->
               <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:16px; margin-bottom:20px;">
                 <canvas id="db-supply-cost-chart" height="95"></canvas>
               </div>
 
-              <!-- Category Breakdown Summary Cards -->
               <div id="db-supply-chart-summary" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px;">
-                <!-- Populated dynamically with category cost breakdown -->
               </div>
             </div>
 
           </div>
         </div>
 
-
-        <!-- ── TAB 3: THƯ VIỆN MEDIA (RELOCATED) ── -->
         ﻿<div class="tab-pane" id="db-pane-media" style="display:none;">
           <div class="card">
             <div class="card-header" style="flex-wrap: wrap; gap: 10px;">
@@ -2354,22 +2167,16 @@
                 <i data-lucide="film" class="lucide-sm" style="color:var(--blue)"></i> Thư viện Media & Quản lý Thư mục Trang trại
               </h3>
             </div>
-            
-            <!-- Interactive Breadcrumb Navigation -->
+
             <div style="padding: 12px 16px; background: #ecfdf5; border-bottom: 1px solid #a7f3d0; font-size: 13px; font-weight: 700; color: #064e3b; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;" id="media-breadcrumb-nav">
               <span style="color:#059669; cursor:pointer;" onclick="navigateToMediaFolder('root')"><i data-lucide="folder" class="lucide-sm"></i> Thư viện gốc</span>
             </div>
 
-            <!-- Main View Container -->
             <div style="padding: 20px;">
-              <!-- Folder Grid Container (Shows Folders when in Folder View) -->
               <div id="media-folders-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px;">
-                <!-- Folder cards populated dynamically by JS -->
               </div>
 
-              <!-- Media Items Grid (Shows Media Files) -->
               <div id="media-gallery-grid" class="media-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 16px;">
-                <!-- Media items populated dynamically -->
               </div>
 
               <div id="media-gallery-empty" style="display: none; text-align: center; padding: 40px; color: var(--gray-400);">
@@ -2380,12 +2187,9 @@
           </div>
         </div>
 
-        <!-- ── TAB 4: LỊCH SỬ BIẾN ĐỘNG (ENTERPRISE SECURITY AUDIT TRAIL & VISUAL DIFF) ── -->
         ﻿<div class="tab-pane" id="db-pane-history" style="display:none;">
 
-          <!-- TẦNG 1: EXECUTIVE AUDIT KPI & TELEMETRY -->
           <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:20px;">
-            <!-- KPI 1: Tổng Sự Kiện Biến Động -->
             <div class="card" style="padding:16px 20px; border-radius:14px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 2px 10px rgba(0,0,0,0.02); display:flex; align-items:center; gap:16px;">
               <div style="width:48px; height:48px; border-radius:12px; background:#f0fdf4; color:#059669; display:flex; align-items:center; justify-content:center; font-size:22px;">
                 <i data-lucide="history" class="lucide-sm"></i>
@@ -2396,7 +2200,6 @@
               </div>
             </div>
 
-            <!-- KPI 2: Lượt Cập Nhật (UPDATE) -->
             <div class="card" onclick="filterHistoryByChip('UPDATE')" style="padding:16px 20px; border-radius:14px; border:1px solid #fef3c7; background:#fffdfa; box-shadow:0 2px 10px rgba(217,119,6,0.05); display:flex; align-items:center; gap:16px; cursor:pointer;" title="Bấm để lọc các sự kiện chỉnh sửa">
               <div style="width:48px; height:48px; border-radius:12px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:22px;">
                 <i data-lucide="edit" class="lucide-sm"></i>
@@ -2407,7 +2210,6 @@
               </div>
             </div>
 
-            <!-- KPI 3: Lượt Xóa Dữ Liệu (DELETE) -->
             <div class="card" onclick="filterHistoryByChip('DELETE')" style="padding:16px 20px; border-radius:14px; border:1px solid #fecaca; background:#fffafb; box-shadow:0 2px 10px rgba(220,38,38,0.05); display:flex; align-items:center; gap:16px; cursor:pointer;" title="Bấm để lọc các sự kiện xóa dữ liệu">
               <div style="width:48px; height:48px; border-radius:12px; background:#fee2e2; color:#dc2626; display:flex; align-items:center; justify-content:center; font-size:22px;">
                 <i data-lucide="trash-2" class="lucide-sm"></i>
@@ -2418,7 +2220,6 @@
               </div>
             </div>
 
-            <!-- KPI 4: Nhân Sự Thao Tác Gần Nhất -->
             <div class="card" style="padding:16px 20px; border-radius:14px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 2px 10px rgba(0,0,0,0.02); display:flex; align-items:center; gap:16px;">
               <div style="width:48px; height:48px; border-radius:12px; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:22px;">
                 <i data-lucide="shield-check" class="lucide-sm"></i>
@@ -2432,14 +2233,11 @@
             </div>
           </div>
 
-          <!-- TẦNG 2: CONTROL BAR & SMART FILTER CHIPS -->
           <div class="card" style="margin-bottom:20px; border-radius:14px; border:1px solid #e2e8f0;">
             <div style="padding:16px 20px; background:#ffffff; display:flex; flex-direction:column; gap:14px;">
-              
-              <!-- Row 1: Dropdown Filters & Search & ERP Action Buttons -->
+
               <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-                
-                <!-- Left: 2-Level Filter & Search -->
+
                 <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; flex:1; min-width:280px;">
                   <div style="min-width:180px; flex:1;">
                     <select id="db-history-filter-action" onchange="loadHistoryTab()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:12.5px; font-weight:600; background:#f8fafc;">
@@ -2466,7 +2264,6 @@
                   </div>
                 </div>
 
-                <!-- Right: Action Buttons -->
                 <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
                   <button class="btn btn-secondary btn-sm" onclick="exportAuditPDF()" style="display:inline-flex; align-items:center; gap:6px; font-weight:700; background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:10px; padding:8px 14px; font-size:12.5px;">
                     <i data-lucide="file-text" class="lucide-sm" style="color:#dc2626;"></i> In / Xuất Báo Cáo Kiểm Toán
@@ -2478,17 +2275,14 @@
                 </div>
               </div>
 
-              <!-- Row 2: Smart Filter Chips Bar -->
               <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-top:1px solid #f1f5f9; padding-top:12px;">
                 <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;" id="db-history-chips-bar">
-                  <!-- Generated dynamically: Tất cả, Chỉnh sửa, Đã xóa, Vật tư, Canh tác, Media... -->
                 </div>
               </div>
 
             </div>
           </div>
 
-          <!-- TẦNG 3: ERP AUDIT MATRIX TABLE -->
           <div class="card" style="border-radius:14px; overflow:hidden; border:1px solid #e2e8f0; box-shadow:0 4px 16px rgba(0,0,0,0.02);">
             <div style="overflow-x:auto;">
               <table style="width:100%; border-collapse:collapse; text-align:left;">
@@ -2510,6 +2304,7 @@
           </div>
 
         </div>
+
         <div class="tab-pane" id="db-pane-check" style="display:none;">
   <div style="margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; background:#f8fafc; padding:16px 20px; border-radius:14px; border:1px solid #e2e8f0;">
     <div>
@@ -2527,22 +2322,16 @@
     </div>
   </div>
 
-  <!-- Telemetry Hạ Tầng CSDL & Máy Chủ NAS -->
   <div id="db-infrastructure-banner" style="margin-bottom:20px; display:none;"></div>
 
-  <!-- Table Cards Telemetry Grid -->
   <div id="db-schema-tables-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px; margin-bottom:24px;">
-    <!-- Populated dynamically by database.js -->
   </div>
 
-  <!-- Selected Table Records Live Viewer & CRUD Container -->
   <div id="db-table-records-container" style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; padding:20px; box-shadow:0 6px 20px rgba(0,0,0,0.03); display:none;">
-    <!-- Populated dynamically by database.js -->
   </div>
 </div>
 
         <div class="tab-pane" id="db-pane-version" style="display:none;">
-  <!-- TOP BANNER: CURRENT ACTIVE VERSION SHOWCASE -->
   <div class="card" style="margin-bottom:20px; border-radius:14px; overflow:hidden; border:1.5px solid #e2e8f0; border-left:4px solid #059669; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.04), 0 4px 14px rgba(0,0,0,0.02);">
     <div style="padding:18px 22px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
       <div>
@@ -2564,7 +2353,6 @@
       </div>
     </div>
 
-    <!-- Quick Telemetry Stats Bar -->
     <div style="background:#f8fafc; border-top:1px solid #e2e8f0; padding:12px 22px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
       <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap; font-size:12.5px; font-weight:700; color:#334155;">
         <span><i data-lucide="layers" class="lucide-sm" style="color:#059669; margin-right:4px;"></i> Mã Build: <strong id="ver-active-build" style="color:#0f172a;">12</strong></span>
@@ -2580,10 +2368,8 @@
     </div>
   </div>
 
-  <!-- 2-COLUMN LAYOUT: PUSH FORM & HISTORY TABLE -->
   <div class="db-version-main-grid" style="display:grid; grid-template-columns: 380px 1fr; gap:20px; align-items:start; width:100%;">
-    
-    <!-- LEFT COLUMN: PUSH NEW VERSION FORM -->
+
     <div class="card" style="border-radius:14px; border:1px solid #cbd5e1; background:#ffffff; box-shadow:0 4px 16px rgba(0,0,0,0.03); overflow:hidden;">
       <div style="background:#f8fafc; padding:14px 18px; border-bottom:1px solid #e2e8f0; display:flex; align-items:center; gap:8px;">
         <i data-lucide="upload-cloud" class="lucide-sm" style="color:#059669; font-size:16px;"></i>
@@ -2593,7 +2379,6 @@
       </div>
 
       <form id="form-push-version" onsubmit="handlePushVersionToDB(event)" style="padding:18px; display:flex; flex-direction:column; gap:14px;">
-        <!-- Version Tag & Build Number -->
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
           <div>
             <label style="font-size:11.5px; font-weight:800; color:#334155; display:block; margin-bottom:4px;">
@@ -2609,7 +2394,6 @@
           </div>
         </div>
 
-        <!-- Platform & Min Supported Version -->
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
           <div>
             <label style="font-size:11.5px; font-weight:800; color:#334155; display:block; margin-bottom:4px;">
@@ -2630,7 +2414,6 @@
           </div>
         </div>
 
-        <!-- APK Download URL -->
         <div>
           <label style="font-size:11.5px; font-weight:800; color:#334155; display:block; margin-bottom:4px;">
             ĐƯỜNG DẪN TẢI APK MOBILE
@@ -2638,7 +2421,6 @@
           <input type="text" id="ver-input-apk" placeholder="/PlantBook-Mobile-ERP-v1.3.5-universal.apk" value="/PlantBook-Mobile-ERP-v1.3.5-universal.apk" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:600; color:#0f172a; outline:none;">
         </div>
 
-        <!-- Release Notes -->
         <div>
           <label style="font-size:11.5px; font-weight:800; color:#334155; display:block; margin-bottom:4px;">
             GHI CHÚ PHÁT HÀNH (RELEASE NOTES)
@@ -2646,7 +2428,6 @@
           <textarea id="ver-input-notes" rows="4" placeholder="Mô tả các tính năng mới, bản vá lỗi, cải tiến hiệu năng..." style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:600; color:#0f172a; outline:none; resize:vertical;"></textarea>
         </div>
 
-        <!-- Force Update Checkbox -->
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 12px; display:flex; align-items:center; gap:10px;">
           <input type="checkbox" id="ver-input-force" style="width:18px; height:18px; cursor:pointer; accent-color:#dc2626;">
           <label for="ver-input-force" style="font-size:12.5px; font-weight:700; color:#0f172a; cursor:pointer;">
@@ -2654,14 +2435,12 @@
           </label>
         </div>
 
-        <!-- Submit Button -->
         <button type="submit" id="btn-push-version-submit" class="btn btn-primary" style="background:linear-gradient(135deg, #064e3b, #047857); color:#ffffff; border:none; padding:12px; border-radius:10px; font-size:13.5px; font-weight:800; display:flex; justify-content:center; align-items:center; gap:8px; cursor:pointer; box-shadow:0 4px 12px rgba(4,120,87,0.3); margin-top:4px;">
           <i data-lucide="rocket" class="lucide-sm"></i> ĐẨY PHIÊN BẢN VÀO CSDL NGAY
         </button>
       </form>
     </div>
 
-    <!-- RIGHT COLUMN: VERSION RELEASES HISTORY TABLE -->
     <div class="card" style="border-radius:14px; border:1px solid #cbd5e1; background:#ffffff; box-shadow:0 4px 16px rgba(0,0,0,0.03); overflow:hidden;">
       <div style="background:#f8fafc; padding:14px 20px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
         <div style="display:flex; align-items:center; gap:8px;">
@@ -2703,11 +2482,8 @@
 
       </div>
 
-      <!-- ── 3. USERS & GOVERNANCE ── -->
-            <!-- ── Users management (Enterprise ERP Governance) ── -->
-      <div class="page-section" id="page-users">
+            <div class="page-section" id="page-users">
 
-        <!-- TẦNG 0: EXECUTIVE ENTERPRISE ERP BANNER -->
         <div class="royal-page-header">
           <div>
             <div class="royal-page-header-badge" style="font-size:11px; color:#059669; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; margin-bottom:4px; display:inline-flex; align-items:center; gap:6px;">
@@ -2731,7 +2507,6 @@
           </div>
         </div>
 
-        <!-- TẦNG 1: EXECUTIVE KPI SUMMARY STRIP -->
         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:16px; margin-bottom:20px;">
           <div class="card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
             <div style="width:44px; height:44px; border-radius:10px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:20px;">
@@ -2784,7 +2559,6 @@
           </div>
         </div>
 
-        <!-- TẦNG 2: NAVIGATION TABS -->
         <div class="tabs" style="margin-bottom: 20px;">
           <div class="tab active" id="user-tab-manage" onclick="switchUserTab('manage')">
             <i data-lucide="users" class="lucide-sm"></i> Quản lý Tài khoản &amp; Nông hộ
@@ -2803,7 +2577,6 @@
           </div>
         </div>
 
-        <!-- Pane: Pending Farmer Registrations -->
         <div class="tab-pane" id="pane-user-pending" style="display:none;">
           <div class="card" style="border-radius:12px; border:1px solid #e2e8f0; overflow:hidden;">
             <div class="card-header" style="background:#ffffff; border-bottom:1px solid #e2e8f0; padding:16px 20px;">
@@ -2831,7 +2604,6 @@
           </div>
         </div>
 
-        <!-- Pane: Manage Users -->
         <div class="tab-pane active" id="pane-user-manage">
           <div class="card" style="border-radius:12px; border:1px solid #e2e8f0; overflow:hidden;">
             <div class="card-header" style="background:#ffffff; border-bottom:1px solid #e2e8f0; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
@@ -2848,10 +2620,8 @@
               </div>
             </div>
 
-            <!-- Group & Tier Filter Bar -->
             <div style="padding: 14px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-              
-              <!-- Filter Pills & RBAC Hierarchy Select -->
+
               <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;" id="user-filter-pills">
                 <button type="button" class="user-filter-btn active" data-filter="all" onclick="setUserFilterGroup('all')" style="padding: 6px 14px; font-size: 12px; font-weight: 800; border-radius: 20px; border: 1.5px solid #059669; background: #059669; color: #ffffff; cursor: pointer;">
                   Tất cả (<span id="cnt-user-all">0</span>)
@@ -2878,7 +2648,6 @@
                 </div>
               </div>
 
-              <!-- Farm & Search Controls -->
               <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; flex:1; max-width:520px; min-width:260px;">
                 <select id="user-filter-farm" onchange="filterUsers()" style="padding:7px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:12px; font-weight:700; color:#064e3b; background:#ffffff;">
                   <option value="all">Tất cả Trang trại</option>
@@ -2905,19 +2674,16 @@
               </tbody>
             </table>
 
-            <!-- Pagination Controls (10 bản ghi / trang) -->
             <div style="padding: 14px 20px; background: #ffffff; border-top: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;" id="users-pagination-bar">
               <div style="font-size: 12.5px; color: #64748b; font-weight: 600;" id="users-pagination-info">
                 Hiển thị 1 - 10 trong tổng số 0 người dùng
               </div>
               <div style="display: flex; gap: 6px; align-items: center;" id="users-pagination-btns">
-                <!-- Populated dynamically by JS -->
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Pane: Activity Status -->
         <div class="tab-pane" id="pane-user-status" style="display:none;">
           <div class="card" style="border-radius:12px; border:1px solid #e2e8f0; overflow:hidden;">
             <div class="card-header" style="background:#ffffff; border-bottom:1px solid #e2e8f0; padding:16px 20px;">
@@ -2947,7 +2713,6 @@
           </div>
         </div>
 
-        <!-- Pane: Password Reset Requests -->
         <div class="tab-pane" id="pane-user-resets" style="display:none;">
           <div class="card" style="border-radius:12px; border:1px solid #e2e8f0; overflow:hidden;">
             <div class="card-header" style="background:#ffffff; border-bottom:1px solid #e2e8f0; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
@@ -2985,10 +2750,8 @@
           </div>
         </div>
 
-        <!-- Pane: Admin Profile -->
         <div class="tab-pane" id="pane-user-admin-profile" style="display:none;">
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:20px; align-items:start;">
-            <!-- Left Column: Admin Identity Badge & Overview -->
             <div class="card" style="border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; padding:24px; text-align:center;">
               <div style="position:relative; width:90px; height:90px; margin:0 auto 16px; border-radius:50%; background:linear-gradient(135deg, #7c3aed, #4f46e5); display:flex; align-items:center; justify-content:center; color:#fff; font-size:36px; font-weight:800; box-shadow:0 4px 14px rgba(124, 58, 237, 0.3);">
                 <span id="adm-profile-avatar-char">A</span>
@@ -3025,9 +2788,7 @@
               </div>
             </div>
 
-            <!-- Right Column: Edit Profile & Change Password -->
             <div style="display:flex; flex-direction:column; gap:20px;">
-              <!-- Form 1: Cập nhật thông tin tài khoản -->
               <div class="card" style="border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; overflow:hidden;">
                 <div class="card-header" style="background:#ffffff; border-bottom:1px solid #e2e8f0; padding:16px 20px;">
                   <h3 style="font-size:15px; font-weight:800; color:#0f172a; margin:0; display:flex; align-items:center; gap:8px;">
@@ -3063,7 +2824,6 @@
                 </form>
               </div>
 
-              <!-- Form 2: Đổi mật khẩu Admin -->
               <div class="card" style="border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; overflow:hidden;">
                 <div class="card-header" style="background:#ffffff; border-bottom:1px solid #e2e8f0; padding:16px 20px;">
                   <h3 style="font-size:15px; font-weight:800; color:#0f172a; margin:0; display:flex; align-items:center; gap:8px;">
@@ -3097,16 +2857,8 @@
         </div>
       </div>
 
+      <div class="page-section" id="page-ai-training" style="display:none;">
 
-
-
-
-
-      <!-- ── 4. AI TRAINING STUDIO & KNOWLEDGE BASE ── -->
-      ﻿<!-- ════════════════ 4. AI TRAINING STUDIO & KNOWLEDGE BASE ════════════════ -->
-<div class="page-section" id="page-ai-training" style="display:none;">
-
-  <!-- Header Section (Executive Enterprise ERP) -->
   <div class="royal-page-header">
     <div style="max-width:680px;">
       <div class="royal-page-header-badge" style="font-size:11px; color:#059669; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; margin-bottom:4px; display:inline-flex; align-items:center; gap:6px;">
@@ -3120,7 +2872,6 @@
       </p>
     </div>
 
-    <!-- Top Action Buttons -->
     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
       <button class="royal-pill-btn royal-pill-btn-primary" onclick="openAiKnowledgeModal()">
         <i data-lucide="plus" class="lucide-sm"></i> + Thêm Tri Thức SOP
@@ -3134,9 +2885,7 @@
     </div>
   </div>
 
-  <!-- KPI Badges (4 Metrics) -->
   <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:24px;">
-    <!-- Metric 1: Tri Thức -->
     <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; box-shadow:0 2px 8px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
       <div style="width:48px; height:48px; border-radius:12px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;">
         <i data-lucide="bookmark" class="lucide-sm"></i>
@@ -3147,7 +2896,6 @@
       </div>
     </div>
 
-    <!-- Metric 2: Q&A Fine-Tuning -->
     <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; box-shadow:0 2px 8px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
       <div style="width:48px; height:48px; border-radius:12px; background:#eff6ff; color:#0284c7; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;">
         <i data-lucide="message-circle" class="lucide-sm"></i>
@@ -3158,7 +2906,6 @@
       </div>
     </div>
 
-    <!-- Metric 3: Nhật Ký Bảo Mật -->
     <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; box-shadow:0 2px 8px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
       <div style="width:48px; height:48px; border-radius:12px; background:#fef2f2; color:#dc2626; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;">
         <i data-lucide="shield-check" class="lucide-sm"></i>
@@ -3169,7 +2916,6 @@
       </div>
     </div>
 
-    <!-- Metric 4: Trạng thái AI Engine -->
     <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; box-shadow:0 2px 8px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
       <div style="width:48px; height:48px; border-radius:12px; background:#f5f3ff; color:#7c3aed; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;">
         <i data-lucide="network" class="lucide-sm"></i>
@@ -3181,7 +2927,6 @@
     </div>
   </div>
 
-  <!-- Sub-Tabs Navigation -->
   <div class="tabs" style="margin-bottom:20px;">
     <div class="tab active" id="ai-subtab-btn-knowledge" onclick="switchAiTrainingSubtab('knowledge')">
       <i data-lucide="book" class="lucide-sm"></i> 1. Kho Tri Thức Quy Trình SOP
@@ -3197,12 +2942,9 @@
     </div>
   </div>
 
-
-  <!-- ════════════════ SUB-TAB 1: KHO TRI THỨC SOP ════════════════ -->
   <div id="ai-subtab-knowledge" class="ai-subtab-pane" style="display:block;">
     <div class="card" style="padding:20px; border-radius:16px; border:1px solid #e2e8f0; background:#ffffff;">
-      
-      <!-- Toolbar Filters -->
+
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px;">
         <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:280px;">
           <div style="position:relative; flex:1;">
@@ -3220,7 +2962,6 @@
         </div>
       </div>
 
-      <!-- Table Container -->
       <div style="overflow-x:auto;">
         <table style="width:100%; border-collapse:collapse; font-size:13px;" id="ai-knowledge-table">
           <thead>
@@ -3243,18 +2984,14 @@
         </table>
       </div>
 
-      <!-- Knowledge Pagination (10 bản ghi / trang) -->
       <div id="ai-knowledge-pagination" style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding-top:12px; border-top:1px solid #f1f5f9; flex-wrap:wrap; gap:10px;"></div>
 
     </div>
   </div>
 
-
-  <!-- ════════════════ SUB-TAB 2: CẶP Q&A HUẤN LUYỆN ════════════════ -->
   <div id="ai-subtab-qa" class="ai-subtab-pane" style="display:none;">
     <div class="card" style="padding:20px; border-radius:16px; border:1px solid #e2e8f0; background:#ffffff;">
-      
-      <!-- Toolbar Filters -->
+
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px;">
         <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:280px;">
           <div style="position:relative; flex:1;">
@@ -3271,25 +3008,20 @@
         </div>
       </div>
 
-      <!-- Q&A List Cards Container -->
       <div id="ai-qa-list-container" style="display:flex; flex-direction:column; gap:14px;">
         <div style="text-align:center; padding:30px; color:#94a3b8;">
           <i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải danh sách Q&amp;A...
         </div>
       </div>
 
-      <!-- QA Pagination (10 bản ghi / trang) -->
       <div id="ai-qa-pagination" style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding-top:12px; border-top:1px solid #f1f5f9; flex-wrap:wrap; gap:10px;"></div>
 
     </div>
   </div>
 
-
-  <!-- ════════════════ SUB-TAB 3: PHÒNG THỬ NGHIỆM AI SANDBOX ════════════════ -->
   <div id="ai-subtab-simulator" class="ai-subtab-pane" style="display:none;">
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
-      
-      <!-- Left: Test Input & Controls -->
+
       <div class="card" style="padding:22px; border-radius:16px; border:1px solid #e2e8f0; background:#ffffff;">
         <h4 style="font-size:15px; font-weight:800; color:#0f172a; margin:0 0 12px 0; display:flex; align-items:center; gap:8px;">
           <span style="color:#059669;"><i data-lucide="terminal" class="lucide-sm"></i></span> Giả Lập Câu Hỏi Của Nông Dân
@@ -3300,7 +3032,6 @@
 
         <textarea id="ai-test-input" rows="4" placeholder="Ví dụ: Vừa xịt thuốc nấm hóa học xong có được tưới men vi sinh không? Hoặc: cây sầu riêng bị xì mủ đọt non..." style="width:100%; border:1.5px solid #cbd5e1; border-radius:12px; padding:12px; font-size:13.5px; font-family:inherit; outline:none; resize:vertical; margin-bottom:14px;" onfocus="this.style.borderColor='#059669'" onblur="this.style.borderColor='#cbd5e1'"></textarea>
 
-        <!-- Quick Prompt Samples -->
         <div style="margin-bottom:16px;">
           <div style="font-size:12px; font-weight:700; color:#64748b; margin-bottom:6px;"> Câu hỏi mẫu thử nhanh:</div>
           <div style="display:flex; flex-wrap:wrap; gap:6px;">
@@ -3316,7 +3047,6 @@
         </button>
       </div>
 
-      <!-- Right: Test Result & Diagnostic Output -->
       <div class="card" style="padding:22px; border-radius:16px; border:1px solid #e2e8f0; background:#ffffff; display:flex; flex-direction:column;">
         <h4 style="font-size:15px; font-weight:800; color:#0f172a; margin:0 0 12px 0; display:flex; align-items:center; justify-content:space-between;">
           <span style="display:flex; align-items:center; gap:8px;">
@@ -3338,11 +3068,9 @@
     </div>
   </div>
 
-
-  <!-- ════════════════ SUB-TAB 4: NHẬT KÝ BẢO MẬT & AUDIT TRAIL ════════════════ -->
   <div id="ai-subtab-security" class="ai-subtab-pane" style="display:none;">
     <div class="card" style="padding:20px; border-radius:16px; border:1px solid #e2e8f0; background:#ffffff;">
-      
+
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
         <h4 style="font-size:15px; font-weight:800; color:#0f172a; margin:0; display:flex; align-items:center; gap:8px;">
           <span style="color:#dc2626;"><i data-lucide="shield-check" class="lucide-sm"></i></span> Lịch Sử Thay Đổi Dữ Liệu &amp; Giám Sát An Ninh AI
@@ -3374,7 +3102,6 @@
         </table>
       </div>
 
-      <!-- Security Logs Pagination (10 bản ghi / trang) -->
       <div id="ai-security-logs-pagination" style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding-top:12px; border-top:1px solid #f1f5f9; flex-wrap:wrap; gap:10px;"></div>
 
     </div>
@@ -3382,17 +3109,13 @@
 
 </div>
 
-
-    </div><!-- /content -->
+    </div>
   </main>
 </div>
 
-<!-- ════════════════ MODALS & POPUPS ════════════════ -->
-﻿<!-- ── ERP AGTECH PLANT EDIT & PROFILE MODAL ── -->
 <div class="modal-overlay" id="plant-modal" style="display:none" onclick="if(event.target===this)closePlantModal()">
   <div class="modal plant-erp-modal" style="background:#ffffff; border-radius:18px; width:92%; max-width:860px; height:720px; max-height:88vh; min-height:540px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 25px 60px -15px rgba(0,0,0,0.35); border:1px solid #cbd5e1; position:relative; z-index:20001;">
-    
-    <!-- 1. ERP Gradient Header with Live Badges -->
+
     <div class="modal-header" style="background:linear-gradient(135deg, #064e3b 0%, #047857 100%); color:#ffffff; padding:18px 24px; border-bottom:1px solid rgba(255,255,255,0.12); position:sticky; top:0; z-index:10; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
       <div style="display:flex; align-items:center; gap:14px;">
         <div style="width:46px; height:46px; border-radius:12px; background:rgba(255,255,255,0.15); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center; font-size:22px; color:#a7f3d0; border:1px solid rgba(255,255,255,0.25); box-shadow:0 4px 12px rgba(0,0,0,0.1); flex-shrink:0;">
@@ -3414,10 +3137,8 @@
       <button class="modal-close" onclick="closePlantModal()" style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.2); width:36px; height:36px; border-radius:10px; color:#ffffff; font-size:20px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s; outline:none;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">×</button>
     </div>
 
-    <!-- 2. Scrollable Body with Fixed Viewport Container -->
     <div class="modal-body" style="padding:20px 24px; overflow-y:auto; background:#f8fafc; flex:1; min-height:0;">
 
-      <!-- Segmented Navigation Tab Bar -->
       <div class="tabs plant-modal-tabs" style="display:flex; gap:6px; background:#e2e8f0; padding:5px; border-radius:12px; margin-bottom:18px; border-bottom:none; flex-shrink:0;">
         <div class="tab active" onclick="switchTab(this,'tab-info')" style="flex:1; text-align:center; padding:9px 12px; font-size:13px; font-weight:700; border-radius:8px; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:6px; border:none; margin:0;">
           <i data-lucide="info" class="lucide-sm"></i> <span>Thông tin cơ bản</span>
@@ -3431,10 +3152,8 @@
         </div>
       </div>
 
-      <!-- ── TAB 1: THÔNG TIN CƠ BẢN ── -->
       <div class="tab-pane active" id="tab-info">
-        
-        <!-- Mode Selector (Chỉ hiển thị khi tạo cây mới) -->
+
         <div id="plant-create-mode-wrap" style="margin-bottom:16px; padding:12px 16px; background:#ffffff; border:1.5px solid #cbd5e1; border-radius:12px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; box-shadow:0 2px 6px rgba(0,0,0,0.02);">
           <div style="font-size:12.5px; font-weight:800; color:#1e293b; display:flex; align-items:center; gap:6px;">
             <i data-lucide="sliders" class="lucide-sm" style="color:#059669;"></i> Chế độ khởi tạo cây:
@@ -3451,13 +3170,11 @@
           </div>
         </div>
 
-        <!-- Group 1:  Định danh & Phân loại giống cây -->
         <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
           <div style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:14px; display:flex; align-items:center; gap:8px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
             <i data-lucide="tag" class="lucide-sm" style="color:#059669;"></i> Định danh &amp; Phân loại giống cây
           </div>
 
-          <!-- 1. Single Mode Tree Code Field -->
           <div class="form-row" id="wrap-single-tree-code" style="margin-bottom:12px;">
             <div class="field" style="margin-bottom:0;">
               <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px;">Mã số cây (ID trong vườn) *</label>
@@ -3471,7 +3188,6 @@
             </div>
           </div>
 
-          <!-- 2. Range Mode Fields (XX -> XY) -->
           <div id="wrap-range-tree-code" style="display:none; background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:12px; padding:14px; margin-bottom:14px;">
             <div style="font-size:12.5px; font-weight:800; color:#065f46; display:flex; align-items:center; gap:6px; margin-bottom:10px;">
               <i data-lucide="layers" class="lucide-sm"></i> Tạo hàng loạt cây cùng thông tin từ số XX đến số XY
@@ -3523,7 +3239,6 @@
           </div>
         </div>
 
-        <!-- Group 2:  Trạng thái sinh trưởng & Quản lý vị trí -->
         <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
           <div style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:14px; display:flex; align-items:center; gap:8px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
             <i data-lucide="activity" class="lucide-sm" style="color:#059669;"></i> Trạng thái sinh trưởng &amp; Quản lý thực địa
@@ -3551,7 +3266,6 @@
           </div>
         </div>
 
-        <!-- Group 3:  Định vị tọa độ GPS & Bản đồ số -->
         <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
             <div style="font-size:13px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
@@ -3573,7 +3287,6 @@
           </div>
         </div>
 
-        <!-- Group 4:  Cổng tra cứu công khai (Public QR / URL) -->
         <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:0; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
           <div style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:14px; display:flex; align-items:center; gap:8px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
             <i data-lucide="globe" class="lucide-sm" style="color:#059669;"></i> Cổng tra cứu công khai &amp; Mã định danh số
@@ -3586,7 +3299,6 @@
               <option value="false"> Riêng tư (Chỉ dành cho quản trị viên và chủ nông hộ)</option>
             </select>
           </div>
-          <!-- Public URL display -->
           <div class="public-url-box" id="public-url-section" style="display:none; background:#f0fdf4; border:1.5px solid #86efac; border-radius:12px; padding:14px;">
             <div style="font-size:12px; font-weight:800; color:#166534; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
               <i data-lucide="link" class="lucide-sm"></i> Đường dẫn tra cứu công khai của cây:
@@ -3604,7 +3316,6 @@
         </div>
       </div>
 
-      <!-- ── TAB 2: DỮ LIỆU MỞ RỘNG (DYNAMIC SCHEMA) ── -->
       <div class="tab-pane" id="tab-extra">
         <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.02); min-height:280px;">
           <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; border-bottom:1px solid #f1f5f9; padding-bottom:10px;">
@@ -3623,7 +3334,6 @@
         </div>
       </div>
 
-      <!-- ── TAB 3: THƯ VIỆN ẢNH & VIDEO ── -->
       <div class="tab-pane" id="tab-media">
         <div id="plant-media-container" style="min-height:280px;">
           <div class="empty-state" style="padding:40px 20px; text-align:center; background:#ffffff; border-radius:14px; border:1.5px dashed #cbd5e1;">
@@ -3636,7 +3346,6 @@
 
     </div>
 
-    <!-- 3. ERP Sticky Bottom Action Footer -->
     <div class="modal-footer" style="padding:16px 24px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; position:sticky; bottom:0; background:#ffffff; z-index:10; border-radius:0 0 18px 18px; flex-shrink:0;">
       <div style="font-size:12px; color:#64748b; display:flex; align-items:center; gap:6px;">
         <i data-lucide="shield-check" class="lucide-sm" style="color:#059669;"></i> <span>Sổ Nông Tân Bảo AgTech · Chuẩn ERP</span>
@@ -3654,7 +3363,6 @@
   </div>
 </div>
 
-﻿<!-- ════════════ SCHEMA MODAL ════════════ -->
 <div class="modal-overlay" id="schema-modal" style="display:none" onclick="if(event.target===this)closeSchemaModal()">
   <div class="modal">
     <div class="modal-header">
@@ -3712,7 +3420,6 @@
   </div>
 </div>
 
-﻿<!-- ════════════ USER MODAL ════════════ -->
 <div class="modal-overlay" id="user-modal" style="display:none" onclick="if(event.target===this)closeUserModal()">
   <div class="modal" style="max-width: 480px;">
     <div class="modal-header">
@@ -3722,12 +3429,12 @@
     <div class="modal-body">
       <form id="f-user-form" onsubmit="return false;">
       <input type="hidden" id="f-user-id">
-      
+
       <div class="field">
         <label>Họ và tên *</label>
         <input type="text" id="f-user-name" placeholder="VD: Nguyễn Văn A, Trần Thị B...">
       </div>
-      
+
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
         <div class="field" style="flex:1; min-width:180px;">
           <label><i data-lucide="phone" class="lucide-sm" style="color:var(--green)"></i> Số điện thoại</label>
@@ -3746,7 +3453,7 @@
         <label><i data-lucide="map-pin" class="lucide-sm" style="color:var(--green)"></i> Địa chỉ</label>
         <input type="text" id="f-user-address" placeholder="VD: Xã Ea Ktur, Huyện Cư Kuin, Đắk Lắk...">
       </div>
-      
+
       <div class="field">
         <label id="f-user-pass-label">Mật khẩu *</label>
         <input type="password" id="f-user-pass" placeholder="••••••••" autocomplete="new-password">
@@ -3754,7 +3461,7 @@
           Để trống nếu không muốn thay đổi mật khẩu
         </small>
       </div>
-      
+
       <div class="field">
         <label>Vai trò *</label>
         <select id="f-user-role" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
@@ -3773,7 +3480,6 @@
         </small>
       </div>
 
-      <!-- Cấu hình Phân quyền xem dữ liệu riêng cá nhân -->
       <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:12px; padding:14px; margin-top:14px;">
         <div style="font-size:12px; font-weight:700; color:#0f172a; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
           <i data-lucide="user-cog" class="lucide-sm" style="color:var(--green)"></i> Cấu hình Quyền xem dữ liệu cho Nông hộ này:
@@ -3785,18 +3491,15 @@
             <option value="all"> Xem toàn bộ cây trồng trong trang trại</option>
             <option value="assigned"> Chỉ xem cây trồng do cá nhân phụ trách</option>
           </select>
-          
-          <!-- Danh sách cây trồng gán thủ công cho Nông hộ này -->
+
           <div id="assigned-plants-picker-container" style="display:none; margin-top:8px; background:#fff; border:1.5px solid #bbf7d0; border-radius:8px; padding:10px;">
             <label style="font-size:11px; font-weight:700; color:#047857; margin-bottom:6px; display:block;">
                Tích chọn danh sách cây giao riêng cho Nông hộ này:
             </label>
             <div id="assigned-plants-checkboxes" style="max-height:150px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; font-size:11.5px;">
-              <!-- Filled dynamically by JS -->
             </div>
           </div>
         </div>
-
 
         <div class="field" style="margin-bottom:10px;">
           <label style="font-size:11.5px; font-weight:600; color:#334155;">Chỉ được xem Lịch sử & Nhật ký từ ngày</label>
@@ -3817,7 +3520,6 @@
       </form>
     </div>
 
-
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeUserModal()">Hủy</button>
       <button class="btn btn-primary" id="user-save-btn" onclick="saveUser()">
@@ -3827,7 +3529,6 @@
   </div>
 </div>
 
-﻿<!-- ════════════ MODAL QUẢN LÝ GÓI CƯỚC NÔNG HỘ (NORMAL vs PRO) ════════════ -->
 <div class="modal-overlay" id="modal-edit-user-tier" style="display:none" onclick="if(event.target===this)closeUserTierModal()">
   <div class="modal" style="max-width: 500px; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.35);">
     <div class="modal-header" style="background: linear-gradient(135deg, #064e3b, #047857); padding: 16px 20px; color: #ffffff;">
@@ -3846,7 +3547,6 @@
         <div style="font-size:12.5px; color:#475569;" id="tier-edit-user-email">0912345678</div>
       </div>
 
-      <!-- 1. Chọn gói cước -->
       <div class="field" style="margin-bottom:18px;">
         <label style="font-weight:800; font-size:13px; color:#0f172a; margin-bottom:8px; display:block;">1. Chọn Gói Cước *</label>
         <div style="display:flex; gap:12px;">
@@ -3867,13 +3567,11 @@
         </div>
       </div>
 
-      <!-- 2. Chọn thời hạn PRO -->
       <div id="pro-duration-section" style="margin-bottom:18px;">
         <label style="font-weight:800; font-size:13px; color:#0f172a; margin-bottom:8px; display:block;">
           <i data-lucide="calendar-days" class="lucide-sm" style="color:#059669"></i> 2. Thời hạn Gói PRO (Admin Nhập liệu Tự do) *
         </label>
 
-        <!-- Quick Duration Preset Buttons -->
         <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">
           <button type="button" onclick="setQuickTierDuration('14days')" style="padding:6px 12px; font-size:11.5px; font-weight:700; border-radius:8px; border:1px solid #a7f3d0; background:#ecfdf5; color:#047857; cursor:pointer;">
             14 Ngày (Trial)
@@ -3892,7 +3590,6 @@
           </button>
         </div>
 
-        <!-- Custom Live Date Picker -->
         <div style="display:flex; gap:10px; align-items:center; margin-bottom:12px;">
           <input type="date" id="tier-expires-date" style="flex:1; background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:10px 12px; font-size:14px; font-weight:700; color:#0f172a;">
           <label style="font-size:12px; font-weight:700; color:#334155; cursor:pointer; display:flex; align-items:center; gap:6px; white-space:nowrap;">
@@ -3900,7 +3597,6 @@
           </label>
         </div>
 
-        <!-- List of Granted PRO Features -->
         <div style="background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:12px; padding:12px 14px;">
           <div style="font-size:12px; font-weight:800; color:#047857; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
             <i data-lucide="check-square" class="lucide-sm" style="color:#059669;"></i> Danh sách Tính năng Nâng cao được mở cấp phép:
@@ -3916,8 +3612,6 @@
         </div>
       </div>
 
-
-      <!-- 3. Admin Notes -->
       <div class="field">
         <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;">
           <i data-lucide="clipboard-list" class="lucide-sm" style="color:#059669"></i> 3. Ghi chú Thu tiền / Hợp đồng (Admin riêng)
@@ -3936,7 +3630,6 @@
 </div>
 
 ﻿
-<!-- ════════════ VIEW SUPPLY DETAILS MODAL ════════════ -->
 
 <div class="modal-overlay" id="supply-view-modal" style="display:none" onclick="if(event.target===this)closeViewSupplyModal()">
   <div class="modal" style="max-width: 500px; border-radius:16px; overflow:hidden;">
@@ -3945,7 +3638,6 @@
       <button class="modal-close" onclick="closeViewSupplyModal()" style="color:#fff; opacity:0.9;">×</button>
     </div>
     <div class="modal-body" id="supply-view-modal-body" style="padding:20px; background:#ffffff;">
-      <!-- Populated dynamically by JS -->
     </div>
     <div class="modal-footer" style="padding:14px 20px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
       <button class="btn btn-secondary" onclick="closeViewSupplyModal()">Đóng</button>
@@ -3956,7 +3648,6 @@
   </div>
 </div>
 
-<!-- ════════════ ADD / EDIT SUPPLY MODAL ════════════ -->
 <div class="modal-overlay" id="supply-form-modal" style="display:none" onclick="if(event.target===this)closeSupplyFormModal()">
   <div class="modal" style="max-width: 520px; border-radius:16px; overflow:hidden;">
     <div class="modal-header" style="background:linear-gradient(135deg, #064e3b, #047857); color:#fff; padding:16px 20px;">
@@ -3965,7 +3656,7 @@
     </div>
     <div class="modal-body" style="padding:20px; background:#ffffff;">
       <input type="hidden" id="f-supply-id">
-      
+
       <div class="field" style="margin-bottom:14px;">
         <label style="font-weight:700; font-size:12px; color:#334155; margin-bottom:4px; display:block;">1. Loại vật tư / Hạng mục *</label>
         <select id="f-supply-category" style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; font-weight:600;">
@@ -4005,7 +3696,6 @@
         </div>
       </div>
 
-      <!-- ════ VietGAP Compliance Fields (Active Ingredients & Target Pests) ════ -->
       <div id="f-supply-vietgap-box" style="background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:12px; padding:14px; margin-bottom:14px;">
         <div style="font-size:12px; font-weight:800; color:#047857; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
           <i data-lucide="shield-check" class="lucide-sm" style="color:#059669;"></i> Tiêu chuẩn VietGAP: Hoạt Chất &amp; Đối Tượng Phòng Trừ
@@ -4047,7 +3737,6 @@
   </div>
 </div>
 
-﻿<!-- ════════════ QR CODE & NFC TAG MODAL ════════════ -->
 <div class="modal-overlay" id="qr-modal" style="display:none" onclick="if(event.target===this)closeQrModal()">
   <div class="modal" style="max-width: 460px; width: 92%; border-radius:14px; overflow:hidden; box-shadow:0 12px 36px rgba(0,0,0,0.2);">
     <div class="modal-header" style="background:#ffffff; border-bottom:1px solid #e2e8f0; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
@@ -4067,7 +3756,6 @@
         <div style="font-size:11px; color:#64748b; margin-top:2px;" id="qr-modal-gps-info">GPS: 106.3, 12.5</div>
       </div>
 
-      <!-- Public URL -->
       <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
         <input type="text" id="qr-modal-url-input" readonly style="flex:1; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:12px; background:#f8fafc; color:#334155;">
         <button onclick="copyQrUrl()" class="btn btn-secondary btn-sm" style="font-weight:700; padding:8px 12px; font-size:12px; cursor:pointer;">
@@ -4089,11 +3777,9 @@
   </div>
 </div>
 
-<!-- ── MODAL KHO THẺ NFC (EXCEL TABLE & CONTINUOUS TAP) ── -->
 <div id="nfc-inventory-modal" class="modal-overlay" style="display:none; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(4px); z-index: 9999;">
   <div class="modal-box" style="max-width: 860px; width: 95%; max-height: 90vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4); background: #ffffff !important; border: 1px solid #e2e8f0;">
-    
-    <!-- Modal Header -->
+
     <div style="background: linear-gradient(135deg, #064e3b 0%, #047857 100%); padding: 16px 22px; color: #ffffff; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
       <div style="display: flex; align-items: center; gap: 12px;">
         <div style="width: 42px; height: 42px; border-radius: 12px; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 20px; color: #a7f3d0;">
@@ -4112,7 +3798,6 @@
       <button class="modal-close-btn" onclick="closeNfcInventoryModal()" aria-label="Đóng" style="color: #ffffff; background: rgba(255,255,255,0.15); border: none; width: 34px; height: 34px; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;"><i data-lucide="x" class="lucide-sm"></i></button>
     </div>
 
-    <!-- Quick Stats Bar -->
     <div style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
       <div style="display: flex; gap: 16px; flex-wrap: wrap;">
         <span style="font-size: 13px; color: #334155; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;">
@@ -4133,7 +3818,6 @@
       </div>
     </div>
 
-    <!-- Continuous Tap & Quick Scan Banner -->
     <div style="padding: 16px 24px; background: #ecfdf5; border-bottom: 1.5px solid #a7f3d0; display: flex; flex-direction: column; gap: 12px;">
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
         <div style="display: flex; align-items: center; gap: 8px;">
@@ -4147,11 +3831,10 @@
         </button>
       </div>
 
-      <!-- Quick Text Input Bar (Keyboard Emulation / USB Reader / Manual) -->
       <div style="display: flex; gap: 8px;">
         <div style="position: relative; flex: 1;">
           <i data-lucide="scan" class="lucide-sm" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #059669; font-size: 15px;"></i>
-          <input type="text" id="nfc-inv-quick-input" placeholder="Quẹt đầu đọc USB hoặc nhập mã UID (vd: 04:20:CF:5A:25:20:91) rồi bấm Enter..." 
+          <input type="text" id="nfc-inv-quick-input" placeholder="Quẹt đầu đọc USB hoặc nhập mã UID (vd: 04:20:CF:5A:25:20:91) rồi bấm Enter..."
                  onkeydown="if(event.key==='Enter') handleQuickNfcInput(event)"
                  style="width: 100%; padding: 10px 12px 10px 38px; border: 1.5px solid #6ee7b7; border-radius: 10px; font-size: 13px; font-family: monospace; font-weight: 700; color: #0f172a; outline: none; background: #ffffff; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);">
         </div>
@@ -4161,7 +3844,6 @@
       </div>
     </div>
 
-    <!-- Excel-Style Table Container -->
     <div style="flex: 1; overflow-y: auto; padding: 16px 24px; min-height: 280px; max-height: 420px; background: #ffffff;">
       <table style="width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; background: #ffffff;">
         <thead>
@@ -4184,17 +3866,14 @@
       </table>
     </div>
 
-    <!-- Pagination Bar in Modal (10 bản ghi / trang) -->
     <div id="nfc-modal-pagination-bar" style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
       <div id="nfc-modal-pagination-info" style="font-size: 12px; font-weight: 600; color: #64748b;">
         Hiển thị 0 - 0 trong 0 thẻ
       </div>
       <div id="nfc-modal-pagination-btns" style="display: flex; gap: 4px; align-items: center; flex-wrap: wrap;">
-        <!-- Filled dynamically by JS -->
       </div>
     </div>
 
-    <!-- Modal Footer -->
     <div style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
       <div style="font-size: 12px; color: #64748b; display: inline-flex; align-items: center; gap: 6px;">
         <i data-lucide="info" class="lucide-sm" style="color: #0284c7;"></i> Thẻ đã nhập kho hoặc gắn trên cây sẽ tự động đồng bộ 2 chiều.
@@ -4218,11 +3897,9 @@
   </div>
 </div>
 
-﻿<!-- ── MODAL IMPORT KHO THẺ NFC (CSV / EXCEL SYMMETRICAL IMPORT) ── -->
 <div id="nfc-import-modal" class="modal-overlay" style="display:none; z-index:9999;">
   <div class="modal-box" style="max-width: 840px; width: 95%; max-height: 90vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: 20px; box-shadow: 0 25px 70px rgba(0,0,0,0.35); border: 1px solid #cbd5e1;">
-    
-    <!-- Modal Header -->
+
     <div style="background: linear-gradient(135deg, #064e3b 0%, #047857 100%); padding: 18px 24px; color: #ffffff; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
       <div style="display: flex; align-items: center; gap: 12px;">
         <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 22px; color: #a7f3d0; box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);">
@@ -4241,10 +3918,8 @@
       <button class="modal-close-btn" onclick="closeAdminNfcImportModal()" aria-label="Đóng" style="color: #ffffff; background: rgba(255,255,255,0.15); border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;">×</button>
     </div>
 
-    <!-- Modal Body (Scrollable) -->
     <div style="flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 16px;">
-      
-      <!-- Top Guide & Sample Download Strip -->
+
       <div style="background: #f0fdf4; border: 1.5px solid #a7f3d0; border-radius: 12px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
         <div style="flex: 1; min-width: 260px;">
           <div style="font-weight: 800; font-size: 13px; color: #065f46; display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
@@ -4259,8 +3934,7 @@
         </button>
       </div>
 
-      <!-- Drag & Drop / File Picker Area -->
-      <div id="nfc-import-dropzone" onclick="document.getElementById('nfc-import-file-input').click()" 
+      <div id="nfc-import-dropzone" onclick="document.getElementById('nfc-import-file-input').click()"
            ondragover="event.preventDefault(); this.style.borderColor='#059669'; this.style.background='#ecfdf5';"
            ondragleave="this.style.borderColor='#cbd5e1'; this.style.background='#f8fafc';"
            ondrop="handleNfcImportDrop(event)"
@@ -4280,10 +3954,8 @@
         </div>
       </div>
 
-      <!-- Live Parsing Telemetry & Preview Section (Shown after parsing) -->
       <div id="nfc-import-preview-section" style="display: none; flex-direction: column; gap: 12px;">
-        
-        <!-- Metrics Telemetry Strip -->
+
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
           <div style="flex: 1; min-width: 120px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 14px; text-align: center;">
             <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Tổng Dòng</div>
@@ -4303,7 +3975,6 @@
           </div>
         </div>
 
-        <!-- Preview Table Box -->
         <div style="border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #ffffff;">
           <div style="background: #f1f5f9; padding: 10px 16px; border-bottom: 1px solid #e2e8f0; font-size: 12.5px; font-weight: 800; color: #334155; display: flex; justify-content: space-between; align-items: center;">
             <span><i data-lucide="table" class="lucide-sm" style="color: #059669;"></i> Xem trước dữ liệu (tối đa 10 dòng đầu)</span>
@@ -4322,7 +3993,6 @@
                 </tr>
               </thead>
               <tbody id="nfc-import-preview-tbody">
-                <!-- Filled dynamically by JS -->
               </tbody>
             </table>
           </div>
@@ -4330,7 +4000,6 @@
 
       </div>
 
-      <!-- Advanced Import Options -->
       <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 18px; display: flex; flex-direction: column; gap: 10px;">
         <div style="font-size: 12.5px; font-weight: 800; color: #334155; display: flex; align-items: center; gap: 6px;">
           <i data-lucide="sliders" class="lucide-sm" style="color: #059669;"></i> Tùy Chọn Xử Lý Import
@@ -4351,7 +4020,6 @@
         </div>
       </div>
 
-      <!-- Processing Progress Box (Hidden until submit) -->
       <div id="nfc-import-progress-box" style="display: none; background: #ecfdf5; border: 1.5px solid #a7f3d0; border-radius: 12px; padding: 14px 18px; text-align: center;">
         <i data-lucide="loader-2" class="lucide-spin lucide-sm" style="font-size: 24px; color: #059669; margin-bottom: 8px;"></i>
         <div id="nfc-import-progress-text" style="font-size: 13.5px; font-weight: 800; color: #065f46;">
@@ -4361,7 +4029,6 @@
 
     </div>
 
-    <!-- Modal Footer -->
     <div style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
       <div style="font-size: 12px; color: #64748b;">
         <i data-lucide="shield-check" class="lucide-sm" style="color: #059669;"></i> Quá trình import hoàn toàn an toàn và có cơ chế kiểm tra trùng lặp tự động.
@@ -4379,11 +4046,9 @@
   </div>
 </div>
 
-<!-- ── MODAL ĐI VƯỜN GÁN THẺ & ĐỊNH VỊ GPS THỰC ĐỊA (FIELD WALK TAGGING) ── -->
 <div id="field-tagging-modal" class="modal-overlay" style="display:none;">
   <div class="modal-box field-tag-modal-container" style="max-width: 640px; width: 95%; max-height: 94vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: 20px; box-shadow: 0 25px 70px rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.15); background: #ffffff;">
-    
-    <!-- 1. Header: Sleek Dark Emerald Gradient with Farm Badge -->
+
     <div style="background: linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%); padding: 16px 22px; color: #ffffff; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); position: relative;">
       <div style="display: flex; align-items: center; gap: 14px;">
         <div style="width: 42px; height: 42px; border-radius: 12px; background: rgba(255,255,255,0.15); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; font-size: 20px; color: #34d399; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 4px 12px rgba(0,0,0,0.15); flex-shrink: 0;">
@@ -4402,10 +4067,8 @@
       <button class="modal-close-btn" onclick="closeFieldTaggingModal()" aria-label="Đóng" style="color: #ffffff; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); width: 34px; height: 34px; border-radius: 10px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.12)'"><i data-lucide="x" class="lucide-sm"></i></button>
     </div>
 
-    <!-- Modal Body -->
     <div style="padding: 16px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 13px; background: #f8fafc;">
-      
-      <!-- 2. Target Tree Selector & Stepper Card -->
+
       <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 14px 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
           <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; display: flex; align-items: center; gap: 5px;">
@@ -4420,7 +4083,7 @@
           <button class="btn btn-secondary btn-sm" id="btn-field-prev-tree" onclick="prevFieldTree()" style="width: 42px; height: 42px; padding: 0; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 14px; border: 1px solid #cbd5e1; flex-shrink: 0; cursor: pointer; transition: all 0.15s;" title="Cây trước">
             <i data-lucide="chevron-left" class="lucide-sm"></i>
           </button>
-          
+
           <div style="text-align: center; flex: 1; min-width: 0;" id="field-tag-current-tree-display">
             <div style="font-size: 22px; font-weight: 900; color: #0f172a; letter-spacing: -0.02em; display: flex; align-items: center; justify-content: center; gap: 8px;">
               <span>Cây #<span id="field-tag-tree-code">1</span></span>
@@ -4438,7 +4101,6 @@
         </div>
       </div>
 
-      <!-- 3. GPS Real-time Telemetry Card -->
       <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 13px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
           <div style="display: flex; align-items: center; gap: 6px;">
@@ -4468,7 +4130,6 @@
         </div>
       </div>
 
-      <!-- 4. Current Assigned NFC Status Card -->
       <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 13px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
           <span style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">
@@ -4483,12 +4144,10 @@
             Chưa gán thẻ NFC
           </div>
           <div id="field-tag-public-url-preview" style="font-size: 11.5px; color: #4f46e5; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-            <!-- Rendered link -->
           </div>
         </div>
       </div>
 
-      <!-- 5. Primary Tap Terminal Action Card -->
       <div style="margin: 2px 0;">
         <button id="btn-field-touch-nfc" onclick="startFieldNfcTouch()" style="width: 100%; background: linear-gradient(135deg, #059669 0%, #10b981 50%, #047857 100%); color: #ffffff; border: none; border-radius: 18px; padding: 18px 16px; font-size: 15.5px; font-weight: 900; cursor: pointer; box-shadow: 0 8px 24px rgba(5,150,105,0.32); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s ease; border: 1.5px solid rgba(255,255,255,0.3);" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 12px 28px rgba(5,150,105,0.4)'" onmouseout="this.style.transform='none'; this.style.boxShadow='0 8px 24px rgba(5,150,105,0.32)'">
           <div style="display: flex; align-items: center; gap: 10px;">
@@ -4503,7 +4162,6 @@
         </button>
       </div>
 
-      <!-- 6. Manual UID Fallback Section -->
       <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px 14px;">
         <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 8px;">
           Hoặc nhập mã thẻ UID thủ công (dành cho đầu đọc / thiết bị không có Web NFC):
@@ -4516,7 +4174,6 @@
         </div>
       </div>
 
-      <!-- 7. Automation Toggle -->
       <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between;">
         <label style="font-size: 12px; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;">
           <input type="checkbox" id="field-tag-auto-next" checked style="accent-color: #059669; width: 17px; height: 17px; cursor: pointer;">
@@ -4526,7 +4183,6 @@
 
     </div>
 
-    <!-- 8. Modal Footer -->
     <div style="background: #ffffff; border-top: 1px solid #e2e8f0; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
       <div style="display: flex; align-items: center; gap: 8px;">
         <span style="font-size: 11.5px; font-weight: 700; color: #64748b;">Nhảy đến cây:</span>
@@ -4543,7 +4199,6 @@
   </div>
 </div>
 
-<!-- ════════════ COST ENTRY MODAL ════════════ -->
 <div class="modal-overlay" id="cost-entry-modal" style="display:none" onclick="if(event.target===this)closeCostEntryModal()">
   <div class="modal" style="max-width:560px;">
     <div class="modal-header">
@@ -4636,9 +4291,6 @@
   </div>
 </div>
 
-<!-- ════════════ PLANT MODAL ════════════ -->
-
-<!-- ════════════ CSV IMPORT MODAL ════════════ -->
 <div class="modal-overlay" id="csv-import-modal" style="display:none" onclick="if(event.target===this)closeCsvImportModal()">
   <div class="modal" style="max-width: 520px;">
     <div class="modal-header">
@@ -4696,7 +4348,7 @@
           </select>
         </div>
       </div>
-      
+
       <div id="csv-preview-section" style="display:none; margin-top: 16px; border-top: 1px dashed var(--gray-200); padding-top: 12px;">
         <h4 style="font-size:12px; font-weight:600; margin-bottom: 8px; color: var(--green);"><i data-lucide="table" class="lucide-sm"></i> Xem trước tọa độ (<span id="csv-preview-count">0</span> điểm)</h4>
         <div style="max-height: 120px; overflow-y:auto; font-size:11px; background:#f9fafb; padding:8px; border-radius:6px; border:1px solid var(--gray-200);">
@@ -4724,8 +4376,6 @@
   </div>
 </div>
 
-
-<!-- ════════════ DEVICE MODAL ════════════ -->
 <div class="modal-overlay" id="device-modal" style="display:none" onclick="if(event.target===this)closeDeviceModal()">
 
   <div class="modal" style="max-width: 480px;">
@@ -4735,12 +4385,12 @@
     </div>
     <div class="modal-body">
       <input type="hidden" id="f-device-id">
-      
+
       <div class="field">
         <label>Tên thiết bị *</label>
         <input type="text" id="f-device-name" placeholder="VD: Cảm biến nhiệt ẩm số 1, Van tưới A2...">
       </div>
-      
+
       <div class="field">
         <label>Loại thiết bị *</label>
         <select id="f-device-type" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
@@ -4767,7 +4417,7 @@
         <label>Dung lượng Pin (%)</label>
         <input type="number" id="f-device-battery" value="100" min="0" max="100">
       </div>
-      
+
       <div class="field">
         <label>Trạng thái *</label>
         <select id="f-device-status" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
@@ -4786,8 +4436,6 @@
   </div>
 </div>
 
-
-<!-- ════════════ USER ACTIVITY MODAL ════════════ -->
 <div class="modal-overlay" id="user-activity-modal" style="display:none" onclick="if(event.target===this)closeUserActivityModal()">
   <div class="modal" style="max-width: 600px;">
     <div class="modal-header">
@@ -4796,7 +4444,6 @@
     </div>
     <div class="modal-body" style="max-height: 450px; overflow-y: auto;">
       <div id="user-activity-timeline" class="timeline" style="padding: 10px 0;">
-        <!-- Activities rendered dynamically here -->
       </div>
     </div>
     <div class="modal-footer">
@@ -4805,8 +4452,6 @@
   </div>
 </div>
 
-
-<!-- ════════════ DESIGN DRAWING / CAD OVERLAY MODAL ════════════ -->
 <div class="modal-overlay" id="design-drawing-modal" style="display:none" onclick="if(event.target===this)closeDesignDrawingModal()">
   <div class="modal" style="max-width: 520px;">
     <div class="modal-header">
@@ -4817,7 +4462,7 @@
       <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:10px 12px; margin-bottom:14px; font-size:12px; color:#1e40af;">
         <i data-lucide="info" class="lucide-sm"></i> Tải lên bản vẽ thiết kế trang trại (định dạng <strong>GeoJSON, KML, CAD DXF hoặc Hình ảnh quy hoạch PNG/JPG</strong>) để phủ trực tiếp lên bản đồ vệ tinh GIS.
       </div>
-      
+
       <div class="field">
         <label>Tên hồ sơ / Bản vẽ thiết kế *</label>
         <input type="text" id="f-drawing-title" placeholder="VD: Bản vẽ Quy hoạch Hệ thống Tưới & Phân lô 2026">
@@ -4849,7 +4494,6 @@
   </div>
 </div>
 
-<!-- ════════════ VIEW AUDIT HISTORY DETAILS MODAL (VISUAL DIFF INSPECTOR) ════════════ -->
 <div class="modal-overlay" id="history-view-modal" style="display:none" onclick="if(event.target===this)closeViewHistoryModal()">
   <div class="modal" style="max-width: 780px; width: 92%; border-radius:16px; overflow:hidden; box-shadow:0 12px 36px rgba(0,0,0,0.25);">
     <div class="modal-header" style="background:linear-gradient(135deg, #064e3b, #047857); color:#fff; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
@@ -4859,7 +4503,6 @@
       <button class="modal-close" onclick="closeViewHistoryModal()" style="color:#fff; opacity:0.9; font-size:22px;">×</button>
     </div>
     <div class="modal-body" id="history-view-modal-body" style="padding:22px; background:#ffffff; max-height:75vh; overflow-y:auto;">
-      <!-- Populated dynamically by JS -->
     </div>
     <div class="modal-footer" style="padding:14px 20px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end;">
       <button class="btn btn-secondary" onclick="closeViewHistoryModal()" style="font-weight:700; border-radius:8px; padding:8px 18px;">Đóng</button>
@@ -4867,7 +4510,6 @@
   </div>
 </div>
 
-<!-- ════════════ MULTI-POINT GPS BOUNDARY IMPORT MODAL ════════════ -->
 <div class="modal-overlay" id="multi-point-gps-modal" style="display:none" onclick="if(event.target===this)closeMultiPointGpsModal()">
   <div class="modal" style="max-width: 600px; width: 92%; border-radius:16px; overflow:hidden; box-shadow:0 12px 36px rgba(0,0,0,0.25);">
     <div class="modal-header" style="background:linear-gradient(135deg, #065f46, #047857); color:#fff; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
@@ -4905,12 +4547,9 @@
   </div>
 </div>
 
-
-﻿<!-- ════════════════ MODAL: THÊM / SỬA BÀI VIẾT TRI THỨC SOP ════════════════ -->
 <div class="modal-overlay" id="ai-knowledge-modal" style="display:none;" onclick="if(event.target===this)closeAiKnowledgeModal()">
   <div class="modal" style="max-width:700px;">
-    
-    <!-- Modal Header -->
+
     <div class="modal-header" style="background:linear-gradient(135deg, #064e3b 0%, #047857 100%); color:#ffffff;">
       <h2 id="ai-k-modal-title" style="margin:0; font-size:16.5px; font-weight:800; color:#ffffff; display:flex; align-items:center; gap:8px;">
         <i data-lucide="bookmark" class="lucide-sm" style="color:#a7f3d0;"></i> Thêm Tài Liệu Tri Thức SOP Mới
@@ -4918,18 +4557,15 @@
       <button class="modal-close" onclick="closeAiKnowledgeModal()" style="color:#ffffff; opacity:0.85;">×</button>
     </div>
 
-    <!-- Modal Body -->
     <div class="modal-body" style="padding:22px;">
       <form id="ai-knowledge-form" onsubmit="saveAiKnowledgeArticle(event); return false;" style="display:flex; flex-direction:column; gap:14px; margin:0;">
         <input type="hidden" id="ai-k-id" value="">
 
-        <!--  HONEYPOT FIELD (Bẫy Bot: Ẩn với người dùng) -->
         <div style="display:none !important;" aria-hidden="true">
           <input type="text" name="hp_security_trap" id="ai-k-hp-trap" tabindex="-1" autocomplete="off" value="">
         </div>
 
         <div style="display:grid; grid-template-columns:2fr 1fr; gap:14px;">
-          <!-- Tiêu đề -->
           <div class="field">
             <label style="display:block; font-size:12.5px; font-weight:700; color:#334155; margin-bottom:6px;">
               Tiêu Đề Tri Thức <span style="color:#dc2626;">*</span>
@@ -4937,7 +4573,6 @@
             <input type="text" id="ai-k-title" required placeholder="Ví dụ: Quy tắc cách ly 10-15 ngày giữa TBVTV & Vi sinh" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; outline:none;" onfocus="this.style.borderColor='#059669'" onblur="this.style.borderColor='#cbd5e1'">
           </div>
 
-          <!-- Phân loại -->
           <div class="field">
             <label style="display:block; font-size:12.5px; font-weight:700; color:#334155; margin-bottom:6px;">
               Phân Loại <span style="color:#dc2626;">*</span>
@@ -4953,7 +4588,6 @@
         </div>
 
         <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:14px;">
-          <!-- Từ khóa nhận diện -->
           <div class="field">
             <label style="display:block; font-size:12.5px; font-weight:700; color:#334155; margin-bottom:6px;">
               Từ Khóa Gợi Ý
@@ -4961,7 +4595,6 @@
             <input type="text" id="ai-k-keywords" placeholder="trichoderma, thuốc hóa học, cách ly..." style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; outline:none;">
           </div>
 
-          <!-- Độ ưu tiên -->
           <div class="field">
             <label style="display:block; font-size:12.5px; font-weight:700; color:#334155; margin-bottom:6px;">
               Độ Ưu Tiên
@@ -4978,7 +4611,6 @@
             </select>
           </div>
 
-          <!-- Trạng thái -->
           <div class="field">
             <label style="display:block; font-size:12.5px; font-weight:700; color:#334155; margin-bottom:6px;">
               Trạng Thái
@@ -4989,7 +4621,6 @@
           </div>
         </div>
 
-        <!-- Nội dung kỹ thuật chi tiết -->
         <div class="field">
           <label style="display:block; font-size:12.5px; font-weight:700; color:#334155; margin-bottom:6px;">
             Nội Dung Kỹ Thuật Chi Tiết (SOP Content) <span style="color:#dc2626;">*</span>
@@ -4997,7 +4628,6 @@
           <textarea id="ai-k-content" rows="6" required placeholder="Nhập phác đồ điều trị, nguyên tắc khoa học, liều lượng và quy trình thực hiện cụ thể..." style="width:100%; padding:12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-family:inherit; outline:none; resize:vertical; line-height:1.5;" onfocus="this.style.borderColor='#059669'" onblur="this.style.borderColor='#cbd5e1'"></textarea>
         </div>
 
-        <!-- Footer Buttons -->
         <div class="modal-footer" style="padding:14px 0 0 0; border-top:1px solid #f1f5f9; display:flex; justify-content:flex-end; gap:10px; margin-top:6px;">
           <button type="button" class="btn btn-secondary" onclick="closeAiKnowledgeModal()" style="font-size:13px; font-weight:700; padding:8px 16px; border-radius:8px;">
             Hủy Bỏ
@@ -5012,11 +4642,9 @@
   </div>
 </div>
 
-﻿<!-- ════════════════ MODAL: THÊM / SỬA CẶP Q&A HUẤN LUYỆN ════════════════ -->
 <div class="modal-overlay" id="ai-qa-modal" style="display:none;" onclick="if(event.target===this)closeAiQaModal()">
   <div class="modal" style="max-width:680px;">
-    
-    <!-- Modal Header -->
+
     <div class="modal-header" style="background:linear-gradient(135deg, #0369a1 0%, #0284c7 100%); color:#ffffff;">
       <h2 id="ai-qa-modal-title" style="margin:0; font-size:16.5px; font-weight:800; color:#ffffff; display:flex; align-items:center; gap:8px;">
         <i data-lucide="messages-square" class="lucide-sm" style="color:#bae6fd;"></i> Thêm Cặp Q&amp;A Huấn Luyện Mới
@@ -5024,18 +4652,15 @@
       <button class="modal-close" onclick="closeAiQaModal()" style="color:#ffffff; opacity:0.85;">×</button>
     </div>
 
-    <!-- Modal Body -->
     <div class="modal-body" style="padding:22px;">
       <form id="ai-qa-form" onsubmit="saveAiQaPair(event); return false;" style="display:flex; flex-direction:column; gap:16px; margin:0;">
         <input type="hidden" id="ai-qa-id" value="">
 
-        <!--  HONEYPOT FIELD (Bẫy Bot) -->
         <div style="display:none !important;" aria-hidden="true">
           <input type="text" name="hp_security_trap" id="ai-qa-hp-trap" tabindex="-1" autocomplete="off" value="">
         </div>
 
         <div style="display:grid; grid-template-columns:2fr 1fr; gap:14px;">
-          <!-- Phân loại -->
           <div class="field">
             <label style="display:block; font-size:12.5px; font-weight:700; color:#334155; margin-bottom:6px;">
               Phân Loại <span style="color:#dc2626;">*</span>
@@ -5048,7 +4673,6 @@
             </select>
           </div>
 
-          <!-- Trạng thái -->
           <div class="field">
             <label style="display:block; font-size:12.5px; font-weight:700; color:#334155; margin-bottom:6px;">
               Trạng Thái
@@ -5059,7 +4683,6 @@
           </div>
         </div>
 
-        <!-- Các mẫu câu hỏi -->
         <div class="field">
           <label style="display:block; font-size:12.5px; font-weight:700; color:#334155; margin-bottom:4px;">
             Các Mẫu Câu Hỏi Tương Tự (Mỗi câu hỏi cách nhau 1 dòng) <span style="color:#dc2626;">*</span>
@@ -5070,7 +4693,6 @@
           <textarea id="ai-qa-questions" rows="4" required placeholder="vừa xịt thuốc nấm tưới vi sinh được không&#10;xịt thuốc sâu xong bón trichoderma liền được không&#10;khoảng cách giữa thuốc trừ bệnh và men vi sinh" style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-family:inherit; outline:none; resize:vertical; line-height:1.5;" onfocus="this.style.borderColor='#0284c7'" onblur="this.style.borderColor='#cbd5e1'"></textarea>
         </div>
 
-        <!-- Câu trả lời chuẩn xác của Tân Bảo -->
         <div class="field">
           <label style="display:block; font-size:12.5px; font-weight:700; color:#334155; margin-bottom:6px;">
             Câu Trả Lời Chuẩn Xác Của Bé Mầm <span style="color:#dc2626;">*</span>
@@ -5078,7 +4700,6 @@
           <textarea id="ai-qa-answer" rows="5" required placeholder="Nhập câu trả lời chi tiết, xưng hô 'Dạ Bác', giải thích lý do rõ ràng và hướng dẫn từng bước..." style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-family:inherit; outline:none; resize:vertical; line-height:1.5;" onfocus="this.style.borderColor='#0284c7'" onblur="this.style.borderColor='#cbd5e1'"></textarea>
         </div>
 
-        <!-- Từ khóa phụ -->
         <div class="field">
           <label style="display:block; font-size:12.5px; font-weight:700; color:#334155; margin-bottom:6px;">
             Từ Khóa Gợi Nhớ (Tùy chọn)
@@ -5086,7 +4707,6 @@
           <input type="text" id="ai-qa-keywords" placeholder="Ví dụ: cách ly 10 ngày, vi sinh, thuốc trừ bệnh..." style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; outline:none;">
         </div>
 
-        <!-- Footer Buttons -->
         <div class="modal-footer" style="padding:14px 0 0 0; border-top:1px solid #f1f5f9; display:flex; justify-content:flex-end; gap:10px; margin-top:4px;">
           <button type="button" class="btn btn-secondary" onclick="closeAiQaModal()" style="font-size:13px; font-weight:700; padding:8px 16px; border-radius:8px;">
             Hủy Bỏ
@@ -5101,8 +4721,6 @@
   </div>
 </div>
 
-
-<!-- Toast -->
 <div id="toast" style="position:fixed;bottom:24px;right:24px;z-index:9999;display:none">
 
   <div style="background:#1f2937;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.2);display:flex;align-items:center;gap:10px">
@@ -5111,8 +4729,6 @@
   </div>
 </div>
 
-
-<!-- Plant Hover Tooltip -->
 <div id="plant-hover-tooltip"></div>
 
   <script src="/assets/js/lucide-auto-hydrator.js?v=v1.3.7"></script>
@@ -5136,13 +4752,10 @@
   <script src="/admin/js/ai-training.js?v=v1.3.7"></script>
   <script src="/admin/js/websocket.js?v=v1.3.7"></script>
   <script>
-    if (typeof window.refreshIcons === 'function') {
+if (typeof window.refreshIcons === 'function') {
       window.refreshIcons();
     }
-  </script>
+</script>
 </body>
 
-
 </html>
-
-

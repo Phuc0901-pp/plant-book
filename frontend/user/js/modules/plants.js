@@ -1,33 +1,18 @@
-/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/* ═══════════════════════════════════════════════════════════════
-   Plant Book – User Portal
-   modules/plants.js — Plant list rendering & search filter
-   ═══════════════════════════════════════════════════════════════ */
-
 import { esc, healthBadge, sanitizeCoordinates, formatSmartArea, toast, getCropImageSrc, isGrowthMedia, isDiseaseMedia, formatDate } from '../core/utils.js';
 import { api } from '../core/api.js';
 import { animateValue } from './countup.js';
 
-
-// ── State (chia sẻ với các module khác qua getter) ──────────
 let _plantsCache = [];
-let _farmsCache  = [];  // Danh sách trang trại của nông hộ
+let _farmsCache  = [];
 
-/**
- * Cập nhật cache danh sách cây trồng.
- * Được gọi từ dashboard.js sau khi fetch API.
- * @param {Array} plants
- */
 export function setPlantsCache(plants) {
   _plantsCache = plants;
 }
 
-/** Lấy danh sách cây trồng hiện tại từ cache */
 export function getPlantsCache() {
   return _plantsCache;
 }
 
-/** Cập nhật cache trang trại và nạp vào dropdown lọc */
 export function setFarmsCache(farms) {
   _farmsCache = farms;
   window._allFarmsCache = farms;
@@ -35,12 +20,10 @@ export function setFarmsCache(farms) {
   renderUserFarmsGrid(farms);
 }
 
-/** Lấy danh sách trang trại từ cache */
 export function getFarmsCache() {
   return _farmsCache;
 }
 
-/** Lấy trang trại đang được chọn/kích hoạt hiện tại */
 export function getActiveFarm() {
   if (_activeFarmId && _farmsCache && _farmsCache.length) {
     const found = _farmsCache.find(f => f.id == _activeFarmId);
@@ -49,9 +32,6 @@ export function getActiveFarm() {
   return _farmsCache && _farmsCache.length > 0 ? _farmsCache[0] : null;
 }
 
-
-
-/** Nạp danh sách trang trại vào select #user-plant-filter-farm */
 function _populateFarmFilter(farms) {
   const sel = document.getElementById('user-plant-filter-farm');
   if (!sel) return;
@@ -59,16 +39,6 @@ function _populateFarmFilter(farms) {
     + farms.map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join('');
 }
 
-// ── Render ────────────────────────────────────────────────────
-
-/**
- * Render danh sách trang trại ở Trang chủ.
- * @param {Array} farms
- */
-/**
- * Render danh sách trang trại ở Trang chủ & kiểm tra xem nông hộ đã khởi tạo trang trại chưa.
- * @param {Array} farms
- */
 export function renderUserFarmsList(farms) {
   const container = document.getElementById('user-farms-container');
   const noFarmNotice = document.getElementById('no-farm-notice');
@@ -103,7 +73,6 @@ export function renderUserFarmsList(farms) {
   }
 }
 
-// ── GPS Self-Init Farm Functions ──────────────────────────────
 export function openSelfInitFarmModal() {
   const user = window.currentUser || {};
   const isNormal = user.role !== 'admin' && user.account_tier !== 'pro';
@@ -115,7 +84,7 @@ export function openSelfInitFarmModal() {
   const modal = document.getElementById('self-init-farm-modal');
   if (!modal) return;
   modal.style.display = 'flex';
-  
+
   const nameInput = document.getElementById('self-farm-name');
   if (nameInput && !nameInput.value) {
     nameInput.value = user.full_name || user.name ? `Trang trại ${user.full_name || user.name}` : 'Trang trại Nông hộ';
@@ -125,7 +94,7 @@ export function openSelfInitFarmModal() {
   if (areaInput && !areaInput.value && user.farm_area) {
     areaInput.value = user.farm_area;
   }
-  
+
   getDeviceGPSPosition();
 }
 
@@ -179,7 +148,6 @@ export async function submitSelfInitFarm() {
     const btn = document.getElementById('btn-submit-self-farm');
     if (btn) btn.disabled = true;
 
-    // Use standard api helper which attaches correct pb_token automatically
     const data = await api('/farms/self-init', {
       method: 'POST',
       body: JSON.stringify({ name, description: desc, latitude: lat, longitude: lng, area, total_plants: totalPlants })
@@ -194,7 +162,6 @@ export async function submitSelfInitFarm() {
       window.location.reload();
     }
 
-    // Auto fly map to GPS ping location
     if (window.userMap && lat && lng) {
       try {
         window.userMap.flyTo({
@@ -212,14 +179,6 @@ export async function submitSelfInitFarm() {
   }
 }
 
-
-
-
-/**
- * Sắp xếp ưu tiên:
- * 1. Cây bệnh (health_status khác 'Bình thường' và khác 'Tốt') lên đầu (xếp theo ID 1 -> n)
- * 2. Cây bình thường / tốt xuống phía sau (xếp theo ID 1 -> n)
- */
 export function sortPlantsByHealthThenId(plants) {
   if (!Array.isArray(plants)) return [];
   return [...plants].sort((a, b) => {
@@ -235,10 +194,6 @@ export function sortPlantsByHealthThenId(plants) {
   });
 }
 
-/**
- * Render tóm tắt tối đa 3 cây ở Trang chủ.
- * @param {Array} plants
- */
 export function renderUserPlantsSummaryTable(plants) {
   const tbody = document.getElementById('user-plants-summary-table');
   if (!tbody) return;
@@ -258,11 +213,6 @@ export const USER_PLANTS_PAGE_SIZE = 10;
 let _userPlantsCurrentPage = 1;
 let _currentFilteredUserPlants = [];
 
-/**
- * Render danh sách đầy đủ cây trồng ở tab Trang trại (Phân trang 10 bản ghi/trang).
- * @param {Array} plants
- * @param {number} [page=1]
- */
 export function renderUserPlantsTable(plants, page = 1) {
   _currentFilteredUserPlants = Array.isArray(plants) ? plants : [];
   _userPlantsCurrentPage = page || 1;
@@ -327,7 +277,6 @@ export function renderUserPlantsTablePage() {
       </button>
     `;
 
-    // Max 5 visible page numbers around current page
     let startPage = Math.max(1, _userPlantsCurrentPage - 2);
     let endPage = Math.min(totalPages, startPage + 4);
     if (endPage - startPage < 4) {
@@ -366,10 +315,6 @@ export function renderUserPlantsTablePage() {
   }
 }
 
-/**
- * Tạo HTML một hàng cây trồng trong bảng.
- * @private
- */
 function _plantRow(p) {
   const nfcBadge = p.nfc_uid
     ? `<span class="badge-nfc-tag" title="Mã thẻ NFC: ${esc(p.nfc_uid)}" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-family:monospace;font-weight:700;color:#059669;background:#ecfdf5;border:1px solid #a7f3d0;padding:2px 7px;border-radius:6px;"><i data-lucide="tag" class="lucide-xs"></i> ${esc(p.nfc_uid)}</span>`
@@ -381,7 +326,6 @@ function _plantRow(p) {
   const slugSafe = esc(p.public_slug || '');
   const uidVal = p.nfc_uid ? `'${esc(p.nfc_uid)}'` : 'null';
 
-  // 3-segment public url: https://plant-book.onrender.com/{farm_id}/{plant_id}/{nfc_uid}
   const farmIdVal = p.farm_id || (_activeFarmId || 0);
   const pubUrl = p.public_url || (farmIdVal && p.id ? `https://plant-book.onrender.com/${farmIdVal}/${p.id}${p.nfc_uid ? '/' + encodeURIComponent(p.nfc_uid) : ''}` : '');
   const shortUrlText = farmIdVal && p.id ? `/${farmIdVal}/${p.id}${p.nfc_uid ? '/...' : ''}` : 'Chưa có';
@@ -454,15 +398,9 @@ function _plantRow(p) {
 
 }
 
-// ── Range Filter & GPS Radar State ─────────────────────────────
 let _activeRangeFilter = 'all';
 let _gpsNearbyPlants = null;
 
-/**
- * Đặt bộ lọc phân đoạn dải cây (1-20, 21-40, 41-60, 61-80)
- * @param {string} range 'all' | '1-20' | '21-40' | '41-60' | '61-80'
- * @param {HTMLElement} btn
- */
 export function setPlantRangeFilter(range, btn) {
   _activeRangeFilter = range || 'all';
   _gpsNearbyPlants = null;
@@ -495,9 +433,6 @@ export function setPlantRangeFilter(range, btn) {
 }
 window.setPlantRangeFilter = setPlantRangeFilter;
 
-/**
- * Radar định vị và tìm kiếm các cây gần tọa độ GPS của người dùng nhất
- */
 export async function locateNearbyPlantsFromGPS() {
   if (!navigator.geolocation) {
     if (window.toast) window.toast('Trình duyệt không hỗ trợ định vị GPS.', 'error');
@@ -553,12 +488,6 @@ export async function locateNearbyPlantsFromGPS() {
 }
 window.locateNearbyPlantsFromGPS = locateNearbyPlantsFromGPS;
 
-// ── Search / Filter ───────────────────────────────────────────
-
-/**
- * Lọc danh sách cây theo từ khoá, dải cây (Range) hoặc khoảng cách GPS.
- * Kết quả được render vào bảng đầy đủ.
- */
 export function filterUserPlants() {
   const query  = (document.getElementById('user-plant-search')?.value || '').trim().toLowerCase();
   const farmId = document.getElementById('user-plant-filter-farm')?.value || '';
@@ -569,7 +498,6 @@ export function filterUserPlants() {
     filtered = filtered.filter(p => String(p.farm_id) === farmId);
   }
 
-  // Lọc theo Dải số thứ tự cây (Range Filter)
   if (!_gpsNearbyPlants && _activeRangeFilter && _activeRangeFilter !== 'all') {
     const parts = _activeRangeFilter.split('-');
     if (parts.length === 2) {
@@ -598,13 +526,11 @@ export function filterUserPlants() {
 
   renderUserPlantsTable(filtered, 1);
 
-  // Sync Mapbox markers with filtered plant results
   if (typeof window.updateUserMapMarkers === 'function') {
     window.updateUserMapMarkers(filtered, false);
   }
 }
 
-// ── Action Menu Toggle ─────────────────────────────────────────
 export function togglePlantMenu(elOrId, event) {
   if (event && event.stopPropagation) {
     event.stopPropagation();
@@ -618,7 +544,6 @@ export function togglePlantMenu(elOrId, event) {
 
   const isOpen = menu && menu.classList.contains('open');
 
-  // Close all other open menus first
   document.querySelectorAll('.plant-action-dropdown.open').forEach(d => {
     d.classList.remove('open');
   });
@@ -637,14 +562,12 @@ export function closePlantMenu(elOrId) {
   }
 }
 
-// Close menus on outside click
 document.addEventListener('click', e => {
   if (!e.target.closest('.plant-action-menu')) {
     document.querySelectorAll('.plant-action-dropdown.open')
       .forEach(d => d.classList.remove('open'));
   }
 });
-
 
 let _activeFarmId = null;
 
@@ -656,7 +579,6 @@ export function openFarmDetailView(farmId, updateHash = true) {
   if (masterView) masterView.style.display = 'none';
   if (detailView) detailView.style.display = 'block';
 
-  // Synchronize URL Hash e.g. #/u/usr-5a9f/farms/farm-5a9e
   if (updateHash && typeof window.encodeId === 'function' && typeof window.getUserHash === 'function') {
     const userHash = window.getUserHash();
     const farmHash = window.encodeId('farm', farmId);
@@ -675,7 +597,6 @@ export function openFarmDetailView(farmId, updateHash = true) {
     if (countEl) animateValue(countEl, 0, farm.plant_count || farm.total_plants || 0, 1000);
     if (areaEl) animateValue(areaEl, 0, farm.area ? parseFloat(farm.area) : 0, 1000, 1);
 
-    // VietGAP & PUC Badges in Detail Subheader
     const vietgapBadge = document.getElementById('active-farm-vietgap-badge');
     const vietgapNum = document.getElementById('active-farm-vietgap-number');
     if (vietgapBadge && vietgapNum) {
@@ -699,17 +620,14 @@ export function openFarmDetailView(farmId, updateHash = true) {
       }
     }
 
-    // Fetch and populate Farmer NFC tag status metrics (Holding, Assigned, Unassigned)
     fetchFarmerNfcStats(farm.id);
 
-    // Filter plant table select dropdown for this farm
     const filterSel = document.getElementById('user-plant-filter-farm');
     if (filterSel) {
       filterSel.value = farm.id;
       filterUserPlants();
     }
 
-    // Trigger instant map resize & smooth bounds navigation down to farm!
     const zoomToFarm = () => {
       const targetMap = userMap || window.userMap;
       if (!targetMap) return;
@@ -726,7 +644,6 @@ export function openFarmDetailView(farmId, updateHash = true) {
         });
       }
 
-      // If no polygon points, find plants in this farm
       if (!hasPoints) {
         const farmPlants = (_plantsCache || []).filter(p => String(p.farm_id) === String(farm.id) && p.latitude && p.longitude);
         farmPlants.forEach(p => {
@@ -752,7 +669,6 @@ export function openFarmDetailView(farmId, updateHash = true) {
   }
 }
 window.openFarmDetailView = openFarmDetailView;
-
 
 export function closeFarmDetailView(updateHash = true) {
   const masterView = document.getElementById('farm-master-view');
@@ -854,11 +770,11 @@ export function renderUserFarmsGrid(farms) {
 
             <!-- Certifications & PUC Badges -->
             <div class="user-farm-card-certs">
-              ${f.vietgap_cert_number 
-                ? `<span class="user-farm-cert-tag vietgap-active" title="Mã chứng nhận VietGAP"><i data-lucide="shield-check" class="lucide-xs"></i> VietGAP: ${esc(f.vietgap_cert_number)}</span>` 
+              ${f.vietgap_cert_number
+                ? `<span class="user-farm-cert-tag vietgap-active" title="Mã chứng nhận VietGAP"><i data-lucide="shield-check" class="lucide-xs"></i> VietGAP: ${esc(f.vietgap_cert_number)}</span>`
                 : `<span class="user-farm-cert-tag muted"><i data-lucide="shield" class="lucide-xs"></i> VietGAP: Chưa cấp</span>`}
-              ${f.puc_code 
-                ? `<span class="user-farm-cert-tag puc-active" title="Mã số vùng trồng PUC"><i data-lucide="globe" class="lucide-xs"></i> PUC: ${esc(f.puc_code)}</span>` 
+              ${f.puc_code
+                ? `<span class="user-farm-cert-tag puc-active" title="Mã số vùng trồng PUC"><i data-lucide="globe" class="lucide-xs"></i> PUC: ${esc(f.puc_code)}</span>`
                 : `<span class="user-farm-cert-tag muted"><i data-lucide="globe" class="lucide-xs"></i> PUC: Chưa cấp</span>`}
             </div>
           </div>
@@ -879,7 +795,6 @@ export function renderUserFarmsGrid(farms) {
       `;
     }).join('');
 
-    // Add + Khởi tạo Trang trại mới card (only if user is PRO/Admin OR hasn't created any farm yet)
     const user = window.currentUser || {};
     const isNormal = user.role !== 'admin' && user.account_tier !== 'pro';
     if (!isNormal || farms.length === 0) {
@@ -901,7 +816,6 @@ export function renderUserFarmsGrid(farms) {
   }
 }
 
-
 export function selectUserFarm(farmId) {
   _activeFarmId = farmId;
   if (_farmsCache && _farmsCache.length) {
@@ -918,7 +832,6 @@ export function selectUserFarm(farmId) {
   }
 }
 
-// ── Farm Edit Functions ────────────────────────────────────────
 export function openEditFarmModal(farmId = null) {
   const targetId = farmId || _activeFarmId;
   const farm = (_farmsCache || []).find(f => String(f.id) === String(targetId));
@@ -1059,8 +972,6 @@ export async function deleteUserFarm(farmId, farmName) {
 }
 window.deleteUserFarm = deleteUserFarm;
 
-// ── FARM SUBTABS & DEMO IOT / WEATHER FORECAST ──────────────────
-
 export function switchFarmSubtab(tab) {
   const btnMap = document.getElementById('farm-subtab-btn-map');
   const btnIot = document.getElementById('farm-subtab-btn-iot');
@@ -1073,7 +984,6 @@ export function switchFarmSubtab(tab) {
     if (paneMap) paneMap.style.display = 'block';
     if (paneIot) paneIot.style.display = 'none';
 
-    // Resize map when switching back to map tab & refresh plant markers
     setTimeout(() => {
       if (window.userMap) {
         try { window.userMap.resize(); } catch (_) {}
@@ -1099,7 +1009,6 @@ export function switchFarmSubtab(tab) {
 }
 window.switchFarmSubtab = switchFarmSubtab;
 
-// [Modularized] IoT & Open-Meteo weather moved to plants-iot-weather.js
 export function getActiveFarmId() { return _activeFarmId; }
 export { selectSoilDepth, refreshIoTDemoData, fetchLiveOpenMeteoForecast, renderUser24HourHourlySection, selectUserHourlyForecastDay, renderIoTDemoData } from './plants-iot-weather.js';
 let _userAudioCtx = null;
@@ -1158,7 +1067,6 @@ export function playUserDuplicateBeep() {
 }
 window.playUserDuplicateBeep = playUserDuplicateBeep;
 
-/// ── Farmer NFC Status & Read-only Tag Tracking ──────────────────────────
 let _userInvFarmId = null;
 let _userNfcInventoryCache = [];
 
@@ -1170,9 +1078,6 @@ function getActiveUserFarmId() {
   return null;
 }
 
-/**
- * Fetch and update the 3 NFC metric badges on the Farmer Farm Detail header
- */
 export async function fetchFarmerNfcStats(farmId) {
   if (!farmId) return;
   try {
@@ -1194,9 +1099,6 @@ export async function fetchFarmerNfcStats(farmId) {
 }
 window.fetchFarmerNfcStats = fetchFarmerNfcStats;
 
-/**
- * Open Farmer NFC Read-Only Inventory Modal
- */
 export async function openFarmerNfcListModal(farmId = null) {
   const targetFarmId = farmId || getActiveUserFarmId();
   if (!targetFarmId) {
@@ -1240,7 +1142,6 @@ export async function loadUserNfcInventoryData(farmId) {
     if (assignedEl) assignedEl.textContent = assigned;
     if (unassignedEl) unassignedEl.textContent = unassigned;
 
-    // Also sync the header strip if visible
     const farmerTotalEl = document.getElementById('farmer-nfc-total');
     const farmerAssignedEl = document.getElementById('farmer-nfc-assigned');
     const farmerUnassignedEl = document.getElementById('farmer-nfc-unassigned');
@@ -1289,7 +1190,7 @@ function renderUserNfcInventoryTable(tags) {
       plantInfo = `
         <div style="display:flex; flex-direction:column; gap:2px;">
           <div>
-            <strong style="color:#0f172a; font-size:13px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="sprout" class="lucide-xs" style="color:#059669;"></i> ${esc(treeCodeText)}</strong> 
+            <strong style="color:#0f172a; font-size:13px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="sprout" class="lucide-xs" style="color:#059669;"></i> ${esc(treeCodeText)}</strong>
             <span style="font-size:11.5px; color:#64748b; font-weight:600;">${esc(plantTypeDesc)}</span>
           </div>
           ${hasGps ? `
@@ -1332,9 +1233,6 @@ function renderUserNfcInventoryTable(tags) {
   }).join('');
 }
 
-/**
- * Export Farmer NFC Tags list to CSV with UTF-8 BOM
- */
 export async function exportFarmerNfcCsv() {
   try {
     const farmId = _userInvFarmId || getActiveUserFarmId();
@@ -1423,7 +1321,6 @@ export async function exportFarmerNfcCsv() {
 }
 window.exportFarmerNfcCsv = exportFarmerNfcCsv;
 
-// ── In-Field Walk & GPS Tagging Controller ──────────────────────────
 let _userFieldTagFarmId = null;
 let _userFieldTagPlants = [];
 let _userFieldTagIndex = 0;
@@ -1441,7 +1338,6 @@ export async function openFieldTaggingModal(farmId = null) {
   const farmNameEl = document.getElementById('field-tag-farm-name');
   if (farmNameEl) farmNameEl.textContent = farmObj ? farmObj.name : `Trang trại #${targetFarmId}`;
 
-  // Filter plants of this farm from cache or fetch
   const farmPlants = (_plantsCache || []).filter(p => String(p.farm_id) === String(targetFarmId));
   _userFieldTagPlants = [...farmPlants].sort((a,b) => {
     const codeA = parseInt(a.tree_code || a.id) || a.id;
@@ -1510,7 +1406,7 @@ function renderUserCurrentFieldTree() {
     const varietyStr = p.plant_variety ? ` — Giống: ${p.plant_variety.replace(/\(durian\)|\(mango\)|\(avocado\)/gi, '').trim()}` : '';
     plantTypeEl.textContent = `${typeStr}${varietyStr}`;
   }
-  
+
   if (currentUidEl) {
     if (p.nfc_uid) {
       currentUidEl.innerHTML = `<span style="color:#059669; font-weight:800; font-family:ui-monospace, monospace;">${p.nfc_uid}</span>`;
@@ -1698,7 +1594,6 @@ async function executeUserFieldTagAssign(plant, uid, ndefInstance) {
     playUserSuccessDing();
     if (window.toast) window.toast(`🎉 Đã gán thẻ ${uid} và lưu GPS cho Cây #${plant.tree_code || plant.id}!`, 'success');
 
-    // Attempt to write NDEF URL to NFC tag
     if (ndefInstance && res.plant?.public_url) {
       try {
         await ndefInstance.write({
@@ -1710,7 +1605,6 @@ async function executeUserFieldTagAssign(plant, uid, ndefInstance) {
       }
     }
 
-    // Update local cached plant
     plant.nfc_uid = uid;
     plant.latitude = lat;
     plant.longitude = lng;
@@ -1719,7 +1613,6 @@ async function executeUserFieldTagAssign(plant, uid, ndefInstance) {
     renderUserCurrentFieldTree();
     filterUserPlants();
 
-    // Check auto advance
     const autoNext = document.getElementById('field-tag-auto-next')?.checked;
     if (autoNext && _userFieldTagIndex < _userFieldTagPlants.length - 1) {
       setTimeout(() => {
@@ -1733,7 +1626,6 @@ async function executeUserFieldTagAssign(plant, uid, ndefInstance) {
   }
 }
 
-// ─── Spatial Tree Reordering by GPS Modal Logic ──────────────────────────────
 let _reorderGpsPreviewData = null;
 
 export function openReorderGpsModal(farmId) {
@@ -1750,7 +1642,7 @@ export function openReorderGpsModal(farmId) {
     const currentActiveFarm = getActiveFarm();
     const targetFarmId = farmId || (currentActiveFarm ? currentActiveFarm.id : farms[0].id);
 
-    farmSelect.innerHTML = farms.map(f => 
+    farmSelect.innerHTML = farms.map(f =>
       `<option value="${f.id}" ${Number(f.id) === Number(targetFarmId) ? 'selected' : ''}> ${esc(f.name)} (${f.plant_count || 0} cây)</option>`
     ).join('');
   }
@@ -1871,7 +1763,6 @@ export async function executeReorderGps() {
     if (window.toast) window.toast(res.message || 'Đã sắp xếp lại mã số cây thành công!', 'success');
     closeReorderGpsModal();
 
-    // Reload plants & map data
     if (window.loadUserDashboard) {
       await window.loadUserDashboard();
     }
@@ -1886,8 +1777,6 @@ export async function executeReorderGps() {
 }
 window.executeReorderGps = executeReorderGps;
 
-
-// ── 12. FARMER PLANT CREATION (CHUẨN VIETGAP & GIS GPS) ───────────
 let _userPlantCreateMode = 'single';
 let _userPlantMatrix = [];
 let _singlePlantPhotoFile = null;
@@ -1986,7 +1875,7 @@ export function calculatePlantAge(plantingDateStr) {
   if (!plantingDateStr) return '';
   const plantingDate = new Date(plantingDateStr);
   if (isNaN(plantingDate.getTime())) return '';
-  
+
   const today = new Date();
   if (plantingDate > today) return 'Mới ươm (Chưa đến ngày trồng)';
 
@@ -2211,7 +2100,6 @@ export function updateUserRangePreview() {
 }
 window.updateUserRangePreview = updateUserRangePreview;
 
-// ── Batch Range Data Matrix Helpers ──
 export function generateUserPlantMatrix() {
   const prefix = (document.getElementById('user-plant-range-prefix')?.value || '').trim();
   const rawStart = document.getElementById('user-plant-range-start')?.value;
@@ -2219,7 +2107,7 @@ export function generateUserPlantMatrix() {
   const padZeros = document.getElementById('user-plant-range-pad-zeros')?.checked;
   const bulkPlotRaw = (document.getElementById('user-matrix-bulk-plot')?.value || document.getElementById('user-plant-plot')?.value || '').trim();
   const bulkPlot = bulkPlotRaw ? normalizePlotName(bulkPlotRaw) : '';
-  
+
   const start = parseInt(rawStart, 10);
   const end = parseInt(rawEnd, 10);
 
@@ -2652,7 +2540,6 @@ export async function openUserCreatePlantModal() {
   const modal = document.getElementById('user-create-plant-modal');
   if (!modal) return;
 
-  // 1. Populate Farms
   const farmSelect = document.getElementById('user-plant-farm-id');
   if (farmSelect) {
     const farms = _farmsCache || [];
@@ -2666,7 +2553,6 @@ export async function openUserCreatePlantModal() {
     }
   }
 
-  // 2. Reset Fields
   ['user-plant-tree-code', 'user-plant-nfc-uid', 'user-plant-type', 'user-plant-variety', 'user-plant-planting-date', 'user-plant-age', 'user-plant-plot', 'user-plant-row', 'user-plant-location', 'user-plant-lat', 'user-plant-lng', 'user-plant-range-prefix', 'user-plant-range-start', 'user-plant-range-end', 'user-matrix-bulk-plot', 'user-plant-initial-yield', 'user-plant-custom-past-disease', 'user-batch-planting-date', 'user-batch-plant-age', 'user-batch-initial-yield', 'user-batch-custom-past-disease'].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
@@ -2695,15 +2581,12 @@ export async function openUserCreatePlantModal() {
   const matrixCountBadge = document.getElementById('user-matrix-count-badge');
   if (matrixCountBadge) matrixCountBadge.textContent = '0 cây trong ma trận';
 
-  // 3. Default mode single
   const radioSingle = document.querySelector('input[name="user-plant-mode"][value="single"]');
   if (radioSingle) radioSingle.checked = true;
   toggleUserPlantCreateMode('single');
 
-  // 4. Load unassigned NFC for active farm
   onUserPlantFarmChange();
 
-  // 5. If farm has GPS, autofill coordinates
   const activeFarm = getActiveFarm();
   if (activeFarm && activeFarm.latitude && activeFarm.longitude) {
     const latEl = document.getElementById('user-plant-lat');
@@ -2730,7 +2613,6 @@ export function closeUserCreatePlantModal() {
 }
 window.closeUserCreatePlantModal = closeUserCreatePlantModal;
 
-// ── Selectable Past Diseases Badges / Chips Handlers ──
 export function togglePastDiseaseChip(btn, diseaseName) {
   if (!btn) return;
   const isBatch = btn.closest('#batch-past-disease-chips-container') !== null;
@@ -2748,7 +2630,6 @@ export function togglePastDiseaseChip(btn, diseaseName) {
     return;
   }
 
-  // If another disease is selected, deselect "Chưa từng nhiễm bệnh"
   if (container) {
     const healthyChip = Array.from(container.querySelectorAll('.past-disease-chip'))
       .find(c => c.textContent.includes('Chưa từng nhiễm bệnh'));
@@ -2964,7 +2845,6 @@ export async function submitUserCreatePlant() {
         body: JSON.stringify(payload)
       });
 
-      // Upload photos for any matrix trees that had photos attached
       if (_userPlantMatrix && _userPlantMatrix.length > 0 && res && res.inserted_ids) {
         const token = localStorage.getItem('token') || localStorage.getItem('pb_token');
         const uploadPromises = [];
@@ -3028,7 +2908,6 @@ export async function submitUserCreatePlant() {
         body: JSON.stringify(payload)
       });
 
-      // Upload single plant initial photo if provided
       if (_singlePlantPhotoFile && res && res.id) {
         try {
           const token = localStorage.getItem('token') || localStorage.getItem('pb_token');
@@ -3056,11 +2935,9 @@ export async function submitUserCreatePlant() {
 
     closeUserCreatePlantModal();
 
-    // Reload Dashboard & plants data
     if (window.loadUserDashboard) {
       await window.loadUserDashboard();
     }
-    // If inside active farm detail view, refresh view
     if (_activeFarmId && window.openFarmDetailView) {
       window.openFarmDetailView(_activeFarmId, false);
     }
@@ -3079,6 +2956,4 @@ export async function submitUserCreatePlant() {
 }
 window.submitUserCreatePlant = submitUserCreatePlant;
 
-// ── Enterprise Plant Profile Modal Controller (Bảo toàn GPS 100%) ──
-// [Modularized] ERP Plant Profile Modal & Growth Gallery moved to plants-profile-erp.js
 export { openPlantProfileModal, closePlantProfileModal, switchErpProfileTab, onErpProfileCareClick, onErpProfileNfcClick, _renderGrowthPhotoGallery, openErpUploadGrowthPhotoModal, closeErpUploadGrowthPhotoModal, onErpGrowthModalFileChange, submitErpGrowthPhoto } from './plants-profile-erp.js';

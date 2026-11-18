@@ -15,7 +15,7 @@ class _AdminDevicePageState extends State<AdminDevicePage> {
   final ApiService _apiService = ApiService();
   bool _isLoading = true;
   List<dynamic> _devices = [];
-  int _selectedDepth = 20; // 10, 20, 30 cm
+  int _selectedDepth = 20;
 
   @override
   void initState() {
@@ -50,7 +50,6 @@ class _AdminDevicePageState extends State<AdminDevicePage> {
       ),
       body: Column(
         children: [
-          // 3-Depth Soil Selector Chips (10cm, 20cm, 30cm)
           Container(
             color: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -110,7 +109,6 @@ class _AdminDevicePageState extends State<AdminDevicePage> {
                             ),
                             const SizedBox(height: 12),
 
-                            // Soil & Air Telemetry Cards Grid
                             Row(
                               children: [
                                 Expanded(child: _metricBox('Độ ẩm đất (${_selectedDepth}cm)', '$soilMoisture %', Icons.water_drop_rounded, soilMoisture < 50 ? Colors.red : Colors.blue)),

@@ -1,9 +1,3 @@
-/**
- * ═══════════════════════════════════════════════════════════════
- * Suite 13: Zalo Official Account Alerts, Data Scrubbing & Privacy
- * ═══════════════════════════════════════════════════════════════
- */
-
 const { describe, it, expect } = require('../test-framework');
 const zaloService = require('../../services/zaloService');
 
@@ -99,12 +93,10 @@ describe('Suite 13: Zalo OA Integration & Public Data Scrubbing Engine', () => {
     const cleanLogs = scrubLogs(rawLogs);
     const firstDetails = cleanLogs[0].details;
 
-    // Public transparent fields MUST exist
     expect(firstDetails.fertilizer_name).toBe('Phân NPK 16-16-8');
     expect(firstDetails.amount).toBe('500g/gốc');
     expect(firstDetails.method).toBe('Bón rãnh quanh tán');
 
-    // Confidential business fields MUST BE DELETED
     expect(firstDetails.unit_price).toBeUndefined();
     expect(firstDetails.total_cost).toBeUndefined();
     expect(firstDetails.cost).toBeUndefined();
@@ -125,13 +117,11 @@ describe('Suite 13: Zalo OA Integration & Public Data Scrubbing Engine', () => {
     };
 
     const farmerUser = { id: 5, role: 'farmer', farm_id: 16 };
-    
-    // Own farm access (Allowed)
+
     const ownAccess = buildSecureQuery(farmerUser, 16, 102);
     expect(ownAccess.isAllowed).toBe(true);
     expect(ownAccess.sql).toContain('farm_id = $2');
 
-    // Foreign farm access attempt (Blocked)
     const foreignAccess = buildSecureQuery(farmerUser, 99, 500);
     expect(foreignAccess.isAllowed).toBe(false);
     expect(foreignAccess.error).toContain('403 Forbidden');

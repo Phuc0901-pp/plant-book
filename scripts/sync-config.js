@@ -1,13 +1,3 @@
-/**
- * ═══════════════════════════════════════════════════════════════
- * Plant Book – Master Configuration Synchronizer & Version Bumper
- * Single Source of Truth: config/app.config.json
- * ═══════════════════════════════════════════════════════════════
- * Usage:
- *   node scripts/sync-config.js          (Sync all files from app.config.json)
- *   node scripts/sync-config.js 1.3.0    (Bump version to 1.3.0 and sync all files)
- */
-
 const fs = require('fs');
 const path = require('path');
 const { buildAll } = require('../backend/scripts/build-html');
@@ -22,7 +12,6 @@ if (!fs.existsSync(CONFIG_FILE)) {
 
 const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
 
-// Handle optional version bump argument: node scripts/sync-config.js 1.3.0
 const newVersionArg = process.argv[2];
 if (newVersionArg && /^\d+\.\d+\.\d+$/.test(newVersionArg.replace(/^v/, ''))) {
   const cleanVer = newVersionArg.replace(/^v/, '');
@@ -34,7 +23,7 @@ if (newVersionArg && /^\d+\.\d+\.\d+$/.test(newVersionArg.replace(/^v/, ''))) {
   config.cache.assetVersion = cleanVer;
   config.brand.userPortalTitle = config.app.name + ' v' + cleanVer + ' — Cổng nông hộ';
   config.brand.adminPortalTitle = config.app.name + ' v' + cleanVer + ' — Quản trị';
-  
+
   fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), 'utf8');
   console.log(`[sync-config] 🚀 Bumped version to v${cleanVer} (Build ${config.app.buildNumber})`);
 }
@@ -46,7 +35,6 @@ const swCache = config.cache.swCacheName || ('pb-farmer-cache-' + versionTag);
 
 console.log(`[sync-config] Synchronizing configuration for ${config.app.name} (${versionTag})...`);
 
-// 1. Sync backend/package.json
 const pkgPath = path.join(ROOT_DIR, 'backend/package.json');
 if (fs.existsSync(pkgPath)) {
   const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
@@ -55,7 +43,6 @@ if (fs.existsSync(pkgPath)) {
   console.log(`  ✔ backend/package.json -> ${version}`);
 }
 
-// 2. Sync mobile_app/pubspec.yaml
 const pubspecPath = path.join(ROOT_DIR, 'mobile_app/pubspec.yaml');
 if (fs.existsSync(pubspecPath)) {
   let pubspec = fs.readFileSync(pubspecPath, 'utf8');
@@ -64,7 +51,6 @@ if (fs.existsSync(pubspecPath)) {
   console.log(`  ✔ mobile_app/pubspec.yaml -> ${version}+${buildNumber}`);
 }
 
-// 3. Sync mobile_app/lib/core/constants/app_constants.dart
 const appConstantsPath = path.join(ROOT_DIR, 'mobile_app/lib/core/constants/app_constants.dart');
 if (fs.existsSync(appConstantsPath)) {
   let appConstants = fs.readFileSync(appConstantsPath, 'utf8');
@@ -73,7 +59,6 @@ if (fs.existsSync(appConstantsPath)) {
   console.log(`  ✔ mobile_app/.../app_constants.dart -> ${versionTag}`);
 }
 
-// 4. Sync frontend/user/sw.js
 const swPath = path.join(ROOT_DIR, 'frontend/user/sw.js');
 if (fs.existsSync(swPath)) {
   let sw = fs.readFileSync(swPath, 'utf8');
@@ -83,7 +68,6 @@ if (fs.existsSync(swPath)) {
   console.log(`  ✔ frontend/user/sw.js -> ${swCache}`);
 }
 
-// 5. Sync frontend/user/js/core/config.js and admin config.js
 const userConfigJs = path.join(ROOT_DIR, 'frontend/user/js/core/config.js');
 const adminConfigJs = path.join(ROOT_DIR, 'frontend/admin/js/core/config.js');
 
@@ -146,7 +130,6 @@ fs.writeFileSync(userConfigJs, userConfigCode, 'utf8');
 fs.writeFileSync(adminConfigJs, userConfigCode, 'utf8');
 console.log(`  ✔ frontend core config.js files synced`);
 
-// 6. Rebuild HTML templates
 console.log('[sync-config] Compiling HTML templates...');
 buildAll();
 console.log(`[sync-config] 🎉 All project configurations synchronized successfully with SSOT!`);

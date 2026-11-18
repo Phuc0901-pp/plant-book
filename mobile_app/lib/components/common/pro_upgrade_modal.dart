@@ -64,7 +64,6 @@ class ProUpgradeModal extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          // Feature list preview
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(

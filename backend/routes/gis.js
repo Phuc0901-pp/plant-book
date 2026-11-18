@@ -1,20 +1,11 @@
-/* ═══════════════════════════════════════════════════════════════
-   Plant Book – Backend Enterprise Architecture
-   routes/gis.js — PostGIS Dynamic Vector Tiles (MVT) & Spatial Clustering Engine
-   Supports: ST_AsMVT (PostGIS) + Dynamic Grid Clustering + Fast Fallback
-   ═══════════════════════════════════════════════════════════════ */
-
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
 const { getCache, setCache } = require('../config/redis');
 const queueService = require('../services/queueService');
 
-let isPostGISAvailable = null; // null = chưa kiểm tra, true/false
+let isPostGISAvailable = null;
 
-/**
- * Kiểm tra xem cơ sở dữ liệu có hỗ trợ PostGIS và hàm ST_AsMVT không
- */
 async function checkPostGIS() {
   if (isPostGISAvailable !== null) return isPostGISAvailable;
   try {
@@ -28,9 +19,6 @@ async function checkPostGIS() {
   return isPostGISAvailable;
 }
 
-/**
- * Chuyển đổi tọa độ Tile (z, x, y) sang Bounding Box (Kinh độ/Vĩ độ WGS84)
- */
 function tileToBBox(x, y, z) {
   const n = Math.pow(2, z);
   const lonMin = (x / n) * 360 - 180;
@@ -49,10 +37,6 @@ function tileToBBox(x, y, z) {
   };
 }
 
-/**
- * ── GET /api/gis/tiles/:z/:x/:y.pbf ──────────────────────────────
- * Endpoint cung cấp Mapbox Vector Tile (MVT) chuẩn nhị phân Protocol Buffers
- */
 router.get('/tiles/:z/:x/:y.pbf', async (req, res) => {
   const z = parseInt(req.params.z, 10);
   const x = parseInt(req.params.x, 10);
@@ -66,7 +50,6 @@ router.get('/tiles/:z/:x/:y.pbf', async (req, res) => {
   const cacheKey = `mvt_tile_${z}_${x}_${y}_f${farmId || 'all'}`;
 
   try {
-    // 1. Kiểm tra cache
     const cachedTile = await getCache(cacheKey);
     if (cachedTile) {
       const buffer = Buffer.isBuffer(cachedTile) ? cachedTile : Buffer.from(cachedTile, 'base64');
@@ -79,13 +62,12 @@ router.get('/tiles/:z/:x/:y.pbf', async (req, res) => {
     const hasPostGIS = await checkPostGIS();
 
     if (hasPostGIS) {
-      // 2A. Thực thi truy vấn PostGIS ST_AsMVT chuẩn quốc tế
       const mvtQuery = `
         WITH tile_bounds AS (
           SELECT ST_TileEnvelope($1, $2, $3) AS geom_3857
         ),
         mvt_data AS (
-          SELECT 
+          SELECT
             p.id,
             p.tree_code,
             p.farm_id,
@@ -103,8 +85,8 @@ router.get('/tiles/:z/:x/:y.pbf', async (req, res) => {
               true
             ) AS geom
           FROM plants p, tile_bounds
-          WHERE p.latitude IS NOT NULL 
-            AND p.longitude IS NOT NULL 
+          WHERE p.latitude IS NOT NULL
+            AND p.longitude IS NOT NULL
             AND p.deleted_at IS NULL
             AND ($4::int IS NULL OR p.farm_id = $4::int)
             AND ST_Intersects(
@@ -118,7 +100,6 @@ router.get('/tiles/:z/:x/:y.pbf', async (req, res) => {
       const result = await pool.readQuery(mvtQuery, [z, x, y, farmId]);
       const tileBuffer = result.rows[0]?.tile || Buffer.alloc(0);
 
-      // Lưu cache 3 phút
       if (tileBuffer.length > 0) {
         await setCache(cacheKey, tileBuffer.toString('base64'), 180);
       }
@@ -127,7 +108,6 @@ router.get('/tiles/:z/:x/:y.pbf', async (req, res) => {
       res.setHeader('Cache-Control', 'public, max-age=300');
       return res.send(tileBuffer);
     } else {
-      // 2B. Chế độ Fallback: Cắt bounding box và trả về tile rỗng hoặc GeoJSON tile tương thích
       const bbox = tileToBBox(x, y, z);
       const fallbackQuery = `
         SELECT p.id, p.tree_code, p.farm_id, p.plant_type, p.plant_variety,
@@ -141,7 +121,6 @@ router.get('/tiles/:z/:x/:y.pbf', async (req, res) => {
       `;
       const pts = await pool.readQuery(fallbackQuery, [bbox.minLat, bbox.maxLat, bbox.minLon, bbox.maxLon, farmId]);
 
-      // Trả về header Protocol Buffers với buffer rỗng nếu không có cây, hoặc stream nén
       const emptyTileBuffer = Buffer.alloc(0);
       res.setHeader('Content-Type', 'application/x-protobuf');
       res.setHeader('Cache-Control', 'public, max-age=300');
@@ -150,15 +129,10 @@ router.get('/tiles/:z/:x/:y.pbf', async (req, res) => {
   } catch (err) {
     console.error(`[MVT Error z=${z} x=${x} y=${y}]:`, err.message);
     res.setHeader('Content-Type', 'application/x-protobuf');
-    return res.status(200).send(Buffer.alloc(0)); // Fail-safe: trả về tile rỗng để mapbox không báo đỏ
+    return res.status(200).send(Buffer.alloc(0));
   }
 });
 
-/**
- * ── GET /api/gis/clusters ────────────────────────────────────────
- * API Server-side Clustering & Viewport Filtering
- * Giảm tải 95% dữ liệu truyền về client cho các trang trại hàng vạn cây
- */
 router.get('/clusters', async (req, res) => {
   try {
     const { bbox, zoom = 14, farm_id } = req.query;
@@ -179,7 +153,6 @@ router.get('/clusters', async (req, res) => {
       return res.json(cached);
     }
 
-    // Nếu zoom lớn (>= 16.5): Trả về toàn bộ điểm chi tiết trong khung nhìn
     if (currentZoom >= 16.5) {
       const detailQuery = `
         SELECT p.id, p.tree_code, p.farm_id, p.plant_type, p.plant_variety,
@@ -226,16 +199,14 @@ router.get('/clusters', async (req, res) => {
         features
       };
 
-      await setCache(cacheKey, responseData, 60); // 1 phút
+      await setCache(cacheKey, responseData, 60);
       return res.json(responseData);
     }
 
-    // Nếu zoom nhỏ (< 16.5): Tự động gom nhóm điểm (Server-side Clustering theo Grid)
-    // Kích thước ô lưới động phụ thuộc vào zoom level
     const gridSize = Math.max(0.0005, 0.05 / Math.pow(2, currentZoom - 10));
 
     const clusterQuery = `
-      SELECT 
+      SELECT
         ROUND(p.longitude / $1) * $1 as grid_lon,
         ROUND(p.latitude / $1) * $1 as grid_lat,
         COUNT(p.id)::int as count,
@@ -292,10 +263,6 @@ router.get('/clusters', async (req, res) => {
   }
 });
 
-/**
- * ── GET /api/gis/metrics ─────────────────────────────────────────
- * Đo lường hiệu năng và trạng thái của GIS & Distributed Message Queue
- */
 router.get('/metrics', async (req, res) => {
   try {
     const hasPostGIS = await checkPostGIS();

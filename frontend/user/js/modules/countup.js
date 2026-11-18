@@ -1,8 +1,3 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/**
- * modules/countup.js - Smooth Universal Number Count-Up Animation (0 -> target)
- */
-
 export function animateValue(el, start, end, duration = 1000, decimals = 0, suffix = '') {
   if (!el) return;
   const startTime = performance.now();
@@ -12,8 +7,7 @@ export function animateValue(el, start, end, duration = 1000, decimals = 0, suff
   function update(currentTime) {
     const elapsed = currentTime - startTime;
     const progress = Math.min(elapsed / duration, 1);
-    
-    // Easing: easeOutExpo
+
     const ease = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
     const current = startVal + (endVal - startVal) * ease;
 
@@ -33,8 +27,7 @@ export function animateValue(el, start, end, duration = 1000, decimals = 0, suff
 
 export function triggerPageCountUpAnimations(pageId) {
   const container = document.getElementById(`page-${pageId}`) || document;
-  
-  // Find all counters with data-count-to or specific metric IDs
+
   const countElements = [
     { id: 'user-plant-count', decimals: 0, suffix: '' },
     { id: 'myplants-total-count', decimals: 0, suffix: '' },
@@ -58,7 +51,6 @@ export function triggerPageCountUpAnimations(pageId) {
     }
   });
 
-  // Also query elements with .stat-number or .count-animate
   const statNumbers = container.querySelectorAll('.stat-number, .count-animate, strong[data-count]');
   statNumbers.forEach(el => {
     const raw = el.getAttribute('data-count') || el.textContent.replace(/[^0-9.-]/g, '');

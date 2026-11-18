@@ -1,7 +1,3 @@
-/* Plant Book AgTech (c) 2026 TBSG AgTech. All Rights Reserved.
-   modules/sub-nfc-bridge.js — Web NFC Hardware Read/Write Bridge & Feedback
-   ======================================================================== */
-
 export class SubNfcBridge {
   constructor() {
     this.hasNfc = 'NDEFReader' in window;
@@ -18,9 +14,6 @@ export class SubNfcBridge {
     return this.lastScannedUid;
   }
 
-  /**
-   * Play audio chime when write is successful
-   */
   playSuccessChime() {
     try {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -30,9 +23,9 @@ export class SubNfcBridge {
       const gain = ctx.createGain();
 
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-      osc.frequency.setValueAtTime(880.00, ctx.currentTime + 0.1); // A5
-      osc.frequency.setValueAtTime(1174.66, ctx.currentTime + 0.2); // D6
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+      osc.frequency.setValueAtTime(880.00, ctx.currentTime + 0.1);
+      osc.frequency.setValueAtTime(1174.66, ctx.currentTime + 0.2);
 
       gain.gain.setValueAtTime(0.15, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.45);
@@ -45,9 +38,6 @@ export class SubNfcBridge {
     } catch (_) {}
   }
 
-  /**
-   * Trigger haptic vibration feedback
-   */
   triggerHaptic(type = 'success') {
     if (!('vibrate' in navigator)) return;
     try {
@@ -61,9 +51,6 @@ export class SubNfcBridge {
     } catch (_) {}
   }
 
-  /**
-   * Listen continuously for an NFC tag to read its UID
-   */
   async scanTag(onReadCallback, onErrorCallback) {
     if (!this.hasNfc) {
       if (onErrorCallback) onErrorCallback(new Error('Trình duyệt không hỗ trợ Web NFC API.'));
@@ -93,9 +80,6 @@ export class SubNfcBridge {
     }
   }
 
-  /**
-   * Scan once with a Promise resolution or timeout
-   */
   async scanTagOnce(timeoutMs = 12000) {
     if (!this.hasNfc) {
       throw new Error('Trình duyệt không hỗ trợ Web NFC API.');
@@ -133,9 +117,6 @@ export class SubNfcBridge {
     });
   }
 
-  /**
-   * Write NDEF URI Record directly to physical NFC tag
-   */
   async writeTagUrl(publicUrl) {
     if (!this.hasNfc) {
       throw new Error('Trình duyệt không hỗ trợ ghi Web NFC.');

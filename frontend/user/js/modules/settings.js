@@ -1,15 +1,8 @@
-/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/* ═══════════════════════════════════════════════════════════════
-   Plant Book – User Portal
-   modules/settings.js — Account settings & Threshold Rules Engine
-   ═══════════════════════════════════════════════════════════════ */
-
 import { api, API, token } from '../core/api.js';
 import { toast, esc } from '../core/utils.js';
 
 let _currentRules = [];
 
-// ── Khởi tạo trang Cài đặt ──────────────────────────────────────
 export async function loadUserSettings() {
   try {
     const user = await api('/auth/me');
@@ -31,12 +24,10 @@ export async function loadUserSettings() {
   }
 }
 
-// ── Sub-Tab Switching ──────────────────────────────────────────
 export function switchSettingsSubtab(subtab) {
   const user = window._currentUserProfile;
   const isSubAccount = user && user.role !== 'admin' && (user.parent_user_id != null || (user.sub_role && user.sub_role !== 'farm_owner'));
 
-  // Nếu là tài khoản dưới quyền, chặn xem Cài đặt ngưỡng & Phân quyền nhân sự
   if (isSubAccount && (subtab === 'thresholds' || subtab === 'team')) {
     subtab = 'profile';
   }
@@ -93,7 +84,6 @@ export function switchSettingsSubtab(subtab) {
 }
 window.switchSettingsSubtab = switchSettingsSubtab;
 
-// ── Threshold Rules CRUD ──────────────────────────────────────
 export async function loadThresholdRules() {
   const container = document.getElementById('threshold-rules-list');
   if (!container) return;
@@ -115,7 +105,6 @@ export async function loadThresholdRules() {
 }
 window.loadThresholdRules = loadThresholdRules;
 
-// ── Device & Metric Hierarchy Catalog ──────────────────────────
 const DEVICE_GROUPS = {
   soil: {
     id: 'soil',
@@ -192,13 +181,12 @@ function _getMetricInfo(devKey, metricKey) {
   return DEVICE_GROUPS[devKey]?.metrics?.[metricKey] || null;
 }
 
-// ── Dynamic Multi-Condition Builder Helpers ───────────────────
 export function addConditionRow(data = null) {
   const container = document.getElementById('rule-conditions-list');
   if (!container) return;
 
   const rowId = 'cond-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6);
-  
+
   let devKey = data?.device_source || (data?.metric_key ? _findDeviceGroupForMetric(data.metric_key) : 'soil');
   if (data?.is_custom) devKey = 'custom';
 
@@ -209,7 +197,7 @@ export function addConditionRow(data = null) {
   const metricKey = isCustom ? '' : (data?.metric_key || Object.keys(DEVICE_GROUPS[devKey]?.metrics || {})[0] || 'soil_moisture_10cm');
   const operator = data?.operator || '<';
   const thresholdVal = data?.threshold_value !== undefined ? data.threshold_value : 50;
-  
+
   const metricInfo = isCustom ? { name: customName, unit: customUnit } : (DEVICE_GROUPS[devKey]?.metrics?.[metricKey] || { name: metricKey, unit: '%' });
   const unit = metricInfo?.unit || (isCustom ? customUnit : '%');
 
@@ -248,7 +236,7 @@ export function addConditionRow(data = null) {
 
     <!-- Step 2: Metric Field & Comparison -->
     <div style="display:grid; grid-template-columns: 1.8fr 1fr 1.2fr; gap:8px; align-items:center;">
-      
+
       <!-- Metric Selector or Custom Inputs -->
       <div class="cond-metric-wrapper">
         <select class="cond-metric" onchange="onConditionMetricChange('${rowId}')" style="width:100%; padding:9px 10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:600; outline:none; display:${isCustom ? 'none' : 'block'};">
@@ -456,7 +444,6 @@ export function updateRuleConditionsSummary() {
 }
 window.updateRuleConditionsSummary = updateRuleConditionsSummary;
 
-
 export function renderThresholdRulesUI(rules) {
   const container = document.getElementById('threshold-rules-list');
   if (!container) return;
@@ -508,7 +495,6 @@ export function renderThresholdRulesUI(rules) {
     const isEnabled = r.is_enabled;
     const ruleTitle = r.title || r.metric_name || 'Quy tắc Cài đặt Ngưỡng';
 
-    // Parse multi-conditions
     let conditions = [];
     if (r.conditions_json) {
       try {
@@ -526,14 +512,14 @@ export function renderThresholdRulesUI(rules) {
     return `
       <div style="background:#ffffff; border:1.5px solid ${isEnabled ? st.border : '#e2e8f0'}; border-radius:18px; padding:20px; box-shadow:0 3px 12px rgba(0,0,0,0.03); opacity:${isEnabled ? 1 : 0.65}; transition:all 0.25s ease; position:relative; overflow:hidden;">
         <div style="position:absolute; top:0; left:0; width:5px; height:100%; background:${st.badgeText};"></div>
-        
+
         <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; padding-left:6px;">
           <div style="flex:1; min-width:280px;">
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
               <span class="badge" style="background:${st.badgeBg}; color:${st.badgeText}; border:1px solid ${st.border}; font-size:11.5px; font-weight:800; display:inline-flex; align-items:center; gap:5px;">
                 <i data-lucide="${st.icon}" class="lucide-sm"></i> ${st.label}
               </span>
-              
+
               <span class="badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size:11px; font-weight:700;">
                 <i data-lucide="sprout" class="lucide-sm"></i> ${r.action_type || 'Canh tác'}
               </span>
@@ -664,7 +650,6 @@ export function updateRuleLivePreview() {
 }
 window.updateRuleLivePreview = updateRuleLivePreview;
 
-// ── Notification Timing Helper ────────────────────────────────
 export function onNotifyTimeTypeChange() {
   const typeSel = document.getElementById('rule-notify-time-type');
   const customWrapper = document.getElementById('rule-custom-time-wrapper');
@@ -680,7 +665,6 @@ export function openAddThresholdRuleModal() {
     return;
   }
 
-  // Show modal FIRST — guaranteed, before any optional DOM manipulation
   modal.style.display = 'flex';
   modal.style.zIndex = '99999';
 
@@ -698,7 +682,6 @@ export function openAddThresholdRuleModal() {
     if (ruleTitleInput) ruleTitleInput.value = 'Cảnh báo Độ ẩm Đất Tầng 10cm & Dự báo Mưa rào';
     if (ruleRec) ruleRec.value = 'Độ ẩm đất tầng 10cm < 50% & Sáng mai dự báo mưa rào. Khuyến nghị tưới bổ sung đến khi độ ẩm đất >= 50%!';
 
-    // Default to 'danger' category
     if (form) {
       const radDanger = form.querySelector('input[name="rule_category"][value="danger"]');
       if (radDanger) radDanger.checked = true;
@@ -706,7 +689,6 @@ export function openAddThresholdRuleModal() {
       if (radAnd) radAnd.checked = true;
     }
 
-    // Reset notification timing
     const notifyTimeSel = document.getElementById('rule-notify-time-type');
     if (notifyTimeSel) notifyTimeSel.value = 'instant';
     const customTimeInput = document.getElementById('rule-custom-time');
@@ -717,7 +699,6 @@ export function openAddThresholdRuleModal() {
 
     if (titleEl) titleEl.textContent = 'Cấu hình Quy tắc Thông báo Tự động';
 
-    // Clear dynamic condition container and seed with default initial condition
     const conditionsContainer = document.getElementById('rule-conditions-list');
     if (conditionsContainer) {
       conditionsContainer.innerHTML = '';
@@ -729,11 +710,9 @@ export function openAddThresholdRuleModal() {
       });
     }
 
-    // Safe call to optional helpers
     try { onRuleCategoryChange('danger'); } catch(_) {}
     try { updateRuleConditionsSummary(); } catch(_) {}
 
-    // Bind live typing listeners
     if (ruleTitleInput) ruleTitleInput.oninput = updateRuleLivePreview;
     if (ruleRec) ruleRec.oninput = updateRuleLivePreview;
 
@@ -756,7 +735,6 @@ export function editThresholdRule(id) {
     return;
   }
 
-  // Show modal FIRST — guaranteed before any DOM manipulation
   modal.style.display = 'flex';
   modal.style.zIndex = '99999';
 
@@ -804,7 +782,6 @@ export function editThresholdRule(id) {
       if (recEv) recEv.value = rule.reconfirm_event_type;
     }
 
-    // Populate dynamic condition rows
     const conditionsContainer = document.getElementById('rule-conditions-list');
     if (conditionsContainer) {
       conditionsContainer.innerHTML = '';
@@ -828,11 +805,9 @@ export function editThresholdRule(id) {
 
     if (titleEl) titleEl.textContent = 'Chỉnh sửa Quy tắc Cài đặt Ngưỡng';
 
-    // Safe call to optional helpers
     try { onRuleCategoryChange(cat); } catch(_) {}
     try { updateRuleConditionsSummary(); } catch(_) {}
 
-    // Bind live typing listeners
     if (ruleTitleEl) ruleTitleEl.oninput = updateRuleLivePreview;
     if (ruleRecEl) ruleRecEl.oninput = updateRuleLivePreview;
 
@@ -930,7 +905,6 @@ window.toggleThresholdRuleEnabled = toggleThresholdRuleEnabled;
 export async function deleteThresholdRule(id) {
   if (!confirm('Bạn có chắc chắn muốn xóa quy tắc cài đặt ngưỡng này?\n\nLưu ý: Sau khi xóa, quy tắc sẽ bị xóa vĩnh viễn và không được tạo lại tự động.')) return;
 
-  // Optimistic UI: remove from local array and rerender immediately
   const ruleIndex = _currentRules.findIndex(r => r.id === id);
   const removedRule = ruleIndex !== -1 ? _currentRules[ruleIndex] : null;
 
@@ -947,7 +921,6 @@ export async function deleteThresholdRule(id) {
       throw new Error(res?.error || 'Phản hồi không hợp lệ từ server.');
     }
   } catch (err) {
-    // Rollback: re-add rule if API failed
     if (removedRule) {
       _currentRules.splice(ruleIndex, 0, removedRule);
       renderThresholdRulesUI(_currentRules);
@@ -957,8 +930,6 @@ export async function deleteThresholdRule(id) {
 }
 window.deleteThresholdRule = deleteThresholdRule;
 
-
-// ── Điền thông tin vào form ─────────────────────────────────────
 function _populateProfileForm(user) {
   _setVal('settings-fullname',  user.full_name  || '');
   _setVal('settings-email',     user.email      || '');
@@ -978,7 +949,6 @@ function _setVal(id, val) {
   if (el) el.value = val;
 }
 
-// ── Render avatar ───────────────────────────────────────────────
 function _renderAvatar(url, name) {
   const img  = document.getElementById('settings-avatar-img');
   const init = document.getElementById('settings-avatar-initials');
@@ -994,13 +964,11 @@ function _renderAvatar(url, name) {
   }
 }
 
-// ── Gắn sự kiện một lần ─────────────────────────────────────────
 let _bound = false;
 function _bindEvents() {
   if (_bound) return;
   _bound = true;
 
-  // Avatar click
   const avatarWrap = document.getElementById('settings-avatar-wrap');
   const avatarInput = document.getElementById('settings-avatar-input');
   if (avatarWrap && avatarInput) {
@@ -1010,21 +978,17 @@ function _bindEvents() {
     });
   }
 
-  // Save profile
   const saveBtn = document.getElementById('settings-save-profile');
   if (saveBtn) saveBtn.addEventListener('click', saveUserProfile);
 
-  // Change password
   const pwBtn = document.getElementById('settings-change-password');
   if (pwBtn) pwBtn.addEventListener('click', changeUserPassword);
 }
 
-// ── Upload avatar ────────────────────────────────────────────────
 export async function uploadUserAvatar(file) {
   const preview = document.getElementById('settings-avatar-img');
   const wrap    = document.getElementById('settings-avatar-wrap');
 
-  // Show instant local preview
   const reader = new FileReader();
   reader.onload = (e) => {
     if (preview) { preview.src = e.target.result; preview.classList.remove('hidden'); }
@@ -1033,7 +997,6 @@ export async function uploadUserAvatar(file) {
   };
   reader.readAsDataURL(file);
 
-  // Spinner on wrap
   wrap && wrap.classList.add('uploading');
 
   try {
@@ -1054,7 +1017,6 @@ export async function uploadUserAvatar(file) {
   }
 }
 
-// ── Lưu thông tin cá nhân ───────────────────────────────────────
 export async function saveUserProfile() {
   const btn = document.getElementById('settings-save-profile');
   const orig = btn ? btn.innerHTML : '';
@@ -1085,7 +1047,6 @@ export async function saveUserProfile() {
   }
 }
 
-// ── Đổi mật khẩu ────────────────────────────────────────────────
 export async function changeUserPassword() {
   const btn = document.getElementById('settings-change-password');
   const orig = btn ? btn.innerHTML : '';
@@ -1135,11 +1096,6 @@ function _getVal(id) {
   const el = document.getElementById(id);
   return el ? el.value.trim() : '';
 }
-
-// ═══════════════════════════════════════════════════════════════════════════
-// FARMER SUB-ACCOUNT RBAC ENGINE (QUẢN LÝ & PHÂN QUYỀN TÀI KHOẢN DƯỚI QUYỀN NÔNG HỘ)
-// Chuẩn Gallagher 8.30 Field Privilege · 100% Lucide Icons
-// ═══════════════════════════════════════════════════════════════════════════
 
 let _cachedTeamData = { farms: [], plants: [], members: [], can_manage_team: true };
 let _selectedPlantIdsForMember = new Set();
@@ -1204,7 +1160,6 @@ export function applySubRoleUiRestrictions(user) {
   );
   window._isFinanceRedactedForCurrentUser = hideFinance;
 
-  // 1. Ẩn 2 mục "Cài đặt ngưỡng giá trị" và "Phân quyền Nhân sự vườn" cho tài khoản dưới quyền
   const btnThresholds = document.getElementById('subtab-btn-thresholds');
   const btnTeamRbac = document.getElementById('subtab-btn-team-rbac');
   const paneThresholds = document.getElementById('subtab-pane-thresholds');
@@ -1220,7 +1175,6 @@ export function applySubRoleUiRestrictions(user) {
     if (btnTeamRbac) btnTeamRbac.style.display = 'inline-flex';
   }
 
-  // 2. Render Thẻ Thông Tin Phân Quyền cho tài khoản dưới quyền
   const subAccountCard = document.getElementById('settings-subaccount-privilege-card');
   if (subAccountCard) {
     if (isSubAccount) {
@@ -1487,7 +1441,6 @@ export function onTeamMemberSubRoleChange() {
 
   const val = roleSel.value || 'care_worker';
 
-  // Highlight active visual role card
   const cardConfigs = {
     care_worker: { activeBorder: '#f59e0b', activeBg: '#fffbeb' },
     manager: { activeBorder: '#10b981', activeBg: '#ecfdf5' },
@@ -1582,7 +1535,6 @@ export async function onTeamMemberFarmOrScopeChange() {
 
   pickerBox.style.display = 'block';
 
-  // Ensure we have plants loaded for this farm
   let farmPlants = _getPlantsForSelectedFarm(farmId);
   if (farmPlants.length === 0 && farmId) {
     try {
@@ -1617,7 +1569,6 @@ export function renderTeamMemberPlantGrid() {
   const farmId = farmSel ? farmSel.value : '';
   const farmPlants = _getPlantsForSelectedFarm(farmId);
 
-  // Filter selected IDs that belong to this farm for accurate counter
   const selectedInFarmCount = farmPlants.filter(p => _selectedPlantIdsForMember.has(Number(p.id))).length;
   if (countEl) {
     countEl.textContent = `Đã chọn ${selectedInFarmCount} / ${farmPlants.length} cây`;
@@ -1635,7 +1586,6 @@ export function renderTeamMemberPlantGrid() {
     return;
   }
 
-  // Group by Plot for Plot Quick-Select Chips
   const plotGroups = new Map();
   farmPlants.forEach(p => {
     const plotName = _extractPlotLabel(p);
@@ -1664,7 +1614,6 @@ export function renderTeamMemberPlantGrid() {
     }
   }
 
-  // Filter by search keyword
   const kw = (searchInput ? searchInput.value : '').trim().toLowerCase();
   const filteredPlants = kw
     ? farmPlants.filter(p => {
@@ -1803,7 +1752,6 @@ export async function openFarmerTeamMemberModal(memberId = null) {
   const modal = document.getElementById('farmer-team-member-modal');
   if (!modal) return;
 
-  // Ensure team & farm plants data is loaded
   if (!_cachedTeamData.farms || _cachedTeamData.farms.length === 0 || !_cachedTeamData.plants || _cachedTeamData.plants.length === 0) {
     try {
       const data = await api('/users/my-team');
@@ -2019,5 +1967,3 @@ export async function deleteFarmerTeamMember(memberId, memberName) {
   }
 }
 window.deleteFarmerTeamMember = deleteFarmerTeamMember;
-
-

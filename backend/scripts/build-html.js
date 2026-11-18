@@ -4,9 +4,6 @@ const path = require('path');
 const FRONTEND_DIR = path.join(__dirname, '../../frontend');
 const CONFIG_PATH = path.join(__dirname, '../../config/app.config.json');
 
-/**
- * Loads master SSOT application configuration from config/app.config.json
- */
 function loadAppConfig() {
   try {
     if (fs.existsSync(CONFIG_PATH)) {
@@ -27,9 +24,6 @@ function loadAppConfig() {
   };
 }
 
-/**
- * Replaces {{PLACEHOLDERS}} in HTML with values from master app.config.json
- */
 function applyPlaceholders(content, config) {
   const cfg = config || loadAppConfig();
   const versionTag = cfg.app?.versionTag || ('v' + (cfg.app?.version || '1.3.5'));
@@ -52,12 +46,6 @@ function applyPlaceholders(content, config) {
     .replace(/\{\{SW_CACHE_NAME\}\}/g, swCache);
 }
 
-/**
- * Recursively resolves <!-- @include 'relativePath' --> directives in a template file.
- * @param {string} filePath - Absolute path to the template file
- * @param {Set<string>} seen - Set of visited file paths to prevent circular includes
- * @returns {string} - Assembled HTML content
- */
 function resolveIncludes(filePath, seen = new Set()) {
   if (seen.has(filePath)) {
     console.warn(`[build-html] Circular include detected: ${filePath}`);
@@ -73,7 +61,6 @@ function resolveIncludes(filePath, seen = new Set()) {
   const content = fs.readFileSync(filePath, 'utf8');
   const baseDir = path.dirname(filePath);
 
-  // Regex to match <!-- @include 'path' --> or <!-- @include "path" -->
   const includeRegex = /<!--\s*@include\s+['"]([^'"]+)['"]\s*-->/g;
 
   return content.replace(includeRegex, (match, includePath) => {
@@ -82,9 +69,16 @@ function resolveIncludes(filePath, seen = new Set()) {
   });
 }
 
-/**
- * Builds the Admin Portal index.html from src/index.template.html
- */
+function normalizeHtmlOutput(html) {
+  return html
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .map(l => l.replace(/[ \t]+$/g, ''))
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim() + '\n';
+}
+
 function buildAdminHtml(config) {
   const templatePath = path.join(FRONTEND_DIR, 'admin/src/index.template.html');
   const outputPath = path.join(FRONTEND_DIR, 'admin/index.html');
@@ -97,14 +91,12 @@ function buildAdminHtml(config) {
   const startTime = Date.now();
   let assembled = resolveIncludes(templatePath);
   assembled = applyPlaceholders(assembled, config);
+  assembled = normalizeHtmlOutput(assembled);
   fs.writeFileSync(outputPath, assembled, 'utf8');
   const elapsed = Date.now() - startTime;
   console.log(`[build-html] Built admin/index.html (${assembled.length} bytes, ${assembled.split('\n').length} lines) in ${elapsed}ms`);
 }
 
-/**
- * Builds the User Portal index.html from src/index.template.html
- */
 function buildUserHtml(config) {
   const templatePath = path.join(FRONTEND_DIR, 'user/src/index.template.html');
   const outputPath = path.join(FRONTEND_DIR, 'user/index.html');
@@ -117,6 +109,7 @@ function buildUserHtml(config) {
   const startTime = Date.now();
   let assembled = resolveIncludes(templatePath);
   assembled = applyPlaceholders(assembled, config);
+  assembled = normalizeHtmlOutput(assembled);
   fs.writeFileSync(outputPath, assembled, 'utf8');
   const elapsed = Date.now() - startTime;
   console.log(`[build-html] Built user/index.html (${assembled.length} bytes, ${assembled.split('\n').length} lines) in ${elapsed}ms`);
@@ -131,7 +124,6 @@ function buildAll() {
   return { admin: true, user: true };
 }
 
-// If executed directly from CLI: node backend/scripts/build-html.js
 if (require.main === module) {
   buildAll();
 }

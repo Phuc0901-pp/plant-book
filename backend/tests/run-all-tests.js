@@ -1,13 +1,6 @@
-/**
- * ═══════════════════════════════════════════════════════════════
- * Master Test Suite Runner (CLI Entry Point)
- * ═══════════════════════════════════════════════════════════════
- */
-
 require('dotenv').config();
 const { run } = require('./test-framework');
 
-// Load all test suites in order
 require('./suites/01_auth.test');
 require('./suites/02_farms_gis.test');
 require('./suites/03_plants_qr.test');

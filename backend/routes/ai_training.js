@@ -12,13 +12,6 @@ const {
   BUILTIN_ENCYCLOPEDIA_ARTICLES
 } = require('../services/beMamAgentEngine');
 
-// ─────────────────────────────────────────────────────────────
-// 🛡️ BẢO MẬT: BỘ LỌC XSS, CHỐNG BOT HONEYPOT & TRÍCH XUẤT REAL CLIENT IP
-// ─────────────────────────────────────────────────────────────
-
-/**
- * Trích xuất Real Client Public IP qua Render/Cloudflare/Nginx Load Balancers
- */
 function getClientIp(req) {
   const forwarded = req.headers['x-forwarded-for'];
   if (forwarded) {
@@ -30,9 +23,6 @@ function getClientIp(req) {
   return (req.ip || req.socket?.remoteAddress || '127.0.0.1').replace(/^::ffff:/, '');
 }
 
-/**
- * Mã hóa / Che giấu email và định danh để bảo mật thông tin quản trị
- */
 function maskEmail(email) {
   if (!email || typeof email !== 'string') return '—';
   const parts = email.split('@');
@@ -50,9 +40,6 @@ function generateIsoPublicId(role, numId) {
   return `${prefix}-${val}`;
 }
 
-/**
- * Làm sạch chuỗi chống XSS Injection cơ bản
- */
 function sanitizeInput(str) {
   if (typeof str !== 'string') return '';
   return str
@@ -63,18 +50,13 @@ function sanitizeInput(str) {
     .trim();
 }
 
-/**
- * Middleware chống Bot xâm nhập qua trường bẫy Honeypot
- */
 function botProtectionMiddleware(req, res, next) {
   const { hp_security_trap, website_hidden_check } = req.body || {};
   const clientIp = getClientIp(req);
 
-  // Nếu trường ẩn honeypot có dữ liệu -> 100% là Bot tự động điền form
   if (hp_security_trap || website_hidden_check) {
     console.warn(`🚨 [SECURITY ALERT] Phát hiện Bot cố gắng xâm nhập AI Training API từ IP ${clientIp}`);
-    
-    // Ghi nhận sự kiện bảo mật vào audit log
+
     pool.query(`
       INSERT INTO ai_training_logs (action, target_type, details, ip_address)
       VALUES ($1, $2, $3, $4)
@@ -86,25 +68,16 @@ function botProtectionMiddleware(req, res, next) {
   next();
 }
 
-// Áp dụng Auth + Admin cho toàn bộ route quản lý huấn luyện AI
 router.use(auth);
 router.use(admin);
 
-// ─────────────────────────────────────────────────────────────
-// 1. KHO TRI THỨC QUY TRÌNH (KNOWLEDGE BASE ARTICLES)
-// ─────────────────────────────────────────────────────────────
-
-/**
- * GET /api/ai/training/knowledge
- * Lấy danh sách tài liệu tri thức (có hỗ trợ tìm kiếm và lọc phân loại)
- */
 router.get('/knowledge', async (req, res) => {
   try {
     const { category, search, active } = req.query;
     let query = `
-      SELECT k.*, u.full_name as author_name 
-      FROM ai_knowledge_articles k 
-      LEFT JOIN users u ON k.created_by = u.id 
+      SELECT k.*, u.full_name as author_name
+      FROM ai_knowledge_articles k
+      LEFT JOIN users u ON k.created_by = u.id
       WHERE 1=1
     `;
     const params = [];
@@ -135,10 +108,6 @@ router.get('/knowledge', async (req, res) => {
   }
 });
 
-/**
- * POST /api/ai/training/knowledge
- * Thêm bài viết tri thức mới
- */
 router.post('/knowledge', botProtectionMiddleware, async (req, res) => {
   try {
     const { category, title, topic_keywords, content, priority = 5, is_active = true } = req.body;
@@ -157,7 +126,7 @@ router.post('/knowledge', botProtectionMiddleware, async (req, res) => {
     const numPriority = Math.max(1, Math.min(10, parseInt(priority, 10) || 5));
 
     const insertRes = await pool.query(`
-      INSERT INTO ai_knowledge_articles 
+      INSERT INTO ai_knowledge_articles
         (category, title, topic_keywords, content, priority, is_active, created_by, updated_at)
       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
       RETURNING *
@@ -165,10 +134,8 @@ router.post('/knowledge', botProtectionMiddleware, async (req, res) => {
 
     const article = insertRes.rows[0];
 
-    // Xóa RAM Cache để AI cập nhật ngay lập tức
     memoryCache.flush();
 
-    // Ghi nhật ký bảo mật
     const clientIp = getClientIp(req);
     await pool.query(`
       INSERT INTO ai_training_logs (action, target_type, target_id, details, admin_id, ip_address)
@@ -182,10 +149,6 @@ router.post('/knowledge', botProtectionMiddleware, async (req, res) => {
   }
 });
 
-/**
- * PUT /api/ai/training/knowledge/:id
- * Cập nhật bài viết tri thức
- */
 router.put('/knowledge/:id', botProtectionMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
@@ -205,16 +168,14 @@ router.put('/knowledge/:id', botProtectionMiddleware, async (req, res) => {
     const boolActive = is_active !== undefined ? Boolean(is_active) : oldData.is_active;
 
     const updateRes = await pool.query(`
-      UPDATE ai_knowledge_articles 
+      UPDATE ai_knowledge_articles
       SET category = $1, title = $2, topic_keywords = $3, content = $4, priority = $5, is_active = $6, updated_at = NOW()
       WHERE id = $7
       RETURNING *
     `, [cleanCategory, cleanTitle, cleanKeywords, cleanContent, numPriority, boolActive, id]);
 
-    // Xóa RAM Cache
     memoryCache.flush();
 
-    // Ghi nhật ký bảo mật
     const clientIp = getClientIp(req);
     await pool.query(`
       INSERT INTO ai_training_logs (action, target_type, target_id, details, admin_id, ip_address)
@@ -228,10 +189,6 @@ router.put('/knowledge/:id', botProtectionMiddleware, async (req, res) => {
   }
 });
 
-/**
- * DELETE /api/ai/training/knowledge/:id
- * Xóa bài viết tri thức
- */
 router.delete('/knowledge/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -256,21 +213,13 @@ router.delete('/knowledge/:id', async (req, res) => {
   }
 });
 
-// ─────────────────────────────────────────────────────────────
-// 2. HUẤN LUYỆN CẶP Q&A THỰC CHIẾN (FEW-SHOT FINE-TUNING)
-// ─────────────────────────────────────────────────────────────
-
-/**
- * GET /api/ai/training/qa
- * Lấy danh sách các cặp Q&A đã huấn luyện
- */
 router.get('/qa', async (req, res) => {
   try {
     const { category, search } = req.query;
     let query = `
-      SELECT q.*, u.full_name as author_name 
-      FROM ai_training_qa q 
-      LEFT JOIN users u ON q.created_by = u.id 
+      SELECT q.*, u.full_name as author_name
+      FROM ai_training_qa q
+      LEFT JOIN users u ON q.created_by = u.id
       WHERE 1=1
     `;
     const params = [];
@@ -295,10 +244,6 @@ router.get('/qa', async (req, res) => {
   }
 });
 
-/**
- * POST /api/ai/training/qa
- * Thêm cặp Q&A mới
- */
 router.post('/qa', botProtectionMiddleware, async (req, res) => {
   try {
     const { category, sample_questions, expected_answer, keywords, is_active = true } = req.body;
@@ -316,7 +261,7 @@ router.post('/qa', botProtectionMiddleware, async (req, res) => {
     const cleanKeywords = sanitizeInput(keywords || '');
 
     const insertRes = await pool.query(`
-      INSERT INTO ai_training_qa 
+      INSERT INTO ai_training_qa
         (category, sample_questions, expected_answer, keywords, is_active, created_by, updated_at)
       VALUES ($1, $2, $3, $4, $5, $6, NOW())
       RETURNING *
@@ -337,10 +282,6 @@ router.post('/qa', botProtectionMiddleware, async (req, res) => {
   }
 });
 
-/**
- * PUT /api/ai/training/qa/:id
- * Cập nhật cặp Q&A
- */
 router.put('/qa/:id', botProtectionMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
@@ -359,7 +300,7 @@ router.put('/qa/:id', botProtectionMiddleware, async (req, res) => {
     const boolActive = is_active !== undefined ? Boolean(is_active) : oldData.is_active;
 
     const updateRes = await pool.query(`
-      UPDATE ai_training_qa 
+      UPDATE ai_training_qa
       SET category = $1, sample_questions = $2, expected_answer = $3, keywords = $4, is_active = $5, updated_at = NOW()
       WHERE id = $6
       RETURNING *
@@ -380,10 +321,6 @@ router.put('/qa/:id', botProtectionMiddleware, async (req, res) => {
   }
 });
 
-/**
- * DELETE /api/ai/training/qa/:id
- * Xóa cặp Q&A
- */
 router.delete('/qa/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -405,14 +342,6 @@ router.delete('/qa/:id', async (req, res) => {
   }
 });
 
-// ─────────────────────────────────────────────────────────────
-// 3. PHÒNG THỬ NGHIỆM AI & PROMPT SIMULATOR (LIVE TEST)
-// ─────────────────────────────────────────────────────────────
-
-/**
- * POST /api/ai/training/test
- * Giả lập và kiểm thử câu hỏi để kiểm tra nguồn tri thức được áp dụng
- */
 router.post('/test', botProtectionMiddleware, async (req, res) => {
   try {
     const { message } = req.body;
@@ -423,10 +352,9 @@ router.post('/test', botProtectionMiddleware, async (req, res) => {
     const cleanMsg = sanitizeInput(message);
     const startTime = Date.now();
 
-    // 1. Quét tìm kiếm trong Cặp Q&A đã huấn luyện (Exact / Phrase match)
     const qaRes = await pool.query(`
-      SELECT * FROM ai_training_qa 
-      WHERE is_active = true 
+      SELECT * FROM ai_training_qa
+      WHERE is_active = true
       ORDER BY updated_at DESC
     `);
 
@@ -442,10 +370,9 @@ router.post('/test', botProtectionMiddleware, async (req, res) => {
       }
     }
 
-    // 2. Quét tìm kiếm trong Kho Tri Thức (Relevant Articles)
     const articlesRes = await pool.query(`
-      SELECT * FROM ai_knowledge_articles 
-      WHERE is_active = true 
+      SELECT * FROM ai_knowledge_articles
+      WHERE is_active = true
       ORDER BY priority DESC, updated_at DESC
     `);
 
@@ -469,7 +396,6 @@ router.post('/test', botProtectionMiddleware, async (req, res) => {
 
     matchedArticles.sort((a, b) => b.score - a.score);
 
-    // Chạy thêm bộ Agent Engine v2.0 để trả về chẩn đoán nâng cao
     const qaMatchV2 = matchTrainingQA(cleanMsg, qaRes.rows);
     const ragV2 = rankKnowledgeArticles(cleanMsg, articlesRes.rows);
     const toolExecV2 = executeAgentTools(cleanMsg, { isAdmin: true, currentUser: req.user });
@@ -509,7 +435,7 @@ router.post('/test', botProtectionMiddleware, async (req, res) => {
         synthesizedReply: synthesizedV2.reply
       },
       recommendation: (matchedQA || qaMatchV2)
-        ? '⚡ Trực tiếp áp dụng câu trả lời chuẩn từ Cặp Q&A (Tốc độ phản hồi < 5ms)' 
+        ? '⚡ Trực tiếp áp dụng câu trả lời chuẩn từ Cặp Q&A (Tốc độ phản hồi < 5ms)'
         : (ragV2.topArticles.length > 0 || toolExecV2.triggeredTools.length > 0
             ? `🤖 Kích hoạt ${toolExecV2.triggeredTools.length} Agent Tools & ${ragV2.topArticles.length} bài viết BM25 RAG (Độ tin cậy: ${Math.round(synthesizedV2.confidenceScore * 100)}%)`
             : '🌐 Sử dụng tri thức tổng quát & tự động đưa vào hàng đợi Auto-Learning')
@@ -520,14 +446,6 @@ router.post('/test', botProtectionMiddleware, async (req, res) => {
   }
 });
 
-// ─────────────────────────────────────────────────────────────
-// 4. THỐNG KÊ & BÁO CÁO NHẬT KÝ BẢO MẬT
-// ─────────────────────────────────────────────────────────────
-
-/**
- * GET /api/ai/training/stats
- * Thống kê tổng quan về kho tri thức và hoạt động huấn luyện
- */
 router.get('/stats', async (req, res) => {
   try {
     const [articlesCount, qaCount, logsCount, unansweredCount, catGroup] = await Promise.all([
@@ -536,9 +454,9 @@ router.get('/stats', async (req, res) => {
       pool.query('SELECT COUNT(*) as total FROM ai_training_logs'),
       pool.query("SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE status = 'pending') as pending FROM ai_unanswered_queries"),
       pool.query(`
-        SELECT category, COUNT(*) as count 
-        FROM ai_knowledge_articles 
-        GROUP BY category 
+        SELECT category, COUNT(*) as count
+        FROM ai_knowledge_articles
+        GROUP BY category
         ORDER BY count DESC
       `)
     ]);
@@ -568,17 +486,13 @@ router.get('/stats', async (req, res) => {
   }
 });
 
-/**
- * GET /api/ai/training/logs
- * Lấy danh sách nhật ký bảo mật & lịch sử nạp tri thức (Hỗ trợ phân trang & ẩn danh hóa ID)
- */
 router.get('/logs', async (req, res) => {
   try {
     const logsRes = await pool.query(`
-      SELECT l.*, u.full_name as admin_name, u.email as admin_email 
-      FROM ai_training_logs l 
-      LEFT JOIN users u ON l.admin_id = u.id 
-      ORDER BY l.created_at DESC 
+      SELECT l.*, u.full_name as admin_name, u.email as admin_email
+      FROM ai_training_logs l
+      LEFT JOIN users u ON l.admin_id = u.id
+      ORDER BY l.created_at DESC
       LIMIT 200
     `);
 
@@ -586,7 +500,7 @@ router.get('/logs', async (req, res) => {
       const publicId = l.admin_id ? generateIsoPublicId('admin', l.admin_id) : 'sys-00000000';
       const maskedEmail = maskEmail(l.admin_email);
       let adminDisplay = '🛡️ Hệ Thống Tự Động';
-      
+
       if (l.action === 'BLOCKED_BOT') {
         adminDisplay = '🛡️ Phòng Vệ Honeypot';
       } else if (l.admin_name) {
@@ -610,14 +524,6 @@ router.get('/logs', async (req, res) => {
   }
 });
 
-// ─────────────────────────────────────────────────────────────
-// 5. NẠP ĐẠI TỪ ĐIỂN TRI THỨC & QUẢN LÝ HÀNG ĐỢI TỰ HỌC (ISO/IEC 42001)
-// ─────────────────────────────────────────────────────────────
-
-/**
- * POST /api/ai/training/seed-encyclopedia
- * Nạp tự động (Idempotent) Bộ Đại Từ Điển Nông Học & VietGAP vào CSDL
- */
 router.post('/seed-encyclopedia', async (req, res) => {
   try {
     let insertedCount = 0;
@@ -652,10 +558,6 @@ router.post('/seed-encyclopedia', async (req, res) => {
   }
 });
 
-/**
- * GET /api/ai/training/unanswered
- * Lấy danh sách các câu hỏi người dùng chưa khớp để Admin duyệt huấn luyện
- */
 router.get('/unanswered', async (req, res) => {
   try {
     const statusFilter = req.query.status || 'pending';
@@ -674,10 +576,6 @@ router.get('/unanswered', async (req, res) => {
   }
 });
 
-/**
- * POST /api/ai/training/unanswered/:id/resolve
- * Chuyển câu hỏi chờ huấn luyện thành Cặp Q&A chính thức chỉ với 1 thao tác
- */
 router.post('/unanswered/:id/resolve', botProtectionMiddleware, async (req, res) => {
   try {
     const { id } = req.params;

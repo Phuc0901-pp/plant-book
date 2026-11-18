@@ -12,7 +12,6 @@ class Farm {
   final bool allowSharedHistory;
   final bool allowSharedSupplies;
 
-  // Chuẩn mở rộng v1.3.5 (GS1 PUC / VietGAP / EUDR Polygon)
   final String? pucCode;
   final String? vietgapCertCode;
   final String? ownerName;

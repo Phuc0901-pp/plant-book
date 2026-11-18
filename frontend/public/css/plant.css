@@ -1,7 +1,7 @@
   :root {
     --font-sans: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    
+
     --bg-dark: #ffffff;
     --bg-card: #ffffff;
     --border-glass: #e2e8f0;
@@ -11,8 +11,7 @@
     --text-primary: #0f172a;
     --text-secondary: #475569;
     --text-muted: #64748b;
-    
-    /* Care Colors */
+
     --color-water: #2563eb;
     --color-fertilize: #059669;
     --color-pesticide: #ea580c;
@@ -34,7 +33,6 @@
     box-sizing: border-box;
   }
 
-  /* International Vector Icon System */
   .lucide, i[data-lucide] {
     display: inline-block;
     vertical-align: -0.15em;
@@ -68,7 +66,7 @@
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     background-color: #f8fafc;
-    background-image: 
+    background-image:
       radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.05) 0px, transparent 50%),
       radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.04) 0px, transparent 50%),
       radial-gradient(at 50% 100%, rgba(16, 185, 129, 0.03) 0px, transparent 50%);
@@ -109,7 +107,6 @@
     letter-spacing: inherit;
   }
 
-  /* Glassmorphism Panel Utility */
   .glass-panel {
     background: #ffffff;
     border: 1.5px solid #e2e8f0;
@@ -122,7 +119,6 @@
     box-sizing: border-box;
   }
 
-  /* ═══ 🏢 ENTERPRISE UNIFIED ERP TOP HEADER NAVBAR ═══ */
   .erp-main-header {
     background: #ffffff;
     border-bottom: 1px solid #e2e8f0;
@@ -198,7 +194,6 @@
     font-family: var(--font-mono);
   }
 
-  /* Center Breadcrumbs & Traceability Indicator */
   .erp-header-center {
     flex: 1;
     min-width: 0;
@@ -262,7 +257,6 @@
     font-family: var(--font-mono);
   }
 
-  /* Right Header Action Buttons */
   .erp-header-right {
     display: flex;
     align-items: center;
@@ -348,7 +342,6 @@
     }
   }
 
-  /* Hero Section & Core Identity Card */
   .hero-container {
     max-width: 1200px;
     margin: 0 auto 20px;
@@ -402,7 +395,6 @@
     background: linear-gradient(180deg, rgba(15,23,42,0.5) 0%, rgba(15,23,42,0) 40%, rgba(15,23,42,0.4) 100%);
   }
 
-  /* Top Cockpit Overlay Badges on Cover */
   .cover-erp-badges {
     position: absolute;
     top: 10px;
@@ -496,7 +488,6 @@
   .badge-info { background: #f1f5f9; color: #334155; border-color: #cbd5e1; }
   .badge-gray { background: #f1f5f9; color: #475569; border-color: #cbd5e1; }
 
-  /* ═══ 6-TILE BALANCED ERP TELEMETRY GRID (2 COLUMNS x 3 ROWS) ═══ */
   .erp-telemetry-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -560,7 +551,6 @@
     text-overflow: ellipsis;
   }
 
-  /* ═══ 📜 DIGITAL PLANT PASSPORT (FULL-WIDTH ENTERPRISE SPEC ROWS) ═══ */
   .erp-passport-card {
     background: #ffffff;
     border: 1.5px solid #86efac;
@@ -652,7 +642,6 @@
     animation: livePulse 2s infinite;
   }
 
-  /* 2 Top Certification Badges (PUC & VietGAP) */
   .passport-certs-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -723,7 +712,6 @@
     flex-shrink: 0;
   }
 
-  /* Full-Width Specification Table Rows (No Cramping) */
   .passport-spec-table {
     display: flex;
     flex-direction: column;
@@ -802,7 +790,6 @@
     color: #0f172a;
   }
 
-  /* Security Hash Bar */
   .passport-security-hash {
     background: #f1f5f9;
     border: 1px dashed #cbd5e1;
@@ -826,8 +813,6 @@
     color: #059669;
   }
 
-  /* Passport Bottom Actions Strip */
-  /* Passport Bottom Seal Strip */
   .passport-bottom-actions {
     margin-top: 14px;
     padding-top: 12px;
@@ -886,7 +871,6 @@
     }
   }
 
-  /* ERP Passport & Security Seal Card */
   .erp-passport-card {
     background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
     border: 1.5px solid #cbd5e1;
@@ -977,7 +961,6 @@
     }
   }
 
-  /* ═══ ERP LEDGER SUMMARY CARDS GRID ═══ */
   .erp-ledger-kpi-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -1016,7 +999,6 @@
     }
   }
 
-  /* ═══ ERP TABLE CONTAINER & MOBILE SCROLL HINT ═══ */
   .erp-table-container {
     width: 100%;
     overflow-x: auto;
@@ -1047,14 +1029,13 @@
     .erp-table-container table {
       min-width: 580px;
     }
-    .erp-table-container th, 
+    .erp-table-container th,
     .erp-table-container td {
       padding: 8px 10px !important;
       font-size: 11.5px !important;
     }
   }
 
-  /* Section Title */
   .sec-title {
     font-size: 18px;
     font-weight: 700;
@@ -1065,12 +1046,10 @@
     color: #0f172a;
   }
 
-  /* Glass Card */
   .glass-card {
     padding: 24px;
   }
 
-  /* Care Actions Section */
   .care-actions-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -1102,15 +1081,14 @@
     font-weight: 700;
     line-height: 1.2;
   }
-  
-  /* Hover effects and category styles */
+
   .care-btn-water:hover { background: #eff6ff; border-color: #3b82f6; color: #1d4ed8; }
   .care-btn-fertilize:hover { background: #ecfdf5; border-color: #10b981; color: #047857; }
   .care-btn-pesticide:hover { background: #fff7ed; border-color: #f97316; color: #c2410c; }
   .care-btn-leaf:hover { background: #fefce8; border-color: #eab308; color: #a16207; }
   .care-btn-flower:hover { background: #fdf2f8; border-color: #ec4899; color: #be185d; }
   .care-btn-disease:hover { background: #fef2f2; border-color: #ef4444; color: #b91c1c; }
-  
+
   .care-btn-harvest {
     grid-column: 1 / -1;
     background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%) !important;
@@ -1128,7 +1106,6 @@
   .care-btn:hover i { transform: scale(1.15); }
   .care-btn:active { transform: scale(0.96); }
 
-  /* Spec List (Schema Data) */
   .spec-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -1151,7 +1128,6 @@
     font-weight: 600;
   }
 
-  /* Care Logs Timeline */
   .timeline {
     position: relative;
     padding-left: 20px;
@@ -1197,14 +1173,14 @@
     border: 3px solid #cbd5e1;
     z-index: 2;
   }
-  
+
   .marker-water { border-color: var(--color-water); box-shadow: 0 0 6px var(--color-water); }
   .marker-fertilize { border-color: var(--color-fertilize); box-shadow: 0 0 6px var(--color-fertilize); }
   .marker-pesticide { border-color: var(--color-pesticide); box-shadow: 0 0 6px var(--color-pesticide); }
   .marker-leaf { border-color: var(--color-leaf); box-shadow: 0 0 6px var(--color-leaf); }
   .marker-flower { border-color: var(--color-flower); box-shadow: 0 0 6px var(--color-flower); }
   .marker-disease { border-color: var(--color-disease); box-shadow: 0 0 6px var(--color-disease); }
-  
+
   .timeline-content {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
@@ -1275,7 +1251,6 @@
     color: var(--text-primary);
   }
 
-  /* Media Gallery */
   .gallery-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
@@ -1299,7 +1274,6 @@
     transform: scale(1.08);
   }
 
-  /* Modals Overlay */
   .modal-overlay {
     position: fixed;
     inset: 0;
@@ -1373,7 +1347,6 @@
     flex-shrink: 0;
   }
 
-  /* Forms */
   .field {
     margin-bottom: 16px;
   }
@@ -1434,8 +1407,7 @@
   .form-row .field {
     margin-bottom: 0;
   }
-  
-  /* Input Custom Helper */
+
   .custom-select-wrap {
     display: flex;
     gap: 8px;
@@ -1444,7 +1416,6 @@
     flex: 1;
   }
 
-  /* Submit Buttons */
   .btn {
     display: inline-flex;
     align-items: center;
@@ -1482,7 +1453,6 @@
   .btn-disease { background: var(--color-disease); }
   .btn-disease:hover { background: #dc2626; }
 
-  /* File upload preview area */
   .upload-zone {
     border: 2px dashed rgba(255,255,255,0.15);
     border-radius: 12px;
@@ -1569,7 +1539,6 @@
     font-weight: 600;
   }
 
-  /* Log media gallery (inside timeline) */
   .log-media-gallery {
     display: flex;
     flex-wrap: wrap;
@@ -1605,7 +1574,6 @@
     color: rgba(255,255,255,0.9);
   }
 
-  /* Lightbox */
   .lightbox {
     position: fixed;
     inset: 0;
@@ -1639,7 +1607,6 @@
     justify-content: center;
   }
 
-  /* Animations */
   @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
@@ -1649,7 +1616,6 @@
     to { transform: translateY(0); opacity: 1; }
   }
 
-  /* Share & Action Buttons in Header */
   .share-btn {
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid var(--border-glass);
@@ -1669,7 +1635,6 @@
     border-color: rgba(255,255,255,0.15);
   }
 
-  /* Footer */
   .footer {
     text-align: center;
     padding: 40px 24px 0;
@@ -1699,7 +1664,6 @@
     object-fit: contain;
   }
 
-  /* Skeleton loaders */
   .skeleton {
     background: linear-gradient(90deg, rgba(255,255,255,0.02) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.02) 75%);
     background-size: 200% 100%;
@@ -1711,7 +1675,6 @@
     100% { background-position: -200% 0; }
   }
 
-  /* Error state */
   .error-state {
     text-align: center;
     padding: 100px 24px;
@@ -1733,7 +1696,6 @@
     line-height: 1.6;
   }
 
-  /* Plant Location Map */
   .plant-map-container {
     width: 100%;
     height: 240px;
@@ -1763,7 +1725,6 @@
     gap: 6px;
   }
 
-  /* GPS & Map Markers */
   .device-location-marker {
     width: 20px;
     height: 20px;
@@ -1797,7 +1758,6 @@
     }
   }
 
-  /* Interactive Health Badge */
   .badge-health-interactive {
     cursor: pointer;
     transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
@@ -1811,7 +1771,6 @@
     transform: translateY(0);
   }
 
-  /* Collapsible Timeline Details */
   .timeline-content {
     cursor: pointer;
     transition: background-color 0.2s ease;
@@ -1852,7 +1811,6 @@
     transform: rotate(180deg);
   }
 
-  /* Export Modal Styles */
   .export-modal-overlay {
     position: fixed;
     inset: 0;
@@ -2031,7 +1989,6 @@
     transform: translateY(0);
   }
 
-  /* ─── Premium Plant Map Marker Pin ─── */
   .plant-map-marker-wrap {
     width: 38px;
     height: 48px;
@@ -2097,7 +2054,6 @@
     100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
   }
 
-  /* ── Auth Status Pills & Navigation ── */
   .auth-status-wrap {
     display: flex;
     align-items: center;
@@ -2170,7 +2126,6 @@
     font-size: 11px;
   }
 
-  /* ── Auth Gate Screen ── */
   .auth-gate-container {
     max-width: 500px;
     margin: 20px auto 40px auto;
@@ -2335,9 +2290,6 @@
     line-height: 1.4;
   }
 
-  /* ═════════════════════════════════════════════════════════════════════════════
-     ─── DEDICATED MOBILE ERP RESPONSIVE OVERRIDES (max-width: 640px) ───────────
-     ═════════════════════════════════════════════════════════════════════════════ */
   @media (max-width: 640px) {
     html, body {
       overflow-x: hidden !important;
@@ -2619,7 +2571,6 @@
     }
   }
 
-  /* ═══ 📜 DIGITAL PLANT PASSPORT & CERTIFICATION STAMP STYLES ═══ */
   .erp-passport-card {
     background: #ffffff;
     border: 1.5px solid #cbd5e1;
@@ -2685,7 +2636,6 @@
     100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
   }
 
-  /* Certification Badges Strip (PUC, VietGAP, NFC) */
   .erp-passport-badges-strip {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -2792,7 +2742,6 @@
     flex-shrink: 0;
   }
 
-  /* Section Dividers inside Passport Grid */
   .erp-passport-section-title {
     font-size: 11px;
     font-weight: 800;
@@ -2864,7 +2813,6 @@
     color: #0f172a;
   }
 
-  /* ═══ 🎖️ OFFICIAL CERTIFICATE VIEWER MODAL ═══ */
   .cert-modal-dialog {
     max-width: 680px;
     width: 95%;
@@ -2963,13 +2911,6 @@
     box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.1);
   }
 
-  /* =========================================================================
-     ENTERPRISE 4-SECTION PUBLIC PROFILE SYSTEM
-     1. Thông tin chi tiết của cây trồng (Chi tiết - Hộ chiếu cây trồng)
-     2. Thông tin mở rộng (GPS Map, Chi phí đầu tư, Minh chứng thực địa)
-     3. Nhật ký canh tác (VietGAP Traceability Timeline)
-     4. Thao tác canh tác nhanh
-     ========================================================================= */
   .profile-section-block {
     max-width: 1200px;
     margin: 0 auto 28px auto;
@@ -3015,7 +2956,6 @@
     gap: 5px;
   }
 
-  /* Core Profile 2-Column Layout */
   .core-profile-layout {
     display: grid;
     grid-template-columns: 1.15fr 0.85fr;
@@ -3028,14 +2968,12 @@
     }
   }
 
-  /* Extended Info Grid */
   .extended-info-grid {
     display: flex;
     flex-direction: column;
     gap: 20px;
   }
 
-  /* Media Evidence Categorization */
   .extended-media-filter-tabs {
     display: flex;
     gap: 8px;
@@ -3182,7 +3120,6 @@
     gap: 4px;
   }
 
-  /* ═══ 🔽 ERP SECTION TOGGLE & COLLAPSIBLE MODULES ═══ */
   .erp-section-toggle-btn {
     background: #ffffff;
     border: 1.5px solid #cbd5e1;
@@ -3210,7 +3147,6 @@
     box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
   }
 
-  /* Collapsed Preview Card */
   .erp-collapse-preview-card {
     background: #ffffff;
     border: 1.5px solid #e2e8f0;
@@ -3278,7 +3214,6 @@
     text-overflow: ellipsis;
   }
 
-  /* Expand Main Button */
   .erp-expand-main-btn {
     background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
     border: 1.5px solid #86efac;
@@ -3305,7 +3240,6 @@
     color: #ffffff;
   }
 
-  /* Collapse Bottom Button */
   .erp-collapse-bottom-btn {
     background: #ffffff;
     border: 1.5px solid #cbd5e1;
@@ -3330,7 +3264,6 @@
     animation: fadeIn 0.3s ease;
   }
 
-  /* ═══ 🏢 ENTERPRISE ERP FOOTER & 2 NAVIGATION BLOCKS ═══ */
   .erp-main-footer {
     background: #ffffff;
     border-top: 1.5px solid #e2e8f0;
@@ -3347,7 +3280,6 @@
     gap: 32px;
   }
 
-  /* 2-Block Main Quick Navigation Cards */
   .footer-nav-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -3379,7 +3311,6 @@
     transform: translateY(-2px);
   }
 
-  /* 🟢 Card 1: VỀ ỨNG DỤNG CHÍNH (Green Theme) */
   .footer-nav-card.app-card {
     border-color: #86efac;
     background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
@@ -3389,7 +3320,6 @@
     box-shadow: 0 8px 24px rgba(16, 185, 129, 0.16);
   }
 
-  /* 🔵 Card 2: WEBSITE DOANH NGHIỆP (Blue Theme) */
   .footer-nav-card.web-card {
     border-color: #93c5fd;
     background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
@@ -3486,7 +3416,6 @@
     color: #2563eb;
   }
 
-  /* Corporate Footer Bottom Bar (Centered on Laptop, Elegant & Responsive on Mobile) */
   .footer-bottom-bar {
     border-top: 1.5px solid #e2e8f0;
     padding-top: 32px;
@@ -3598,7 +3527,6 @@
     margin: 0 auto;
   }
 
-  /* Responsive Adjustments for Tablets and Mobile */
   @media(max-width: 768px) {
     .erp-main-footer {
       margin-top: 36px;
@@ -3643,7 +3571,6 @@
     }
   }
 
-  /* ═══ PUBLIC TIMELINE FILTER BAR & FULL RECORD CARDS (TICKET 2) ═══ */
   .public-timeline-filter-bar {
     background: #f8fafc;
     border: 1.5px solid #e2e8f0;

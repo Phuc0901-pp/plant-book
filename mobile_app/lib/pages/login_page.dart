@@ -16,13 +16,12 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  
+
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _rememberMe = true;
   String? _errorMessage;
 
-  // Trạng thái đồng bộ dữ liệu ngoại tuyến lần đầu (Offline Warm-up)
   bool _isWarmingCache = false;
   String _warmStatus = 'Đang đồng bộ dữ liệu ngoại tuyến...';
   double _warmProgress = 0.0;
@@ -54,7 +53,6 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     if (result['success'] == true) {
-      // Nếu là đăng nhập ngoại tuyến bằng bộ nhớ đệm: Chuyển ngay vào Dashboard
       if (result['is_offline_auth'] == true) {
         final user = CacheService().getCachedUserProfile();
         if (user != null && user['role'] == 'admin') {
@@ -71,7 +69,6 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      // Đăng nhập trực tuyến thành công -> Bắt đầu nạp toàn bộ dữ liệu nông trại vào bộ nhớ đệm ngoại tuyến
       setState(() {
         _isWarmingCache = true;
         _warmStatus = 'Đang khởi tạo cơ sở dữ liệu ngoại tuyến...';
@@ -114,10 +111,9 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF042F2E), // Deep Emerald & Slate
+      backgroundColor: const Color(0xFF042F2E),
       body: Stack(
         children: [
-          // Background Gradient & Subtle ERP Elements
           Positioned.fill(
             child: Container(
               decoration: const BoxDecoration(
@@ -142,7 +138,6 @@ class _LoginPageState extends State<LoginPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // ERP Brand Header
                     Column(
                       children: [
                         Container(
@@ -206,7 +201,6 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Main Enterprise Login Card
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -284,7 +278,6 @@ class _LoginPageState extends State<LoginPage> {
                               const SizedBox(height: 16),
                             ],
 
-                            // Email / Phone Field
                             TextFormField(
                               controller: _emailController,
                               keyboardType: TextInputType.emailAddress,
@@ -318,7 +311,6 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             const SizedBox(height: 16),
 
-                            // Password Field with Eye Toggle
                             TextFormField(
                               controller: _passwordController,
                               obscureText: _obscurePassword,
@@ -363,7 +355,6 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             const SizedBox(height: 12),
 
-                            // Remember me & Forgot Password Row
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -398,7 +389,6 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             const SizedBox(height: 18),
 
-                            // Primary Login Button
                             Container(
                               height: 50,
                               decoration: BoxDecoration(
@@ -444,7 +434,6 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             const SizedBox(height: 18),
 
-                            // Register Farmer Link
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -469,7 +458,6 @@ class _LoginPageState extends State<LoginPage> {
 
                     const SizedBox(height: 20),
 
-                    // Responsive Footer — Guaranteed NO OVERFLOW
                     Wrap(
                       alignment: WrapAlignment.center,
                       crossAxisAlignment: WrapCrossAlignment.center,
@@ -494,7 +482,6 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
 
-          // Lớp phủ hiển thị tiến trình nạp dữ liệu ngoại tuyến lần đầu
           if (_isWarmingCache)
             Positioned.fill(
               child: Container(
@@ -590,7 +577,7 @@ class _FarmerRegisterWizardDialogState extends State<_FarmerRegisterWizardDialog
   final _plantAgeController = TextEditingController();
   final _farmAreaController = TextEditingController();
   String _selectedGender = 'Nam';
-  
+
   bool _isSubmitting = false;
   String? _errorMsg;
 
@@ -768,7 +755,7 @@ class _FarmerRegisterWizardDialogState extends State<_FarmerRegisterWizardDialog
                   )
                 else
                   const SizedBox(),
-                
+
                 if (_currentStep < 3)
                   ElevatedButton(
                     onPressed: () {

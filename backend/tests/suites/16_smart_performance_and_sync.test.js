@@ -70,7 +70,6 @@ describe('Suite 16: Smart Performance, Range Querying, Deduplication & Live Sync
     const ok = await invalidateAndBroadcast('plants_updated', { plant_id: 1, action: 'update' }, ['plants_']);
     expect(ok).toBe(true);
 
-    // Wait up to 300ms for async queueService worker interval to finish cache invalidation
     let after = await getCache('plants_test_16');
     for (let i = 0; i < 15 && after !== null; i++) {
       await new Promise(r => setTimeout(r, 20));
@@ -87,9 +86,9 @@ describe('Suite 16: Smart Performance, Range Querying, Deduplication & Live Sync
     const userLng = 107.240000;
 
     const sampleTrees = [
-      { id: 1, tree_code: '1', latitude: 10.925050, longitude: 107.240050 }, // ~7.5m
-      { id: 2, tree_code: '2', latitude: 10.926000, longitude: 107.240000 }, // ~111m
-      { id: 3, tree_code: '3', latitude: 10.925010, longitude: 107.240010 }, // ~1.5m
+      { id: 1, tree_code: '1', latitude: 10.925050, longitude: 107.240050 },
+      { id: 2, tree_code: '2', latitude: 10.926000, longitude: 107.240000 },
+      { id: 3, tree_code: '3', latitude: 10.925010, longitude: 107.240010 },
     ];
 
     const haversine = (lat1, lon1, lat2, lon2) => {

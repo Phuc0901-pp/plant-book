@@ -1,7 +1,3 @@
-/* ═══════════════════════════════════════════════════════════════════════════
-   SUITE 22: ISO 19111 / ISO 19115 / ISO 19157 / RFC 7946 GPS & GIS COMPLIANCE
-   Kiểm định chuẩn dữ liệu không gian, tọa độ WGS 84, GeoJSON Polygon & PostGIS
-   ═══════════════════════════════════════════════════════════════════════════ */
 const { describe, it, expect } = require('../test-framework');
 const fs = require('fs');
 const path = require('path');

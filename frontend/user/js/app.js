@@ -1,10 +1,3 @@
-/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/* ═══════════════════════════════════════════════════════════════
-   Plant Book – User Portal
-   app.js — Entry point (Slim)
-   Imports tất cả module và expose ra window cho HTML inline handlers
-   ═══════════════════════════════════════════════════════════════ */
-// Passive Event Listeners Patch for 60fps smooth scrolling
 (function() {
   const originalAddEventListener = EventTarget.prototype.addEventListener;
   EventTarget.prototype.addEventListener = function(type, listener, options) {
@@ -21,27 +14,25 @@
   };
 })();
 
-// ── Core ──────────────────────────────────────────────────────
 import { showPage, toggleMobileSidebar, closeMobileSidebar } from './core/router.js';
 import './core/offline-db.js';
 import { updateOfflineSyncBadge, triggerOfflineSync } from './core/offline-sync.js';
 
-// ── Modules ───────────────────────────────────────────────────
 import './modules/notifications.js';
 import { loadUserDashboard }          from './modules/dashboard.js';
-import { 
-  filterUserPlants, openSelfInitFarmModal, closeSelfInitFarmModal, getDeviceGPSPosition, 
-  submitSelfInitFarm, selectUserFarm, openEditFarmModal, closeEditFarmModal, 
-  getEditDeviceGPSPosition, submitEditFarm, deleteUserFarm, renderUserFarmsGrid, 
-  openFarmDetailView, closeFarmDetailView, getActiveFarm, getFarmsCache, 
-  togglePlantMenu, closePlantMenu, openFarmerNfcListModal, fetchFarmerNfcStats, 
-  exportFarmerNfcCsv, openReorderGpsModal, closeReorderGpsModal, previewReorderGps, 
-  executeReorderGps, openUserCreatePlantModal, closeUserCreatePlantModal, 
-  submitUserCreatePlant, toggleUserPlantCreateMode, updateUserRangePreview, 
-  getUserPlantGPS, onUserPlantNfcSelectChange, onUserPlantFarmChange, 
-  calculatePlantAge, onUserPlantingDateChange, generateUserPlantMatrix, 
-  renderUserPlantMatrix, updateMatrixItem, deleteMatrixRow, applyBulkLocationToMatrix, 
-  applyBulkPlotToMatrix, updateMatrixPlot, updateMatrixRow, onUserSinglePlotChange, 
+import {
+  filterUserPlants, openSelfInitFarmModal, closeSelfInitFarmModal, getDeviceGPSPosition,
+  submitSelfInitFarm, selectUserFarm, openEditFarmModal, closeEditFarmModal,
+  getEditDeviceGPSPosition, submitEditFarm, deleteUserFarm, renderUserFarmsGrid,
+  openFarmDetailView, closeFarmDetailView, getActiveFarm, getFarmsCache,
+  togglePlantMenu, closePlantMenu, openFarmerNfcListModal, fetchFarmerNfcStats,
+  exportFarmerNfcCsv, openReorderGpsModal, closeReorderGpsModal, previewReorderGps,
+  executeReorderGps, openUserCreatePlantModal, closeUserCreatePlantModal,
+  submitUserCreatePlant, toggleUserPlantCreateMode, updateUserRangePreview,
+  getUserPlantGPS, onUserPlantNfcSelectChange, onUserPlantFarmChange,
+  calculatePlantAge, onUserPlantingDateChange, generateUserPlantMatrix,
+  renderUserPlantMatrix, updateMatrixItem, deleteMatrixRow, applyBulkLocationToMatrix,
+  applyBulkPlotToMatrix, updateMatrixPlot, updateMatrixRow, onUserSinglePlotChange,
   togglePastDiseaseChip, getSelectedPastDiseases, resetPastDiseaseChips,
   onUserBatchPlantingDateChange, autoCalcMatrixAge, applyBulkAgronomyToMatrix,
   updateMatrixPastDiseases, getSelectedBatchPastDiseases, resetBatchPastDiseaseChips,
@@ -52,13 +43,13 @@ import { filterUserLogs }             from './modules/logs.js';
 import { renderUserReminders, quickCare, quickCareAll } from './modules/reminders.js';
 import { openCareModal, closeCareModal, saveCareLog, onCareLogTypeChange, calculateHarvestEconomicsPreview, startVoiceInput, stopVoiceInput } from './modules/care-modal.js?v=2.8.5';
 import { onCareMediaSelected, openLightbox } from './modules/media.js?v=2.8.5';
-import { 
-  loadUserSettings, saveUserProfile, changeUserPassword, uploadUserAvatar, 
-  switchSettingsSubtab, loadThresholdRules, openAddThresholdRuleModal, 
-  closeThresholdRuleModal, saveThresholdRule, addConditionRow, 
-  removeConditionRow, onConditionMetricChange, updateRuleConditionsSummary, 
-  getConditionsFromUI, onNotifyTimeTypeChange, onConditionDeviceChange, 
-  onCustomUnitInput 
+import {
+  loadUserSettings, saveUserProfile, changeUserPassword, uploadUserAvatar,
+  switchSettingsSubtab, loadThresholdRules, openAddThresholdRuleModal,
+  closeThresholdRuleModal, saveThresholdRule, addConditionRow,
+  removeConditionRow, onConditionMetricChange, updateRuleConditionsSummary,
+  getConditionsFromUI, onNotifyTimeTypeChange, onConditionDeviceChange,
+  onCustomUnitInput
 } from './modules/settings.js';
 import { openNfcModal, closeNfcModal, startNfcScan, saveNfcUidManually, deactivateNfcTag, prevNfcPlant, nextNfcPlant, getNfcCurrentGps, clearNfcGps, saveNfcLocationManually } from './modules/nfc.js';
 import { initWeatherClockWidget, refreshDeviceWeather } from './modules/weather-clock.js?v=v1.2.4';
@@ -111,7 +102,6 @@ window.closeProUpgradeModal = function() {
   const modal = document.getElementById('pro-upgrade-modal');
   if (modal) modal.style.display = 'none';
 };
-
 
 window.openFeatureDetailModal = function(type) {
   const modal = document.getElementById('feature-detail-modal');
@@ -261,13 +251,11 @@ window.switchWikiSubtab = function(tabName) {
   const paneGuide = document.getElementById('wiki-subtab-guide');
   const paneVietgap = document.getElementById('wiki-subtab-vietgap');
 
-  // Reset all panes
   if (paneRoles) paneRoles.style.display = 'none';
   if (paneAdv) paneAdv.style.display = 'none';
   if (paneGuide) paneGuide.style.display = 'none';
   if (paneVietgap) paneVietgap.style.display = 'none';
 
-  // Reset all buttons
   [btnRoles, btnAdv, btnGuide, btnVietgap].forEach(btn => {
     if (btn) btn.classList.remove('active');
   });
@@ -282,7 +270,6 @@ window.switchWikiSubtab = function(tabName) {
     if (paneVietgap) paneVietgap.style.display = 'block';
     if (btnVietgap) btnVietgap.classList.add('active');
   } else {
-    // Default: 'roles'
     if (paneRoles) paneRoles.style.display = 'block';
     if (btnRoles) btnRoles.classList.add('active');
     initGuideRoleView();
@@ -359,7 +346,6 @@ window.searchGuideContent = function(query) {
 };
 
 window.filterGuideTopics = function(topic, btnEl) {
-  // Update button active styles
   const allBtns = document.querySelectorAll('.guide-filter-btn');
   allBtns.forEach(btn => {
     btn.classList.remove('active');
@@ -379,7 +365,6 @@ window.filterGuideTopics = function(topic, btnEl) {
     btnEl.style.fontWeight = '800';
   }
 
-  // Filter cards
   const cards = document.querySelectorAll('.guide-card');
   cards.forEach(card => {
     const cardTopic = card.getAttribute('data-guide-topic');
@@ -391,8 +376,6 @@ window.filterGuideTopics = function(topic, btnEl) {
   });
 };
 
-// ── Expose to Window (for HTML inline onclick="..." handlers) ──
-// Cần thiết vì ES Modules có scope riêng, không tự trở thành global.
 window.showPage             = showPage;
 window.toggleMobileSidebar  = toggleMobileSidebar;
 window.closeMobileSidebar   = closeMobileSidebar;
@@ -413,7 +396,6 @@ window.onCareLogTypeChange  = onCareLogTypeChange;
 window.calculateHarvestEconomicsPreview = calculateHarvestEconomicsPreview;
 window.startVoiceInput      = startVoiceInput;
 window.stopVoiceInput       = stopVoiceInput;
-
 
 window.onCareMediaSelected  = onCareMediaSelected;
 window.openLightbox         = openLightbox;
@@ -502,33 +484,28 @@ window.setMascotState       = setMascotState;
 window.updateOfflineSyncBadge = updateOfflineSyncBadge;
 window.triggerOfflineSync   = triggerOfflineSync;
 
-// Initialize Live Clock & GPS Weather Widget
 try {
   initWeatherClockWidget();
 } catch (err) {
   console.warn('[App] Weather Clock Widget init warning:', err);
 }
 
-// Initialize 3D Chibi Plant Mascot Assistant
 try {
   initChibiMascot();
 } catch (err) {
   console.warn('[App] Chibi Mascot init warning:', err);
 }
 
-// Purge legacy field-mode state
 try {
   localStorage.removeItem('pb_field_mode');
   document.body.classList.remove('field-mode');
 } catch (_) {}
 
-// Register PWA service worker with Network-First strategy and immediate auto-update check
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/user/sw.js')
       .then((reg) => {
         console.log('✅ ServiceWorker registered successfully:', reg.scope);
-        // Force immediate check for worker script updates from server
         if (typeof reg.update === 'function') {
           reg.update().catch(() => {});
         }
@@ -536,4 +513,3 @@ if ('serviceWorker' in navigator) {
       .catch((err) => console.warn('❌ ServiceWorker registration failed:', err));
   });
 }
-

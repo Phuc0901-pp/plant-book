@@ -12,17 +12,12 @@ const {
   synthesizeGroundedAgentReply
 } = require('../services/beMamAgentEngine');
 
-/**
- * Phân loại độ khó câu hỏi (Smart Dynamic Model Routing)
- * - Câu hỏi dễ/tra cứu dữ liệu/thao tác app: Dùng Model Tiêu Chuẩn (2.5 Flash Lite / 2.0 Flash) -> Quota 1.500 lượt/ngày!
- * - Câu hỏi khó/phân tích sâu/bệnh hại phức tạp: Kích hoạt Model Siêu Cấp (Gemini 3.7 / 3.5 / Pro)
- */
 function classifyQueryComplexity(message) {
   const lower = message.toLowerCase().trim();
 
   const complexKeywords = [
     'nguyên nhân', 'tại sao', 'phác đồ', 'kết hợp', 'ra hoa nghịch vụ', 'trái vụ',
-    'cháy múi', 'sượng cơm', 'vừa bị', 'triệu chứng', 'phèn mặn', 'hoạt chất', 
+    'cháy múi', 'sượng cơm', 'vừa bị', 'triệu chứng', 'phèn mặn', 'hoạt chất',
     'nồng độ', 'kế hoạch', 'tối ưu', 'phân tích', 'xuất khẩu', 'globalgap', 'lập bảng',
     'tính toán', 'phối trộn', 'ủ phân', 'ức chế đọt', 'nứt thân xì mủ diện rộng'
   ];
@@ -30,26 +25,21 @@ function classifyQueryComplexity(message) {
   const isLongQuery = lower.split(/\s+/).length >= 18;
 
   if (hasComplexKeywords || isLongQuery) {
-    return 'complex'; // -> Route tới Flagship Models trước
+    return 'complex';
   }
 
-  return 'standard'; // -> Route tới Standard / Light Models trước
+  return 'standard';
 }
 
-/**
- * POST /api/ai/chat
- * Trợ lý ảo AI Bé Mầm AgTech - Tự động nhảy model khi hết quota & Cache RAM Scoped Context ($0)
- */
 router.post('/chat', auth, async (req, res) => {
   try {
     const { message, history = [] } = req.body;
-    const currentUser = req.user; // { id, email, role, name, farm_id }
+    const currentUser = req.user;
 
     if (!message || !message.trim()) {
       return res.status(400).json({ error: 'Nội dung tin nhắn không được để trống' });
     }
 
-    // 0. OWASP LLM01 Prompt Injection Guardrail
     const guardCheck = checkPromptInjection(message);
     if (!guardCheck.safe) {
       return res.json({
@@ -63,8 +53,7 @@ router.post('/chat', auth, async (req, res) => {
 
     const isAdmin = currentUser.role === 'admin';
     const cacheKey = `ai_context_${currentUser.id}_${isAdmin ? 'adm' : 'usr'}`;
-    
-    // 1. Kiểm tra RAM Cache trước (Độ trễ <0.1ms)
+
     let cachedContextData = memoryCache.get(cacheKey);
     let systemContext = '';
     let userFarms = [];
@@ -85,7 +74,6 @@ router.post('/chat', auth, async (req, res) => {
       userSuppliesInventory = cachedContextData.userSuppliesInventory || [];
       userIotSensors = cachedContextData.userIotSensors || [];
     } else {
-      // 2. Truy vấn từ Read Replica Pool (Fault-Tolerant: 1 câu phụ lỗi không làm sập toàn bộ Promise.all)
       const safeReadQuery = (sql, params = []) =>
         pool.readQuery(sql, params).catch((qErr) => {
           console.warn('AI SQL sub-query warn:', qErr.message);
@@ -96,39 +84,39 @@ router.post('/chat', auth, async (req, res) => {
         if (isAdmin) {
           const [farmsRes, plantsRes, sickRes, costRes, logsRes, suppliesInvRes, iotRes] = await Promise.all([
             safeReadQuery(`
-              SELECT f.id, f.name, f.area, f.total_plants, COALESCE(u.full_name, 'Nông hộ') as owner_name 
-              FROM farms f 
-              LEFT JOIN users u ON f.user_id = u.id 
+              SELECT f.id, f.name, f.area, f.total_plants, COALESCE(u.full_name, 'Nông hộ') as owner_name
+              FROM farms f
+              LEFT JOIN users u ON f.user_id = u.id
               WHERE (f.is_deleted IS NOT TRUE)
             `),
             safeReadQuery(`
-              SELECT p.id, p.tree_code, p.nfc_uid, p.plot_code, p.planting_date, p.plant_type, p.plant_variety, p.health_status, p.farm_id, f.name as farm_name 
-              FROM plants p 
+              SELECT p.id, p.tree_code, p.nfc_uid, p.plot_code, p.planting_date, p.plant_type, p.plant_variety, p.health_status, p.farm_id, f.name as farm_name
+              FROM plants p
               LEFT JOIN farms f ON p.farm_id = f.id
               WHERE (f.is_deleted IS NOT TRUE) AND (p.is_deleted IS NOT TRUE) AND (p.deleted_at IS NULL)
             `),
             safeReadQuery("SELECT COUNT(*) as count FROM plants WHERE health_status IN ('Cần chú ý', 'Bệnh', 'Nguy cấp')"),
             safeReadQuery("SELECT COALESCE(SUM(total_cost), 0) as total FROM supply_usages"),
             safeReadQuery(`
-              SELECT pl.log_date, pl.log_type, pl.note, pl.details, p.tree_code, p.plant_type, f.name as farm_name 
-              FROM plant_logs pl 
-              JOIN plants p ON pl.plant_id = p.id 
-              JOIN farms f ON p.farm_id = f.id 
-              WHERE (pl.is_deleted IS NOT TRUE) 
-              ORDER BY pl.log_date DESC, pl.created_at DESC 
+              SELECT pl.log_date, pl.log_type, pl.note, pl.details, p.tree_code, p.plant_type, f.name as farm_name
+              FROM plant_logs pl
+              JOIN plants p ON pl.plant_id = p.id
+              JOIN farms f ON p.farm_id = f.id
+              WHERE (pl.is_deleted IS NOT TRUE)
+              ORDER BY pl.log_date DESC, pl.created_at DESC
               LIMIT 12
             `),
             safeReadQuery(`
-              SELECT s.id, s.name, s.category, s.stock_quantity, s.unit, s.package_price, s.unit_price, f.name as farm_name 
-              FROM supplies s 
-              LEFT JOIN farms f ON s.farm_id = f.id 
-              ORDER BY s.created_at DESC 
+              SELECT s.id, s.name, s.category, s.stock_quantity, s.unit, s.package_price, s.unit_price, f.name as farm_name
+              FROM supplies s
+              LEFT JOIN farms f ON s.farm_id = f.id
+              ORDER BY s.created_at DESC
               LIMIT 30
             `),
             safeReadQuery(`
-              SELECT fis.farm_id, f.name as farm_name, fis.air_data, fis.soil_data, fis.water_data, fis.updated_at 
-              FROM farm_iot_sensors fis 
-              JOIN farms f ON fis.farm_id = f.id 
+              SELECT fis.farm_id, f.name as farm_name, fis.air_data, fis.soil_data, fis.water_data, fis.updated_at
+              FROM farm_iot_sensors fis
+              JOIN farms f ON fis.farm_id = f.id
               WHERE (f.is_deleted IS NOT TRUE)
             `)
           ]);
@@ -171,7 +159,7 @@ router.post('/chat', auth, async (req, res) => {
           const sickCount = sickRes.rows?.[0]?.count || 0;
           const totalExpense = costRes.rows?.[0]?.total || 0;
 
-          const farmLines = userFarms.map(f => 
+          const farmLines = userFarms.map(f =>
             `- Trang trại: "${f.name}" | Chủ hộ: ${f.owner} | Diện tích: ${f.area ? f.area + ' ha' : 'N/A'} | Cây trồng: ${f.crops} (Tổng: ${f.total} cây)`
           ).join('\n');
 
@@ -183,68 +171,67 @@ ${farmLines}
 - Tổng chi phí vật tư toàn hệ thống: ${Number(totalExpense).toLocaleString('vi-VN')} VNĐ.`;
 
         } else {
-          // NÔNG HỘ / USER: CHỈ TRUY CẬP DỮ LIỆU CÁC TRANG TRẠI THUỘC SỞ HỮU CỦA USER NÀY
           const [farmsRes, plantsRes, logsRes, costRes, usagesRes, suppliesInvRes, iotRes] = await Promise.all([
             safeReadQuery(`
-              SELECT f.id, f.name, f.area, f.total_plants, u.full_name as owner_name 
-              FROM farms f 
-              LEFT JOIN users u ON f.user_id = u.id 
-              WHERE (f.is_deleted IS NOT TRUE) 
+              SELECT f.id, f.name, f.area, f.total_plants, u.full_name as owner_name
+              FROM farms f
+              LEFT JOIN users u ON f.user_id = u.id
+              WHERE (f.is_deleted IS NOT TRUE)
                 AND (f.user_id = $1 OR f.created_by = $1 OR f.id = (SELECT farm_id FROM users WHERE id = $1))
             `, [currentUser.id]),
 
             safeReadQuery(`
-              SELECT p.id, p.tree_code, p.nfc_uid, p.plot_code, p.planting_date, p.plant_type, p.plant_variety, p.health_status, p.farm_id, f.name as farm_name 
-              FROM plants p 
-              JOIN farms f ON p.farm_id = f.id 
-              WHERE (f.is_deleted IS NOT TRUE) 
-                AND (p.is_deleted IS NOT TRUE) 
-                AND (p.deleted_at IS NULL) 
+              SELECT p.id, p.tree_code, p.nfc_uid, p.plot_code, p.planting_date, p.plant_type, p.plant_variety, p.health_status, p.farm_id, f.name as farm_name
+              FROM plants p
+              JOIN farms f ON p.farm_id = f.id
+              WHERE (f.is_deleted IS NOT TRUE)
+                AND (p.is_deleted IS NOT TRUE)
+                AND (p.deleted_at IS NULL)
                 AND (f.user_id = $1 OR f.created_by = $1 OR f.id = (SELECT farm_id FROM users WHERE id = $1) OR p.created_by = $1)
             `, [currentUser.id]),
 
             safeReadQuery(`
-              SELECT pl.log_date, pl.log_type, pl.note, pl.details, p.tree_code, p.plant_type, f.name as farm_name 
-              FROM plant_logs pl 
-              JOIN plants p ON pl.plant_id = p.id 
-              JOIN farms f ON p.farm_id = f.id 
+              SELECT pl.log_date, pl.log_type, pl.note, pl.details, p.tree_code, p.plant_type, f.name as farm_name
+              FROM plant_logs pl
+              JOIN plants p ON pl.plant_id = p.id
+              JOIN farms f ON p.farm_id = f.id
               WHERE (pl.is_deleted IS NOT TRUE)
-                AND (f.user_id = $1 OR f.created_by = $1 OR pl.created_by = $1) 
-              ORDER BY pl.log_date DESC, pl.created_at DESC 
+                AND (f.user_id = $1 OR f.created_by = $1 OR pl.created_by = $1)
+              ORDER BY pl.log_date DESC, pl.created_at DESC
               LIMIT 15
             `, [currentUser.id]),
 
             safeReadQuery(`
-              SELECT COALESCE(SUM(su.total_cost), 0) as total 
-              FROM supply_usages su 
-              LEFT JOIN farms f ON su.farm_id = f.id 
+              SELECT COALESCE(SUM(su.total_cost), 0) as total
+              FROM supply_usages su
+              LEFT JOIN farms f ON su.farm_id = f.id
               WHERE su.user_id = $1 OR f.user_id = $1 OR f.created_by = $1
             `, [currentUser.id]),
 
             safeReadQuery(`
-              SELECT s.name, s.category, su.quantity, s.unit, su.unit_price, su.total_cost, su.usage_date, f.name as farm_name 
-              FROM supply_usages su 
-              JOIN supplies s ON su.supply_id = s.id 
-              LEFT JOIN farms f ON su.farm_id = f.id 
+              SELECT s.name, s.category, su.quantity, s.unit, su.unit_price, su.total_cost, su.usage_date, f.name as farm_name
+              FROM supply_usages su
+              JOIN supplies s ON su.supply_id = s.id
+              LEFT JOIN farms f ON su.farm_id = f.id
               WHERE su.user_id = $1 OR f.user_id = $1 OR f.created_by = $1
-              ORDER BY su.usage_date DESC 
+              ORDER BY su.usage_date DESC
               LIMIT 8
             `, [currentUser.id]),
 
             safeReadQuery(`
-              SELECT s.id, s.name, s.category, s.stock_quantity, s.unit, s.package_price, s.unit_price, f.name as farm_name 
-              FROM supplies s 
-              LEFT JOIN farms f ON s.farm_id = f.id 
-              WHERE s.user_id = $1 OR f.user_id = $1 OR f.created_by = $1 
-              ORDER BY s.created_at DESC 
+              SELECT s.id, s.name, s.category, s.stock_quantity, s.unit, s.package_price, s.unit_price, f.name as farm_name
+              FROM supplies s
+              LEFT JOIN farms f ON s.farm_id = f.id
+              WHERE s.user_id = $1 OR f.user_id = $1 OR f.created_by = $1
+              ORDER BY s.created_at DESC
               LIMIT 30
             `, [currentUser.id]),
 
             safeReadQuery(`
-              SELECT fis.farm_id, f.name as farm_name, fis.air_data, fis.soil_data, fis.water_data, fis.updated_at 
-              FROM farm_iot_sensors fis 
-              JOIN farms f ON fis.farm_id = f.id 
-              WHERE (f.is_deleted IS NOT TRUE) 
+              SELECT fis.farm_id, f.name as farm_name, fis.air_data, fis.soil_data, fis.water_data, fis.updated_at
+              FROM farm_iot_sensors fis
+              JOIN farms f ON fis.farm_id = f.id
+              WHERE (f.is_deleted IS NOT TRUE)
                 AND (f.user_id = $1 OR f.created_by = $1 OR f.id = (SELECT farm_id FROM users WHERE id = $1))
             `, [currentUser.id])
           ]);
@@ -285,15 +272,15 @@ ${farmLines}
           userSuppliesInventory = suppliesInvRes.rows || [];
           userIotSensors = iotRes.rows || [];
 
-          const farmLines = userFarms.map(f => 
+          const farmLines = userFarms.map(f =>
             `- Trang trại của Bác: "${f.name}" | Diện tích: ${f.area ? f.area + ' ha' : 'Chưa nhập'} | Cây trồng: ${f.crops} (Tổng: ${f.total} cây)`
           ).join('\n');
 
-          const logLines = userLogs.map(l => 
+          const logLines = userLogs.map(l =>
             `- Ngày ${new Date(l.log_date).toLocaleDateString('vi-VN')}: [${l.log_type}] trên cây ${l.tree_code || l.plant_type} (${l.farm_name}) - Ghi chú: ${l.note || 'Bình thường'}`
           ).join('\n');
 
-          const supplyLines = userRecentSupplies.map(s => 
+          const supplyLines = userRecentSupplies.map(s =>
             `- ${s.name} (${s.category}): ${s.quantity} ${s.unit} - Thành tiền: ${Number(s.total_cost).toLocaleString('vi-VN')} VNĐ (${s.farm_name})`
           ).join('\n');
 
@@ -310,7 +297,6 @@ ${logLines || '- Chưa có nhật ký chăm sóc nào gần đây.'}
 ${supplyLines || '- Chưa ghi nhận tiêu hao vật tư gần đây.'}`;
         }
 
-        // Lưu vào RAM Cache trong 45 giây để phục vụ các câu chat tiếp theo tức thì
         memoryCache.set(cacheKey, {
           systemContext,
           userFarms,
@@ -328,8 +314,6 @@ ${supplyLines || '- Chưa ghi nhận tiêu hao vật tư gần đây.'}`;
       }
     }
 
-    // 2. HYBRID BM25 RAG & 8 AGENTIC TOOLS EXECUTION (ISO/IEC 42001 & 23053)
-    // Quét toàn bộ ai_training_qa & ai_knowledge_articles trong RAM Cache (xóa bỏ giới hạn LIMIT 30)
     let trainedKnowledgeText = '';
     let matchedQAResult = null;
     let ragResult = { topArticles: [], matchedSynonyms: [], maxScore: 0 };
@@ -351,7 +335,6 @@ ${supplyLines || '- Chưa ghi nhận tiêu hao vật tư gần đây.'}`;
         userIotSensors
       });
 
-      // Nếu khớp Cặp Q&A độ tin cậy cao (>= 0.85) và không yêu cầu tính toán phức tạp -> Phản xạ tức thì (< 5ms, $0 Token)
       if (matchedQAResult && matchedQAResult.score >= 0.85 && toolExecResult.triggeredTools.length === 0) {
         return res.json({
           success: true,
@@ -379,7 +362,6 @@ ${supplyLines || '- Chưa ghi nhận tiêu hao vật tư gần đây.'}`;
       ? `\n[KẾT QUẢ THỰC THI CÔNG CỤ AGENT TRÊN DỮ LIỆU THẬT CỦA VƯỜN]:\n${toolExecResult.toolSections.join('\n\n')}\n`
       : '';
 
-    // 3. TẬP HUẤN TOÀN BỘ KIẾN THỨC NÔNG NGHIỆP & CẨM NANG HỆ THỐNG
     const systemPrompt = `Bạn là "Bé Mầm AgTech" - AI Agent chuyên gia nông nghiệp thông minh (chuẩn ISO/IEC 42001) của hệ thống Sổ Nông Tân Bảo AgTech.
 Xưng hô: Xưng là "Bé Mầm" hoặc "em", gọi người dùng là "${isAdmin ? 'Admin' : 'Bác ' + (currentUser.name || 'nông hộ')}".
 
@@ -401,7 +383,6 @@ ${matchedQAResult ? `\n[CẶP Q&A ĐÃ HUẤN LUYỆN LIÊN QUAN]:\n${matchedQAR
 
 ${systemContext}`;
 
-    // 4. ĐIỀU HƯỚNG MÔ HÌNH CHUẨN & TỰ ĐỘNG CHUYỂN TIẾP (AUTO FAILOVER LOOP)
     const queryComplexity = classifyQueryComplexity(message);
     const modelCandidates = queryComplexity === 'complex'
       ? ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash', 'gemini-2.5-flash-lite']
@@ -467,13 +448,11 @@ ${systemContext}`;
               console.warn(`[AI Agent Router] Model ${modelName} trả về HTTP ${geminiRes.status} -> Chuyển model kế tiếp...`);
             }
           } catch (_) {
-            // Timeout hoặc lỗi mạng -> Chuyển tiếp
           }
         }
       }
     }
 
-    // 5. GROUNDED NEURO-SYMBOLIC AGENT SYNTHESIZER (Hoạt động 100% bất tử kể cả khi không có Gemini API Key)
     const synthesized = synthesizeGroundedAgentReply({
       rawQuery: message,
       isAdmin,
@@ -483,7 +462,6 @@ ${systemContext}`;
       toolExecResult
     });
 
-    // 6. AUTO-LEARNING LOOP: Ghi nhận tự động các câu hỏi lạ (confidence < 0.35) vào ai_unanswered_queries
     if (synthesized.needsAutoLearning && pool && typeof pool.query === 'function') {
       pool.query(
         `INSERT INTO ai_unanswered_queries (user_id, user_query, bot_response, user_feedback, status)

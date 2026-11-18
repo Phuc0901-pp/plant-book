@@ -1,4 +1,3 @@
-// Modular Plant Public Timeline & Agronomic Calculators
 function _fmtPublicShortDate(dVal) {
   if (!dVal) return '';
   const s = String(dVal).slice(0, 10);
@@ -80,7 +79,6 @@ function getUnit(details, defaultUnit = '') {
   return details.unit || details.package_unit || defaultUnit;
 }
 
-// Helper: Get structured text from care logs
 function getCareLogSummary(log) {
   const details = log.details || {};
   const qty = getQuantity(details);
@@ -147,17 +145,15 @@ function getCareLogSummary(log) {
     return `Đã thu hoạch: <strong>${esc(yieldKg)} kg</strong>${fruitCount}${revStr}${batchStr}.${cmpStr}`;
   }
   if (log.log_type === 'Bệnh cây') {
-    const sevIcon = details.severity === 'Nghiêm trọng' 
-      ? '<i data-lucide="alert-octagon" class="lucide-xs" style="color:#dc2626; vertical-align:-2px;"></i>' 
-      : (details.severity === 'Trung bình' 
-          ? '<i data-lucide="alert-triangle" class="lucide-xs" style="color:#ea580c; vertical-align:-2px;"></i>' 
+    const sevIcon = details.severity === 'Nghiêm trọng'
+      ? '<i data-lucide="alert-octagon" class="lucide-xs" style="color:#dc2626; vertical-align:-2px;"></i>'
+      : (details.severity === 'Trung bình'
+          ? '<i data-lucide="alert-triangle" class="lucide-xs" style="color:#ea580c; vertical-align:-2px;"></i>'
           : '<i data-lucide="alert-circle" class="lucide-xs" style="color:#d97706; vertical-align:-2px;"></i>');
     return `<span style="color:var(--color-disease);font-weight:700">${sevIcon} ${esc(details.disease_name || 'Bệnh chưa xác định')}</span>${details.description ? '<br><span style="color:var(--text-secondary);font-size:12px">' + esc(details.description) + '</span>' : ''}`;
   }
   return esc(log.note || '');
 }
-
-// ── Timeline Pagination & Rendering Helpers ──────────────────
 
 function getShortSummary(log) {
   const details = log.details || {};
@@ -203,10 +199,10 @@ function getShortSummary(log) {
     return `Thu hoạch ${yieldKg ? yieldKg + ' kg' : ''}${fruitCount} — Mã Lô: ${esc(log.batch_code || details.batch_code || 'VietGAP')}${esc(cmpShort)}`;
   }
   if (log.log_type === 'Bệnh cây') {
-    const sevIcon = details.severity === 'Nghiêm trọng' 
-      ? '<i data-lucide="alert-octagon" class="lucide-xs" style="color:#dc2626; vertical-align:-2px;"></i>' 
-      : (details.severity === 'Trung bình' 
-          ? '<i data-lucide="alert-triangle" class="lucide-xs" style="color:#ea580c; vertical-align:-2px;"></i>' 
+    const sevIcon = details.severity === 'Nghiêm trọng'
+      ? '<i data-lucide="alert-octagon" class="lucide-xs" style="color:#dc2626; vertical-align:-2px;"></i>'
+      : (details.severity === 'Trung bình'
+          ? '<i data-lucide="alert-triangle" class="lucide-xs" style="color:#ea580c; vertical-align:-2px;"></i>'
           : '<i data-lucide="alert-circle" class="lucide-xs" style="color:#d97706; vertical-align:-2px;"></i>');
     return `${sevIcon} Phát hiện bệnh: ${esc(details.disease_name || 'Bệnh chưa xác định')}`;
   }
@@ -292,7 +288,7 @@ function _renderTimelineItemHtml(log) {
   let tagClass = 'tag-general';
   let icon = 'edit-3';
   let chibiKey = '';
-  
+
   if (log.log_type === 'Tưới nước') {
     markerClass = 'marker-water';
     tagClass = 'tag-water';
@@ -344,7 +340,7 @@ function _renderTimelineItemHtml(log) {
     icon = 'bug';
     chibiKey = 'chibi-disease';
   }
-  
+
   const timeVal = (log.details && log.details.performed_at) ? log.details.performed_at : (log.created_at || log.log_date);
   const fullDateTime = typeof fmtDateTime === 'function' ? fmtDateTime(timeVal) : _fmtPublicShortDate(timeVal);
 
@@ -362,7 +358,6 @@ function _renderTimelineItemHtml(log) {
   if ((!mediaUrls || mediaUrls.length === 0) && log.details && log.details.media_urls) {
     mediaUrls = Array.isArray(log.details.media_urls) ? log.details.media_urls : [];
   }
-  // Smart correlation fallback: If mediaUrls is empty and currentPlantData has media gallery items
   if ((!mediaUrls || mediaUrls.length === 0) && typeof currentPlantData !== 'undefined' && currentPlantData && Array.isArray(currentPlantData.media) && currentPlantData.media.length > 0) {
     const logDateStr = log.log_date ? new Date(log.log_date).toISOString().slice(0, 10) : '';
     if (log.log_type === 'Bệnh cây') {
@@ -581,10 +576,8 @@ function renderPublicLogTimeline(page = 1, expanded = false) {
 
   let visibleDates = [];
   if (!expanded) {
-    // Mode 1: Default summary (3 days most recent)
     visibleDates = dates.slice(0, 3);
   } else {
-    // Mode 2: Expanded with pagination (5 days per page)
     const totalPages = Math.ceil(dates.length / (window._publicLogPageSize || 5)) || 1;
     if (page < 1) page = 1;
     if (page > totalPages) page = totalPages;
@@ -596,7 +589,7 @@ function renderPublicLogTimeline(page = 1, expanded = false) {
   }
 
   const groups = window._publicLogsGrouped;
-  
+
   container.innerHTML = `
     <div class="timeline">
       ${visibleDates.map(date => `
@@ -608,7 +601,6 @@ function renderPublicLogTimeline(page = 1, expanded = false) {
     </div>
   `;
 
-  // Render Pagination / Expand Controls Box
   if (paginationBox) {
     const totalDatesCount = dates.length;
     if (!expanded) {
@@ -663,7 +655,6 @@ window.changePublicLogPage = function(page) {
   renderPublicLogTimeline(page, true);
 };
 
-// Helper: Calculate PHI Quarantine status from pesticide logs
 function calculatePlantPhiStatus(plant) {
   const logs = plant.logs || [];
   const now = new Date();
@@ -716,7 +707,6 @@ function calculatePlantPhiStatus(plant) {
   };
 }
 
-// Helper: Calculate tree age in years/months
 function calculateTreeAge(plantingDate) {
   if (!plantingDate) return null;
   const d = new Date(plantingDate);
@@ -729,4 +719,3 @@ function calculateTreeAge(plantingDate) {
   }
   return `${years.toFixed(1)} năm tuổi`;
 }
-

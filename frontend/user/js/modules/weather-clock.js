@@ -1,17 +1,9 @@
-/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/**
- * modules/weather-clock.js - Live Digital Clock & Real-Time GPS Weather Widget (Open-Meteo API)
- * Enhanced with Local Storage Caching, Fault-Tolerant Climatology Fallback & 503 Error Resilience
- */
-
 let _clockInterval = null;
 let _currentCoords = null;
 const CACHE_KEY = 'tanbao_cached_weather';
 
-// WMO Weather Interpretation Codes (WW) with Rich Multi-Layer Meteorological SVGs
 export function getCorporateWeatherSvg(code) {
   const c = parseInt(code, 10);
-  // 0: Sunny / Clear Sky
   if (c === 0) {
     return `<svg width="44" height="44" viewBox="0 0 48 48" fill="none" style="filter: drop-shadow(0 4px 10px rgba(245,158,11,0.45));">
       <defs>
@@ -34,7 +26,6 @@ export function getCorporateWeatherSvg(code) {
       <circle cx="24" cy="24" r="11.5" fill="url(#sunGlowGrad)" stroke="#FEF08A" stroke-width="1.5"/>
     </svg>`;
   }
-  // 1, 2, 80: Clear / Partly Cloudy / Sun & Rain
   if (c === 1 || c === 2 || c === 80) {
     return `<svg width="44" height="44" viewBox="0 0 48 48" fill="none" style="filter: drop-shadow(0 4px 12px rgba(56,189,248,0.35));">
       <defs>
@@ -53,7 +44,6 @@ export function getCorporateWeatherSvg(code) {
       ${c === 80 ? '<line x1="20" y1="41" x2="18" y2="45" stroke="#38BDF8" stroke-width="2" stroke-linecap="round"/><line x1="28" y1="41" x2="26" y2="45" stroke="#38BDF8" stroke-width="2" stroke-linecap="round"/>' : ''}
     </svg>`;
   }
-  // 3: Overcast / Cloudy
   if (c === 3) {
     return `<svg width="44" height="44" viewBox="0 0 48 48" fill="none" style="filter: drop-shadow(0 4px 10px rgba(148,163,184,0.3));">
       <defs>
@@ -70,7 +60,6 @@ export function getCorporateWeatherSvg(code) {
       <path d="M16 38h20a7 7 0 0 0 2.3-13.6 8.5 8.5 0 0 0-15.6-3.8 6 6 0 0 0-7.7 6.4A6.5 6.5 0 0 0 16 38z" fill="url(#cloudFrontGrad)" stroke="rgba(255,255,255,0.9)" stroke-width="1"/>
     </svg>`;
   }
-  // 45, 48: Fog / Smog
   if (c === 45 || c === 48) {
     return `<svg width="44" height="44" viewBox="0 0 48 48" fill="none" style="filter: drop-shadow(0 4px 8px rgba(203,213,225,0.3));">
       <defs>
@@ -87,7 +76,6 @@ export function getCorporateWeatherSvg(code) {
       <line x1="14" y1="37" x2="34" y2="37" stroke="url(#mistLineGrad)" stroke-width="3" stroke-linecap="round"/>
     </svg>`;
   }
-  // 51, 53, 55, 61, 63, 65, 81, 82: Rain / Showers
   if ((c >= 51 && c <= 65) || c === 81 || c === 82) {
     const isHeavy = c === 65 || c === 82 || c === 55 || c === 63;
     return `<svg width="44" height="44" viewBox="0 0 48 48" fill="none" style="filter: drop-shadow(0 4px 12px rgba(59,130,246,0.4));">
@@ -108,7 +96,6 @@ export function getCorporateWeatherSvg(code) {
       ${isHeavy ? '<line x1="19" y1="36" x2="16" y2="45" stroke="url(#dropGrad)" stroke-width="2.5" stroke-linecap="round"/><line x1="28" y1="36" x2="25" y2="45" stroke="url(#dropGrad)" stroke-width="2.5" stroke-linecap="round"/>' : ''}
     </svg>`;
   }
-  // 95, 96, 99: Thunderstorm / Lightning
   if (c >= 95 && c <= 99) {
     return `<svg width="44" height="44" viewBox="0 0 48 48" fill="none" style="filter: drop-shadow(0 4px 14px rgba(234,179,8,0.5));">
       <defs>
@@ -126,7 +113,6 @@ export function getCorporateWeatherSvg(code) {
       <path d="M26 21l-5 10h6l-3.5 13 11-14h-6.5l5.5-9h-7z" fill="url(#boltGrad)" stroke="#FEF08A" stroke-width="0.8" style="filter: drop-shadow(0 0 6px #FDE047);"/>
     </svg>`;
   }
-  // Default Sunny
   return `<svg width="44" height="44" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="12" fill="#F59E0B"/></svg>`;
 }
 
@@ -270,8 +256,7 @@ export function startLiveClock() {
 
   function update() {
     const now = new Date();
-    
-    // Time format HH:mm:ss
+
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
     const seconds = String(now.getSeconds()).padStart(2, '0');
@@ -281,7 +266,6 @@ export function startLiveClock() {
     if (timeEl) timeEl.textContent = `${hours}:${minutes}`;
     if (secEl) secEl.textContent = `:${seconds}`;
 
-    // Date format in Vietnamese
     const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
     const dayName = days[now.getDay()];
     const dateStr = `${dayName}, ${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}`;
@@ -318,7 +302,7 @@ function _renderWeatherUI(data, locationName, isRealGps, statusBadge = '') {
 
   widgetBox.innerHTML = `
     <div class="weather-widget-wrapper" style="display:flex; flex-direction:column; gap:12px; width:100%;">
-      
+
       <!-- Top Header Strip: Location & Status -->
       <div class="weather-header-strip" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; padding-bottom:8px; border-bottom:1px solid #e2e8f0; width:100%;">
         <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
@@ -334,7 +318,7 @@ function _renderWeatherUI(data, locationName, isRealGps, statusBadge = '') {
 
       <!-- Main Body: Hero Condition (Left) + 4 Metrics Grid (Right) -->
       <div class="weather-body-grid" style="display:grid; grid-template-columns:auto 1fr; gap:16px; align-items:center; width:100%;">
-        
+
         <!-- Hero Weather Condition & Temperature Box -->
         <div class="weather-hero-block" style="display:flex; align-items:center; gap:14px; min-width:220px;">
           <div style="width:58px; height:58px; border-radius:14px; background:#ecfdf5; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(16,185,129,0.12); border:1.5px solid #a7f3d0; flex-shrink:0;">
@@ -354,7 +338,7 @@ function _renderWeatherUI(data, locationName, isRealGps, statusBadge = '') {
 
         <!-- Detailed Metrics Grid (4 Clean Balanced Chips) -->
         <div class="weather-metrics-grid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; width:100%;">
-          
+
           <!-- Humidity Chip -->
           <div class="weather-metric-chip" style="background:#ecfdf5; border:1.2px solid #a7f3d0; border-radius:10px; padding:7px 10px; box-shadow:0 1px 2px rgba(0,0,0,0.02);">
             <div style="font-size:10.5px; color:#059669; font-weight:800; display:flex; align-items:center; gap:5px;">
@@ -403,7 +387,6 @@ function _renderWeatherUI(data, locationName, isRealGps, statusBadge = '') {
     </div>
   `;
 
-  // Trigger CountUp animations on weather numbers!
   if (typeof window.animateValue === 'function') {
     window.animateValue(document.getElementById('weather-val-temp'), 0, temp, 800, 0, '°C');
     window.animateValue(document.getElementById('weather-val-feel'), 0, feelLike, 800, 0);
@@ -413,7 +396,6 @@ function _renderWeatherUI(data, locationName, isRealGps, statusBadge = '') {
     window.animateValue(document.getElementById('weather-val-uv'), 0, parseFloat(uv), 800, 1);
   }
 
-  // Sync state to 3D Chibi Mascot
   if (typeof window.setMascotState === 'function') {
     if (rainProb >= 60) {
       window.setMascotState('rain');
@@ -434,7 +416,6 @@ export async function refreshDeviceWeather(forcePrompt = false) {
   if (refreshBtn) refreshBtn.classList.add('lucide-spin');
   if (statusEl) statusEl.textContent = 'Đang xác định vị trí...';
 
-  // Step 1: Check active farm coordinates
   const activeFarm = (typeof window.getActiveFarm === 'function' ? window.getActiveFarm() : null)
     || (window._allFarmsCache && window._allFarmsCache.length > 0 ? window._allFarmsCache[0] : null);
 
@@ -449,8 +430,8 @@ export async function refreshDeviceWeather(forcePrompt = false) {
       lng = parseFloat(activeFarm.longitude);
     } else if (activeFarm.polygon_coordinates) {
       try {
-        const poly = typeof activeFarm.polygon_coordinates === 'string' 
-          ? JSON.parse(activeFarm.polygon_coordinates) 
+        const poly = typeof activeFarm.polygon_coordinates === 'string'
+          ? JSON.parse(activeFarm.polygon_coordinates)
           : activeFarm.polygon_coordinates;
         if (Array.isArray(poly) && poly.length > 0) {
           const ring = Array.isArray(poly[0][0]) ? poly[0] : poly;
@@ -473,7 +454,6 @@ export async function refreshDeviceWeather(forcePrompt = false) {
     farmDisplayName = activeFarm.name ? `${activeFarm.name}${activeFarm.address ? ` (${activeFarm.address})` : ''}` : '';
   }
 
-  // Try real-time device Geolocation (prioritized if available or user prompted)
   try {
     if ('geolocation' in navigator) {
       const position = await new Promise((resolve, reject) => {
@@ -493,7 +473,6 @@ export async function refreshDeviceWeather(forcePrompt = false) {
     console.warn('[WeatherWidget] GPS position error or permission denied.', err.message);
   }
 
-  // If GPS coordinates could not be retrieved from GPS or Farm: Set to null (do NOT default to Long Khánh)
   if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
     lat = null;
     lng = null;
@@ -509,10 +488,9 @@ export async function refreshDeviceWeather(forcePrompt = false) {
 
   if (statusEl) statusEl.textContent = 'Đang tải dữ liệu khí tượng Open-Meteo...';
 
-  // Step 2: Fetch Open-Meteo Real-Time Weather API
   try {
     const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,uv_index&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max,uv_index_max,et0_fao_evapotranspiration&timezone=auto`;
-    
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 7000);
 
@@ -524,9 +502,8 @@ export async function refreshDeviceWeather(forcePrompt = false) {
     }
     const data = await res.json();
 
-    // Step 3: Fetch Location Name (Reverse Geocode / Farm Name)
-    let locationName = isRealGps 
-      ? `GPS: ${lat.toFixed(3)}°, ${lng.toFixed(3)}°` 
+    let locationName = isRealGps
+      ? `GPS: ${lat.toFixed(3)}°, ${lng.toFixed(3)}°`
       : (farmDisplayName || 'Trang trại Nông hộ');
 
     try {
@@ -549,7 +526,6 @@ export async function refreshDeviceWeather(forcePrompt = false) {
       }
     } catch (_) {}
 
-    // Step 4: Parse Weather metrics
     const current = data.current || {};
     const daily = data.daily || {};
 
@@ -569,7 +545,6 @@ export async function refreshDeviceWeather(forcePrompt = false) {
     const weatherCode = current.weather_code ?? 0;
     const wmo = WMO_WEATHER_MAP[weatherCode] || { label: 'Trời quang đãng', icon: 'sun', color: '#fbbf24', bg: 'rgba(251,191,36,0.15)' };
 
-    // Agricultural Advisory Formula & Advice
     const irrigLiters = Math.round(et0 * 30 * 0.85);
     let agriTip = `Bốc thoát hơi nước hôm nay ~${et0} mm/ngày (tưới bù ~${irrigLiters}L/gốc). Thời tiết thuận lợi cho các hoạt động chăm sóc cây trồng.`;
     if (rainProb >= 60 || rainSum >= 10) {
@@ -597,22 +572,18 @@ export async function refreshDeviceWeather(forcePrompt = false) {
       agriTip
     };
 
-    // Save to Local Storage Cache
     _saveCachedWeather({ data: weatherPayload, locationName, isRealGps });
 
-    // Render UI
     _renderWeatherUI(weatherPayload, locationName, isRealGps);
 
   } catch (err) {
     console.warn('[WeatherWidget] Open-Meteo API unreachable or returning 503/Timeout. Activating cache/fallback resilience.', err.message);
-    
-    // Check if we have cached weather
+
     const cached = _getCachedWeather();
     if (cached && cached.data) {
       const timeStr = new Date(cached.timestamp).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
       _renderWeatherUI(cached.data, cached.locationName || 'Vườn mẫu Tân Bảo', cached.isRealGps, `Lưu lúc ${timeStr}`);
     } else {
-      // Climatology fallback
       const now = new Date();
       const hour = now.getHours();
       let estTemp = 29;
@@ -649,7 +620,6 @@ let _lastUserWeatherFetch = 0;
 
 export function setupUserWeatherAutoRefresh() {
   if (_userWeatherAutoInterval) clearInterval(_userWeatherAutoInterval);
-  // Auto refresh every 10 minutes in background
   _userWeatherAutoInterval = setInterval(() => {
     if (document.visibilityState === 'visible') {
       refreshDeviceWeather();

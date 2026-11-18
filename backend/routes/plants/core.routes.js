@@ -16,7 +16,6 @@ router.get('/', auth, async (req, res) => {
   try {
     const { search, health_status, plant_type, user_id, farm_id, range_min, range_max, chunk_group } = req.query;
 
-    // Singleflight Cache Key định danh truy vấn
     const sfKey = `plants:user_${req.user.id}:${farm_id || 'all'}:${range_min || ''}_${range_max || ''}:${chunk_group || ''}:${health_status || ''}:${plant_type || ''}:${search || ''}`;
 
     const rows = await singleflight.do(sfKey, async () => {
@@ -31,15 +30,15 @@ router.get('/', auth, async (req, res) => {
                TO_CHAR((SELECT MAX(log_date) FROM plant_logs WHERE plant_id = p.id AND log_type = 'Bón phân' AND (is_deleted IS NOT TRUE)), 'YYYY-MM-DD') as last_fertilized,
                TO_CHAR((SELECT MAX(log_date) FROM plant_logs WHERE plant_id = p.id AND (is_deleted IS NOT TRUE)), 'YYYY-MM-DD') as last_care_date,
                (SELECT log_type FROM plant_logs WHERE plant_id = p.id AND (is_deleted IS NOT TRUE) ORDER BY log_date DESC, id DESC LIMIT 1) as last_care_type,
-               CASE 
-                 WHEN p.phi_until_date IS NOT NULL AND p.phi_until_date >= CURRENT_DATE 
-                 THEN (p.phi_until_date - CURRENT_DATE) 
-                 ELSE 0 
+               CASE
+                 WHEN p.phi_until_date IS NOT NULL AND p.phi_until_date >= CURRENT_DATE
+                 THEN (p.phi_until_date - CURRENT_DATE)
+                 ELSE 0
                 END as phi_remaining_days,
-               CASE 
-                 WHEN p.phi_until_date IS NOT NULL AND p.phi_until_date >= CURRENT_DATE 
-                 THEN 'quarantine' 
-                 ELSE 'safe' 
+               CASE
+                 WHEN p.phi_until_date IS NOT NULL AND p.phi_until_date >= CURRENT_DATE
+                 THEN 'quarantine'
+                 ELSE 'safe'
                END as current_phi_status
         FROM plants p
         LEFT JOIN plant_schemas ps ON ps.id = p.schema_id
@@ -59,9 +58,9 @@ router.get('/', auth, async (req, res) => {
           idx++;
         } else {
           query += ` AND (
-            f.user_id = $${idx} 
-            OR p.created_by = $${idx} 
-            OR p.assigned_to_user_id = $${idx} 
+            f.user_id = $${idx}
+            OR p.created_by = $${idx}
+            OR p.assigned_to_user_id = $${idx}
             OR p.farm_id IN (SELECT id FROM farms WHERE user_id = $${idx} AND is_deleted IS NOT TRUE)
             OR p.farm_id = (SELECT farm_id FROM users WHERE id = $${idx})
           )`;
@@ -96,7 +95,6 @@ router.get('/', auth, async (req, res) => {
         idx++;
       }
 
-      // ── Range & Chunk Group Querying (0..20, 21..40, 41..60, 61..80) ──
       let rMin = null;
       let rMax = null;
       if (chunk_group) {
@@ -145,7 +143,6 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-// ─── GPS Proximity Query (Tìm cây gần vị trí GPS của người dùng) ──────────────
 router.get('/nearby-gps', auth, async (req, res) => {
   try {
     const { lat, lng, radius = 500, farm_id } = req.query;
@@ -171,7 +168,7 @@ router.get('/nearby-gps', auth, async (req, res) => {
                ) AS distance_meters
         FROM plants p
         LEFT JOIN farms f ON f.id = p.farm_id
-        WHERE p.latitude IS NOT NULL 
+        WHERE p.latitude IS NOT NULL
           AND p.longitude IS NOT NULL
           AND p.deleted_at IS NULL
       `;
@@ -215,7 +212,6 @@ router.get('/nearby-gps', auth, async (req, res) => {
   }
 });
 
-// ─── Smart Agronomic Reminders (Nhắc việc thông minh theo chu kỳ) ─────────────
 router.get('/smart-reminders', auth, async (req, res) => {
   try {
     const { farm_id } = req.query;
@@ -243,28 +239,26 @@ router.get('/smart-reminders', auth, async (req, res) => {
 router.get('/logs/recent', auth, async (req, res) => {
   try {
     const rawDays = req.query.days;
-    let daysLimit = 30; // default 30 days
+    let daysLimit = 30;
     let isAll = false;
 
     if (rawDays === '3') {
-      daysLimit = 7; // Dashboard short summary
+      daysLimit = 7;
     } else if (rawDays === 'all') {
       isAll = true;
     } else if (rawDays && !isNaN(parseInt(rawDays, 10))) {
       daysLimit = parseInt(rawDays, 10);
     }
 
-
-
     let query = `
-      SELECT pl.*, 
-             COALESCE(p.plant_type, 'Toàn vườn') as plant_type, 
-             COALESCE(p.plant_variety, '') as plant_variety, 
-             COALESCE(p.tree_code, 'Toàn vườn') as tree_code, 
+      SELECT pl.*,
+             COALESCE(p.plant_type, 'Toàn vườn') as plant_type,
+             COALESCE(p.plant_variety, '') as plant_variety,
+             COALESCE(p.tree_code, 'Toàn vườn') as tree_code,
              p.assigned_to_user_id,
-             COALESCE(p.farm_id, (SELECT id FROM farms WHERE user_id = pl.created_by LIMIT 1)) as farm_id, 
-             COALESCE(f.name, (SELECT name FROM farms WHERE user_id = pl.created_by LIMIT 1), 'Trang trại Nông hộ') as farm_name, 
-             COALESCE(p.location, 'Toàn vườn') as plant_location, 
+             COALESCE(p.farm_id, (SELECT id FROM farms WHERE user_id = pl.created_by LIMIT 1)) as farm_id,
+             COALESCE(f.name, (SELECT name FROM farms WHERE user_id = pl.created_by LIMIT 1), 'Trang trại Nông hộ') as farm_name,
+             COALESCE(p.location, 'Toàn vườn') as plant_location,
              u.full_name as creator_name
       FROM plant_logs pl
       LEFT JOIN plants p ON pl.plant_id = p.id
@@ -283,7 +277,6 @@ router.get('/logs/recent', auth, async (req, res) => {
 
     if (req.user.role !== 'admin') {
       if (req.user.view_plants_scope === 'assigned') {
-        // Chỉ hiển thị lịch sử chăm sóc của các cây mà tài khoản được phân quyền phụ trách (hoặc chủ vườn)
         query += ` AND (f.user_id = $${idx} OR p.assigned_to_user_id = $${idx}) `;
         params.push(req.user.id);
         idx++;
@@ -318,7 +311,6 @@ router.get('/logs/recent', auth, async (req, res) => {
   }
 });
 
-
 router.get('/media/all', auth, async (req, res) => {
   try {
     let query = `
@@ -332,7 +324,6 @@ router.get('/media/all', auth, async (req, res) => {
     const params = [];
     let paramIndex = 1;
 
-    // Security: Non-admin users can only view their own farm media (or assigned plants if scope === 'assigned')!
     if (req.user.role !== 'admin') {
       if (req.user.view_plants_scope === 'assigned') {
         query += ` AND (f.user_id = $${paramIndex} OR p.assigned_to_user_id = $${paramIndex}) `;
@@ -343,13 +334,11 @@ router.get('/media/all', auth, async (req, res) => {
       paramIndex++;
       query += ` AND pm.delete_pending = false `;
     } else {
-      // Admins can filter by User ID
       if (req.query.user_id) {
         query += ` AND f.user_id = $${paramIndex} `;
         params.push(parseInt(req.query.user_id));
         paramIndex++;
       }
-      // Admins can filter by delete_pending
       if (req.query.pending_only === 'true') {
         query += ` AND pm.delete_pending = true `;
       }
@@ -379,10 +368,10 @@ router.get('/media/all', auth, async (req, res) => {
 router.get('/:id(\\d+)', auth, async (req, res) => {
   try {
     const plant = await pool.query(
-      `SELECT p.*, ps.name as schema_name, ps.fields as schema_fields, 
-              f.name as farm_name, f.user_id as farm_owner_id, 
+      `SELECT p.*, ps.name as schema_name, ps.fields as schema_fields,
+              f.name as farm_name, f.user_id as farm_owner_id,
               u.full_name as owner_name, u.phone as owner_phone
-       FROM plants p 
+       FROM plants p
        LEFT JOIN plant_schemas ps ON ps.id = p.schema_id
        LEFT JOIN farms f ON f.id = p.farm_id
        LEFT JOIN users u ON u.id = f.user_id
@@ -408,9 +397,9 @@ router.get('/:id(\\d+)', auth, async (req, res) => {
 
     const media = await pool.query('SELECT * FROM plant_media WHERE plant_id=$1 ORDER BY uploaded_at DESC', [req.params.id]);
     const logs = await pool.query(
-      `SELECT pl.*, u.full_name as creator_name, u.phone as creator_phone, u.email as creator_email 
-       FROM plant_logs pl 
-       LEFT JOIN users u ON u.id = pl.created_by 
+      `SELECT pl.*, u.full_name as creator_name, u.phone as creator_phone, u.email as creator_email
+       FROM plant_logs pl
+       LEFT JOIN users u ON u.id = pl.created_by
        WHERE pl.plant_id=$1 AND (pl.is_deleted IS NOT TRUE)
        ORDER BY pl.log_date DESC, pl.created_at DESC`, [req.params.id]
     );
@@ -426,12 +415,11 @@ router.get('/:id(\\d+)', auth, async (req, res) => {
   }
 });
 
-
 router.get('/:id(\\d+)/logs', auth, async (req, res) => {
   try {
     const plant = await pool.query(
       `SELECT p.id, p.created_by, p.assigned_to_user_id, f.user_id as farm_owner_id, p.farm_id
-       FROM plants p 
+       FROM plants p
        LEFT JOIN farms f ON f.id = p.farm_id
        WHERE p.id=$1`, [req.params.id]
     );
@@ -478,7 +466,6 @@ router.get('/:id(\\d+)/logs', auth, async (req, res) => {
     logsQuery += ' ORDER BY pl.log_date DESC, pl.id DESC';
     const logsRes = await pool.query(logsQuery, logsParams);
 
-    // Truy vấn các khoản tiêu hao vật tư liên kết với cây này từ supply_usages
     let usagesRows = [];
     try {
       const usagesRes = await pool.query(
@@ -522,7 +509,6 @@ router.get('/:id(\\d+)/logs', auth, async (req, res) => {
 
     const redactFinance = isUserFinanceRedacted(req.user);
 
-    // Đối soát chi phí và tên vật tư vào từng log nếu log chưa có cost
     const enrichedLogs = logsRes.rows.map(log => {
       let d = log.details || {};
       if (typeof d === 'string') {
@@ -530,7 +516,7 @@ router.get('/:id(\\d+)/logs', auth, async (req, res) => {
       }
 
       if (!d.total_cost || parseFloat(d.total_cost) === 0) {
-        const matched = usagesRows.find(u => 
+        const matched = usagesRows.find(u =>
           (d.supply_id && u.supply_id == d.supply_id) ||
           (u.usage_date === log.log_date && (u.note || '').includes(log.log_type))
         );
@@ -561,8 +547,6 @@ router.get('/:id(\\d+)/logs', auth, async (req, res) => {
   }
 });
 
-
-
 router.post('/batch', auth, admin, async (req, res) => {
   const client = await pool.connect();
   try {
@@ -587,7 +571,7 @@ router.post('/batch', auth, admin, async (req, res) => {
       const resDb = await client.query(
         `INSERT INTO plants (public_slug, schema_id, plant_type, plant_variety, plant_age, health_status, location, data, is_public, farm_id, latitude, longitude, created_by, tree_code)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
-         ON CONFLICT (public_slug) DO UPDATE 
+         ON CONFLICT (public_slug) DO UPDATE
          SET schema_id = EXCLUDED.schema_id,
              plant_type = EXCLUDED.plant_type,
              plant_variety = EXCLUDED.plant_variety,
@@ -619,29 +603,28 @@ router.post('/batch', auth, admin, async (req, res) => {
   }
 });
 
-// POST /api/plants/batch-range — Import sequential range of trees XX -> XY with identical or matrix-customized attributes
 router.post('/batch-range', auth, async (req, res) => {
   const client = await pool.connect();
   try {
-    const { 
-      items, // Matrix of trees: [{ tree_code, location, latitude, longitude, planting_date, plant_age, health_status, plant_type, plant_variety }]
-      tree_codes, 
-      start_num, 
-      end_num, 
-      prefix, 
+    const {
+      items,
+      tree_codes,
+      start_num,
+      end_num,
+      prefix,
       pad_zeros,
-      plant_type, 
-      plant_variety, 
+      plant_type,
+      plant_variety,
       planting_date,
-      plant_age, 
-      health_status, 
-      location, 
-      data, 
-      is_public, 
-      farm_id, 
-      latitude, 
-      longitude, 
-      schema_id 
+      plant_age,
+      health_status,
+      location,
+      data,
+      is_public,
+      farm_id,
+      latitude,
+      longitude,
+      schema_id
     } = req.body;
 
     if (req.user.role !== 'admin') {
@@ -664,11 +647,9 @@ router.post('/batch-range', auth, async (req, res) => {
       return res.status(400).json({ error: 'Loại cây là bắt buộc.' });
     }
 
-    // Build list of tree objects to insert
     let treesToInsert = [];
 
     if (Array.isArray(items) && items.length > 0) {
-      // Direct Data Matrix mode
       treesToInsert = items.map((it, idx) => {
         const code = String(it.tree_code || it.code || `Tree-${idx + 1}`).trim();
         const pLat = it.latitude !== undefined && it.latitude !== '' && !isNaN(parseFloat(it.latitude)) ? parseFloat(it.latitude) : (latitude !== undefined && latitude !== '' ? parseFloat(latitude) : null);
@@ -760,7 +741,6 @@ router.post('/batch-range', auth, async (req, res) => {
     for (const tree of treesToInsert) {
       const slug = `${farm_id || 0}_${tree.code}`;
 
-      // Extract plot_code and row_number
       let plotCode = tree.plot_code || null;
       let rowNum = tree.row_number !== undefined && tree.row_number !== null ? parseInt(tree.row_number, 10) : null;
       if (!plotCode && tree.location) {
@@ -801,7 +781,7 @@ router.post('/batch-range', auth, async (req, res) => {
       const resDb = await client.query(
         `INSERT INTO plants (public_slug, schema_id, plant_type, plant_variety, planting_date, plant_age, health_status, location, plot_code, row_number, data, is_public, farm_id, latitude, longitude, created_by, tree_code)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
-         ON CONFLICT (public_slug) DO UPDATE 
+         ON CONFLICT (public_slug) DO UPDATE
          SET schema_id = EXCLUDED.schema_id,
              plant_type = EXCLUDED.plant_type,
              plant_variety = EXCLUDED.plant_variety,
@@ -854,7 +834,6 @@ router.post('/batch-range', auth, async (req, res) => {
   }
 });
 
-// GET /api/plants/farms/:farmId/plots - Get plots for a farm
 router.get('/farms/:farmId/plots', auth, async (req, res) => {
   try {
     const farmId = parseInt(req.params.farmId, 10);
@@ -869,12 +848,10 @@ router.get('/farms/:farmId/plots', auth, async (req, res) => {
   }
 });
 
-// ─── Helper: Normalize NFC UID & Two-Way Inventory Sync (SSOT) ──────────────
-
 router.post('/', auth, async (req, res) => {
   try {
     const { schema_id, plant_type, plant_variety, planting_date, plant_age, health_status, location, plot_code, row_number, data, is_public, farm_id, latitude, longitude, tree_code, nfc_uid, initial_yield, past_diseases } = req.body;
-    
+
     if (req.user.role !== 'admin') {
       if (!farm_id) {
         return res.status(400).json({ error: 'Vui lòng chọn trang trại để tạo cây trồng.' });
@@ -939,7 +916,7 @@ router.post('/', auth, async (req, res) => {
     const result = await pool.query(
       `INSERT INTO plants (public_slug, schema_id, plant_type, plant_variety, planting_date, plant_age, health_status, location, plot_code, row_number, data, is_public, farm_id, latitude, longitude, created_by, tree_code, nfc_uid)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
-       ON CONFLICT (public_slug) DO UPDATE 
+       ON CONFLICT (public_slug) DO UPDATE
        SET schema_id = EXCLUDED.schema_id,
            plant_type = EXCLUDED.plant_type,
            plant_variety = EXCLUDED.plant_variety,
@@ -960,7 +937,7 @@ router.post('/', auth, async (req, res) => {
            updated_at = NOW()
        RETURNING *`,
       [slug, schema_id || null, plant_type, plant_variety || '', planting_date || null, plant_age || '', health_status || 'Tốt',
-       location, finalPlotCode, finalRowNum, JSON.stringify(plantData), is_public !== false, farm_id || null, 
+       location, finalPlotCode, finalRowNum, JSON.stringify(plantData), is_public !== false, farm_id || null,
        latitude !== undefined && latitude !== '' ? parseFloat(latitude) : null,
        longitude !== undefined && longitude !== '' ? parseFloat(longitude) : null,
        req.user.id, finalTreeCode, cleanNfcUid]
@@ -982,7 +959,6 @@ router.post('/', auth, async (req, res) => {
       });
     }
 
-    // Ghi nhận Audit Log
     await logAudit({
       actionType: 'CREATE_PLANT',
       tableName: 'plants',
@@ -993,7 +969,6 @@ router.post('/', auth, async (req, res) => {
       notes: `Tạo mới cây #${insertedPlant.tree_code || insertedPlant.id}`
     });
 
-    // Invalidate Cache & Broadcast WebSocket event
     await invalidateAndBroadcast('plants_updated', {
       plant_id: insertedPlant.id,
       farm_id: insertedPlant.farm_id,
@@ -1015,9 +990,7 @@ router.put('/:id', auth, admin, async (req, res) => {
     const oldPlant = existingRes.rows[0];
 
     const { plant_type, plant_variety, planting_date, plant_age, health_status, location, data, is_public, schema_id, farm_id, latitude, longitude, tree_code, nfc_uid } = req.body;
-    
-    // Nếu cây đã có public_slug thì giữ nguyên để tránh xung đột UNIQUE constraint
-    // Chỉ tạo mới slug nếu cây chưa có slug
+
     const finalSlug = oldPlant.public_slug || (tree_code ? `${req.user.id}_${farm_id || 0}_${tree_code}` : generateSlug(plant_type));
     const parsedFarmId = farm_id !== undefined && farm_id !== null && farm_id !== '' ? parseInt(farm_id, 10) : null;
     const parsedSchemaId = schema_id !== undefined && schema_id !== null && schema_id !== '' ? parseInt(schema_id, 10) : null;
@@ -1026,9 +999,9 @@ router.put('/:id', auth, admin, async (req, res) => {
     const finalNfcUid = nfc_uid !== undefined ? formatStandardNfcUid(nfc_uid) : oldPlant.nfc_uid;
 
     const result = await pool.query(
-      `UPDATE plants 
-       SET plant_type=$1, plant_variety=$2, planting_date=$3, plant_age=$4, health_status=$5, location=$6, 
-           data=$7, is_public=$8, schema_id=$9, farm_id=$10, latitude=$11, longitude=$12, tree_code=$13, 
+      `UPDATE plants
+       SET plant_type=$1, plant_variety=$2, planting_date=$3, plant_age=$4, health_status=$5, location=$6,
+           data=$7, is_public=$8, schema_id=$9, farm_id=$10, latitude=$11, longitude=$12, tree_code=$13,
            public_slug=$14, nfc_uid=$15, updated_at=NOW()
        WHERE id=$16 RETURNING *`,
       [plant_type, plant_variety, planting_date || null, plant_age, health_status, location,
@@ -1057,7 +1030,6 @@ router.put('/:id', auth, admin, async (req, res) => {
       });
     }
 
-    // Ghi nhận Audit Log
     try {
       await logAudit({
         actionType: 'UPDATE_PLANT',
@@ -1073,7 +1045,6 @@ router.put('/:id', auth, admin, async (req, res) => {
       console.warn('Audit log warning:', auditErr.message);
     }
 
-    // Invalidate Cache & Broadcast WebSocket event
     try {
       await invalidateAndBroadcast('plants_updated', {
         plant_id: updatedPlant.id,
@@ -1091,7 +1062,6 @@ router.put('/:id', auth, admin, async (req, res) => {
   }
 });
 
-// ─── Direct Plant GPS Update (accessible by farm owner, assigned user or admin) ───
 router.put('/:id/gps', auth, async (req, res) => {
   try {
     const plantId = parseInt(req.params.id);
@@ -1130,7 +1100,7 @@ router.put('/:id/gps', auth, async (req, res) => {
     let updateParams;
     if (location !== undefined) {
       const locVal = (location !== null && location !== '') ? String(location).trim() : null;
-      updateQuery = `UPDATE plants 
+      updateQuery = `UPDATE plants
                      SET latitude = $1, longitude = $2, gps_accuracy = COALESCE($3, gps_accuracy),
                          gps_altitude = COALESCE($4, gps_altitude), gps_captured_at = COALESCE($5::timestamptz, gps_captured_at),
                          gps_srid = $6, location = $7, updated_at = NOW()
@@ -1138,7 +1108,7 @@ router.put('/:id/gps', auth, async (req, res) => {
                      RETURNING id, tree_code, public_slug, nfc_uid, public_url, farm_id, latitude, longitude, gps_accuracy, gps_altitude, gps_captured_at, gps_srid, location`;
       updateParams = [latVal, lngVal, accVal, altVal, capturedAtVal, sridVal, locVal, plantId];
     } else {
-      updateQuery = `UPDATE plants 
+      updateQuery = `UPDATE plants
                      SET latitude = $1, longitude = $2, gps_accuracy = COALESCE($3, gps_accuracy),
                          gps_altitude = COALESCE($4, gps_altitude), gps_captured_at = COALESCE($5::timestamptz, gps_captured_at),
                          gps_srid = $6, updated_at = NOW()
@@ -1149,7 +1119,6 @@ router.put('/:id/gps', auth, async (req, res) => {
 
     const updated = await pool.query(updateQuery, updateParams);
 
-    // Invalidate Cache & Broadcast WebSocket event
     await invalidateAndBroadcast('plants_updated', {
       plant_id: plantId,
       farm_id: updated.rows[0].farm_id || plant.farm_id,
@@ -1176,7 +1145,6 @@ router.put('/:id/gps', auth, async (req, res) => {
   }
 });
 
-// ─── Reorder Tree Codes Automatically by GPS Coordinates ────────────────────
 router.post('/farms/:farmId/reorder-by-gps', auth, async (req, res) => {
   const client = await pool.connect();
   try {
@@ -1185,7 +1153,6 @@ router.post('/farms/:farmId/reorder-by-gps', auth, async (req, res) => {
       return res.status(400).json({ error: 'Mã trang trại không hợp lệ.' });
     }
 
-    // Verify ownership / access
     const farmRes = await client.query('SELECT id, name, user_id FROM farms WHERE id = $1', [farmId]);
     if (farmRes.rows.length === 0) {
       return res.status(404).json({ error: 'Không tìm thấy trang trại.' });
@@ -1198,16 +1165,16 @@ router.post('/farms/:farmId/reorder-by-gps', auth, async (req, res) => {
     }
 
     const {
-      order_mode = 'north_to_south', // 'north_to_south' | 'by_columns' | 'snake' | 'by_rows'
+      order_mode = 'north_to_south',
       prefix = '',
       start_number = 1,
-      pad_digits = 0, // 0 = no pad (1..75), 2 = (01..75), 3 = (001..075)
+      pad_digits = 0,
       dry_run = false
     } = req.body;
 
     const plantsRes = await client.query(
-      `SELECT id, farm_id, tree_code, nfc_uid, public_slug, latitude, longitude, location, plant_type, created_by 
-       FROM plants 
+      `SELECT id, farm_id, tree_code, nfc_uid, public_slug, latitude, longitude, location, plant_type, created_by
+       FROM plants
        WHERE farm_id = $1
        ORDER BY id ASC`,
       [farmId]
@@ -1218,7 +1185,6 @@ router.post('/farms/:farmId/reorder-by-gps', auth, async (req, res) => {
       return res.status(400).json({ error: 'Trang trại này chưa có cây trồng nào.' });
     }
 
-    // Split plants with GPS vs without GPS
     const gpsPlants = allPlants.filter(p => p.latitude != null && p.longitude != null && !isNaN(parseFloat(p.latitude)) && !isNaN(parseFloat(p.longitude)));
     const noGpsPlants = allPlants.filter(p => p.latitude == null || p.longitude == null || isNaN(parseFloat(p.latitude)) || isNaN(parseFloat(p.longitude)));
 
@@ -1226,7 +1192,6 @@ router.post('/farms/:farmId/reorder-by-gps', auth, async (req, res) => {
       return res.status(400).json({ error: 'Chưa có cây nào được định vị GPS để có thể sắp xếp theo không gian địa lý.' });
     }
 
-    // Calculate center & principal orientation angle (PCA)
     const N = gpsPlants.length;
     let meanLat = 0, meanLng = 0;
     gpsPlants.forEach(p => {
@@ -1245,14 +1210,12 @@ router.post('/farms/:farmId/reorder-by-gps', auth, async (req, res) => {
       cxy += dx * dy;
     });
 
-    // Principal angle theta
     let theta = 0.5 * Math.atan2(2 * cxy, cyy - cxx);
 
-    // Project coordinates onto Length axis (u) and Width axis (v)
     gpsPlants.forEach(p => {
       const dy = parseFloat(p.latitude) - meanLat;
       const dx = (parseFloat(p.longitude) - meanLng) * Math.cos(meanLat * Math.PI / 180);
-      
+
       const u = dy * Math.cos(theta) + dx * Math.sin(theta);
       const v = -dy * Math.sin(theta) + dx * Math.cos(theta);
 
@@ -1262,7 +1225,6 @@ router.post('/farms/:farmId/reorder-by-gps', auth, async (req, res) => {
       p._v = v;
     });
 
-    // Determine orientation so u is aligned with North to South (highest = North/Top)
     let latCorr = 0;
     gpsPlants.forEach(p => {
       latCorr += p._u * (p._rawLat - meanLat);
@@ -1271,7 +1233,6 @@ router.post('/farms/:farmId/reorder-by-gps', auth, async (req, res) => {
       gpsPlants.forEach(p => { p._u = -p._u; });
     }
 
-    // Determine orientation so v is aligned with West to East (lowest = West/Left)
     let lngCorr = 0;
     gpsPlants.forEach(p => {
       lngCorr += p._v * (p._rawLng - meanLng);
@@ -1280,7 +1241,6 @@ router.post('/farms/:farmId/reorder-by-gps', auth, async (req, res) => {
       gpsPlants.forEach(p => { p._v = -p._v; });
     }
 
-    // Sort according to order_mode:
     if (order_mode === 'by_columns') {
       const vVals = gpsPlants.map(p => p._v).sort((a,b) => a - b);
       const minV = vVals[0];
@@ -1291,9 +1251,9 @@ router.post('/farms/:farmId/reorder-by-gps', auth, async (req, res) => {
         const colA = a._v;
         const colB = b._v;
         if (Math.abs(colA - colB) > (vRange > 0 ? vRange * 0.25 : 0.00005)) {
-          return colA - colB; // Left column first, then Right column
+          return colA - colB;
         }
-        return b._u - a._u; // North to South within same column
+        return b._u - a._u;
       });
     } else if (order_mode === 'snake') {
       const uVals = gpsPlants.map(p => p._u).sort((a,b) => b - a);
@@ -1322,29 +1282,27 @@ router.post('/farms/:farmId/reorder-by-gps', auth, async (req, res) => {
       const snakeSorted = [];
       rows.forEach((r, idx) => {
         if (idx % 2 === 0) {
-          r.plants.sort((a, b) => a._v - b._v); // Left to Right
+          r.plants.sort((a, b) => a._v - b._v);
         } else {
-          r.plants.sort((a, b) => b._v - a._v); // Right to Left
+          r.plants.sort((a, b) => b._v - a._v);
         }
         snakeSorted.push(...r.plants);
       });
       gpsPlants.length = 0;
       gpsPlants.push(...snakeSorted);
     } else {
-      // Default: 'north_to_south' (Top to Bottom, Left to Right within row pairs)
       const uVals = gpsPlants.map(p => p._u).sort((a,b) => b - a);
       const uRange = (uVals[0] || 0) - (uVals[uVals.length - 1] || 0);
       const rowBand = uRange > 0 ? (uRange / (N > 4 ? Math.max(Math.floor(N / 2.2), 1) : N)) * 0.7 : 0.00003;
 
       gpsPlants.sort((a, b) => {
         if (Math.abs(a._u - b._u) < rowBand) {
-          return a._v - b._v; // Left before Right
+          return a._v - b._v;
         }
-        return b._u - a._u; // North (Top) before South (Bottom)
+        return b._u - a._u;
       });
     }
 
-    // Numbering generator
     const formatNumber = (num) => {
       const s = String(num);
       if (pad_digits > 0) {
@@ -1370,7 +1328,6 @@ router.post('/farms/:farmId/reorder-by-gps', auth, async (req, res) => {
       currentNum++;
     }
 
-    // If dry_run, return preview without modifying DB
     if (dry_run) {
       return res.json({
         success: true,
@@ -1384,14 +1341,13 @@ router.post('/farms/:farmId/reorder-by-gps', auth, async (req, res) => {
       });
     }
 
-    // Execute batch update in transaction
     await client.query('BEGIN');
 
     for (const item of reorderedList) {
       const publicUrl = generatePublicPlantUrl(farmId, item.id, item.nfc_uid);
       await client.query(
-        `UPDATE plants 
-         SET tree_code = $1, public_url = $2, updated_at = NOW() 
+        `UPDATE plants
+         SET tree_code = $1, public_url = $2, updated_at = NOW()
          WHERE id = $3`,
         [item.new_tree_code, publicUrl, item.id]
       );
@@ -1399,7 +1355,6 @@ router.post('/farms/:farmId/reorder-by-gps', auth, async (req, res) => {
 
     await client.query('COMMIT');
 
-    // Broadcast WebSocket event
     const broadcast = req.app.get('broadcast');
     if (broadcast) {
       broadcast('plants_updated', { farm_id: farmId, action: 'reorder_gps', count: reorderedList.length });
@@ -1423,7 +1378,5 @@ router.post('/farms/:farmId/reorder-by-gps', auth, async (req, res) => {
     client.release();
   }
 });
-
-// ─── NFC Tag Assignment (accessible by farm owner or admin) ──────────────────
 
 module.exports = router;

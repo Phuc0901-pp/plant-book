@@ -6,7 +6,6 @@
   <title>{{USER_PORTAL_TITLE}}</title>
   <meta name="description" content="Sổ Nông Tân Bảo Agtech — Hệ thống quản lý nhật ký canh tác nông nghiệp thông minh">
 
-  <!-- PWA & Mobile Web App support -->
   <link rel="manifest" href="/user/manifest.json">
   <meta name="theme-color" content="#16a34a">
   <meta name="mobile-web-app-capable" content="yes">
@@ -18,8 +17,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <script>
-    // 1. window.onerror explicitly suppresses console printing in Chrome when returning true
-    window.onerror = function(message, source, lineno, colno, error) {
+window.onerror = function(message, source, lineno, colno, error) {
       const msg = String(message || '');
       const src = String(source || '');
       const stack = String(error?.stack || '');
@@ -33,12 +31,11 @@
         src.includes('moz-extension://') ||
         src.includes('web-vitals')
       ) {
-        return true; // Suppress from console
+        return true;
       }
       return false;
     };
 
-    // 2. Global error event listener
     window.addEventListener('error', function(event) {
       const msg = String(event.message || '');
       const src = String(event.filename || '');
@@ -59,7 +56,6 @@
       }
     }, true);
 
-    // 3. Unhandled promise rejections
     window.addEventListener('unhandledrejection', function(event) {
       const reason = String(event.reason?.message || event.reason || '');
       const stack = String(event.reason?.stack || '');
@@ -75,13 +71,12 @@
         event.preventDefault();
       }
     });
-  </script>
+</script>
   <link rel="icon" type="image/png" href="/assets/favicon.png">
   <link rel="shortcut icon" type="image/png" href="/assets/favicon.png">
 
   <link rel="apple-touch-icon" href="/assets/favicon.png">
 
-  <!-- Google Fonts: Be Vietnam Pro (Enterprise Vietnamese Standard) & JetBrains Mono (Codes/UID) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://api.mapbox.com">
@@ -91,20 +86,17 @@
   <link rel="dns-prefetch" href="https://events.mapbox.com">
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300;1,400;1,500;1,600;1,700;1,800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 
-  <!-- Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="/assets/js/lucide-auto-hydrator.js?v={{APP_VERSION}}"></script>
   <script src="/assets/js/enterprise-security-guard.js?v={{APP_VERSION}}"></script>
 
-  <!-- Styles -->
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.css" rel="stylesheet">
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.js"></script>
   <link rel="stylesheet" href="/user/css/user-layout.css?v={{APP_VERSION}}">
 <style>
-  /* ════ Universal +4px Icon System Enhancement ════ */
-  .lucide {
+.lucide {
     width: calc(1.15em + 4px) !important;
     height: calc(1.15em + 4px) !important;
     display: inline-block;
@@ -145,7 +137,6 @@
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
   }
-  /* FORCE HIGH-CONTRAST DARK TEXT AND CLEAR BORDERS FOR MODALS ON DARK LOGIN PAGE */
 #register-modal .modal, #forgot-modal .modal, #self-init-farm-modal .modal, #edit-farm-modal .modal {
   background: #ffffff !important;
   color: #0f172a !important;
@@ -244,7 +235,6 @@
   flex-shrink: 0 !important;
 }
 </style>
-
 
 </head>
 

@@ -1,9 +1,3 @@
-/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/* ════════════════════════════════════════════════════════
-   Plant Book Admin — websocket.js
-   Real-time events synchronization via WebSockets
-   ════════════════════════════════════════════════════════ */
-
 let socket = null;
 let reconnectTimer = null;
 let isManualClose = false;
@@ -35,7 +29,6 @@ async function connectWebSocket() {
   }
 
   isConnecting = true;
-  // Pre-flight check: ensure backend is alive before opening WebSocket (prevents cold-start red console errors)
   const isHealthy = await checkServerHealth();
   isConnecting = false;
 
@@ -72,7 +65,6 @@ async function connectWebSocket() {
       socket = null;
       if (!isManualClose && typeof token !== 'undefined' && token) {
         retryCount++;
-        // Exponential backoff: 3s, 6s, 12s, max 30s
         const delay = Math.min(3000 * Math.pow(1.5, retryCount - 1), 30000);
         reconnectTimer = setTimeout(connectWebSocket, delay);
       }
@@ -103,7 +95,6 @@ function closeWebSocket() {
   }
 }
 
-// Clean lifecycle & Back-Forward Cache (bfcache) handlers
 if (typeof window !== 'undefined') {
   window.addEventListener('pagehide', () => {
     if (socket) {
@@ -146,23 +137,19 @@ function handleRealtimeEvent(msg) {
   const { event, data } = msg;
 
   if (event === 'user_status_changed') {
-    // 1. Update in-memory allUsers cache
     const u = allUsers.find(x => x.id === data.id);
     if (u) {
       u.is_online = data.is_online;
       u.last_active_at = data.last_active_at;
     }
-    
-    // 2. Render both user tables
+
     renderUsersTable(allUsers);
     renderUserStatusTable(allUsers);
-    
-    // 3. Highlight/Flash the modified row
+
     flashUserRow(data.id);
   }
 
   if (event === 'new_care_log') {
-    // 1. If currently viewing dashboard, reload activity logs and stats
     const activeSection = document.querySelector('.page-section.active');
     if (activeSection && activeSection.id === 'page-dashboard') {
       loadDashboard();
@@ -171,7 +158,6 @@ function handleRealtimeEvent(msg) {
       }
     }
 
-    // 2. If viewing a plant modal and the tab is "tab-logs", reload it
     const plantModal = document.getElementById('plant-modal');
     const logsTab = document.getElementById('tab-logs');
     if (plantModal && plantModal.style.display === 'flex' && logsTab && logsTab.classList.contains('active') && editingPlantId === data.log.plant_id) {
@@ -191,9 +177,7 @@ function handleRealtimeEvent(msg) {
     if (activeSection && activeSection.id === 'page-plants') {
       loadPlants();
     } else if (activeSection && activeSection.id === 'page-dashboard') {
-      // Nếu sự kiện là cập nhật GPS hoặc vừa kéo thả thì không reload lại toàn bộ dashboard/map
       if (data && (data.action === 'gps_updated' || data.action === 'update')) {
-        // Chỉ cập nhật các con số thống kê metric nếu có, không gọi loadDashboard() làm giật bản đồ
         if (typeof updateDashboardMetricsOnly === 'function') {
           updateDashboardMetricsOnly();
         }
@@ -218,7 +202,6 @@ function handleRealtimeEvent(msg) {
   if (event === 'farms_updated') {
     const activeSection = document.querySelector('.page-section.active');
     if (activeSection && activeSection.id === 'page-gis') {
-      // Reload farms list
       if (typeof loadFarmsList === 'function') loadFarmsList();
     }
   }
@@ -247,12 +230,11 @@ function handleRealtimeEvent(msg) {
 
 }
 
-// Visual flash notification on updated row
 function flashUserRow(userId) {
   const rows = document.querySelectorAll(`tr[data-user-id="${userId}"]`);
   rows.forEach(row => {
     row.style.transition = 'background-color 0.3s ease';
-    row.style.backgroundColor = '#dcfce7'; // green-light flash
+    row.style.backgroundColor = '#dcfce7';
     setTimeout(() => {
       row.style.backgroundColor = '';
     }, 1500);

@@ -1,8 +1,3 @@
-/* ═══════════════════════════════════════════════════════════════
-   Plant Book – Backend Enterprise
-   middleware/securityHeaders.js — OWASP ASVS HTTP Security Headers & CORS Whitelist
-   ═══════════════════════════════════════════════════════════════ */
-
 const DEFAULT_ALLOWED_ORIGINS = [
   'https://dev-plantbook.onrender.com',
   'https://plant-book.onrender.com',
@@ -25,20 +20,16 @@ function getAllowedOrigins() {
 }
 
 function isOriginAllowed(origin) {
-  // Native Mobile App (Flutter/Dart http), curl, and server-to-server calls omit Origin
   if (!origin) return true;
 
-  // Local development & LAN testing (localhost / 127.0.0.1 / 192.168.x.x / 10.x.x.x)
   if (/^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?$/i.test(origin)) {
     return true;
   }
 
-  // All *.onrender.com subdomains (e.g. dev-plantbook.onrender.com, plant-book.onrender.com)
   if (/^https:\/\/[a-z0-9-]+\.onrender\.com$/i.test(origin)) {
     return true;
   }
 
-  // All Tanbao corporate domains & subdomains
   if (/^https:\/\/([a-z0-9-]+\.)?tanbaocorp(-agritech)?\.vn$/i.test(origin)) {
     return true;
   }

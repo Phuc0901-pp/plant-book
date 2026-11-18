@@ -18,11 +18,11 @@ class _SettingsPageState extends State<SettingsPage> {
   final _formKey = GlobalKey<FormState>();
   final _oldPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
-  
+
   bool _isLoading = true;
   bool _isSavingPassword = false;
   bool _notificationsEnabled = true;
-  
+
   Map<String, dynamic>? _userProfile;
 
   @override
@@ -37,7 +37,7 @@ class _SettingsPageState extends State<SettingsPage> {
     });
 
     final info = await _apiService.fetchUserInfo();
-    
+
     setState(() {
       _userProfile = info;
       _isLoading = false;
@@ -129,11 +129,9 @@ class _SettingsPageState extends State<SettingsPage> {
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                // 1. Profile header block
                 _buildProfileHeader(),
                 const SizedBox(height: 24),
 
-                // Profile details block
                 _sectionTitle('Thông tin cá nhân'),
                 Card(
                   elevation: 0,
@@ -152,7 +150,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         const Divider(height: 24, color: AppTheme.grayBorder),
                         _profileDetailRow(Icons.wc_rounded, 'Giới tính', _userProfile?['gender'] ?? '—'),
                         const Divider(height: 24, color: AppTheme.grayBorder),
-                        _profileDetailRow(Icons.location_city_rounded, 'Khu vực', 
+                        _profileDetailRow(Icons.location_city_rounded, 'Khu vực',
                             _userProfile?['city'] != null || _userProfile?['country'] != null
                             ? '${_userProfile?['city'] ?? ''}${_userProfile?['city'] != null && _userProfile?['country'] != null ? ', ' : ''}${_userProfile?['country'] ?? ''}'
                             : '—'),
@@ -161,8 +159,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                
-                // 2. Notification Toggle Settings
+
                 _sectionTitle('Thông báo ứng dụng'),
                 Card(
                   elevation: 0,
@@ -185,7 +182,6 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 const SizedBox(height: 24),
 
-                // 2.5 Offline Mode Hub Card
                 _sectionTitle('Dữ liệu & Ngoại tuyến (Offline Mode)'),
                 Card(
                   elevation: 0,
@@ -215,8 +211,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                
-                // 3. Change Password Block
+
                 _sectionTitle('Bảo mật tài khoản'),
                 Card(
                   elevation: 0,
@@ -281,8 +276,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                
-                // 4. Logout Section
+
                 ElevatedButton.icon(
                   onPressed: _handleLogout,
                   icon: const Icon(Icons.logout_rounded),
@@ -294,7 +288,6 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 const SizedBox(height: 24),
 
-                // 5. Version Info Footer Badge
                 Center(
                   child: Column(
                     children: [
@@ -323,7 +316,6 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
     );
   }
-
 
   Widget _sectionTitle(String title) {
     return Padding(

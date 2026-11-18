@@ -17,7 +17,7 @@ class _AdminGisPageState extends State<AdminGisPage> {
   final ApiService _apiService = ApiService();
   bool _isLoading = true;
   List<Farm> _farms = [];
-  String _selectedLayer = 'polygon'; // 'polygon', 'contour', 'satellite'
+  String _selectedLayer = 'polygon';
 
   @override
   void initState() {
@@ -43,7 +43,6 @@ class _AdminGisPageState extends State<AdminGisPage> {
     for (final f in _farms) {
       totalM2 += (f.area ?? 0);
     }
-    // If area in DB is m2, convert to ha, or if already ha, format nicely
     return totalM2 > 1000 ? totalM2 / 10000 : totalM2;
   }
 
@@ -77,7 +76,6 @@ class _AdminGisPageState extends State<AdminGisPage> {
           ? const LoadingIndicator(message: 'Đang kết nối vệ tinh Mapbox GIS...')
           : Column(
               children: [
-                // Top Enterprise GIS Dashboard Banner
                 Container(
                   width: double.infinity,
                   decoration: const BoxDecoration(
@@ -95,7 +93,6 @@ class _AdminGisPageState extends State<AdminGisPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Header Row with zero overflow
                       Row(
                         children: [
                           Container(
@@ -124,7 +121,6 @@ class _AdminGisPageState extends State<AdminGisPage> {
                       ),
                       const SizedBox(height: 12),
 
-                      // Metric Summary Row
                       Row(
                         children: [
                           _buildMetricPill(
@@ -148,7 +144,6 @@ class _AdminGisPageState extends State<AdminGisPage> {
                       ),
                       const SizedBox(height: 12),
 
-                      // Layer Filter Chips
                       SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: Row(
@@ -165,7 +160,6 @@ class _AdminGisPageState extends State<AdminGisPage> {
                   ),
                 ),
 
-                // Section Title Bar
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   color: const Color(0xFFF1F5F9),
@@ -189,7 +183,6 @@ class _AdminGisPageState extends State<AdminGisPage> {
                   ),
                 ),
 
-                // Farms ERP List
                 Expanded(
                   child: _farms.isEmpty
                       ? Center(
@@ -238,7 +231,6 @@ class _AdminGisPageState extends State<AdminGisPage> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      // Top row: Name & Area Pill
                                       Row(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
@@ -300,11 +292,9 @@ class _AdminGisPageState extends State<AdminGisPage> {
                                       const Divider(height: 1, color: Color(0xFFF1F5F9)),
                                       const SizedBox(height: 10),
 
-                                      // Bottom Info & Quick action pills
                                       Row(
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
-                                          // Status badge
                                           Row(
                                             children: [
                                               Container(
@@ -327,7 +317,6 @@ class _AdminGisPageState extends State<AdminGisPage> {
                                             ],
                                           ),
 
-                                          // Action button
                                           Row(
                                             children: const [
                                               Text(

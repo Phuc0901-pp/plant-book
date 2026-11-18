@@ -1,9 +1,3 @@
-/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
-/* ═══════════════════════════════════════════════════════════════
-   Plant Book – User Portal
-   modules/dashboard.js — Main data loader & state orchestrator
-   ═══════════════════════════════════════════════════════════════ */
-
 import { api, currentUser }          from '../core/api.js';
 import { toast, esc }                from '../core/utils.js';
 import { animateValue }              from './countup.js';
@@ -13,24 +7,13 @@ import { renderUserReminders }       from './reminders.js';
 import { initFloatingActionButton }  from './fab.js';
 import { ensureUserMapboxToken, initUserMap } from './map.js';
 
-/**
- * Cache configs dùng chung toàn portal.
- * Được expose lên window._allConfigsCache cho các module con tránh circular import.
- */
 let _configsCache = {};
 
-/**
- * Palette màu nhận diện cây trồng chuẩn AgTech
- */
 const CROP_COLOR_PALETTE = ['#059669', '#0284c7', '#8b5cf6', '#f59e0b', '#10b981', '#06b6d4', '#f97316', '#ec4899'];
 
-/**
- * Render Khối Hồ Sơ Nông Hộ & Năng Lực Canh Tác VietGAP (Tầng 1)
- */
 export function renderFarmerCockpitCard(user, farms = [], plants = []) {
   if (!user) return;
 
-  // 1. Farmer Name, Email, Phone & Address
   const nameEl = document.getElementById('cockpit-farmer-name');
   if (nameEl) nameEl.textContent = user.full_name || user.name || 'Nông hộ';
 
@@ -75,7 +58,6 @@ export function renderFarmerCockpitCard(user, farms = [], plants = []) {
     }
   }
 
-  // 2. Tier Badge
   const tierBadgeEl = document.getElementById('cockpit-tier-badge');
   if (tierBadgeEl) {
     const isPro = (user.account_tier === 'pro' || !user.account_tier || user.account_tier === 'normal');
@@ -88,7 +70,6 @@ export function renderFarmerCockpitCard(user, farms = [], plants = []) {
          </span>`;
   }
 
-  // 3. Farm Count & Total Area
   const farmCountEl = document.getElementById('cockpit-farm-count');
   if (farmCountEl) farmCountEl.textContent = farms.length || 1;
 
@@ -96,7 +77,7 @@ export function renderFarmerCockpitCard(user, farms = [], plants = []) {
   farms.forEach(f => {
     if (f.area) totalSqM += parseFloat(f.area) || 0;
   });
-  if (totalSqM === 0) totalSqM = 5733.9; // Fallback to LK Farm area
+  if (totalSqM === 0) totalSqM = 5733.9;
   const totalHa = (totalSqM / 10000).toFixed(2);
 
   const totalAreaEl = document.getElementById('cockpit-total-area');
@@ -104,7 +85,6 @@ export function renderFarmerCockpitCard(user, farms = [], plants = []) {
     totalAreaEl.innerHTML = `Diện tích: <span style="font-weight:900; color:#0f172a;">${totalHa} ha</span> (${Number(totalSqM.toFixed(1)).toLocaleString('vi-VN')} m²)`;
   }
 
-  // ── VietGAP & PUC Badges (Cockpit Column 2) ──
   const primaryFarm = farms.length > 0 ? farms[0] : null;
   const vietgapNumberEl = document.getElementById('cockpit-vietgap-number');
   const vietgapBadgeEl = document.getElementById('cockpit-vietgap-badge');
@@ -138,7 +118,6 @@ export function renderFarmerCockpitCard(user, farms = [], plants = []) {
     }
   }
 
-  // ── 3.1. Farm Popover Rendering & Interactive Listeners ──
   const popoverListEl = document.getElementById('cockpit-farm-popover-list');
   const popoverEl = document.getElementById('cockpit-farm-popover');
   const triggerEl = document.getElementById('cockpit-farm-trigger');
@@ -191,7 +170,6 @@ export function renderFarmerCockpitCard(user, farms = [], plants = []) {
     }
   }
 
-  // Toggle popover function
   function toggleFarmPopover(e) {
     if (e) e.stopPropagation();
     if (!popoverEl) return;
@@ -219,7 +197,6 @@ export function renderFarmerCockpitCard(user, farms = [], plants = []) {
     closePopoverBtn._hasListener = true;
   }
 
-  // Auto close popover on outside click
   if (!window._farmPopoverGlobalHandler) {
     window._farmPopoverGlobalHandler = (e) => {
       const p = document.getElementById('cockpit-farm-popover');
@@ -237,7 +214,6 @@ export function renderFarmerCockpitCard(user, farms = [], plants = []) {
     document.addEventListener('click', window._farmPopoverGlobalHandler);
   }
 
-  // ── 4. Crop Breakdown (ERP Multi-segment Progress Bar & Chip Matrix) ──
   const cropGroupMap = new Map();
   plants.forEach(p => {
     const type = p.plant_type || 'Sầu riêng';
@@ -257,7 +233,6 @@ export function renderFarmerCockpitCard(user, farms = [], plants = []) {
   const chipsMatrixEl = document.getElementById('cockpit-crop-chips-matrix');
   const healthStatusText = document.getElementById('cockpit-health-status-text');
 
-  // Health KPI calculation
   let sickCount = 0;
   plants.forEach(p => {
     const s = (p.health_status || '').toLowerCase();
@@ -269,7 +244,6 @@ export function renderFarmerCockpitCard(user, farms = [], plants = []) {
     healthStatusText.textContent = `${healthyPct}% Cây sinh trưởng tốt (${healthyCount}/${totalPlants} cây)`;
   }
 
-  // Render Multi-segment Progress Bar
   if (progressBarEl) {
     if (totalPlants === 0) {
       progressBarEl.innerHTML = '<div class="crop-progress-segment" style="width: 100%; background: #cbd5e1;" title="Chưa có cây trồng"></div>';
@@ -286,7 +260,6 @@ export function renderFarmerCockpitCard(user, farms = [], plants = []) {
     }
   }
 
-  // Render Compact Chip Matrix
   if (chipsMatrixEl) {
     if (totalPlants === 0) {
       chipsMatrixEl.innerHTML = '<span style="font-size:12px; color:#64748b;">🌱 Chưa ghi nhận cây trồng</span>';
@@ -310,10 +283,6 @@ export function renderFarmerCockpitCard(user, farms = [], plants = []) {
   }
 }
 
-/**
- * Render Trung Tâm Giám Sát Cảnh Báo & Rủi Ro Phân Cấp (Tầng 2)
- * Sắp xếp từ NẶNG -> TRUNG BÌNH -> NHẸ
- */
 export function renderPriorityAlertsCenter(plants = [], recentLogs = []) {
   const container = document.getElementById('alerts-list-container');
   const badgeEl = document.getElementById('alerts-count-badge');
@@ -321,7 +290,6 @@ export function renderPriorityAlertsCenter(plants = [], recentLogs = []) {
 
   const alerts = [];
 
-  // 1. Quét Cây bị Sâu Bệnh (MỨC ĐỎ - Khẩn cấp)
   plants.forEach(p => {
     const status = (p.health_status || '').toLowerCase();
     const typeClean = esc(p.plant_type || 'Cây').replace(/([^\s])\(/g, '$1 (');
@@ -350,7 +318,6 @@ export function renderPriorityAlertsCenter(plants = [], recentLogs = []) {
     }
   });
 
-  // 2. Quét Cây Cần Chú Ý (MỨC VÀNG)
   plants.forEach(p => {
     const status = (p.health_status || '').toLowerCase();
     const typeClean = esc(p.plant_type || 'Cây').replace(/([^\s])\(/g, '$1 (');
@@ -379,7 +346,6 @@ export function renderPriorityAlertsCenter(plants = [], recentLogs = []) {
     }
   });
 
-  // 3. Lịch Nhắc Việc Canh Tác Mùa Vụ (MỨC XANH - Nhẹ / Nhắc nhở)
   alerts.push({
     severity: 'INFO',
     level: 5,
@@ -399,7 +365,6 @@ export function renderPriorityAlertsCenter(plants = [], recentLogs = []) {
     plantType: plants.length > 0 ? plants[0].plant_type : 'Sầu riêng'
   });
 
-  // Sắp xếp theo level (1 -> 5)
   alerts.sort((a, b) => a.level - b.level);
 
   if (badgeEl) {
@@ -453,7 +418,6 @@ export function renderPriorityAlertsCenter(plants = [], recentLogs = []) {
   }
 }
 
-// ── 15-Minute Smooth Auto-Refresh ────────────────────────────
 let _autoRefreshInterval = null;
 
 export function initAutoRefreshTimer() {
@@ -464,18 +428,13 @@ export function initAutoRefreshTimer() {
     const isCareOpen = careModal && careModal.style.display !== 'none' && getComputedStyle(careModal).display !== 'none';
     const isEditing = Boolean(window._activeEditLogId);
 
-    // Only refresh if tab is visible and user is not currently in an open modal
     if (isDocVisible && !isCareOpen && !isEditing) {
       console.log('🔄 [Dashboard] Tự động tải lại dữ liệu ngầm (15 phút/lần) mượt mà...');
-      loadUserDashboard(true /* isSilent */);
+      loadUserDashboard(true );
     }
-  }, 15 * 60 * 1000); // 15 minutes = 900,000ms
+  }, 15 * 60 * 1000);
 }
 
-/**
- * Tải toàn bộ dữ liệu cần thiết cho cổng nông hộ và dispatch sang các module render.
- * @param {boolean} isSilent — true: tải ngầm mượt mà không nháy giao diện
- */
 export async function loadUserDashboard(isSilent = false) {
   try {
     const [farms, plants, recentLogs, configs, profile] = await Promise.all([
@@ -497,23 +456,20 @@ export async function loadUserDashboard(isSilent = false) {
       localStorage.setItem('user', JSON.stringify(activeUser));
     }
 
-    // Tải lịch sử 30 ngày (không chặn nếu lỗi)
     const allLogs = await api('/plants/logs/recent?days=30').catch(err => {
       console.warn('Lỗi tải lịch sử 30 ngày:', err);
       return [];
     });
 
-    // ── Cập nhật cache toàn cục ──────────────────────────────
     _configsCache = configs;
-    window._allConfigsCache = configs;   // dùng cho care-modal & reminders
-    window._allPlantsCache  = plants;    // dùng cho care-modal
+    window._allConfigsCache = configs;
+    window._allPlantsCache  = plants;
 
     setPlantsCache(plants);
     setFarmsCache(farms);
     setLogsCache(allLogs);
     populateLogFarmFilter(farms);
 
-    // ── Cập nhật UI Trang chủ ────────────────────────────────
     const nameEl = document.getElementById('welcome-name');
     if (nameEl && (activeUser.full_name || activeUser.name)) {
       nameEl.textContent = activeUser.full_name || activeUser.name;
@@ -530,27 +486,22 @@ export async function loadUserDashboard(isSilent = false) {
       else animateValue(countFullEl, 0, plants.length, 1000);
     }
 
-    // ── Render Tầng 1: Thẻ Hồ Sơ Nông Hộ & Cơ Cấu Trang Trại ──
     renderFarmerCockpitCard(activeUser, farms, plants);
 
-    // ── Render Tầng 1.5: Bảng Điều Khiển Tài Chính Doanh Nghiệp (BI) & Dự Báo Mùa Vụ ──
     if (typeof window.loadExecutiveBiAnalytics === 'function') {
       window.loadExecutiveBiAnalytics();
     }
 
-    // ── Render Tầng 2: Trung Tâm Cảnh Báo Phân Cấp (Đỏ -> Vàng -> Xanh) ──
     renderPriorityAlertsCenter(plants, recentLogs);
 
-    // ── Render Tầng 3: Bảng Cây & Nhật Ký Hoạt Động ────────────
     renderUserFarmsList(farms);
-    renderUserPlantsSummaryTable(plants);    // Trang chủ: tóm tắt 3 cây
-    renderUserPlantsTable(plants);           // Trang trại: đầy đủ
-    renderUserLogsTable(recentLogs);         // Trang chủ: tóm tắt 3 nhật ký
-    renderUserLogsTableFull(allLogs);        // Lịch sử: đầy đủ 30 ngày
+    renderUserPlantsSummaryTable(plants);
+    renderUserPlantsTable(plants);
+    renderUserLogsTable(recentLogs);
+    renderUserLogsTableFull(allLogs);
     renderUserReminders(plants);
     initFloatingActionButton();
 
-    // ── Bản đồ GIS ───────────────────────────────────────────
     if (!isSilent) {
       await ensureUserMapboxToken();
       initUserMap(farms, plants);
@@ -560,7 +511,6 @@ export async function loadUserDashboard(isSilent = false) {
       window.lucide.createIcons();
     }
 
-    // ── Khởi động hẹn giờ 15 phút tải lại ngầm ────────────────
     initAutoRefreshTimer();
 
   } catch (err) {

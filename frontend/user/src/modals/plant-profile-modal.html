@@ -1,6 +1,4 @@
-<!-- ════════════════ MODAL HỒ SƠ CÂY TRỒNG NỘI BỘ ERP (ENTERPRISE PLANT PROFILE) ════════════════ -->
 <style>
-/* ── Enterprise Fixed-Chrome 5-Tier Modal Architecture (Zero Flex Compression) ── */
 #internal-plant-profile-modal {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -169,7 +167,6 @@
     justify-content: flex-end !important;
   }
 
-  /* Transform into a luxury native mobile sheet / full-screen app */
   #internal-plant-profile-modal .modal.erp-plant-modal {
     width: 100% !important;
     max-width: 100% !important;
@@ -178,7 +175,7 @@
     max-height: 96dvh !important;
     border-radius: 24px 24px 0 0 !important;
     margin: 0 !important;
-    padding: 0 !important; /* Overrides generic .modal mobile 18px padding */
+    padding: 0 !important;
     border: none !important;
     box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.3) !important;
     display: flex !important;
@@ -186,7 +183,6 @@
     overflow: hidden !important;
   }
 
-  /* Sleek drag pill handle on top of mobile sheet */
   .erp-mobile-sheet-handle {
     display: block !important;
     width: 42px;
@@ -196,7 +192,6 @@
     margin: 8px auto 4px auto;
   }
 
-  /* Mobile Header */
   .erp-plant-modal-header {
     padding: 10px 14px 12px 14px !important;
     flex-shrink: 0 !important;
@@ -209,7 +204,6 @@
     height: 40px !important;
   }
 
-  /* 2x2 Metric Grid with zero horizontal overflow */
   .erp-metrics-bar {
     grid-template-columns: 1fr 1fr !important;
     gap: 8px !important;
@@ -230,7 +224,6 @@
     font-size: 12px !important;
   }
 
-  /* Mobile Navigation Subtabs: edge-to-edge touch scroll */
   .erp-subtabs-nav {
     padding: 0 8px !important;
     gap: 4px !important;
@@ -249,7 +242,6 @@
     flex-shrink: 0 !important;
   }
 
-  /* Modal Body: Single smooth vertical scroll container with safe-area padding */
   .erp-plant-modal-body {
     padding: 12px 12px calc(24px + env(safe-area-inset-bottom, 12px)) 12px !important;
     overflow-y: auto !important;
@@ -259,13 +251,11 @@
     -webkit-overflow-scrolling: touch !important;
   }
 
-  /* Agronomic layout: single column on mobile */
   .erp-overview-grid {
     grid-template-columns: 1fr !important;
     gap: 12px !important;
   }
 
-  /* Financial cards: stacked neatly on mobile */
   .erp-cost-kpi-grid {
     grid-template-columns: 1fr !important;
     gap: 10px !important;
@@ -275,8 +265,7 @@
 
 <div class="modal-overlay" id="internal-plant-profile-modal" style="display:none;" onclick="if(event.target===this)closePlantProfileModal()">
   <div class="modal erp-plant-modal">
-    
-    <!-- ── Header ── -->
+
     <div class="erp-plant-modal-header" style="background: linear-gradient(135deg, #064e3b 0%, #047857 100%); color: #ffffff; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.15);">
       <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1;">
         <div style="width: 46px; height: 46px; border-radius: 12px; background: rgba(255,255,255,0.18); border: 1.5px solid rgba(255,255,255,0.4); display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
@@ -307,10 +296,8 @@
       </div>
     </div>
 
-    <!-- ── Quick Metrics Executive Bar ── -->
     <div class="erp-metrics-bar">
-      
-      <!-- Metric 1: Tuổi cây -->
+
       <div class="erp-metric-item" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
         <div class="metric-icon-box" style="width: 34px; height: 34px; border-radius: 10px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;">
           <i data-lucide="calendar" class="lucide-sm"></i>
@@ -321,7 +308,6 @@
         </div>
       </div>
 
-      <!-- Metric 2: Lô & Hàng vị trí -->
       <div class="erp-metric-item" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
         <div class="metric-icon-box" style="width: 34px; height: 34px; border-radius: 10px; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;">
           <i data-lucide="map-pin" class="lucide-sm"></i>
@@ -332,7 +318,6 @@
         </div>
       </div>
 
-      <!-- Metric 3: Năng suất ban đầu -->
       <div class="erp-metric-item" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
         <div class="metric-icon-box" style="width: 34px; height: 34px; border-radius: 10px; background: #fefce8; color: #ca8a04; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;">
           <i data-lucide="trending-up" class="lucide-sm"></i>
@@ -343,7 +328,6 @@
         </div>
       </div>
 
-      <!-- Metric 4: Định danh Thẻ NFC -->
       <div class="erp-metric-item" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
         <div class="metric-icon-box" style="width: 34px; height: 34px; border-radius: 10px; background: #fdf2f8; color: #db2777; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;">
           <i data-lucide="tag" class="lucide-sm"></i>
@@ -356,7 +340,6 @@
 
     </div>
 
-    <!-- ── ERP Navigation Subtabs ── -->
     <div class="erp-subtabs-nav">
       <button type="button" class="erp-profile-tab-btn active" id="tab-btn-erp-overview" onclick="switchErpProfileTab('overview')" style="font-size: 13px; font-weight: 800; color: #059669; border: none; background: transparent; border-bottom: 3px solid #059669; cursor: pointer;">
         <i data-lucide="layout-dashboard" class="lucide-sm"></i> <span>1. Thông Số Nông Học & GPS</span>
@@ -369,13 +352,10 @@
       </button>
     </div>
 
-    <!-- ── Tab Contents ── -->
     <div class="modal-body erp-plant-modal-body">
-      
-      <!-- ════ TAB 1: THÔNG SỐ NÔNG HỌC & GPS ════ -->
+
       <div id="erp-tab-pane-overview" style="display: block;">
 
-        <!-- Crop Variety & Identity Card with Image from Assets -->
         <div style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border: 1.5px solid #a7f3d0; border-radius: 14px; padding: 12px 16px; margin-bottom: 14px; display: flex; align-items: center; gap: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
           <div style="width: 68px; height: 68px; border-radius: 12px; overflow: hidden; border: 2px solid #059669; flex-shrink: 0; background: #ffffff; box-shadow: 0 4px 10px rgba(5,150,105,0.15); display: flex; align-items: center; justify-content: center;">
             <img id="erp-plant-crop-tab-img" src="/assets/crop/durian.png" alt="Hình ảnh giống cây" style="width: 100%; height: 100%; object-fit: cover; cursor: pointer;" onclick="if(this.src && window.openLightbox) openLightbox(this.src, 'image')" onerror="this.onerror=null; this.src='/assets/crop/durian.png';">
@@ -395,7 +375,6 @@
           </div>
         </div>
 
-        <!-- ════ KHỐI ALBUM & DÒNG THỜI GIAN ẢNH SINH TRƯỞNG (GROWTH PHOTO TIMELINE) ════ -->
         <div style="background: #ffffff; border: 1.5px solid #a7f3d0; border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(5,150,105,0.05);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
             <div>
@@ -414,15 +393,12 @@
             </div>
           </div>
 
-          <!-- Growth Stage Photo Carousel / Grid -->
           <div id="erp-plant-growth-gallery-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 10px; max-height: 250px; overflow-y: auto; padding: 2px;">
-            <!-- Populated dynamically via JS -->
           </div>
         </div>
 
         <div class="erp-overview-grid" style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px;">
-          
-          <!-- Column Left: Detailed Agronomic Attributes -->
+
           <div style="display: flex; flex-direction: column; gap: 12px;">
             <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px 16px;">
               <h4 style="margin: 0 0 12px 0; font-size: 13.5px; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 6px;">
@@ -457,7 +433,6 @@
               </div>
             </div>
 
-            <!-- Past Diseases Chips Card -->
             <div style="background: #fffbeb; border: 1px solid #fef3c7; border-radius: 14px; padding: 14px 16px;">
               <h4 style="margin: 0 0 8px 0; font-size: 13px; font-weight: 800; color: #92400e; display: flex; align-items: center; gap: 6px;">
                 <i data-lucide="shield-alert" class="lucide-sm" style="color: #d97706;"></i> Tiền Sử Dịch Bệnh & Vấn Đề Sức Khỏe Trước Đây
@@ -468,9 +443,7 @@
             </div>
           </div>
 
-          <!-- Column Right: GPS Location & NFC Card -->
           <div style="display: flex; flex-direction: column; gap: 12px;">
-            <!-- GPS Card -->
             <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px 16px;">
               <h4 style="margin: 0 0 10px 0; font-size: 13.5px; font-weight: 800; color: #1e293b; display: flex; align-items: center; justify-content: space-between;">
                 <span style="display: flex; align-items: center; gap: 6px;">
@@ -491,7 +464,6 @@
               </div>
             </div>
 
-            <!-- NFC Quick Action Box -->
             <div style="background: #fdf2f8; border: 1px solid #fce7f3; border-radius: 14px; padding: 14px 16px;">
               <h4 style="margin: 0 0 8px 0; font-size: 13px; font-weight: 800; color: #9d174d; display: flex; align-items: center; justify-content: space-between;">
                 <span style="display: flex; align-items: center; gap: 6px;">
@@ -510,7 +482,6 @@
         </div>
       </div>
 
-      <!-- ════ TAB 2: LỊCH SỬ CANH TÁC & VIETGAP LOGBOOK ════ -->
       <div id="erp-tab-pane-logs" style="display: none;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
           <div>
@@ -519,13 +490,12 @@
             </h4>
             <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Truy xuất hồ sơ VietGAP thời gian thực từ cơ sở dữ liệu</div>
           </div>
-          
+
           <button type="button" class="btn btn-primary btn-sm" onclick="onErpProfileCareClick()" style="background: linear-gradient(135deg, #10b981, #059669); border: none; font-weight: 800; font-size: 12px; border-radius: 8px; padding: 7px 14px; display: inline-flex; align-items: center; gap: 6px; color: #ffffff;">
             <i data-lucide="plus" class="lucide-sm"></i> <span>Thêm nhật ký mới</span>
           </button>
         </div>
 
-        <!-- Bộ lọc nhật ký canh tác nội bộ (Hạng mục · Ngày · Vật tư · Từ khóa) -->
         <div id="erp-modal-logs-filter-bar" class="erp-modal-logs-filter-bar">
           <div class="erp-filter-field">
             <label for="erp-log-filter-type">Hạng mục canh tác</label>
@@ -573,13 +543,10 @@
         </div>
       </div>
 
-      <!-- ════ TAB 3: HẠCH TOÁN TÀI CHÍNH, CHI PHÍ & THU HOẠCH ════ -->
       <div id="erp-tab-pane-cost" style="display: none;">
-        
-        <!-- Nhóm 1: Tổng Quan Tài Chính & Hiệu Quả Thu Hoạch -->
+
         <div class="erp-cost-kpi-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px;">
-          
-          <!-- Doanh thu thu hoạch -->
+
           <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 1.5px solid #86efac; border-radius: 14px; padding: 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
             <div style="font-size: 11px; font-weight: 800; color: #166534; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: center; gap: 4px;">
               <i data-lucide="banknote" class="lucide-xs"></i> Tổng Doanh Thu Thu Hoạch
@@ -590,7 +557,6 @@
             </div>
           </div>
 
-          <!-- Lợi nhuận ròng (Doanh thu - Chi phí) -->
           <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1.5px solid #93c5fd; border-radius: 14px; padding: 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
             <div style="font-size: 11px; font-weight: 800; color: #1e40af; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: center; gap: 4px;">
               <i data-lucide="trending-up" class="lucide-xs"></i> Lợi Nhuận Ròng (Lãi/Lỗ)
@@ -603,7 +569,6 @@
             </div>
           </div>
 
-          <!-- Tổng chi phí đầu tư & chăm sóc -->
           <div style="background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border: 1.5px solid #fca5a5; border-radius: 14px; padding: 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
             <div style="font-size: 11px; font-weight: 800; color: #991b1b; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: center; gap: 4px;">
               <i data-lucide="calculator" class="lucide-xs"></i> Tổng Chi Phí Chăm Sóc
@@ -616,9 +581,8 @@
 
         </div>
 
-        <!-- Nhóm 2: Bóc Tách Chi Phí Vật Tư Từng Loại -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 16px;">
-          
+
           <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 12px; text-align: center;">
             <div style="font-size: 10.5px; font-weight: 800; color: #475569; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 4px;">
               <i data-lucide="sprout" class="lucide-xs" style="color: #16a34a;"></i> Phân Bón
@@ -642,7 +606,6 @@
 
         </div>
 
-        <!-- Nhóm 3: Bảng Lịch Sử Thu Hoạch Của Riêng Cây Này -->
         <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 6px;">
             <h4 style="margin: 0; font-size: 13px; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 6px;">
@@ -657,7 +620,6 @@
           </div>
         </div>
 
-        <!-- Nhóm 4: Bảng Bóc Tách Vật Tư Đã Dùng Cho Cây -->
         <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
           <h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 6px;">
             <i data-lucide="receipt" class="lucide-sm" style="color: #059669;"></i> Chi tiết bóc tách vật tư đã dùng cho cây
@@ -670,7 +632,6 @@
 
     </div>
 
-    <!-- ── Footer Actions ── -->
     <div class="erp-plant-modal-footer" style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
       <div style="font-size: 12px; color: #64748b; font-weight: 600;">
         <i data-lucide="shield-check" class="lucide-xs" style="color: #059669;"></i> Hồ sơ nông hộ ERP nội bộ · Bảo toàn GPS 100%
@@ -686,10 +647,9 @@
   </div>
 </div>
 
-<!-- ════════════════ MODAL TẢI LÊN ẢNH SINH TRƯỞNG HIỆN TRƯỜNG (APPEND-ONLY) ════════════════ -->
 <div class="modal-overlay" id="erp-upload-growth-photo-modal" style="display:none; z-index:20005;" onclick="if(event.target===this)closeErpUploadGrowthPhotoModal()">
   <div class="modal" style="max-width: 480px; width: 92%; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.3); border: 1px solid #cbd5e1; animation: modalFadeIn 0.2s ease;">
-    
+
     <div style="background: linear-gradient(135deg, #064e3b 0%, #047857 100%); color: #ffffff; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center;">
       <div style="display: flex; align-items: center; gap: 8px;">
         <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center;">
@@ -705,14 +665,13 @@
     </div>
 
     <div style="padding: 16px 18px; background: #f8fafc;">
-      
-      <!-- Photo Dropzone / Picker -->
+
       <div style="margin-bottom: 14px;">
         <label style="font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 6px; display: block;">
           Hình ảnh thực địa *
         </label>
         <input type="file" id="erp-growth-modal-file" accept="image/*" style="display: none;" onchange="onErpGrowthModalFileChange(this)">
-        
+
         <div id="erp-growth-modal-dropzone" onclick="document.getElementById('erp-growth-modal-file').click()" style="border: 2px dashed #a7f3d0; background: #ffffff; border-radius: 12px; padding: 16px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative;">
           <div id="erp-growth-modal-preview-wrap" style="display: none;">
             <img id="erp-growth-modal-img-preview" src="" alt="Preview" style="max-height: 160px; max-width: 100%; border-radius: 8px; object-fit: contain; margin: 0 auto; display: block; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
@@ -730,7 +689,6 @@
         </div>
       </div>
 
-      <!-- Growth Stage Selector -->
       <div style="margin-bottom: 14px;">
         <label style="font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 5px; display: flex; align-items: center; gap: 5px;">
           <i data-lucide="sprout" class="lucide-xs" style="color: #059669;"></i> Giai đoạn sinh trưởng *
@@ -746,7 +704,6 @@
         </select>
       </div>
 
-      <!-- Caption / Field Note -->
       <div style="margin-bottom: 6px;">
         <label style="font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 5px; display: block;">
           Ghi chú hiện trường (Tùy chọn)
@@ -756,7 +713,6 @@
 
     </div>
 
-    <!-- Footer Actions -->
     <div style="padding: 12px 18px; background: #ffffff; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 8px; align-items: center;">
       <button type="button" class="btn btn-secondary" onclick="closeErpUploadGrowthPhotoModal()" style="font-weight: 700; font-size: 12.5px; padding: 7px 14px; border-radius: 8px;">
         Hủy
@@ -768,4 +724,3 @@
 
   </div>
 </div>
-
