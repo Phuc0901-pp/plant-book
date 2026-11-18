@@ -1,11 +1,43 @@
 const LEGACY_LABOR_ALIASES = ['Nhân công', 'Cắt lá', 'Cắt tỉa', 'Cắt cành', 'Tỉa cành/lá', 'Tỉa hoa', 'Tỉa quả', 'Tỉa quả/hoa', 'Thụ phấn', 'Làm cỏ'];
 
 function matchesExportCategory(checkedCats, logType) {
-  if (!checkedCats || checkedCats.length === 0) return true;
+  if (!checkedCats) return true;
+  if (checkedCats.length === 0) return false;
   if (checkedCats.includes(logType)) return true;
   if (checkedCats.includes('Nhân công') && LEGACY_LABOR_ALIASES.includes(logType)) return true;
   return false;
 }
+
+function updateExportModalMatchSummary() {
+  const summaryEl = document.getElementById('export-modal-match-summary');
+  if (!summaryEl || !currentPlantData) return 0;
+  const fromDate = document.getElementById('export-from-date')?.value || '';
+  const toDate = document.getElementById('export-to-date')?.value || '';
+  const checkedCats = [];
+  document.querySelectorAll('#export-categories-container input[name="export-cat"]:checked').forEach(cb => {
+    checkedCats.push(cb.value);
+  });
+  if (checkedCats.length === 0) {
+    summaryEl.textContent = 'Vui lòng chọn ít nhất 1 hạng mục canh tác để xuất báo cáo.';
+    summaryEl.style.background = '#fef2f2';
+    summaryEl.style.borderColor = '#fecaca';
+    summaryEl.style.color = '#991b1b';
+    return 0;
+  }
+  const logs = currentPlantData.logs || [];
+  const count = logs.filter(log => {
+    const rawDate = log.log_date || log.created_at;
+    const logDateStr = rawDate ? new Date(rawDate).toISOString().split('T')[0] : '';
+    const inDate = (!fromDate || !logDateStr || logDateStr >= fromDate) && (!toDate || !logDateStr || logDateStr <= toDate);
+    return inDate && matchesExportCategory(checkedCats, log.log_type);
+  }).length;
+  summaryEl.style.background = '#ecfdf5';
+  summaryEl.style.borderColor = '#a7f3d0';
+  summaryEl.style.color = '#065f46';
+  summaryEl.textContent = `Đã chọn ${checkedCats.length} hạng mục · Sẵn sàng xuất ${count} nhật ký đạt chuẩn VietGAP / GlobalG.A.P.`;
+  return count;
+}
+window.updateExportModalMatchSummary = updateExportModalMatchSummary;
 
 function openExportModal() {
   if (!currentPlantData) {
@@ -19,18 +51,23 @@ function openExportModal() {
   const today = new Date().toISOString().split('T')[0];
   toDateInput.value = today;
 
-  if (currentPlantData.created_at) {
-    const createdDate = new Date(currentPlantData.created_at).toISOString().split('T')[0];
-    fromDateInput.value = createdDate;
+  const logs = currentPlantData.logs || [];
+  const logDates = logs
+    .map(l => (l.log_date || l.created_at) ? new Date(l.log_date || l.created_at).toISOString().split('T')[0] : '')
+    .filter(Boolean)
+    .sort();
+
+  if (logDates.length > 0) {
+    fromDateInput.value = logDates[0];
+  } else if (currentPlantData.created_at) {
+    fromDateInput.value = new Date(currentPlantData.created_at).toISOString().split('T')[0];
   } else {
     const oneYearAgo = new Date();
     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
     fromDateInput.value = oneYearAgo.toISOString().split('T')[0];
   }
 
-  const categories = ["Tưới nước", "Bón phân", "Phun thuốc", "Nhân công", "Kiểm toán quả", "Bệnh cây", "Thu hoạch"];
-
-  const logs = currentPlantData.logs || [];
+  const categories = ["Kiểm toán quả", "Phun thuốc", "Bón phân", "Tưới nước", "Nhân công", "Bệnh cây", "Thu hoạch"];
   logs.forEach(l => {
     if (l.log_type && !categories.includes(l.log_type) && !LEGACY_LABOR_ALIASES.includes(l.log_type)) {
       categories.push(l.log_type);
@@ -40,16 +77,24 @@ function openExportModal() {
   const container = document.getElementById('export-categories-container');
   container.innerHTML = categories.map(cat => {
     const label = cat === 'Nhân công' ? 'Thuê nhân công' : cat;
+    const cnt = logs.filter(l => cat === 'Nhân công' ? (l.log_type === 'Nhân công' || LEGACY_LABOR_ALIASES.includes(l.log_type)) : l.log_type === cat).length;
     return `
-      <label class="export-category-item">
-        <input type="checkbox" name="export-cat" value="${esc(cat)}" checked>
-        <span>${esc(label)}</span>
+      <label class="export-category-item" style="justify-content:space-between;">
+        <span style="display:inline-flex; align-items:center; gap:7px;">
+          <input type="checkbox" name="export-cat" value="${esc(cat)}" checked onchange="updateExportModalMatchSummary()">
+          <span>${esc(label)}</span>
+        </span>
+        <span style="font-size:11px; font-weight:800; color:#047857; background:#ecfdf5; border:1px solid #a7f3d0; padding:1px 6px; border-radius:999px;">${cnt}</span>
       </label>
     `;
   }).join('');
 
+  updateExportModalMatchSummary();
   document.getElementById('export-modal').classList.add('active');
   document.body.style.overflow = 'hidden';
+  if (window.PlantBookI18n && typeof window.PlantBookI18n.applyDomTranslations === 'function') {
+    window.PlantBookI18n.applyDomTranslations();
+  }
 }
 
 function closeExportModal() {
@@ -60,11 +105,25 @@ function closeExportModal() {
 function toggleAllExportCategories(select) {
   const checkboxes = document.querySelectorAll('#export-categories-container input[type="checkbox"]');
   checkboxes.forEach(cb => cb.checked = select);
+  updateExportModalMatchSummary();
 }
+
+function selectExportCategoriesPreset(preset) {
+  const checkboxes = document.querySelectorAll('#export-categories-container input[type="checkbox"]');
+  checkboxes.forEach(cb => {
+    if (preset === 'all') cb.checked = true;
+    else if (preset === 'none') cb.checked = false;
+    else if (preset === 'fruit_audit') cb.checked = (cb.value === 'Kiểm toán quả' || cb.value === 'Thu hoạch');
+    else if (preset === 'phi_safety') cb.checked = (cb.value === 'Phun thuốc' || cb.value === 'Bón phân' || cb.value === 'Bệnh cây');
+  });
+  updateExportModalMatchSummary();
+}
+window.selectExportCategoriesPreset = selectExportCategoriesPreset;
 
 function generateExportReport() {
   const fromDate = document.getElementById('export-from-date')?.value || '';
   const toDate = document.getElementById('export-to-date')?.value || '';
+  const standard = document.getElementById('export-standard-select')?.value || 'vietgap_globalgap_iso';
 
   const checkedCats = [];
   document.querySelectorAll('#export-categories-container input[name="export-cat"]:checked').forEach(cb => {
@@ -82,7 +141,7 @@ function generateExportReport() {
     return;
   }
 
-  const reportUrl = `/plant/${encodeURIComponent(targetId)}/report?from=${fromDate}&to=${toDate}&categories=${encodeURIComponent(checkedCats.join(','))}`;
+  const reportUrl = `/plant/${encodeURIComponent(targetId)}/report?from=${fromDate}&to=${toDate}&categories=${encodeURIComponent(checkedCats.join(','))}&standard=${encodeURIComponent(standard)}`;
   window.open(reportUrl, '_blank');
   closeExportModal();
 }
@@ -95,6 +154,7 @@ function exportPublicLogsCsv() {
 
   const fromDate = document.getElementById('export-from-date')?.value || '';
   const toDate = document.getElementById('export-to-date')?.value || '';
+  const standard = document.getElementById('export-standard-select')?.value || 'vietgap_globalgap_iso';
 
   const checkedCats = [];
   document.querySelectorAll('#export-categories-container input[name="export-cat"]:checked').forEach(cb => {
@@ -106,33 +166,48 @@ function exportPublicLogsCsv() {
     return;
   }
 
-  const logs = currentPlantData.logs || [];
+  let logs = (currentPlantData.logs || []).slice();
+  if (typeof enrichPublicPlantLogsWithAuditChain === 'function') {
+    logs = enrichPublicPlantLogsWithAuditChain(logs);
+  }
   const filteredLogs = logs.filter(log => {
-    const logDateStr = new Date(log.log_date).toISOString().split('T')[0];
-    const isWithinDate = (!fromDate || logDateStr >= fromDate) && (!toDate || logDateStr <= toDate);
+    const rawDt = log.log_date || log.created_at;
+    const logDateStr = rawDt ? new Date(rawDt).toISOString().split('T')[0] : '';
+    const isWithinDate = (!fromDate || !logDateStr || logDateStr >= fromDate) && (!toDate || !logDateStr || logDateStr <= toDate);
     const isMatchedCat = matchesExportCategory(checkedCats, log.log_type);
     return isWithinDate && isMatchedCat;
   });
-  filteredLogs.sort((a, b) => new Date(a.log_date) - new Date(b.log_date));
+  filteredLogs.sort((a, b) => new Date(a.log_date || a.created_at) - new Date(b.log_date || b.created_at));
 
   if (filteredLogs.length === 0) {
     alert("Không có nhật ký canh tác nào khớp với khoảng thời gian và hạng mục đã chọn.");
     return;
   }
 
+  const tr = (text) => {
+    if (window.PlantBookI18n && typeof window.PlantBookI18n.translateDynamicTerm === 'function') {
+      const lang = window.PlantBookI18n.getLanguage ? window.PlantBookI18n.getLanguage() : 'vi';
+      if (lang && lang !== 'vi') return window.PlantBookI18n.translateDynamicTerm(String(text), lang);
+    }
+    return String(text);
+  };
+
   const headers = [
     "STT",
+    "Tiêu Chuẩn Hồ Sơ",
     "Mã Cây",
-    "Tên Cây",
+    "Loại Cây",
     "Giống Cây",
+    "Mã Vùng Trồng (PUC)",
     "Trang Trại",
     "Ngày Thực Hiện",
-    "Hoạt Động Canh Tác",
-    "Chi Tiết Hoạt Động / Vật Tư",
+    "Hạng Mục Canh Tác",
+    "Chi Tiết Hoạt Động / Vật Tư / Kiểm Toán",
+    "Thiết Bị & Mã Lô",
     "Người Thực Hiện",
     "Ghi Chú",
     "Hình Ảnh / Video"
-  ];
+  ].map(tr);
 
   function escapeCsvCell(val) {
     if (val === null || val === undefined) return '""';
@@ -146,42 +221,48 @@ function exportPublicLogsCsv() {
   filteredLogs.forEach((log, index) => {
     let detailsText = '';
     const d = log.details || {};
+    const qty = d.quantity ?? d.amount ?? d.qty ?? d.dosage ?? d.volume ?? '';
     if (log.log_type === 'Tưới nước') {
-      detailsText = `Cách: ${d.method || '—'}, Lượng: ${d.amount || '—'} ${d.unit || ''}`;
+      const wQty = d.water_liters ? `${d.water_liters} Lít` : (qty ? `${qty} ${d.unit || 'm³'}` : 'Định mức chuẩn');
+      detailsText = `Cách: ${d.method || log.equipment_used || 'Tự động'}, Lượng: ${wQty}`;
     } else if (log.log_type === 'Bón phân') {
-      detailsText = `Loại: ${d.type || '—'}, Tên phân: ${d.fertilizer_name || '—'}, Lượng: ${d.amount || '—'} ${d.unit || ''}`;
+      detailsText = `Loại: ${d.type || d.method || '—'}, Tên phân: ${d.supply_name || d.fertilizer_name || d.material_name || '—'}, Lượng: ${qty || '—'} ${d.unit || 'kg'}`;
     } else if (log.log_type === 'Phun thuốc') {
-      detailsText = `Loại: ${d.type || '—'}, Thuốc: ${d.pesticide_name || '—'}, Liều lượng: ${d.amount || '—'}, Lý do: ${d.reason || '—'}`;
+      detailsText = `Loại: ${d.type || d.method || '—'}, Thuốc: ${d.supply_name || d.pesticide_name || d.material_name || '—'}, Liều lượng: ${qty || '—'}${d.active_ingredient ? ', Hoạt chất: ' + d.active_ingredient : ''}${d.phi_days ? ', PHI: ' + d.phi_days + ' ngày' : ''}${d.reason ? ', Lý do: ' + d.reason : ''}`;
     } else if (log.log_type === 'Nhân công') {
       detailsText = `Công việc: ${d.work_content || d.reason || 'Chăm sóc'}, Số công: ${d.worker_count || d.amount || 1} người`;
     } else if (log.log_type === 'Kiểm toán quả') {
-      detailsText = `Giai đoạn: ${d.audit_stage || 'Đậu quả'}, Số quả: ${d.fruit_count ?? d.amount ?? 0} quả${d.comparison_text ? ', ' + d.comparison_text : ''}${d.reason ? ', Ghi nhận: ' + d.reason : ''}`;
+      detailsText = `Giai đoạn: ${d.audit_stage || d.fruit_stage || 'Đậu quả'}, Số quả: ${d.fruit_count ?? d.amount ?? 0} quả${d.audit_time ? ' (' + d.audit_time + ')' : ''}${d.comparison_text ? ', ' + d.comparison_text : ''}${d.reason ? ', Ghi nhận: ' + d.reason : ''}`;
     } else if (log.log_type === 'Thu hoạch') {
       detailsText = `Sản lượng: ${d.amount || d.yield_kg || '—'} ${d.unit || 'kg'}${d.fruit_count ? ', Số trái: ' + d.fruit_count : ''}${d.harvest_comparison_text ? ', ' + d.harvest_comparison_text : ''}`;
-    } else if (log.log_type === 'Cắt lá') {
-      detailsText = `Số cành/lá tỉa: ${d.amount || '—'}, Lý do: ${d.reason || '—'}`;
+    } else if (log.log_type === 'Cắt lá' || log.log_type === 'Cắt tỉa') {
+      detailsText = `Số cành/lá tỉa: ${qty || '—'}, Lý do: ${d.reason || '—'}`;
     } else if (log.log_type === 'Tỉa hoa') {
-      detailsText = `Số bông/trái tỉa: ${d.amount || '—'}, Lý do: ${d.reason || '—'}`;
+      detailsText = `Số bông/trái tỉa: ${qty || '—'}, Lý do: ${d.reason || '—'}`;
     } else if (log.log_type === 'Bệnh cây') {
       detailsText = `Bệnh: ${d.disease_name || 'Chưa rõ'}, Mức độ: ${d.severity || '—'}, Mô tả: ${d.description || '—'}`;
     } else {
-      detailsText = d.method || d.amount || '';
+      detailsText = d.method || qty || '';
     }
 
     const mediaUrls = (log.media_urls && Array.isArray(log.media_urls))
       ? log.media_urls.map(m => m.url || m).join('; ')
       : '';
+    const equipBatch = [log.equipment_used, log.batch_code].filter(Boolean).join(' · ');
 
     const row = [
       index + 1,
+      standard,
       currentPlantData.tree_code || currentPlantData.id || '',
-      currentPlantData.plant_type || '',
+      tr(currentPlantData.plant_type || ''),
       currentPlantData.plant_variety || '',
+      currentPlantData.puc_code || '',
       currentPlantData.farm_name || '',
-      new Date(log.log_date).toLocaleDateString('vi-VN'),
-      log.log_type || '',
-      detailsText,
-      log.creator_name || 'Nông hộ',
+      new Date(log.log_date || log.created_at).toLocaleDateString('vi-VN'),
+      tr(log.log_type || ''),
+      tr(detailsText),
+      equipBatch,
+      log.operator_name || log.creator_name || d.operator_name || 'Kỹ thuật viên trang trại',
       log.note || '',
       mediaUrls
     ];
@@ -196,7 +277,7 @@ function exportPublicLogsCsv() {
   const cleanTreeCode = (currentPlantData.tree_code || currentPlantData.id || 'Tree').toString().replace(/[^a-zA-Z0-9_]/g, '_');
   const dateSuffix = new Date().toISOString().slice(0, 10);
   link.setAttribute('href', url);
-  link.setAttribute('download', `NhatKyCanhTac_${cleanPlantType}_${cleanTreeCode}_${dateSuffix}.csv`);
+  link.setAttribute('download', `BaoCaoVietGAP_GlobalGAP_${cleanPlantType}_${cleanTreeCode}_${dateSuffix}.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

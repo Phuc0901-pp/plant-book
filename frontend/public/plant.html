@@ -1281,30 +1281,47 @@ window.onerror = function(message, source, lineno, colno, error) {
   <div class="export-modal">
     <div class="export-modal-header">
       <div class="export-modal-title">
-        <i data-lucide="file-text" class="lucide-sm" style="color:var(--green-bright)"></i> Xuất báo cáo & Nhật ký canh tác
+        <i data-lucide="file-text" class="lucide-sm" style="color:var(--green-bright)"></i> Xuất báo cáo VietGAP · GlobalG.A.P. · ISO 22005
       </div>
       <button class="export-modal-close" onclick="closeExportModal()">×</button>
     </div>
     <div class="export-modal-body">
       <div class="export-field">
+        <label for="export-standard-select">Tiêu chuẩn hồ sơ xuất</label>
+        <select id="export-standard-select" class="export-input">
+          <option value="vietgap_globalgap_iso">Chuẩn Tổng Hợp: VietGAP + GlobalG.A.P. IFA v6.0 + ISO 22005</option>
+          <option value="vietgap">Chuẩn VietGAP Trồng Trọt (TCVN 11892-1:2017)</option>
+          <option value="globalgap_gacc">Chuẩn Xuất Khẩu GlobalG.A.P. + GACC</option>
+        </select>
+      </div>
+
+      <div class="export-field">
         <label>Khoảng thời gian xuất báo cáo</label>
         <div class="export-date-row">
-          <input type="date" id="export-from-date" class="export-input">
-          <input type="date" id="export-to-date" class="export-input">
+          <input type="date" id="export-from-date" class="export-input" onchange="if(window.updateExportModalMatchSummary)window.updateExportModalMatchSummary()">
+          <input type="date" id="export-to-date" class="export-input" onchange="if(window.updateExportModalMatchSummary)window.updateExportModalMatchSummary()">
         </div>
       </div>
 
       <div class="export-field">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-          <label>Hạng mục nhật ký muốn xuất</label>
-          <div class="export-quick-actions">
-            <button class="export-link-btn" onclick="toggleAllExportCategories(true)">Chọn hết</button>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; flex-wrap:wrap; gap:6px;">
+          <label>Hạng mục canh tác muốn xuất</label>
+          <div class="export-quick-actions" style="flex-wrap:wrap;">
+            <button type="button" class="export-link-btn" onclick="selectExportCategoriesPreset('all')">Chọn hết</button>
             <span style="color:var(--border-glass)">|</span>
-            <button class="export-link-btn" onclick="toggleAllExportCategories(false)">Bỏ chọn</button>
+            <button type="button" class="export-link-btn" onclick="selectExportCategoriesPreset('fruit_audit')">Kiểm toán quả &amp; Thu hoạch</button>
+            <span style="color:var(--border-glass)">|</span>
+            <button type="button" class="export-link-btn" onclick="selectExportCategoriesPreset('phi_safety')">Phun thuốc &amp; Bón phân</button>
+            <span style="color:var(--border-glass)">|</span>
+            <button type="button" class="export-link-btn" onclick="selectExportCategoriesPreset('none')">Bỏ chọn</button>
           </div>
         </div>
         <div class="export-categories-grid" id="export-categories-container">
         </div>
+      </div>
+
+      <div id="export-modal-match-summary" style="background:#ecfdf5; border:1px solid #a7f3d0; color:#065f46; padding:8px 12px; border-radius:8px; font-size:12px; font-weight:700;">
+        Đang sẵn sàng xuất nhật ký canh tác.
       </div>
     </div>
     <div class="export-modal-footer" style="display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap;">

@@ -134,6 +134,10 @@
     "title": "Cultivation Traceability Report",
     "copy_link": "Copy Link",
     "export_csv": "Export CSV (Excel)",
-    "print_pdf": "Print / Export PDF"
+    "print_pdf": "Print / Export PDF",
+    "select_categories": "Select Export Categories",
+    "config_title": "Configure Report Export Categories",
+    "standard_label": "International Export Standard",
+    "standards_summary": "VietGAP (TCVN 11892-1:2017) · GlobalG.A.P. (IFA v6.0) · ISO 22005:2007"
   }
 }

@@ -55,7 +55,7 @@
               <i data-lucide="shield-alert" class="lucide-sm"></i> Chỉ Cây bệnh
             </button>
 
-            <button type="button" id="btn-user-quick-export-csv" onclick="exportUserFilteredLogsCsv()" style="padding:9px 14px; border-radius:10px; border:1.5px solid #a7f3d0; background:#f0fdf4; color:#047857; font-size:12.5px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px;" title="Tải nhanh toàn bộ kết quả đang lọc ra file Excel (CSV UTF-8 BOM)">
+            <button type="button" id="btn-user-quick-export-csv" onclick="openUserExportLogsModal('csv')" style="padding:9px 14px; border-radius:10px; border:1.5px solid #a7f3d0; background:#f0fdf4; color:#047857; font-size:12.5px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px;" title="Chọn hạng mục canh tác và xuất file Excel chuẩn VietGAP / GlobalG.A.P.">
               <i data-lucide="download" class="lucide-sm" style="color:#059669;"></i> Xuất Excel
             </button>
 
@@ -224,17 +224,26 @@
 
           <div style="padding:22px 24px; display:flex; flex-direction:column; gap:16px; max-height:75vh; overflow-y:auto;">
 
+            <div>
+              <label for="modal-export-standard" style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:6px;"><i data-lucide="shield-check" class="lucide-xs"></i> Tiêu chuẩn xuất hồ sơ quốc tế:</label>
+              <select id="modal-export-standard" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600; outline:none; background:#ffffff;">
+                <option value="vietgap_globalgap_iso">Chuẩn Tổng Hợp: VietGAP (TCVN 11892-1:2017) + GlobalG.A.P. IFA v6.0 + ISO 22005</option>
+                <option value="vietgap">Chuẩn VietGAP Trồng Trọt (TCVN 11892-1:2017)</option>
+                <option value="globalgap_gacc">Chuẩn Xuất Khẩu GlobalG.A.P. + Nghị định thư GACC</option>
+              </select>
+            </div>
+
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
               <div>
                 <label style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:6px;"><i data-lucide="map-pin" class="lucide-xs"></i> Trang trại:</label>
-                <select id="modal-export-farm" onchange="onModalExportFarmChange()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600; outline:none; background:#ffffff;">
+                <select id="modal-export-farm" onchange="onModalExportFarmChange(); if(window.updateUserExportMatchSummary)window.updateUserExportMatchSummary();" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600; outline:none; background:#ffffff;">
                   <option value="all">Tất cả trang trại</option>
                 </select>
               </div>
 
               <div>
                 <label style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:6px;"><i data-lucide="sprout" class="lucide-xs"></i> Cây trồng / Lô:</label>
-                <select id="modal-export-plant" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600; outline:none; background:#ffffff;">
+                <select id="modal-export-plant" onchange="if(window.updateUserExportMatchSummary)window.updateUserExportMatchSummary();" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600; outline:none; background:#ffffff;">
                   <option value="all">Tất cả cây trồng</option>
                 </select>
               </div>
@@ -245,28 +254,34 @@
               <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                 <div>
                   <span style="font-size:11px; color:#64748b; font-weight:600; display:block; margin-bottom:4px;">Từ ngày:</span>
-                  <input type="date" id="modal-export-date-from" style="width:100%; padding:8px 10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:600; outline:none; background:#ffffff;">
+                  <input type="date" id="modal-export-date-from" onchange="if(window.updateUserExportMatchSummary)window.updateUserExportMatchSummary()" style="width:100%; padding:8px 10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:600; outline:none; background:#ffffff;">
                 </div>
                 <div>
                   <span style="font-size:11px; color:#64748b; font-weight:600; display:block; margin-bottom:4px;">Đến ngày:</span>
-                  <input type="date" id="modal-export-date-to" style="width:100%; padding:8px 10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:600; outline:none; background:#ffffff;">
+                  <input type="date" id="modal-export-date-to" onchange="if(window.updateUserExportMatchSummary)window.updateUserExportMatchSummary()" style="width:100%; padding:8px 10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:600; outline:none; background:#ffffff;">
                 </div>
               </div>
             </div>
 
             <div>
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
                 <label style="font-size:12px; font-weight:800; color:#1e293b; display:flex; align-items:center; gap:6px;">
-                  <i data-lucide="check-square" class="lucide-xs" style="color:#059669;"></i> Hạng mục hoạt động:
+                  <i data-lucide="check-square" class="lucide-xs" style="color:#059669;"></i> Hạng mục canh tác cần xuất:
                 </label>
-                <div style="display:flex; gap:10px;">
-                  <button type="button" onclick="toggleAllUserExportCats(true)" style="background:none; border:none; color:#059669; font-size:12px; font-weight:700; cursor:pointer; text-decoration:underline;">Chọn hết</button>
-                  <button type="button" onclick="toggleAllUserExportCats(false)" style="background:none; border:none; color:#64748b; font-size:12px; font-weight:700; cursor:pointer; text-decoration:underline;">Bỏ chọn</button>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                  <button type="button" onclick="selectUserExportPreset('all')" style="background:none; border:none; color:#059669; font-size:12px; font-weight:700; cursor:pointer; text-decoration:underline;">Chọn hết</button>
+                  <button type="button" onclick="selectUserExportPreset('fruit_audit')" style="background:none; border:none; color:#0f766e; font-size:12px; font-weight:700; cursor:pointer; text-decoration:underline;">Kiểm toán quả &amp; Thu hoạch</button>
+                  <button type="button" onclick="selectUserExportPreset('phi_safety')" style="background:none; border:none; color:#d97706; font-size:12px; font-weight:700; cursor:pointer; text-decoration:underline;">Phun thuốc &amp; Bón phân</button>
+                  <button type="button" onclick="selectUserExportPreset('none')" style="background:none; border:none; color:#64748b; font-size:12px; font-weight:700; cursor:pointer; text-decoration:underline;">Bỏ chọn</button>
                 </div>
               </div>
 
-              <div id="modal-export-categories-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:8px;">
+              <div id="modal-export-categories-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(175px, 1fr)); gap:8px;">
               </div>
+            </div>
+
+            <div id="modal-export-match-summary" style="background:#ecfdf5; border:1px solid #a7f3d0; color:#065f46; padding:9px 12px; border-radius:10px; font-size:12px; font-weight:700;">
+              Đang sẵn sàng xuất báo cáo chuẩn VietGAP / GlobalG.A.P.
             </div>
 
           </div>

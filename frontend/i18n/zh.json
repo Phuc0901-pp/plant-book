@@ -134,6 +134,10 @@
     "title": "农事种植追溯报告",
     "copy_link": "复制链接",
     "export_csv": "导出 CSV (Excel)",
-    "print_pdf": "打印报告 / 导出 PDF"
+    "print_pdf": "打印报告 / 导出 PDF",
+    "select_categories": "选择导出农事类别",
+    "config_title": "配置报告导出农事类别",
+    "standard_label": "国际认证导出标准",
+    "standards_summary": "VietGAP (TCVN 11892-1:2017) · GlobalG.A.P. (IFA v6.0) · ISO 22005:2007"
   }
 }

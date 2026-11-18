@@ -134,6 +134,10 @@
     "title": "Báo cáo lịch trình canh tác",
     "copy_link": "Sao chép liên kết",
     "export_csv": "Xuất CSV (Excel)",
-    "print_pdf": "In báo cáo / Tải PDF"
+    "print_pdf": "In báo cáo / Tải PDF",
+    "select_categories": "Chọn hạng mục xuất",
+    "config_title": "Cấu Hình Hạng Mục Xuất Báo Cáo",
+    "standard_label": "Tiêu chuẩn xuất hồ sơ quốc tế",
+    "standards_summary": "VietGAP (TCVN 11892-1:2017) · GlobalG.A.P. (IFA v6.0) · ISO 22005:2007"
   }
 }

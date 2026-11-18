@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sổ Nông Tân Bảo Agtech — Báo cáo lịch trình canh tác</title>
+  <title>Sổ Nông Tân Bảo Agtech — Báo cáo truy xuất chuẩn VietGAP · GlobalG.A.P. · ISO 22005</title>
   <link rel="icon" type="image/png" href="/assets/favicon.png">
   <link rel="shortcut icon" type="image/png" href="/assets/favicon.png">
   <link rel="apple-touch-icon" href="/assets/favicon.png">
@@ -15,11 +15,11 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="/assets/js/lucide-auto-hydrator.js"></script>
   <script src="/assets/js/enterprise-security-guard.js"></script>
-  <script src="/js/i18n-engine.js?v=1.3.7"></script>
+  <script src="/js/i18n-engine.js?v=1.3.8"></script>
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.css" rel="stylesheet">
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.js"></script>
 
-  <link rel="stylesheet" href="/css/report.css">
+  <link rel="stylesheet" href="/css/report.css?v=2.1.0">
 </head>
 <body>
 
@@ -27,6 +27,7 @@
     <div class="brand-logo-wrap">
       <img src="/assets/logo.png" class="brand-logo" onerror="this.style.display='none'">
       <span class="brand-name">TANBAO AgTech</span>
+      <span class="brand-std-pill">ISO 22005 · VietGAP · GlobalG.A.P.</span>
     </div>
     <div class="actions-wrap">
       <div id="export-lang-switcher" style="display:inline-flex; align-items:center; gap:2px; background:#f1f5f9; border:1px solid #cbd5e1; border-radius:9px; padding:2px;" title="Chuyển đổi ngôn ngữ (Tiếng Việt / English / 中文)">
@@ -34,13 +35,16 @@
         <button type="button" data-lang-btn="en" onclick="if(window.switchExportLanguage)window.switchExportLanguage('en')" style="border:none; border-radius:7px; padding:4px 7px; font-size:11px; font-weight:700; cursor:pointer; background:transparent; color:#334155;">🇬🇧 EN</button>
         <button type="button" data-lang-btn="zh" onclick="if(window.switchExportLanguage)window.switchExportLanguage('zh')" style="border:none; border-radius:7px; padding:4px 7px; font-size:11px; font-weight:700; cursor:pointer; background:transparent; color:#334155;">🇨🇳 中文</button>
       </div>
-      <button class="btn btn-secondary" id="btn-copy-link" onclick="copyReportLink()">
+      <button type="button" class="btn btn-secondary" id="btn-open-report-config" onclick="openReportConfigModal('preview')">
+        <i data-lucide="sliders-horizontal" class="lucide-sm"></i> Chọn hạng mục xuất
+      </button>
+      <button type="button" class="btn btn-secondary" id="btn-copy-link" onclick="copyReportLink()">
         <i data-lucide="link" class="lucide-sm"></i> Sao chép liên kết
       </button>
-      <button class="btn btn-secondary" id="btn-export-csv" onclick="exportReportCsv()" style="background: #f0fdf4; border-color: #86efac; color: #166534; font-weight: 700;">
+      <button type="button" class="btn btn-secondary" id="btn-export-csv" onclick="openReportConfigModal('csv')" style="background: #f0fdf4; border-color: #86efac; color: #166534; font-weight: 700;">
         <i data-lucide="file-spreadsheet" class="lucide-sm"></i> Xuất CSV (Excel)
       </button>
-      <button class="btn btn-primary" onclick="window.print()">
+      <button type="button" class="btn btn-primary" id="btn-print-report" onclick="openReportConfigModal('print')">
         <i data-lucide="printer" class="lucide-sm"></i> In báo cáo / Tải PDF
       </button>
     </div>
@@ -61,15 +65,27 @@
     <div class="header">
       <div class="logo-wrap">
         <img src="/assets/logo.png" class="logo-img" onerror="this.style.display='none'">
-        <div class="company-title">TANBAO AgTech</div>
+        <div>
+          <div class="company-title">TANBAO AgTech</div>
+          <div class="company-sub">Hồ Sơ Truy Xuất Nguồn Gốc Quốc Tế &amp; Kiểm Định Canh Tác</div>
+        </div>
       </div>
       <div class="title-wrap">
-        <h1 class="title">Báo cáo lịch trình canh tác</h1>
+        <h1 class="title" id="report-main-heading">Báo cáo lịch trình canh tác</h1>
+        <p class="subtitle" id="report-standard-subtitle">Tiêu chuẩn áp dụng: VietGAP (TCVN 11892-1:2017) · GlobalG.A.P. (IFA v6.0) · ISO 22005:2007</p>
         <p class="subtitle" id="report-time">Trích xuất lúc: —</p>
       </div>
     </div>
 
-    <div class="section-title">Thông tin cây trồng</div>
+    <div class="std-compliance-banner" id="report-compliance-banner">
+      <span class="std-badge std-green">VietGAP (TCVN 11892-1:2017)</span>
+      <span class="std-badge std-blue">GlobalG.A.P. IFA v6.0</span>
+      <span class="std-badge std-slate">ISO 22005:2007 Traceability</span>
+      <span class="std-badge std-amber">GACC Export Ready</span>
+      <span class="std-badge std-phi" id="plant-phi-status">An Toàn Thu Hoạch (PHI)</span>
+    </div>
+
+    <div class="section-title">I. Thông tin định danh cây trồng &amp; Chứng nhận vùng trồng</div>
     <div class="info-grid">
       <div class="info-item">
         <span class="info-label">Mã số cây:</span>
@@ -95,18 +111,34 @@
         <span class="info-label">Trang trại:</span>
         <span class="info-val" id="plant-farm">—</span>
       </div>
-      <div class="info-item" style="grid-column: span 2;">
-        <span class="info-label">Tọa độ GPS:</span>
-        <span class="info-val" id="plant-gps">—</span>
+      <div class="info-item">
+        <span class="info-label">Mã vùng trồng (PUC):</span>
+        <span class="info-val font-mono" id="plant-puc-code">—</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Chứng nhận VietGAP:</span>
+        <span class="info-val" id="plant-vietgap-cert">—</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Thẻ NFC RFID:</span>
+        <span class="info-val font-mono" id="plant-nfc-uid">—</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Tọa độ GPS (WGS84):</span>
+        <span class="info-val font-mono" id="plant-gps">—</span>
       </div>
     </div>
 
+    <div class="section-title">II. Tổng hợp hạng mục canh tác &amp; Kiểm toán quả</div>
+    <div id="report-stats-strip" class="report-stats-strip"></div>
+    <div id="report-fruit-audit-chain" class="report-audit-chain-box" style="display: none;"></div>
+
     <div id="map-section" style="display: none;">
-      <div class="section-title">Bản đồ vị trí & Ranh giới trang trại</div>
+      <div class="section-title">III. Bản đồ vị trí vệ tinh &amp; Ranh giới trang trại (GIS WGS84)</div>
       <div id="report-map"></div>
     </div>
 
-    <div class="section-title">Nhật ký hoạt động canh tác</div>
+    <div class="section-title">IV. Nhật ký hoạt động canh tác chi tiết (VietGAP &amp; GlobalG.A.P.)</div>
     <div class="summary-text" id="report-summary">
       Thời gian báo cáo: từ <strong>ngày đầu số hóa</strong> đến <strong>hiện tại</strong>. Đã lọc <strong>0</strong> nhật ký hoạt động.
     </div>
@@ -114,12 +146,113 @@
     <div id="table-container">
     </div>
 
+    <div class="section-title">V. Xác nhận kiểm định hồ sơ (VietGAP / GlobalG.A.P. Audit Sign-Off)</div>
+    <div class="audit-signature-grid">
+      <div class="audit-sig-col">
+        <div class="sig-role">1. Kỹ thuật viên / Người ghi sổ</div>
+        <div class="sig-note">(Ký và ghi rõ họ tên)</div>
+        <div class="sig-spacer"></div>
+        <div class="sig-name" id="report-sig-operator">Kỹ thuật viên trang trại</div>
+      </div>
+      <div class="audit-sig-col">
+        <div class="sig-role">2. Kiểm soát nội bộ (ICS / GlobalG.A.P.)</div>
+        <div class="sig-note">(Thẩm định quy trình &amp; PHI)</div>
+        <div class="sig-spacer"></div>
+        <div class="sig-name">................................................</div>
+      </div>
+      <div class="audit-sig-col">
+        <div class="sig-role">3. Chủ trang trại / Đại diện VietGAP</div>
+        <div class="sig-note">(Xác nhận xuất hồ sơ)</div>
+        <div class="sig-spacer"></div>
+        <div class="sig-name" id="report-sig-owner">................................................</div>
+      </div>
+    </div>
+
     <div class="footer">
-      <div>Báo cáo được tạo tự động bởi hệ sinh thái số Tanbao AgTech</div>
-      <div>Trang 1/1</div>
+      <div>Báo cáo truy xuất nguồn gốc chuẩn ISO 22005 · VietGAP · GlobalG.A.P. — Tanbao AgTech</div>
+      <div id="report-hash-seal" class="font-mono">SHA-256 Ledger Verified</div>
     </div>
   </div>
 
-  <script src="/js/report.js?v=2.0.9" defer></script>
+  <div id="report-export-config-modal" class="report-modal-overlay" style="display: none;" onclick="if(event.target===this)closeReportConfigModal()">
+    <div class="report-modal-card">
+      <div class="report-modal-header">
+        <div>
+          <h3 id="report-cfg-modal-title">Cấu Hình Hạng Mục Xuất Báo Cáo</h3>
+          <p>Chọn các hạng mục canh tác (Kiểm toán quả, Phun thuốc, Bón phân...) &amp; tiêu chuẩn trước khi xuất</p>
+        </div>
+        <button type="button" class="report-modal-close" onclick="closeReportConfigModal()" title="Đóng">×</button>
+      </div>
+
+      <div class="report-modal-body">
+        <div class="report-cfg-section">
+          <div class="report-cfg-row-head">
+            <label for="report-cfg-standard">Tiêu chuẩn xuất hồ sơ quốc tế</label>
+          </div>
+          <select id="report-cfg-standard" class="report-cfg-select" onchange="updateReportConfigMatchCount()">
+            <option value="vietgap_globalgap_iso">Chuẩn Tổng Hợp: VietGAP (TCVN 11892-1:2017) + GlobalG.A.P. IFA v6.0 + ISO 22005</option>
+            <option value="vietgap">Chuẩn VietGAP Trồng Trọt (TCVN 11892-1:2017)</option>
+            <option value="globalgap_gacc">Chuẩn Xuất Khẩu GlobalG.A.P. + Nghị định thư GACC</option>
+          </select>
+        </div>
+
+        <div class="report-cfg-section">
+          <div class="report-cfg-row-head">
+            <label>Khoảng thời gian trích xuất</label>
+            <div class="report-cfg-quick-links">
+              <button type="button" onclick="setReportConfigDatePreset('all')">Toàn bộ lịch sử</button>
+              <button type="button" onclick="setReportConfigDatePreset('30d')">30 ngày gần nhất</button>
+              <button type="button" onclick="setReportConfigDatePreset('90d')">90 ngày</button>
+              <button type="button" onclick="setReportConfigDatePreset('year')">Năm nay</button>
+            </div>
+          </div>
+          <div class="report-cfg-date-grid">
+            <div>
+              <span class="report-cfg-sublabel">Từ ngày</span>
+              <input type="date" id="report-cfg-from" class="report-cfg-input" onchange="updateReportConfigMatchCount()">
+            </div>
+            <div>
+              <span class="report-cfg-sublabel">Đến ngày</span>
+              <input type="date" id="report-cfg-to" class="report-cfg-input" onchange="updateReportConfigMatchCount()">
+            </div>
+          </div>
+        </div>
+
+        <div class="report-cfg-section">
+          <div class="report-cfg-row-head">
+            <label>Chọn hạng mục canh tác cần xuất</label>
+            <div class="report-cfg-quick-links">
+              <button type="button" onclick="selectReportConfigCategoriesPreset('all')">Chọn tất cả</button>
+              <button type="button" onclick="selectReportConfigCategoriesPreset('fruit_audit')">Kiểm toán quả &amp; Thu hoạch</button>
+              <button type="button" onclick="selectReportConfigCategoriesPreset('phi_safety')">Phun thuốc &amp; Bón phân</button>
+              <button type="button" onclick="selectReportConfigCategoriesPreset('none')">Bỏ chọn</button>
+            </div>
+          </div>
+          <div id="report-cfg-categories-grid" class="report-cfg-categories-grid"></div>
+        </div>
+
+        <div id="report-cfg-match-count" class="report-cfg-match-banner">
+          Đang sẵn sàng xuất 0 nhật ký canh tác đạt chuẩn.
+        </div>
+      </div>
+
+      <div class="report-modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeReportConfigModal()">Đóng</button>
+        <div class="report-modal-footer-actions">
+          <button type="button" class="btn btn-secondary" id="btn-cfg-apply-preview" onclick="applyReportConfigPreview()">
+            <i data-lucide="refresh-cw" class="lucide-sm"></i> Cập nhật xem trước
+          </button>
+          <button type="button" class="btn btn-secondary" id="btn-cfg-export-csv" onclick="confirmExportReportCsv()" style="background:#f0fdf4; border-color:#86efac; color:#166534; font-weight:700;">
+            <i data-lucide="file-spreadsheet" class="lucide-sm"></i> Xác nhận Tải CSV (Excel)
+          </button>
+          <button type="button" class="btn btn-primary" id="btn-cfg-print-pdf" onclick="confirmPrintReport()">
+            <i data-lucide="printer" class="lucide-sm"></i> Xác nhận In / Xuất PDF
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/report.js?v=2.2.0" defer></script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 import { esc, formatDate, toast } from '../core/utils.js';
 import { api, getCurrentUserRbac } from '../core/api.js';
 import { buildMediaThumbnailsHtml } from './media.js';
-import { getPlantsCache } from './plants.js';
+import { getPlantsCache, getFarmsCache } from './plants.js';
 
 let _logsCache = [];
 let _diseaseOnlyFilterActive = false;
@@ -1391,45 +1391,118 @@ export async function executeSelectiveDelete() {
 }
 window.executeSelectiveDelete = executeSelectiveDelete;
 
-export function openUserExportLogsModal() {
+export function updateUserExportMatchSummary() {
+  const summaryEl = document.getElementById('modal-export-match-summary');
+  if (!summaryEl) return 0;
+  const farmId = document.getElementById('modal-export-farm')?.value || 'all';
+  const plantId = document.getElementById('modal-export-plant')?.value || 'all';
+  const fromDate = document.getElementById('modal-export-date-from')?.value || '';
+  const toDate = document.getElementById('modal-export-date-to')?.value || '';
+
+  const checkedCats = [];
+  document.querySelectorAll('input[name="user_export_cat"]:checked').forEach(cb => checkedCats.push(cb.value));
+
+  if (checkedCats.length === 0) {
+    summaryEl.textContent = 'Vui lòng chọn ít nhất 1 hạng mục canh tác để xuất báo cáo.';
+    summaryEl.style.background = '#fef2f2';
+    summaryEl.style.borderColor = '#fecaca';
+    summaryEl.style.color = '#991b1b';
+    return 0;
+  }
+
+  let list = [...(_logsCache || [])];
+  if (farmId !== 'all') list = list.filter(l => String(l.farm_id) === String(farmId));
+  if (plantId !== 'all') list = list.filter(l => String(l.plant_id) === String(plantId));
+  if (fromDate) list = list.filter(l => l.log_date && new Date(l.log_date).toISOString().slice(0, 10) >= fromDate);
+  if (toDate) list = list.filter(l => l.log_date && new Date(l.log_date).toISOString().slice(0, 10) <= toDate);
+  list = list.filter(l => matchesUserLogCategory(checkedCats, l.log_type));
+
+  summaryEl.style.background = '#ecfdf5';
+  summaryEl.style.borderColor = '#a7f3d0';
+  summaryEl.style.color = '#065f46';
+  summaryEl.textContent = `Đã chọn ${checkedCats.length} hạng mục · Tìm thấy ${list.length} bản ghi nhật ký phù hợp chuẩn VietGAP / GlobalG.A.P.`;
+  return list.length;
+}
+window.updateUserExportMatchSummary = updateUserExportMatchSummary;
+
+function renderUserExportCategoryGrid() {
+  const catsContainer = document.getElementById('modal-export-categories-grid');
+  if (!catsContainer) return;
+  const standardCats = ['Kiểm toán quả', 'Phun thuốc', 'Bón phân', 'Tưới nước', 'Nhân công', 'Bệnh cây', 'Thu hoạch'];
+  const logs = _logsCache || [];
+  catsContainer.innerHTML = standardCats.map(cat => {
+    const label = cat === 'Nhân công' ? 'Thuê nhân công' : cat;
+    const cnt = logs.filter(l => cat === 'Nhân công' ? (l.log_type === 'Nhân công' || LEGACY_LABOR_ALIASES.includes(l.log_type)) : l.log_type === cat).length;
+    return `
+      <label style="display:flex; align-items:center; justify-content:space-between; gap:6px; background:#f8fafc; border:1px solid #e2e8f0; padding:7px 10px; border-radius:8px; font-size:12.5px; font-weight:600; color:#334155; cursor:pointer;">
+        <span style="display:inline-flex; align-items:center; gap:6px;">
+          <input type="checkbox" name="user_export_cat" value="${esc(cat)}" checked onchange="updateUserExportMatchSummary()" style="accent-color:#059669; cursor:pointer;">
+          <span>${esc(label)}</span>
+        </span>
+        <span style="font-size:11px; font-weight:800; color:#047857; background:#ecfdf5; border:1px solid #a7f3d0; padding:1px 6px; border-radius:999px;">${cnt}</span>
+      </label>
+    `;
+  }).join('');
+}
+
+export async function openUserExportLogsModal(defaultMode, presetFarmId, presetPlantId) {
   const farmSel = document.getElementById('modal-export-farm');
+  const plantSel = document.getElementById('modal-export-plant');
   const fromDateInput = document.getElementById('modal-export-date-from');
   const toDateInput = document.getElementById('modal-export-date-to');
-  const catsContainer = document.getElementById('modal-export-categories-grid');
 
   const filterFarmSel = document.getElementById('user-log-filter-farm');
-  if (farmSel && filterFarmSel) {
-    farmSel.innerHTML = filterFarmSel.innerHTML;
-    farmSel.value = filterFarmSel.value || 'all';
+  if (farmSel) {
+    if (filterFarmSel && filterFarmSel.options && filterFarmSel.options.length > 1) {
+      farmSel.innerHTML = filterFarmSel.innerHTML;
+    } else {
+      let farms = [];
+      try { farms = getFarmsCache() || []; } catch (_) { farms = []; }
+      farmSel.innerHTML = '<option value="all">Tất cả trang trại</option>'
+        + farms.map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join('');
+    }
+    farmSel.value = presetFarmId ? String(presetFarmId) : ((filterFarmSel && filterFarmSel.value) || 'all');
   }
 
   onModalExportFarmChange();
+  if (plantSel && presetPlantId) {
+    plantSel.value = String(presetPlantId);
+  }
 
   const today = new Date().toISOString().slice(0, 10);
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const fromDateStr = thirtyDaysAgo.toISOString().slice(0, 10);
-
-  if (fromDateInput) fromDateInput.value = fromDateStr;
+  const logDates = (_logsCache || [])
+    .map(l => (l.log_date || l.created_at) ? new Date(l.log_date || l.created_at).toISOString().slice(0, 10) : '')
+    .filter(Boolean)
+    .sort();
+  if (fromDateInput) fromDateInput.value = logDates.length > 0 ? logDates[0] : '';
   if (toDateInput) toDateInput.value = today;
 
-  const standardCats = ["Tưới nước", "Bón phân", "Phun thuốc", "Nhân công", "Kiểm toán quả", "Bệnh cây", "Thu hoạch"];
-  if (catsContainer) {
-    catsContainer.innerHTML = standardCats.map(cat => {
-      const label = cat === 'Nhân công' ? 'Thuê nhân công' : cat;
-      return `
-        <label style="display:inline-flex; align-items:center; gap:6px; background:#f8fafc; border:1px solid #e2e8f0; padding:6px 10px; border-radius:8px; font-size:12.5px; font-weight:600; color:#334155; cursor:pointer;">
-          <input type="checkbox" name="user_export_cat" value="${esc(cat)}" checked style="accent-color:#059669; cursor:pointer;">
-          <span>${esc(label)}</span>
-        </label>
-      `;
-    }).join('');
-  }
+  renderUserExportCategoryGrid();
+  updateUserExportMatchSummary();
 
   const modal = document.getElementById('user-export-logs-modal');
   if (modal) {
     modal.style.display = 'flex';
     if (window.lucide) lucide.createIcons();
+    if (window.PlantBookI18n && typeof window.PlantBookI18n.applyDomTranslations === 'function') {
+      window.PlantBookI18n.applyDomTranslations();
+    }
+  }
+
+  if (!_logsCache || _logsCache.length === 0) {
+    try {
+      const freshRes = await api('/plants/logs/recent?days=all');
+      if (Array.isArray(freshRes) && freshRes.length > 0) {
+        setLogsCache(enrichLogsWithFruitAuditChain(freshRes));
+        const dates = freshRes
+          .map(l => (l.log_date || l.created_at) ? new Date(l.log_date || l.created_at).toISOString().slice(0, 10) : '')
+          .filter(Boolean)
+          .sort();
+        if (fromDateInput && !fromDateInput.value && dates.length > 0) fromDateInput.value = dates[0];
+        renderUserExportCategoryGrid();
+        updateUserExportMatchSummary();
+      }
+    } catch (_) {}
   }
 }
 window.openUserExportLogsModal = openUserExportLogsModal;
@@ -1466,38 +1539,56 @@ window.onModalExportFarmChange = onModalExportFarmChange;
 export function toggleAllUserExportCats(select) {
   const checkboxes = document.querySelectorAll('input[name="user_export_cat"]');
   checkboxes.forEach(cb => cb.checked = select);
+  updateUserExportMatchSummary();
 }
 window.toggleAllUserExportCats = toggleAllUserExportCats;
+
+export function selectUserExportPreset(preset) {
+  const checkboxes = document.querySelectorAll('input[name="user_export_cat"]');
+  checkboxes.forEach(cb => {
+    if (preset === 'all') cb.checked = true;
+    else if (preset === 'none') cb.checked = false;
+    else if (preset === 'fruit_audit') cb.checked = (cb.value === 'Kiểm toán quả' || cb.value === 'Thu hoạch');
+    else if (preset === 'phi_safety') cb.checked = (cb.value === 'Phun thuốc' || cb.value === 'Bón phân' || cb.value === 'Bệnh cây');
+  });
+  updateUserExportMatchSummary();
+}
+window.selectUserExportPreset = selectUserExportPreset;
 
 function formatLogDetailsText(log) {
   const d = log.details || {};
   const parts = [];
+  const qty = d.amount ?? d.quantity ?? d.qty ?? d.dosage ?? d.volume ?? '';
   if (log.log_type === 'Tưới nước') {
-    if (d.method) parts.push(`Phương pháp: ${d.method}`);
-    if (d.amount) parts.push(`Lượng nước: ${d.amount} ${d.unit || 'L'}`);
+    if (d.method || log.equipment_used) parts.push(`Phương pháp: ${d.method || log.equipment_used}`);
+    if (d.water_liters) parts.push(`Lượng nước: ${d.water_liters} Lít`);
+    else if (qty) parts.push(`Lượng nước: ${qty} ${d.unit || 'm³'}`);
   } else if (log.log_type === 'Bón phân') {
-    if (d.fertilizer_name || d.supply_name) parts.push(`Tên phân: ${d.fertilizer_name || d.supply_name}`);
+    if (d.supply_name || d.fertilizer_name || d.material_name) parts.push(`Tên phân: ${d.supply_name || d.fertilizer_name || d.material_name}`);
     if (d.type) parts.push(`Loại: ${d.type}`);
-    if (d.amount || d.quantity) parts.push(`Lượng: ${d.amount || d.quantity} ${d.unit || 'kg'}`);
+    if (qty) parts.push(`Lượng: ${qty} ${d.unit || 'kg'}`);
   } else if (log.log_type === 'Phun thuốc') {
-    if (d.pesticide_name || d.supply_name) parts.push(`Tên thuốc: ${d.pesticide_name || d.supply_name}`);
+    if (d.supply_name || d.pesticide_name || d.material_name) parts.push(`Tên thuốc: ${d.supply_name || d.pesticide_name || d.material_name}`);
     if (d.type) parts.push(`Loại thuốc: ${d.type}`);
-    if (d.amount || d.dosage) parts.push(`Liều lượng: ${d.amount || d.dosage} ${d.unit || ''}`);
+    if (qty) parts.push(`Liều lượng: ${qty} ${d.unit || ''}`.trim());
+    if (d.active_ingredient) parts.push(`Hoạt chất: ${d.active_ingredient}`);
+    if (d.phi_days || d.phi) parts.push(`Cách ly PHI: ${d.phi_days || d.phi} ngày`);
     if (d.reason) parts.push(`Đối tượng phòng trừ: ${d.reason}`);
   } else if (log.log_type === 'Nhân công') {
     if (d.work_content) parts.push(`Nội dung: ${d.work_content}`);
     if (d.worker_count) parts.push(`Số người: ${d.worker_count} người`);
     if (d.time_range) parts.push(`Giờ làm: ${d.time_range}`);
     if (d.batch_total_cost || d.total_cost) parts.push(`Chi phí: ${Number(d.batch_total_cost || d.total_cost).toLocaleString('vi-VN')} đ`);
-  } else if (log.log_type === 'Cắt lá') {
-    if (d.amount) parts.push(`Số lượng cành/lá: ${d.amount}`);
+  } else if (log.log_type === 'Cắt lá' || log.log_type === 'Cắt tỉa') {
+    if (qty) parts.push(`Số lượng cành/lá: ${qty}`);
     if (d.reason) parts.push(`Mục đích: ${d.reason}`);
   } else if (log.log_type === 'Tỉa hoa') {
-    if (d.amount) parts.push(`Số lượng hoa/quả: ${d.amount}`);
+    if (qty) parts.push(`Số lượng hoa/quả: ${qty}`);
     if (d.reason) parts.push(`Mục đích: ${d.reason}`);
   } else if (log.log_type === 'Kiểm toán quả') {
-    if (d.audit_stage) parts.push(`Giai đoạn: ${d.audit_stage}`);
+    if (d.audit_stage || d.fruit_stage) parts.push(`Giai đoạn: ${d.audit_stage || d.fruit_stage}`);
     if (d.fruit_count !== undefined) parts.push(`Số quả: ${d.fruit_count} quả`);
+    if (d.dropped_or_culled_count > 0) parts.push(`Rụng/Tỉa bỏ: ${d.dropped_or_culled_count} quả`);
     if (d.audit_time) parts.push(`Giờ đếm: ${d.audit_time}`);
     if (d.comparison_text) parts.push(d.comparison_text);
     if (d.reason) parts.push(`Nguyên nhân/Ghi nhận: ${d.reason}`);
@@ -1514,32 +1605,44 @@ function formatLogDetailsText(log) {
     if (d.description) parts.push(`Mô tả triệu chứng: ${d.description}`);
   } else {
     if (d.method) parts.push(d.method);
-    if (d.amount) parts.push(`${d.amount} ${d.unit || ''}`);
+    if (qty) parts.push(`${qty} ${d.unit || ''}`.trim());
   }
   return parts.join(' | ');
 }
 
-export function exportLogsToCsv(logs, filename = 'NhatKyCanhTac.csv') {
+export function exportLogsToCsv(logs, filename = 'NhatKyCanhTac.csv', meta = {}) {
   if (!Array.isArray(logs) || logs.length === 0) {
     toast('Không có nhật ký canh tác nào để xuất file.', 'warning');
     return;
   }
 
+  const tr = (txt) => {
+    if (window.PlantBookI18n && typeof window.PlantBookI18n.translateDynamicTerm === 'function') {
+      const lang = window.PlantBookI18n.getLanguage ? window.PlantBookI18n.getLanguage() : 'vi';
+      if (lang && lang !== 'vi') return window.PlantBookI18n.translateDynamicTerm(String(txt), lang);
+    }
+    return String(txt);
+  };
+
+  const stdLabel = meta.standardLabel || 'VietGAP (TCVN 11892-1:2017) · GlobalG.A.P. (IFA v6.0) · ISO 22005:2007';
+
   const headers = [
     "STT",
+    "Tiêu Chuẩn Hồ Sơ",
     "Ngày Canh Tác",
     "Mã Cây / Lô",
     "Loại Cây",
     "Giống Cây",
     "Trang Trại",
     "Hoạt Động Canh Tác",
-    "Chi Tiết Kỹ Thuật (Vật tư, Thuốc, Liều lượng)",
+    "Chi Tiết Kỹ Thuật (Vật tư, Thuốc, Kiểm toán quả)",
+    "Thiết Bị & Mã Lô",
     "Đơn Giá (VNĐ)",
     "Thành Tiền (VNĐ)",
     "Người Thực Hiện",
     "Ghi Chú Bổ Sung",
     "Hình Ảnh / Video Bằng Chứng"
-  ];
+  ].map(tr);
 
   function escapeCsvCell(val) {
     if (val === null || val === undefined) return '""';
@@ -1551,7 +1654,7 @@ export function exportLogsToCsv(logs, filename = 'NhatKyCanhTac.csv') {
   rows.push(headers.map(escapeCsvCell).join(','));
 
   logs.forEach((log, index) => {
-    const detailsStr = formatLogDetailsText(log);
+    const detailsStr = tr(formatLogDetailsText(log));
     const mediaUrls = (log.media_urls && Array.isArray(log.media_urls))
       ? log.media_urls.map(m => m.url || m).join('; ')
       : '';
@@ -1559,21 +1662,25 @@ export function exportLogsToCsv(logs, filename = 'NhatKyCanhTac.csv') {
     const d = log.details || {};
     const unitPrice = d.unit_price || d.package_price || '';
     const totalCost = d.total_cost || d.cost || '';
+    const equipBatch = [log.equipment_used, log.batch_code].filter(Boolean).join(' · ');
+    const operatorStr = log.operator_name || log.creator_name || d.operator_name || 'Kỹ thuật viên trang trại';
 
     const dateStr = log.log_date ? new Date(log.log_date).toLocaleDateString('vi-VN') : '';
 
     const row = [
       index + 1,
+      stdLabel,
       dateStr,
       log.tree_code || log.plant_id || 'Toàn vườn',
-      log.plant_type || '',
+      tr(log.plant_type || ''),
       log.plant_variety || '',
       log.farm_name || '',
-      log.log_type || '',
+      tr(log.log_type || ''),
       detailsStr,
+      equipBatch,
       unitPrice,
       totalCost,
-      log.creator_name || 'Nông hộ',
+      operatorStr,
       log.note || '',
       mediaUrls
     ];
@@ -1595,13 +1702,7 @@ export function exportLogsToCsv(logs, filename = 'NhatKyCanhTac.csv') {
 window.exportLogsToCsv = exportLogsToCsv;
 
 export function exportUserFilteredLogsCsv() {
-  const logsToExport = _currentFilteredLogs && _currentFilteredLogs.length > 0 ? _currentFilteredLogs : _logsCache;
-  if (!logsToExport || logsToExport.length === 0) {
-    toast('Không có nhật ký nào trong danh sách hiển thị để xuất.', 'warning');
-    return;
-  }
-  const dateSuffix = new Date().toISOString().slice(0, 10);
-  exportLogsToCsv(logsToExport, `NhatKyCanhTac_KetQuaLoc_${dateSuffix}.csv`);
+  openUserExportLogsModal('csv');
 }
 window.exportUserFilteredLogsCsv = exportUserFilteredLogsCsv;
 
@@ -1610,6 +1711,13 @@ export async function executeUserExport(mode = 'csv') {
   const plantId = document.getElementById('modal-export-plant')?.value || 'all';
   const fromDate = document.getElementById('modal-export-date-from')?.value || '';
   const toDate = document.getElementById('modal-export-date-to')?.value || '';
+  const stdCode = document.getElementById('modal-export-standard')?.value || 'vietgap_globalgap_iso';
+  const stdMap = {
+    vietgap: 'VietGAP (TCVN 11892-1:2017)',
+    globalgap_gacc: 'GlobalG.A.P. IFA v6.0 · Nghị định thư GACC',
+    vietgap_globalgap_iso: 'VietGAP (TCVN 11892-1:2017) · GlobalG.A.P. (IFA v6.0) · ISO 22005:2007'
+  };
+  const standardLabel = stdMap[stdCode] || stdMap.vietgap_globalgap_iso;
 
   const checkedCats = [];
   document.querySelectorAll('input[name="user_export_cat"]:checked').forEach(cb => {
@@ -1665,18 +1773,21 @@ export async function executeUserExport(mode = 'csv') {
   closeUserExportLogsModal();
 
   const farmSel = document.getElementById('modal-export-farm');
-  const farmName = farmSel && farmSel.selectedIndex >= 0 ? farmSel.options[farmSel.selectedIndex].text : 'NongTrang';
+  const selectedFarmOpt = (farmSel && farmSel.options && farmSel.selectedIndex >= 0) ? farmSel.options[farmSel.selectedIndex] : null;
+  const farmName = selectedFarmOpt ? selectedFarmOpt.text : 'NongTrang';
   const cleanFarmName = farmName.replace(/[^a-zA-Z0-9_\u00C0-\u024F\u1E00-\u1EFF]/g, '_');
   const dateSuffix = new Date().toISOString().slice(0, 10);
 
   if (mode === 'csv') {
-    exportLogsToCsv(filtered, `So_Nhat_Ky_VietGAP_${cleanFarmName}_${dateSuffix}.csv`);
+    exportLogsToCsv(filtered, `So_Nhat_Ky_VietGAP_GlobalGAP_${cleanFarmName}_${dateSuffix}.csv`, { standardLabel });
   } else {
     openPrintableVietGapReport(filtered, {
       farmName: farmName === 'Tất cả trang trại' ? 'Toàn bộ trang trại' : farmName,
       fromDate: fromDate,
       toDate: toDate,
-      totalLogs: filtered.length
+      totalLogs: filtered.length,
+      standardLabel,
+      categoriesLabel: checkedCats.map(c => c === 'Nhân công' ? 'Thuê nhân công' : c).join(', ')
     });
   }
 }
@@ -1693,6 +1804,7 @@ export function openPrintableVietGapReport(logs, meta = {}) {
   const printTimeStr = now.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
   const fromStr = meta.fromDate ? new Date(meta.fromDate).toLocaleDateString('vi-VN') : 'Ngày đầu số hóa';
   const toStr = meta.toDate ? new Date(meta.toDate).toLocaleDateString('vi-VN') : 'Hiện tại';
+  const stdLabel = meta.standardLabel || 'VietGAP (TCVN 11892-1:2017) · GlobalG.A.P. (IFA v6.0) · ISO 22005:2007';
 
   let tableRowsHtml = '';
   logs.forEach((log, index) => {
@@ -1700,6 +1812,9 @@ export function openPrintableVietGapReport(logs, meta = {}) {
     const dateStr = log.log_date ? new Date(log.log_date).toLocaleDateString('vi-VN') : '—';
     const treeCodeStr = log.tree_code || log.plant_id || 'Toàn vườn';
     const plantTypeStr = log.plant_type ? `${log.plant_type}${log.plant_variety ? ' (' + log.plant_variety + ')' : ''}` : '—';
+    const d = log.details || {};
+    const operatorName = log.operator_name || log.creator_name || d.operator_name || 'Kỹ thuật viên trang trại';
+    const equipBatch = [log.equipment_used ? `TB: ${log.equipment_used}` : '', log.batch_code ? `Lô: ${log.batch_code}` : ''].filter(Boolean).join(' · ');
 
     tableRowsHtml += `
       <tr>
@@ -1709,9 +1824,10 @@ export function openPrintableVietGapReport(logs, meta = {}) {
         <td style="font-weight:700; color:#065f46;">${esc(log.log_type || 'Chăm sóc')}</td>
         <td>
           <div style="font-weight:500;">${esc(detailsStr || 'Thực hiện theo quy trình chuẩn')}</div>
+          ${equipBatch ? `<div style="font-size:11px; color:#0369a1; margin-top:2px;">${esc(equipBatch)}</div>` : ''}
           ${log.note ? `<div style="font-size:11.5px; color:#64748b; margin-top:2px;"><em>Ghi chú:</em> ${esc(log.note)}</div>` : ''}
         </td>
-        <td style="text-align:center;">${esc(log.creator_name || 'Nông hộ')}</td>
+        <td style="text-align:center;">${esc(operatorName)}</td>
         <td style="text-align:center; color:#15803d; font-weight:700;">Đạt Chuẩn</td>
       </tr>
     `;
@@ -1722,7 +1838,7 @@ export function openPrintableVietGapReport(logs, meta = {}) {
     <html lang="vi">
     <head>
       <meta charset="UTF-8">
-      <title>Sổ Nhật Ký Canh Tác VietGAP — ${esc(meta.farmName || 'Nông Trại')}</title>
+      <title>Sổ Nhật Ký Canh Tác VietGAP &amp; GlobalG.A.P. — ${esc(meta.farmName || 'Nông Trại')}</title>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
       <style>
         @page { size: A4 landscape; margin: 12mm 10mm 15mm 10mm; }
@@ -1752,6 +1868,8 @@ export function openPrintableVietGapReport(logs, meta = {}) {
         .meta-strip {
           display: flex;
           justify-content: space-between;
+          flex-wrap: wrap;
+          gap: 10px;
           background: #f8fafc;
           border: 1px solid #e2e8f0;
           padding: 8px 14px;
@@ -1806,32 +1924,32 @@ export function openPrintableVietGapReport(logs, meta = {}) {
     </head>
     <body>
       <div class="no-print-bar">
-        <div><strong>Bản in Sổ Nhật Ký Canh Tác VietGAP</strong> · Số lượng: ${logs.length} dòng ghi chép</div>
+        <div><strong>Bản in Sổ Nhật Ký Canh Tác ${esc(stdLabel)}</strong> · Số lượng: ${logs.length} dòng ghi chép</div>
         <button onclick="window.print()" style="background:#10b981; color:#ffffff; border:none; padding:6px 16px; border-radius:6px; font-weight:700; cursor:pointer; font-size:13px;">
-          🖨️ In Báo Cáo / Xuất PDF
+          In Báo Cáo / Xuất PDF
         </button>
       </div>
 
       <div class="header-grid">
         <div class="org-info">
           <div class="org-name">TÂN BẢO AGTECH — HỆ SINH THÁI NÔNG NGHIỆP SỐ</div>
-          <div class="system-name">Hệ Thống Quản Lý Canh Tác & Định Danh Cây Trồng NFC Plant Book</div>
+          <div class="system-name">Hệ Thống Quản Lý Canh Tác &amp; Định Danh Cây Trồng NFC Plant Book</div>
         </div>
         <div style="text-align: right; font-size: 11px; color: #64748b;">
-          <div>Tiêu chuẩn áp dụng: <strong>VietGAP / GlobalGAP</strong></div>
+          <div>Tiêu chuẩn áp dụng: <strong>${esc(stdLabel)}</strong></div>
           <div>Thời gian trích xuất: ${printTimeStr}</div>
         </div>
       </div>
 
       <div class="report-title-box">
-        <h1 class="report-title">SỔ NHẬT KÝ CANH TÁC & CHĂM SÓC CÂY TRỒNG</h1>
-        <div class="report-sub">Trang trại: <strong>${esc(meta.farmName || 'Nông Trại')}</strong></div>
+        <h1 class="report-title">SỔ NHẬT KÝ CANH TÁC &amp; KIỂM ĐỊNH CHẤT LƯỢNG CÂY TRỒNG</h1>
+        <div class="report-sub">Trang trại: <strong>${esc(meta.farmName || 'Nông Trại')}</strong>${meta.categoriesLabel ? ` · Hạng mục: <strong>${esc(meta.categoriesLabel)}</strong>` : ''}</div>
       </div>
 
       <div class="meta-strip">
         <div>Khoảng thời gian: <strong>${fromStr}</strong> đến <strong>${toStr}</strong></div>
         <div>Tổng số hoạt động: <strong>${logs.length}</strong> nhật ký</div>
-        <div>Tình trạng dữ liệu: <strong>Hợp Lệ & Đã Xác Thực</strong></div>
+        <div>Tình trạng dữ liệu: <strong>Hợp Lệ &amp; Đã Xác Thực SHA-256</strong></div>
       </div>
 
       <table>
@@ -1841,8 +1959,8 @@ export function openPrintableVietGapReport(logs, meta = {}) {
             <th style="width: 10%">Ngày</th>
             <th style="width: 13%">Mã Cây / Giống</th>
             <th style="width: 13%">Hoạt Động</th>
-            <th style="width: 42%">Nội Dung Kỹ Thuật (Vật tư, Thuốc, Liều lượng, Ghi chú)</th>
-            <th style="width: 10%">Người Làm</th>
+            <th style="width: 42%">Nội Dung Kỹ Thuật (Vật tư, Thuốc BVTV/PHI, Kiểm toán quả, Ghi chú)</th>
+            <th style="width: 10%">Người Thực Hiện</th>
             <th style="width: 8%">Đánh Giá</th>
           </tr>
         </thead>
@@ -1853,19 +1971,19 @@ export function openPrintableVietGapReport(logs, meta = {}) {
 
       <div class="signature-grid">
         <div>
-          <div class="sig-title">NGƯỜI LẬP SỔ</div>
+          <div class="sig-title">1. KỸ THUẬT VIÊN / NGƯỜI LẬP SỔ</div>
           <div class="sig-sub">(Ký và ghi rõ họ tên)</div>
           <div class="sig-space"></div>
-          <div class="sig-name">${esc(logs[0]?.creator_name || 'Nông hộ')}</div>
+          <div class="sig-name">${esc(logs[0]?.operator_name || logs[0]?.creator_name || 'Kỹ thuật viên trang trại')}</div>
         </div>
         <div>
-          <div class="sig-title">KỸ THUẬT VIÊN / TỔ TRƯỞNG</div>
-          <div class="sig-sub">(Ký và ghi rõ họ tên)</div>
+          <div class="sig-title">2. KIỂM SOÁT NỘI BỘ (ICS / GLOBALG.A.P.)</div>
+          <div class="sig-sub">(Thẩm định quy trình &amp; PHI)</div>
           <div class="sig-space"></div>
           <div class="sig-name">................................................</div>
         </div>
         <div>
-          <div class="sig-title">CHỦ TRANG TRẠI / GIÁM SÁT VIETGAP</div>
+          <div class="sig-title">3. CHỦ TRANG TRẠI / GIÁM SÁT VIETGAP</div>
           <div class="sig-sub">(Ký, đóng dấu hoặc xác nhận)</div>
           <div class="sig-space"></div>
           <div class="sig-name">................................................</div>

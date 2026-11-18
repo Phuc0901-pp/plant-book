@@ -984,6 +984,17 @@ export function resetErpModalLogFilters(silent) {
   }
 }
 
+export function openErpPlantExportModal() {
+  if (!_currentErpPlant) return;
+  const p = _currentErpPlant;
+  if (typeof window.openUserExportLogsModal === 'function') {
+    window.openUserExportLogsModal('print', p.farm_id || '', p.id || '');
+  } else if (p.public_slug || p.nfc_uid || p.id) {
+    const slug = p.nfc_uid || p.public_slug || p.id;
+    window.open(`/plant/${encodeURIComponent(slug)}/report`, '_blank');
+  }
+}
+
 window.openPlantProfileModal = openPlantProfileModal;
 window.closePlantProfileModal = closePlantProfileModal;
 window.switchErpProfileTab = switchErpProfileTab;
@@ -991,6 +1002,7 @@ window.onErpProfileCareClick = onErpProfileCareClick;
 window.onErpProfileNfcClick = onErpProfileNfcClick;
 window.filterErpModalLogs = filterErpModalLogs;
 window.resetErpModalLogFilters = resetErpModalLogFilters;
+window.openErpPlantExportModal = openErpPlantExportModal;
 
 function _getGrowthStageLucideIcon(stageStr) {
   const s = (stageStr || '').toLowerCase();

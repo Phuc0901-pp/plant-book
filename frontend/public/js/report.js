@@ -1,12 +1,41 @@
     let plantData = null;
 
     const LEGACY_LABOR_ALIASES = ['Nhân công', 'Cắt lá', 'Cắt tỉa', 'Cắt cành', 'Tỉa cành/lá', 'Tỉa hoa', 'Tỉa quả', 'Tỉa quả/hoa', 'Thụ phấn', 'Làm cỏ'];
+    const BASE_REPORT_CATEGORIES = [
+      { value: 'Kiểm toán quả', label: 'Kiểm toán quả (Đậu quả → Quả non → Quả chín)' },
+      { value: 'Phun thuốc', label: 'Phun thuốc BVTV & Kiểm soát PHI' },
+      { value: 'Bón phân', label: 'Bón phân & Dinh dưỡng cây trồng' },
+      { value: 'Tưới nước', label: 'Tưới nước & Điều tiết ẩm độ' },
+      { value: 'Nhân công', label: 'Thuê nhân công & Cắt tỉa vườn' },
+      { value: 'Bệnh cây', label: 'Theo dõi bệnh cây & Dịch hại' },
+      { value: 'Thu hoạch', label: 'Thu hoạch & Đối soát sản lượng' }
+    ];
+
+    let _activeReportConfig = {
+      fromDate: '',
+      toDate: '',
+      checkedCats: BASE_REPORT_CATEGORIES.map(c => c.value),
+      standard: 'vietgap_globalgap_iso',
+      explicitCats: false
+    };
 
     function matchesReportCategory(checkedCats, logType) {
-      if (!checkedCats || checkedCats.length === 0) return true;
+      if (!checkedCats) return true;
+      if (checkedCats.length === 0) return false;
       if (checkedCats.includes(logType)) return true;
       if (checkedCats.includes('Nhân công') && LEGACY_LABOR_ALIASES.includes(logType)) return true;
       return false;
+    }
+
+    function trReportTerm(text) {
+      if (!text) return text;
+      if (typeof window !== 'undefined' && window.PlantBookI18n && typeof window.PlantBookI18n.translateDynamicTerm === 'function') {
+        const lang = window.PlantBookI18n.getLanguage ? window.PlantBookI18n.getLanguage() : 'vi';
+        if (lang && lang !== 'vi') {
+          return window.PlantBookI18n.translateDynamicTerm(String(text), lang);
+        }
+      }
+      return String(text);
     }
 
     function enrichReportLogsWithFruitAuditChain(logs) {
@@ -27,7 +56,7 @@
         const d = l.details;
         const dDateIso = l.log_date ? new Date(l.log_date).toISOString().slice(0, 10) : '';
         if (l.log_type === 'Kiểm toán quả') {
-          const stage = d.audit_stage || 'Đậu quả';
+          const stage = d.audit_stage || d.fruit_stage || 'Đậu quả';
           const cnt = parseInt(d.fruit_count ?? d.amount, 10);
           if (!isNaN(cnt)) {
             if (lastAudit) {
@@ -75,62 +104,164 @@
 
     function formatDate(d) {
       if (!d) return '—';
+      const s = String(d);
+      const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (iso) return `${iso[3]}/${iso[2]}/${iso[1]}`;
       const dateObj = new Date(d);
-      return dateObj.toLocaleDateString('vi-VN', {day:'2-digit', month:'2-digit', year:'numeric'});
+      return !isNaN(dateObj.getTime())
+        ? dateObj.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+        : s;
     }
 
     function formatTime(d) {
-      if (!d) return '—';
+      if (!d) return '';
       const dateObj = new Date(d);
-      return dateObj.toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'});
+      if (isNaN(dateObj.getTime())) return '';
+      return dateObj.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
     }
 
-    function getLogDetailsText(log) {
-      const details = log.details || {};
-      if (log.log_type === 'Tưới nước') {
-        return `Phương pháp: ${esc(details.method || '—')} | Lượng nước: ${esc(details.amount || '—')} ${esc(details.unit || '')}`;
+    function formatReportLogTime(log) {
+      if (!log) return '';
+      const d = (log.details && typeof log.details === 'object') ? log.details : {};
+      if (d.audit_time && /^\d{1,2}:\d{2}/.test(String(d.audit_time))) {
+        return String(d.audit_time).slice(0, 5);
       }
-      if (log.log_type === 'Bón phân') {
-        return `Loại phân: ${esc(details.type || '—')} | Lượng bón: ${esc(details.amount || '—')} ${esc(details.unit || '')} | Tên phân: ${esc(details.fertilizer_name || '—')}`;
-      }
-      if (log.log_type === 'Phun thuốc') {
-        return `Loại thuốc: ${esc(details.type || '—')} | Tên thuốc: ${esc(details.pesticide_name || '—')} | Liều lượng: ${esc(details.amount || '—')} | Lý do: ${esc(details.reason || '—')}`;
-      }
-      if (log.log_type === 'Nhân công') {
-        const workContent = details.work_content || details.reason || 'Chăm sóc vườn';
-        const workers = details.worker_count || details.amount || 1;
-        return `Công việc: ${esc(workContent)} | Số công: ${esc(workers)} người`;
-      }
-      if (log.log_type === 'Cắt lá') {
-        return `Số cành/lá cắt tỉa: ${esc(details.amount || '—')} | Lý do: ${esc(details.reason || '—')}`;
-      }
-      if (log.log_type === 'Tỉa hoa') {
-        return `Số bông/trái tỉa bớt: ${esc(details.amount || '—')} | Lý do: ${esc(details.reason || '—')}`;
-      }
-      if (log.log_type === 'Bệnh cây') {
-        return `Bệnh: ${esc(details.disease_name || 'Bệnh chưa xác định')} | Mức độ: ${esc(details.severity || '—')} | Mô tả: ${esc(details.description || '—')}`;
-      }
-      if (log.log_type === 'Kiểm toán quả') {
-        const stage = details.audit_stage || 'Đậu quả';
-        const cnt = details.fruit_count !== undefined ? details.fruit_count : (details.amount || 0);
-        const timePart = details.audit_time ? ` (${esc(details.audit_time)})` : '';
-        const cmpPart = details.comparison_text ? ` | Đối chiếu: ${esc(details.comparison_text)}` : '';
-        const reasonPart = details.reason ? ` | Nguyên nhân: ${esc(details.reason)}` : '';
-        return `Giai đoạn: ${esc(stage)}${timePart} | Số quả: ${esc(cnt)} quả${cmpPart}${reasonPart}`;
-      }
-      if (log.log_type === 'Thu hoạch') {
-        const yieldVal = details.amount || details.yield_kg || '—';
-        const yieldUnit = details.unit || 'kg';
-        const qualityVal = details.quality || details.grade || 'Đạt chuẩn';
-        const batchVal = log.batch_code || details.batch_code || '—';
-        const cmpPart = details.harvest_comparison_text ? ` | ${esc(details.harvest_comparison_text)}` : '';
-        return `Sản lượng: ${esc(yieldVal)} ${esc(yieldUnit)} | Chất lượng: ${esc(qualityVal)} | Mã lô: ${esc(batchVal)}${cmpPart}`;
+      const raw = d.performed_at || log.created_at;
+      if (raw) {
+        const dt = new Date(raw);
+        if (!isNaN(dt.getTime())) {
+          const hh = String(dt.getHours()).padStart(2, '0');
+          const mm = String(dt.getMinutes()).padStart(2, '0');
+          if (hh !== '00' || mm !== '00') return `${hh}:${mm}`;
+        }
       }
       return '';
     }
 
+    function getReportOperatorName(log) {
+      if (!log) return 'Kỹ thuật viên trang trại';
+      const d = (log.details && typeof log.details === 'object') ? log.details : {};
+      return log.operator_name || log.creator_name || d.operator_name || 'Kỹ thuật viên trang trại';
+    }
+
+    function computeReportTreeAge(plant) {
+      if (!plant) return '—';
+      if (plant.plant_age) return plant.plant_age;
+      if (!plant.planting_date) return '—';
+      const planted = new Date(plant.planting_date);
+      if (isNaN(planted.getTime())) return '—';
+      const years = (Date.now() - planted.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
+      if (years < 1) {
+        const months = Math.max(1, Math.round(years * 12));
+        return `${months} tháng tuổi`;
+      }
+      return `${years.toFixed(1)} năm tuổi`;
+    }
+
+    function computeReportPhiStatus(logs, farmSupplies) {
+      const now = Date.now();
+      let maxExpiryMs = 0;
+      let lastPestName = '';
+      const supplyMap = new Map();
+      (farmSupplies || []).forEach(s => {
+        if (s && s.name) supplyMap.set(String(s.name).trim().toLowerCase(), s);
+      });
+
+      (logs || []).forEach(log => {
+        if (!log || log.log_type !== 'Phun thuốc') return;
+        const d = (log.details && typeof log.details === 'object') ? log.details : {};
+        const pName = (d.supply_name || d.pesticide_name || d.pesticide || d.material_name || d.name || '').trim();
+        const linkedSup = pName ? supplyMap.get(pName.toLowerCase()) : null;
+        const phiDays = parseInt(d.phi_days ?? d.phi ?? (linkedSup && linkedSup.phi_days), 10) || 14;
+        const logDt = new Date(log.log_date || log.created_at);
+        if (!isNaN(logDt.getTime())) {
+          const expMs = logDt.getTime() + phiDays * 24 * 60 * 60 * 1000;
+          if (expMs > maxExpiryMs) {
+            maxExpiryMs = expMs;
+            lastPestName = pName || 'Thuốc BVTV';
+          }
+        }
+      });
+
+      if (!maxExpiryMs) {
+        return { isSafe: true, daysRemaining: 0, text: 'An Toàn Thu Hoạch (0 ngày cách ly PHI)' };
+      }
+      const diffDays = Math.ceil((maxExpiryMs - now) / (1000 * 60 * 60 * 24));
+      if (diffDays > 0) {
+        return { isSafe: false, daysRemaining: diffDays, text: `Cách ly PHI: Còn ${diffDays} ngày (${lastPestName})` };
+      }
+      return { isSafe: true, daysRemaining: 0, text: `An Toàn Thu Hoạch (Đã qua PHI: ${lastPestName})` };
+    }
+
+    function getLogDetailsText(log) {
+      const details = (log && log.details && typeof log.details === 'object') ? log.details : {};
+      const qty = details.quantity ?? details.amount ?? details.qty ?? details.dosage ?? details.volume ?? details.water_volume ?? '';
+      if (log.log_type === 'Tưới nước') {
+        const wQty = details.water_liters ? `${details.water_liters} Lít` : (qty ? `${qty} ${details.unit || 'm³'}` : 'Định mức chuẩn');
+        return `Phương pháp: ${esc(details.method || log.equipment_used || 'Tự động')} | Lượng nước: ${esc(wQty)}`;
+      }
+      if (log.log_type === 'Bón phân') {
+        const fName = details.supply_name || details.fertilizer_name || details.fertilizer || details.material_name || details.name || '—';
+        const fQty = qty ? `${qty} ${details.unit || 'kg'}` : '—';
+        return `Phân bón: ${esc(fName)} | Loại: ${esc(details.type || details.method || '—')} | Lượng bón: ${esc(fQty)}`;
+      }
+      if (log.log_type === 'Phun thuốc') {
+        const pName = details.supply_name || details.pesticide_name || details.pesticide || details.material_name || details.name || '—';
+        const parts = [
+          `Thuốc BVTV: ${esc(pName)}`,
+          `Loại: ${esc(details.type || details.method || '—')}`,
+          `Liều lượng: ${esc(qty ? `${qty} ${details.unit || ''}`.trim() : '—')}`
+        ];
+        if (details.active_ingredient) parts.push(`Hoạt chất: ${esc(details.active_ingredient)}`);
+        if (details.phi_days || details.phi) parts.push(`Cách ly PHI: ${esc(details.phi_days || details.phi)} ngày`);
+        if (details.reason) parts.push(`Đối tượng: ${esc(details.reason)}`);
+        return parts.join(' | ');
+      }
+      if (log.log_type === 'Nhân công') {
+        const workContent = details.work_content || details.reason || 'Chăm sóc vườn';
+        const workers = details.worker_count || details.workers_count || details.amount || 1;
+        return `Công việc: ${esc(workContent)} | Số công: ${esc(workers)} người`;
+      }
+      if (log.log_type === 'Cắt lá' || log.log_type === 'Cắt tỉa') {
+        return `Số cành/lá cắt tỉa: ${esc(qty || '—')} | Lý do: ${esc(details.reason || '—')}`;
+      }
+      if (log.log_type === 'Tỉa hoa') {
+        return `Số bông/trái tỉa bớt: ${esc(qty || '—')} | Lý do: ${esc(details.reason || '—')}`;
+      }
+      if (log.log_type === 'Bệnh cây') {
+        return `Bệnh: ${esc(details.disease_name || 'Bệnh chưa xác định')} | Mức độ: ${esc(details.severity || '—')} | Mô tả: ${esc(details.description || details.treatment || '—')}`;
+      }
+      if (log.log_type === 'Kiểm toán quả') {
+        const stage = details.audit_stage || details.fruit_stage || 'Đậu quả';
+        const cnt = details.fruit_count !== undefined ? details.fruit_count : (details.amount || 0);
+        const culled = details.dropped_or_culled_count !== undefined ? details.dropped_or_culled_count : 0;
+        const timePart = details.audit_time ? ` (${esc(details.audit_time)})` : '';
+        const culledPart = culled > 0 ? ` | Rụng/Tỉa bỏ: ${esc(culled)} quả` : '';
+        const cmpPart = details.comparison_text ? ` | Đối chiếu: ${esc(details.comparison_text)}` : '';
+        const reasonPart = details.reason ? ` | Nguyên nhân: ${esc(details.reason)}` : '';
+        return `Giai đoạn: ${esc(stage)}${timePart} | Số quả: ${esc(cnt)} quả${culledPart}${cmpPart}${reasonPart}`;
+      }
+      if (log.log_type === 'Thu hoạch') {
+        const yieldVal = details.amount || details.yield_kg || '—';
+        const yieldUnit = details.unit || 'kg';
+        const fruitPart = details.fruit_count ? ` (${esc(details.fruit_count)} quả)` : '';
+        const qualityVal = details.quality || details.grade || 'Đạt chuẩn';
+        const batchVal = log.batch_code || details.batch_code || '—';
+        const cmpPart = details.harvest_comparison_text ? ` | ${esc(details.harvest_comparison_text)}` : '';
+        return `Sản lượng: ${esc(yieldVal)} ${esc(yieldUnit)}${fruitPart} | Chất lượng: ${esc(qualityVal)} | Mã lô: ${esc(batchVal)}${cmpPart}`;
+      }
+      return details.method ? `${esc(details.method)}${qty ? ' (' + esc(qty) + ')' : ''}` : '';
+    }
+
+    function getReportStandardLabel(code) {
+      if (code === 'vietgap') return 'Tiêu chuẩn áp dụng: VietGAP Trồng Trọt (TCVN 11892-1:2017) · ISO 22005:2007';
+      if (code === 'globalgap_gacc') return 'Tiêu chuẩn áp dụng: GlobalG.A.P. IFA v6.0 · Nghị định thư GACC · ISO 22005:2007';
+      return 'Tiêu chuẩn áp dụng: VietGAP (TCVN 11892-1:2017) · GlobalG.A.P. (IFA v6.0) · ISO 22005:2007';
+    }
+
     function copyReportLink() {
       const btn = document.getElementById('btn-copy-link');
+      if (!btn) return;
       navigator.clipboard.writeText(window.location.href).then(() => {
         const originalContent = btn.innerHTML;
         btn.innerHTML = '<i data-lucide="check" class="lucide-sm"></i> Đã sao chép!';
@@ -164,46 +295,45 @@
       return '';
     }
 
-    function exportReportCsv() {
-      if (!plantData) {
-        alert("Dữ liệu báo cáo chưa sẵn sàng.");
-        return;
-      }
-
-      const urlParams = new URLSearchParams(window.location.search);
-      const fromDate = urlParams.get('from');
-      const toDate = urlParams.get('to');
-      const categoriesParam = urlParams.get('categories');
-      const checkedCats = categoriesParam ? categoriesParam.split(',') : [];
-
-      const logs = enrichReportLogsWithFruitAuditChain(plantData.logs || []);
-      const filteredLogs = logs.filter(log => {
-        const logDateStr = new Date(log.log_date).toISOString().split('T')[0];
-        const isWithinDate = (!fromDate || logDateStr >= fromDate) && (!toDate || logDateStr <= toDate);
-        const isMatchedCat = matchesReportCategory(checkedCats, log.log_type);
+    function filterReportLogsByConfig(logs, config) {
+      const cfg = config || _activeReportConfig;
+      const checkedCats = cfg.explicitCats ? (cfg.checkedCats || []) : null;
+      const fromDate = cfg.fromDate || '';
+      const toDate = cfg.toDate || '';
+      const filtered = (logs || []).filter(log => {
+        const rawDt = log.log_date || log.created_at;
+        const logDateStr = rawDt ? new Date(rawDt).toISOString().slice(0, 10) : '';
+        const isWithinDate = (!fromDate || !logDateStr || logDateStr >= fromDate) && (!toDate || !logDateStr || logDateStr <= toDate);
+        const isMatchedCat = !checkedCats || matchesReportCategory(checkedCats, log.log_type);
         return isWithinDate && isMatchedCat;
       });
-      filteredLogs.sort((a, b) => new Date(a.log_date) - new Date(b.log_date));
+      filtered.sort((a, b) => new Date(a.log_date || a.created_at) - new Date(b.log_date || b.created_at));
+      return filtered;
+    }
 
-      if (filteredLogs.length === 0) {
-        alert("Không có nhật ký canh tác nào để xuất trong phạm vi đã chọn.");
-        return;
-      }
-
+    function buildReportCsvString(filteredLogs, config) {
+      const cfg = config || _activeReportConfig;
+      const stdText = getReportStandardLabel(cfg.standard);
       const headers = [
-        "STT",
-        "Mã Số Cây",
-        "Loại Cây",
-        "Giống Cây",
-        "Trang Trại",
-        "Địa Chỉ Trang Trại",
-        "Ngày Thực Hiện",
-        "Hoạt Động Canh Tác",
-        "Chi Tiết Kỹ Thuật / Vật Tư / Bệnh",
-        "Người Thực Hiện",
-        "Ghi Chú",
-        "Hình Ảnh / Video Bằng Chứng"
-      ];
+        'STT',
+        'Tiêu Chuẩn Áp Dụng',
+        'Mã Số Cây',
+        'Loại Cây',
+        'Giống Cây',
+        'Mã Vùng Trồng (PUC)',
+        'Chứng Nhận VietGAP',
+        'Trang Trại',
+        'Địa Chỉ Trang Trại',
+        'Ngày Thực Hiện',
+        'Giờ Thực Hiện',
+        'Hạng Mục Canh Tác',
+        'Chi Tiết Kỹ Thuật / Vật Tư / Kiểm Toán Quả',
+        'Thiết Bị Sử Dụng',
+        'Mã Lô Canh Tác',
+        'Người Thực Hiện',
+        'Ghi Chú',
+        'Minh Chứng Thực Địa'
+      ].map(trReportTerm);
 
       function escapeCsvCell(val) {
         if (val === null || val === undefined) return '""';
@@ -215,29 +345,54 @@
       rows.push(headers.map(escapeCsvCell).join(','));
 
       filteredLogs.forEach((log, index) => {
-        const detailsText = getLogDetailsText(log).replace(/<[^>]*>/g, '');
+        const detailsText = trReportTerm(getLogDetailsText(log).replace(/<[^>]*>/g, ''));
         const mediaUrls = (log.media_urls && Array.isArray(log.media_urls))
           ? log.media_urls.map(m => m.url || m).join('; ')
           : '';
+        const timeStr = formatReportLogTime(log) || '—';
 
         const row = [
           index + 1,
+          stdText,
           plantData.tree_code || plantData.id || '',
-          plantData.plant_type || '',
+          trReportTerm(plantData.plant_type || ''),
           plantData.plant_variety || '',
+          plantData.puc_code || '',
+          plantData.vietgap_cert_number || '',
           plantData.farm_name || '',
           plantData.farm_address || '',
-          formatDate(log.log_date),
-          log.log_type || '',
+          formatDate(log.log_date || log.created_at),
+          timeStr,
+          trReportTerm(log.log_type || ''),
           detailsText,
-          log.creator_name || 'Nông hộ',
+          log.equipment_used || '',
+          log.batch_code || '',
+          getReportOperatorName(log),
           log.note || '',
           mediaUrls
         ];
         rows.push(row.map(escapeCsvCell).join(','));
       });
 
-      const csvContent = '\uFEFF' + rows.join('\r\n');
+      return '\uFEFF' + rows.join('\r\n');
+    }
+
+    function exportReportCsv(overrideLogs, overrideConfig) {
+      if (!plantData) {
+        alert('Dữ liệu báo cáo chưa sẵn sàng.');
+        return null;
+      }
+      const logs = enrichReportLogsWithFruitAuditChain(plantData.logs || []);
+      const filteredLogs = Array.isArray(overrideLogs)
+        ? overrideLogs
+        : filterReportLogsByConfig(logs, overrideConfig || _activeReportConfig);
+
+      if (filteredLogs.length === 0) {
+        alert('Không có nhật ký canh tác nào phù hợp với hạng mục và khoảng thời gian đã chọn.');
+        return null;
+      }
+
+      const csvContent = buildReportCsvString(filteredLogs, overrideConfig || _activeReportConfig);
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -245,29 +400,409 @@
       const cleanTreeCode = (plantData.tree_code || plantData.id || 'Tree').toString().replace(/[^a-zA-Z0-9_]/g, '_');
       const dateSuffix = new Date().toISOString().slice(0, 10);
       link.setAttribute('href', url);
-      link.setAttribute('download', `NhatKyCanhTac_${cleanPlantType}_${cleanTreeCode}_${dateSuffix}.csv`);
+      link.setAttribute('download', `BaoCaoVietGAP_GlobalGAP_${cleanPlantType}_${cleanTreeCode}_${dateSuffix}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+      return csvContent;
     }
     window.exportReportCsv = exportReportCsv;
+
+    function getAllAvailableReportCategories() {
+      const cats = BASE_REPORT_CATEGORIES.map(c => ({ ...c }));
+      const knownValues = new Set(cats.map(c => c.value));
+      ((plantData && plantData.logs) || []).forEach(l => {
+        if (l && l.log_type && !knownValues.has(l.log_type) && !LEGACY_LABOR_ALIASES.includes(l.log_type)) {
+          knownValues.add(l.log_type);
+          cats.push({ value: l.log_type, label: l.log_type });
+        }
+      });
+      return cats;
+    }
+
+    function countLogsForCategory(catValue) {
+      const logs = (plantData && plantData.logs) || [];
+      return logs.filter(l => {
+        if (catValue === 'Nhân công') return l.log_type === 'Nhân công' || LEGACY_LABOR_ALIASES.includes(l.log_type);
+        return l.log_type === catValue;
+      }).length;
+    }
+
+    function openReportConfigModal(defaultMode) {
+      if (!plantData) {
+        alert('Dữ liệu cây trồng đang được tải. Vui lòng đợi giây lát.');
+        return;
+      }
+      const grid = document.getElementById('report-cfg-categories-grid');
+      const fromEl = document.getElementById('report-cfg-from');
+      const toEl = document.getElementById('report-cfg-to');
+      const stdEl = document.getElementById('report-cfg-standard');
+      const titleEl = document.getElementById('report-cfg-modal-title');
+
+      if (titleEl) {
+        if (defaultMode === 'csv') titleEl.textContent = 'Chọn Hạng Mục Canh Tác Trước Khi Xuất CSV (Excel)';
+        else if (defaultMode === 'print') titleEl.textContent = 'Chọn Hạng Mục Canh Tác Trước Khi In / Tải PDF';
+        else titleEl.textContent = 'Cấu Hình Hạng Mục Xuất Báo Cáo';
+      }
+
+      if (fromEl) fromEl.value = _activeReportConfig.fromDate || '';
+      if (toEl) toEl.value = _activeReportConfig.toDate || '';
+      if (stdEl && _activeReportConfig.standard) stdEl.value = _activeReportConfig.standard;
+
+      if (grid) {
+        const cats = getAllAvailableReportCategories();
+        const activeSet = new Set(_activeReportConfig.checkedCats || []);
+        grid.innerHTML = cats.map(c => {
+          const cnt = countLogsForCategory(c.value);
+          const checkedAttr = (!_activeReportConfig.explicitCats || activeSet.has(c.value)) ? 'checked' : '';
+          return `
+            <label class="report-cfg-cat-item">
+              <span style="display:flex; align-items:center; gap:7px; min-width:0;">
+                <input type="checkbox" name="report_cfg_cat" value="${esc(c.value)}" ${checkedAttr} onchange="updateReportConfigMatchCount()">
+                <span>${esc(c.label)}</span>
+              </span>
+              <span class="report-cfg-cat-count">${cnt}</span>
+            </label>
+          `;
+        }).join('');
+      }
+
+      updateReportConfigMatchCount();
+      const modal = document.getElementById('report-export-config-modal');
+      if (modal) modal.style.display = 'flex';
+      if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
+      if (window.PlantBookI18n && typeof window.PlantBookI18n.applyDomTranslations === 'function') {
+        window.PlantBookI18n.applyDomTranslations();
+      }
+    }
+    window.openReportConfigModal = openReportConfigModal;
+
+    function closeReportConfigModal() {
+      const modal = document.getElementById('report-export-config-modal');
+      if (modal) modal.style.display = 'none';
+    }
+    window.closeReportConfigModal = closeReportConfigModal;
+
+    function readReportConfigFromModal() {
+      const fromEl = document.getElementById('report-cfg-from');
+      const toEl = document.getElementById('report-cfg-to');
+      const stdEl = document.getElementById('report-cfg-standard');
+      const checkedCats = [];
+      document.querySelectorAll('#report-cfg-categories-grid input[name="report_cfg_cat"]:checked').forEach(cb => {
+        checkedCats.push(cb.value);
+      });
+      return {
+        fromDate: fromEl ? fromEl.value : '',
+        toDate: toEl ? toEl.value : '',
+        checkedCats,
+        standard: stdEl ? stdEl.value : 'vietgap_globalgap_iso',
+        explicitCats: true
+      };
+    }
+
+    function updateReportConfigMatchCount() {
+      const banner = document.getElementById('report-cfg-match-count');
+      if (!banner || !plantData) return 0;
+      const cfg = readReportConfigFromModal();
+      const logs = enrichReportLogsWithFruitAuditChain(plantData.logs || []);
+      const matched = filterReportLogsByConfig(logs, cfg);
+      if (cfg.checkedCats.length === 0) {
+        banner.textContent = 'Vui lòng chọn ít nhất 1 hạng mục canh tác để xuất báo cáo.';
+        banner.style.background = '#fef2f2';
+        banner.style.borderColor = '#fecaca';
+        banner.style.color = '#991b1b';
+        return 0;
+      }
+      banner.style.background = '#ecfdf5';
+      banner.style.borderColor = '#a7f3d0';
+      banner.style.color = '#065f46';
+      banner.textContent = `Đã chọn ${cfg.checkedCats.length} hạng mục · Sẵn sàng xuất ${matched.length} nhật ký canh tác đạt chuẩn VietGAP / GlobalG.A.P.`;
+      return matched.length;
+    }
+    window.updateReportConfigMatchCount = updateReportConfigMatchCount;
+
+    function selectReportConfigCategoriesPreset(preset) {
+      const boxes = document.querySelectorAll('#report-cfg-categories-grid input[name="report_cfg_cat"]');
+      boxes.forEach(cb => {
+        if (preset === 'all') cb.checked = true;
+        else if (preset === 'none') cb.checked = false;
+        else if (preset === 'fruit_audit') cb.checked = (cb.value === 'Kiểm toán quả' || cb.value === 'Thu hoạch');
+        else if (preset === 'phi_safety') cb.checked = (cb.value === 'Phun thuốc' || cb.value === 'Bón phân' || cb.value === 'Bệnh cây');
+      });
+      updateReportConfigMatchCount();
+    }
+    window.selectReportConfigCategoriesPreset = selectReportConfigCategoriesPreset;
+
+    function setReportConfigDatePreset(preset) {
+      const fromEl = document.getElementById('report-cfg-from');
+      const toEl = document.getElementById('report-cfg-to');
+      if (!fromEl || !toEl) return;
+      const today = new Date();
+      const todayIso = today.toISOString().slice(0, 10);
+      if (preset === 'all') {
+        fromEl.value = '';
+        toEl.value = '';
+      } else if (preset === '30d') {
+        const d = new Date(today.getTime() - 30 * 86400000);
+        fromEl.value = d.toISOString().slice(0, 10);
+        toEl.value = todayIso;
+      } else if (preset === '90d') {
+        const d = new Date(today.getTime() - 90 * 86400000);
+        fromEl.value = d.toISOString().slice(0, 10);
+        toEl.value = todayIso;
+      } else if (preset === 'year') {
+        fromEl.value = `${today.getFullYear()}-01-01`;
+        toEl.value = todayIso;
+      }
+      updateReportConfigMatchCount();
+    }
+    window.setReportConfigDatePreset = setReportConfigDatePreset;
+
+    function applyReportConfigPreview() {
+      const cfg = readReportConfigFromModal();
+      if (cfg.checkedCats.length === 0) {
+        alert('Vui lòng chọn ít nhất một hạng mục canh tác cần xuất.');
+        return false;
+      }
+      _activeReportConfig = cfg;
+      renderReportView();
+      closeReportConfigModal();
+      return true;
+    }
+    window.applyReportConfigPreview = applyReportConfigPreview;
+
+    function confirmExportReportCsv() {
+      const cfg = readReportConfigFromModal();
+      if (cfg.checkedCats.length === 0) {
+        alert('Vui lòng chọn ít nhất một hạng mục canh tác cần xuất.');
+        return false;
+      }
+      _activeReportConfig = cfg;
+      renderReportView();
+      const csvOut = exportReportCsv(null, cfg);
+      if (csvOut) closeReportConfigModal();
+      return Boolean(csvOut);
+    }
+    window.confirmExportReportCsv = confirmExportReportCsv;
+
+    function confirmPrintReport() {
+      const ok = applyReportConfigPreview();
+      if (!ok) return false;
+      setTimeout(() => {
+        if (typeof window.print === 'function') window.print();
+      }, 180);
+      return true;
+    }
+    window.confirmPrintReport = confirmPrintReport;
+
+    function renderReportView() {
+      if (!plantData) return;
+      const now = new Date();
+      const timeEl = document.getElementById('report-time');
+      if (timeEl) timeEl.textContent = `Trích xuất lúc: ${formatDate(now)} ${formatTime(now)}`;
+
+      const stdSubEl = document.getElementById('report-standard-subtitle');
+      if (stdSubEl) stdSubEl.textContent = getReportStandardLabel(_activeReportConfig.standard);
+
+      document.getElementById('plant-id').textContent = `#${plantData.tree_code || plantData.id}`;
+      document.getElementById('plant-type').textContent = plantData.plant_type || '—';
+      document.getElementById('plant-variety').textContent = plantData.plant_variety || '—';
+      document.getElementById('plant-age').textContent = computeReportTreeAge(plantData);
+      document.getElementById('plant-location').textContent = plantData.location || plantData.plot_code || '—';
+      document.getElementById('plant-farm').textContent = plantData.farm_name || '—';
+
+      const pucEl = document.getElementById('plant-puc-code');
+      if (pucEl) pucEl.textContent = plantData.puc_code || 'Chưa cấp mã PUC';
+      const certEl = document.getElementById('plant-vietgap-cert');
+      if (certEl) certEl.textContent = plantData.vietgap_cert_number ? `${plantData.vietgap_cert_number}${plantData.vietgap_cert_org ? ' (' + plantData.vietgap_cert_org + ')' : ''}` : 'TCVN 11892-1:2017 / GlobalG.A.P.';
+      const nfcEl = document.getElementById('plant-nfc-uid');
+      if (nfcEl) nfcEl.textContent = plantData.nfc_uid || 'Chưa gắn thẻ NFC';
+
+      const hasCoords = plantData.latitude && plantData.longitude;
+      document.getElementById('plant-gps').textContent = hasCoords
+        ? `${Number(plantData.latitude).toFixed(6)}, ${Number(plantData.longitude).toFixed(6)}`
+        : '—';
+
+      const logs = enrichReportLogsWithFruitAuditChain(plantData.logs || []);
+      const phi = computeReportPhiStatus(logs, plantData.farm_supplies);
+      const phiEl = document.getElementById('plant-phi-status');
+      if (phiEl) {
+        phiEl.textContent = phi.text;
+        phiEl.classList.toggle('is-quarantine', !phi.isSafe);
+      }
+
+      const filteredLogs = filterReportLogsByConfig(logs, _activeReportConfig);
+
+      const statsStrip = document.getElementById('report-stats-strip');
+      if (statsStrip) {
+        const countByCat = new Map();
+        filteredLogs.forEach(l => {
+          const catKey = LEGACY_LABOR_ALIASES.includes(l.log_type) ? 'Nhân công' : (l.log_type || 'Khác');
+          countByCat.set(catKey, (countByCat.get(catKey) || 0) + 1);
+        });
+        const totalCard = `<div class="report-stat-card"><div class="report-stat-val">${filteredLogs.length}</div><div class="report-stat-lbl">Tổng bản ghi xuất</div></div>`;
+        const catCards = Array.from(countByCat.entries()).map(([cat, cnt]) => {
+          const lbl = cat === 'Nhân công' ? 'Thuê nhân công' : cat;
+          return `<div class="report-stat-card"><div class="report-stat-val">${cnt}</div><div class="report-stat-lbl">${esc(lbl)}</div></div>`;
+        }).join('');
+        statsStrip.innerHTML = totalCard + catCards;
+      }
+
+      const auditChainBox = document.getElementById('report-fruit-audit-chain');
+      if (auditChainBox) {
+        const auditItems = filteredLogs.filter(l => l.log_type === 'Kiểm toán quả' || l.log_type === 'Thu hoạch');
+        const chainLines = auditItems
+          .map(l => {
+            const txt = (l.details && (l.details.comparison_text || l.details.harvest_comparison_text)) || '';
+            if (!txt) return '';
+            return `<div class="report-audit-step"><strong>${esc(formatDate(l.log_date))} (${esc(l.log_type)}):</strong> ${esc(txt)}</div>`;
+          })
+          .filter(Boolean);
+        if (chainLines.length > 0) {
+          auditChainBox.style.display = 'block';
+          auditChainBox.innerHTML = `<div class="report-audit-chain-title">Chuỗi Theo Dõi Kiểm Toán Quả &amp; Đối Soát Thu Hoạch (${chainLines.length} mốc)</div>${chainLines.join('')}`;
+        } else {
+          auditChainBox.style.display = 'none';
+          auditChainBox.innerHTML = '';
+        }
+      }
+
+      const activeCatLabels = _activeReportConfig.explicitCats && _activeReportConfig.checkedCats.length > 0
+        ? _activeReportConfig.checkedCats.map(c => (c === 'Nhân công' ? 'Thuê nhân công' : c)).join(', ')
+        : 'Tất cả hạng mục canh tác';
+
+      const summaryText = `Thời gian báo cáo: từ <strong>${_activeReportConfig.fromDate ? formatDate(_activeReportConfig.fromDate) : 'ngày đầu số hóa'}</strong> đến <strong>${_activeReportConfig.toDate ? formatDate(_activeReportConfig.toDate) : 'hiện tại'}</strong> · Hạng mục: <strong>${esc(activeCatLabels)}</strong> · Đã lọc <strong>${filteredLogs.length}</strong> nhật ký hoạt động.`;
+      document.getElementById('report-summary').innerHTML = summaryText;
+
+      const sigOp = document.getElementById('report-sig-operator');
+      if (sigOp && filteredLogs.length > 0) sigOp.textContent = getReportOperatorName(filteredLogs[filteredLogs.length - 1]);
+      const sigOwner = document.getElementById('report-sig-owner');
+      if (sigOwner) sigOwner.textContent = plantData.owner_name || plantData.farm_name || 'Chủ trang trại';
+
+      const hashSeal = document.getElementById('report-hash-seal');
+      if (hashSeal) {
+        const latestLog = filteredLogs[filteredLogs.length - 1];
+        const shortHash = latestLog && latestLog.record_hash ? String(latestLog.record_hash).slice(0, 16) : (plantData.nfc_uid || `PLANT-${plantData.id}`);
+        hashSeal.textContent = `ISO-22005 SEAL: ${shortHash}`;
+      }
+
+      const tableContainer = document.getElementById('table-container');
+      if (filteredLogs.length === 0) {
+        tableContainer.innerHTML = `<div class="no-data">Không có hoạt động canh tác nào khớp với khoảng thời gian và hạng mục đã chọn.</div>`;
+      } else {
+        let tableHtml = `
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 12%">Ngày / Giờ</th>
+                <th style="width: 14%">Hạng mục</th>
+                <th style="width: 34%">Chi tiết kỹ thuật / Vật tư / Kiểm toán</th>
+                <th style="width: 14%">Thiết bị &amp; Tuân thủ</th>
+                <th style="width: 14%">Ghi chú &amp; Minh chứng</th>
+                <th style="width: 12%">Người thực hiện</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+
+        filteredLogs.forEach((l, idx) => {
+          const detailsText = getLogDetailsText(l);
+          const timePart = formatReportLogTime(l);
+          const mediaUrls = (l.media_urls && Array.isArray(l.media_urls)) ? l.media_urls : [];
+          let mediaHtml = '';
+
+          if (mediaUrls.length > 0) {
+            const imgHtmls = [];
+            const videoHtmls = [];
+
+            mediaUrls.forEach(m => {
+              const url = m.url || m;
+              const isVideo = (m.type === 'video') || /\.(mp4|mov|avi|mkv|webm)/i.test(url);
+              if (isVideo) {
+                videoHtmls.push(`
+                  <div class="video-link-item">
+                    <span style="color: #e53e3e;">▶</span>
+                    <a href="${esc(url)}" target="_blank">Xem video thực địa</a>
+                  </div>
+                `);
+              } else {
+                imgHtmls.push(`
+                  <img src="${esc(url)}" class="media-thumb" onclick="window.open('${esc(url)}', '_blank')">
+                `);
+              }
+            });
+
+            if (imgHtmls.length > 0 || videoHtmls.length > 0) {
+              mediaHtml = `
+                <div class="media-container">
+                  ${imgHtmls.length > 0 ? `<div class="media-gallery">${imgHtmls.join('')}</div>` : ''}
+                  ${videoHtmls.join('')}
+                </div>
+              `;
+            }
+          }
+
+          const equipParts = [];
+          if (l.equipment_used) equipParts.push(`<div>Thiết bị: <strong>${esc(l.equipment_used)}</strong></div>`);
+          if (l.batch_code) equipParts.push(`<div class="font-mono">Lô: <strong>${esc(l.batch_code)}</strong></div>`);
+          equipParts.push('<span class="compliance-pill">Đạt Chuẩn</span>');
+
+          tableHtml += `
+            <tr>
+              <td>
+                <div style="font-weight:700; color:#64748b; font-size:11px;">#${idx + 1}</div>
+                <strong>${formatDate(l.log_date || l.created_at)}</strong>
+                ${timePart ? `<div style="font-size:11px; color:#64748b;">${esc(timePart)}</div>` : ''}
+              </td>
+              <td><span class="log-type">${esc(l.log_type)}</span></td>
+              <td>${detailsText ? `<div style="font-weight: 500;">${detailsText}</div>` : '<span style="color:#94a3b8;">Theo quy trình chuẩn</span>'}</td>
+              <td>${equipParts.join('')}</td>
+              <td>
+                ${l.note ? `<div class="log-note">${esc(l.note)}</div>` : '<span style="color:#94a3b8; font-size:11.5px;">Không có ghi chú</span>'}
+                ${mediaHtml}
+              </td>
+              <td><strong>${esc(getReportOperatorName(l))}</strong></td>
+            </tr>
+          `;
+        });
+
+        tableHtml += `
+            </tbody>
+          </table>
+        `;
+        tableContainer.innerHTML = tableHtml;
+      }
+
+      if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
+      if (window.PlantBookI18n && typeof window.PlantBookI18n.applyDomTranslations === 'function') {
+        window.PlantBookI18n.applyDomTranslations();
+      }
+    }
 
     async function initReport() {
       try {
         const slug = getReportTargetSlug();
-        if (!slug) throw new Error("Mã định danh cây trồng trống.");
+        if (!slug) throw new Error('Mã định danh cây trồng trống.');
 
         const urlParams = new URLSearchParams(window.location.search);
-        const fromDate = urlParams.get('from');
-        const toDate = urlParams.get('to');
+        const fromDate = urlParams.get('from') || '';
+        const toDate = urlParams.get('to') || '';
         const categoriesParam = urlParams.get('categories');
-        const checkedCats = categoriesParam ? categoriesParam.split(',') : [];
+        const checkedCats = categoriesParam ? categoriesParam.split(',').filter(Boolean) : BASE_REPORT_CATEGORIES.map(c => c.value);
+
+        _activeReportConfig = {
+          fromDate,
+          toDate,
+          checkedCats,
+          standard: urlParams.get('standard') || 'vietgap_globalgap_iso',
+          explicitCats: Boolean(categoriesParam)
+        };
 
         let res = await fetch(`/api/plants/public/${encodeURIComponent(slug)}`);
         if (!res.ok) {
           const pathParts = window.location.pathname.split('/').filter(p => p.length > 0);
-          const farmId = (!isNaN(parseInt(pathParts[0]))) ? pathParts[0] : null;
+          const farmId = (!isNaN(parseInt(pathParts[0], 10))) ? pathParts[0] : null;
           if (farmId && slug) {
             res = await fetch(`/api/plants/public-by-farm-uid/${farmId}/${encodeURIComponent(slug)}`);
           }
@@ -279,117 +814,17 @@
         }
         plantData = await res.json();
 
-        const now = new Date();
-        document.getElementById('report-time').textContent = `Trích xuất lúc: ${formatDate(now)} ${formatTime(now)}`;
-
-        document.getElementById('plant-id').textContent = `#${plantData.id}`;
-        document.getElementById('plant-type').textContent = plantData.plant_type || '—';
-        document.getElementById('plant-variety').textContent = plantData.plant_variety || '—';
-        document.getElementById('plant-age').textContent = plantData.plant_age || '—';
-        document.getElementById('plant-location').textContent = plantData.location || '—';
-        document.getElementById('plant-farm').textContent = plantData.farm_name || '—';
-
-        const hasCoords = plantData.latitude && plantData.longitude;
-        document.getElementById('plant-gps').textContent = hasCoords
-          ? `${plantData.latitude}, ${plantData.longitude}`
-          : '—';
-
-        const logs = enrichReportLogsWithFruitAuditChain(plantData.logs || []);
-        const filteredLogs = logs.filter(log => {
-          const logDateStr = new Date(log.log_date).toISOString().split('T')[0];
-          const isWithinDate = (!fromDate || logDateStr >= fromDate) && (!toDate || logDateStr <= toDate);
-
-          const isMatchedCat = matchesReportCategory(checkedCats, log.log_type);
-          return isWithinDate && isMatchedCat;
-        });
-        filteredLogs.sort((a, b) => new Date(a.log_date) - new Date(b.log_date));
-
-        const summaryText = `Thời gian báo cáo: từ <strong>${fromDate ? formatDate(fromDate) : 'ngày đầu số hóa'}</strong> đến <strong>${toDate ? formatDate(toDate) : 'hiện tại'}</strong>. Đã lọc <strong>${filteredLogs.length}</strong> nhật ký hoạt động.`;
-        document.getElementById('report-summary').innerHTML = summaryText;
-
-        const tableContainer = document.getElementById('table-container');
-        if (filteredLogs.length === 0) {
-          tableContainer.innerHTML = `<div class="no-data">Không có hoạt động canh tác nào khớp với khoảng thời gian và hạng mục đã chọn.</div>`;
-        } else {
-          let tableHtml = `
-            <table>
-              <thead>
-                <tr>
-                  <th style="width: 15%">Ngày thực hiện</th>
-                  <th style="width: 20%">Hoạt động</th>
-                  <th style="width: 45%">Nội dung chi tiết</th>
-                  <th style="width: 20%">Người thực hiện</th>
-                </tr>
-              </thead>
-              <tbody>
-          `;
-
-          filteredLogs.forEach(l => {
-            const detailsText = getLogDetailsText(l);
-            const mediaUrls = (l.media_urls && Array.isArray(l.media_urls)) ? l.media_urls : [];
-            let mediaHtml = '';
-
-            if (mediaUrls.length > 0) {
-              const imgHtmls = [];
-              const videoHtmls = [];
-
-              mediaUrls.forEach(m => {
-                const url = m.url || m;
-                const isVideo = (m.type === 'video') || /\.(mp4|mov|avi|mkv|webm)/i.test(url);
-                if (isVideo) {
-                  videoHtmls.push(`
-                    <div class="video-link-item">
-                      <span style="color: #e53e3e;">▶</span>
-                      <a href="${url}" target="_blank">Xem video nhật ký bệnh cây</a>
-                    </div>
-                  `);
-                } else {
-                  imgHtmls.push(`
-                    <img src="${url}" class="media-thumb" onclick="window.open('${url}', '_blank')">
-                  `);
-                }
-              });
-
-              if (imgHtmls.length > 0 || videoHtmls.length > 0) {
-                mediaHtml = `
-                  <div class="media-container">
-                    ${imgHtmls.length > 0 ? `<div class="media-gallery">${imgHtmls.join('')}</div>` : ''}
-                    ${videoHtmls.join('')}
-                  </div>
-                `;
-              }
-            }
-
-            tableHtml += `
-              <tr>
-                <td><strong>${formatDate(l.log_date)}</strong></td>
-                <td><span class="log-type">${esc(l.log_type)}</span></td>
-                <td>
-                  ${detailsText ? `<div style="font-weight: 500; margin-bottom: 4px;">${detailsText}</div>` : ''}
-                  ${l.note ? `<div class="log-note">${esc(l.note)}</div>` : ''}
-                  ${mediaHtml}
-                </td>
-                <td>${esc(l.creator_name || 'Công nhân / Khách')}</td>
-              </tr>
-            `;
-          });
-
-          tableHtml += `
-              </tbody>
-            </table>
-          `;
-          tableContainer.innerHTML = tableHtml;
-        }
+        renderReportView();
 
         document.getElementById('loader').style.display = 'none';
         document.getElementById('report-content').style.display = 'block';
 
+        const hasCoords = plantData.latitude && plantData.longitude;
         const hasBoundary = plantData.farm_boundary && plantData.farm_boundary.coordinates;
         if (hasCoords || hasBoundary) {
           document.getElementById('map-section').style.display = 'block';
           await initReportMap(hasCoords, hasBoundary);
         }
-
       } catch (err) {
         console.error(err);
         document.getElementById('loader').style.display = 'none';

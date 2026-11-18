@@ -529,6 +529,82 @@
       en: 'Generated automatically by Tanbao AgTech Digital Agricultural Ecosystem',
       zh: '由新宝农业科技 (Tanbao AgTech) 数字化农业生态系统自动生成'
     },
+    'Hồ Sơ Truy Xuất Nguồn Gốc Quốc Tế & Kiểm Định Canh Tác': {
+      en: 'International Traceability & Cultivation Audit Dossier',
+      zh: '国际农产品溯源与农事审计规范档案'
+    },
+    'Chọn hạng mục xuất': { en: 'Select Export Categories', zh: '选择导出农事类别' },
+    'Xuất báo cáo VietGAP': { en: 'Export VietGAP Report', zh: '导出 VietGAP 报告' },
+    'Xuất Báo Cáo VietGAP': { en: 'Export VietGAP Report', zh: '导出 VietGAP 报告' },
+    'Cấu Hình Hạng Mục Xuất Báo Cáo': { en: 'Configure Report Export Categories', zh: '配置报告导出农事类别' },
+    'Chọn Hạng Mục Canh Tác Trước Khi Xuất CSV (Excel)': {
+      en: 'Select Cultivation Categories Before CSV (Excel) Export',
+      zh: '导出 CSV (Excel) 前选择农事操作类别'
+    },
+    'Chọn Hạng Mục Canh Tác Trước Khi In / Tải PDF': {
+      en: 'Select Cultivation Categories Before Print / PDF Export',
+      zh: '打印 / 导出 PDF 前选择农事操作类别'
+    },
+    'Chọn các hạng mục canh tác (Kiểm toán quả, Phun thuốc, Bón phân...) & tiêu chuẩn trước khi xuất': {
+      en: 'Select cultivation categories (Fruit Audit, Spraying, Fertilization...) and international standards before exporting',
+      zh: '导出前请选择农事作业类别（结果审计、施药、施肥等）与国际认证标准'
+    },
+    'Tiêu chuẩn xuất hồ sơ quốc tế': { en: 'International Export Standard', zh: '国际认证导出标准' },
+    'Tiêu chuẩn xuất hồ sơ quốc tế:': { en: 'International Export Standard:', zh: '国际认证导出标准：' },
+    'Tiêu chuẩn hồ sơ xuất': { en: 'Export Document Standard', zh: '导出报告合规标准' },
+    'Khoảng thời gian trích xuất': { en: 'Extraction Date Range', zh: '报告时间范围' },
+    'Toàn bộ lịch sử': { en: 'Full History', zh: '全部历史' },
+    '30 ngày gần nhất': { en: 'Last 30 Days', zh: '近 30 天' },
+    '90 ngày': { en: '90 Days', zh: '近 90 天' },
+    'Năm nay': { en: 'This Year', zh: '本年度' },
+    'Chọn hạng mục canh tác cần xuất': { en: 'Select Cultivation Categories to Export', zh: '选择要导出的农事类别' },
+    'Hạng mục canh tác cần xuất:': { en: 'Cultivation Categories to Export:', zh: '要导出的农事类别：' },
+    'Chọn tất cả': { en: 'Select All', zh: '全选' },
+    'Kiểm toán quả & Thu hoạch': { en: 'Fruit Audit & Harvest', zh: '结果审计与采收' },
+    'Phun thuốc & Bón phân': { en: 'Spraying & Fertilization', zh: '植保施药与施肥' },
+    'Cập nhật xem trước': { en: 'Update Preview', zh: '更新预览' },
+    'Xác nhận Tải CSV (Excel)': { en: 'Confirm CSV (Excel) Export', zh: '确认导出 CSV (Excel)' },
+    'Xác nhận In / Xuất PDF': { en: 'Confirm Print / PDF Export', zh: '确认打印 / 导出 PDF' },
+    'I. Thông tin định danh cây trồng & Chứng nhận vùng trồng': {
+      en: 'I. Tree Identification & Farm Certification Profile',
+      zh: '一、果树单株标识与产区认证信息'
+    },
+    'II. Tổng hợp hạng mục canh tác & Kiểm toán quả': {
+      en: 'II. Cultivation Category Summary & Fruit Audit Progression',
+      zh: '二、农事作业汇总与结果审计追踪'
+    },
+    'III. Bản đồ vị trí vệ tinh & Ranh giới trang trại (GIS WGS84)': {
+      en: 'III. Satellite Tree Location & Farm Boundary Map (GIS WGS84)',
+      zh: '三、果树卫星定位与庄园边界地图 (GIS WGS84)'
+    },
+    'IV. Nhật ký hoạt động canh tác chi tiết (VietGAP & GlobalG.A.P.)': {
+      en: 'IV. Detailed Cultivation Activity Ledger (VietGAP & GlobalG.A.P.)',
+      zh: '四、详细农事作业记录台账 (VietGAP & GlobalG.A.P.)'
+    },
+    'V. Xác nhận kiểm định hồ sơ (VietGAP / GlobalG.A.P. Audit Sign-Off)': {
+      en: 'V. Audit & Verification Sign-Off (VietGAP / GlobalG.A.P.)',
+      zh: '五、审核签章确认 (VietGAP / GlobalG.A.P. 规范)'
+    },
+    'Mã vùng trồng (PUC)': { en: 'Production Unit Code (PUC)', zh: '出口种植园代码 (PUC)' },
+    'Chứng nhận VietGAP': { en: 'VietGAP / GlobalG.A.P. Cert', zh: 'VietGAP / GlobalG.A.P. 认证' },
+    'Tọa độ GPS (WGS84)': { en: 'WGS84 GPS Coordinates', zh: 'WGS84 卫星坐标' },
+    'Tổng bản ghi xuất': { en: 'Total Exported Logs', zh: '导出记录总数' },
+    'Ngày / Giờ': { en: 'Date / Time', zh: '日期 / 时间' },
+    'Hạng mục': { en: 'Category', zh: '作业类别' },
+    'Chi tiết kỹ thuật / Vật tư / Kiểm toán': {
+      en: 'Technical Details / Supplies / Fruit Audit',
+      zh: '技术明细 / 农资 / 结果审计'
+    },
+    'Thiết bị & Tuân thủ': { en: 'Equipment & Compliance', zh: '设备与合规状态' },
+    'Ghi chú & Minh chứng': { en: 'Notes & Field Evidence', zh: '备注与现场影像' },
+    'Đạt Chuẩn': { en: 'Compliant', zh: '合规达标' },
+    '1. Kỹ thuật viên / Người ghi sổ': { en: '1. Agronomist / Recorder', zh: '1. 技术员 / 记录人' },
+    '2. Kiểm soát nội bộ (ICS / GlobalG.A.P.)': { en: '2. Internal Control (ICS / GlobalG.A.P.)', zh: '2. 内部质量控制 (ICS / GlobalG.A.P.)' },
+    '3. Chủ trang trại / Đại diện VietGAP': { en: '3. Farm Owner / VietGAP Representative', zh: '3. 庄园主 / VietGAP 代表' },
+    'Báo cáo truy xuất nguồn gốc chuẩn ISO 22005 · VietGAP · GlobalG.A.P. — Tanbao AgTech': {
+      en: 'ISO 22005 · VietGAP · GlobalG.A.P. Certified Traceability Report — Tanbao AgTech',
+      zh: 'ISO 22005 · VietGAP · GlobalG.A.P. 标准溯源报告 — Tanbao AgTech'
+    },
 
     'Dashboard': { en: 'Dashboard', zh: '管理仪表盘' },
     'Tổng quan': { en: 'Overview', zh: '系统总览' },
@@ -739,6 +815,13 @@
       [/^BIỂU ĐỒ ĐƯỜNG CHI PHÍ TIÊU HAO\s*\((\d+)\s*KỲ CHỌN\)$/i, 'EXPENDITURE TRAJECTORY CHART ($1 PERIODS)'],
       [/^Bảng tổng hợp chi phí vật tư\s*\((.+)\)$/i, 'Detailed Supply Cost Breakdown ($1)'],
       [/^Tổng số:\s*(\d+)\s*cây$/i, 'Total: $1 trees'],
+      [/^Trích xuất lúc:\s*(.+)$/i, 'Extracted at: $1'],
+      [/^Tiêu chuẩn áp dụng:\s*(.+)$/i, 'Applied Standards: $1'],
+      [/^Đã chọn\s*(\d+)\s*hạng mục\s*·\s*Sẵn sàng xuất\s*(\d+)\s*nhật ký.*$/i, 'Selected $1 categories · Ready to export $2 compliant logs'],
+      [/^Đã chọn\s*(\d+)\s*hạng mục\s*·\s*Tìm thấy\s*(\d+)\s*bản ghi.*$/i, 'Selected $1 categories · Found $2 compliant records'],
+      [/^Chuỗi Theo Dõi Kiểm Toán Quả & Đối Soát Thu Hoạch\s*\((\d+)\s*mốc\)$/i, 'Fruit Audit & Harvest Reconciliation Chain ($1 milestones)'],
+      [/^An Toàn Thu Hoạch\s*\(([^)]+)\)$/i, 'Safe to Harvest ($1)'],
+      [/^Cách ly PHI:\s*Còn\s*(\d+)\s*ngày\s*\(([^)]+)\)$/i, 'PHI Quarantine: $1 days remaining ($2)'],
       [/^Minh chứng hình ảnh & video thực địa\s*\((\d+)\):$/i, 'Field Photo & Video Evidence ($1):'],
       [/Sầu riêng\s*\(durian\)\s*\(([^)]+)\)/gi, 'Durian ($1)'],
       [/Sầu riêng\s*\(durian\)/gi, 'Durian'],
@@ -817,6 +900,13 @@
       [/^BIỂU ĐỒ ĐƯỜNG CHI PHÍ TIÊU HAO\s*\((\d+)\s*KỲ CHỌN\)$/i, '农资消耗成本趋势图 ($1 个周期)'],
       [/^Bảng tổng hợp chi phí vật tư\s*\((.+)\)$/i, '农资消耗成本汇总表 ($1)'],
       [/^Tổng số:\s*(\d+)\s*cây$/i, '总计：$1 棵果树'],
+      [/^Trích xuất lúc:\s*(.+)$/i, '导出时间：$1'],
+      [/^Tiêu chuẩn áp dụng:\s*(.+)$/i, '执行认证标准：$1'],
+      [/^Đã chọn\s*(\d+)\s*hạng mục\s*·\s*Sẵn sàng xuất\s*(\d+)\s*nhật ký.*$/i, '已选 $1 个类别 · 准备导出 $2 条合规农事记录'],
+      [/^Đã chọn\s*(\d+)\s*hạng mục\s*·\s*Tìm thấy\s*(\d+)\s*bản ghi.*$/i, '已选 $1 个类别 · 找到 $2 条合规记录'],
+      [/^Chuỗi Theo Dõi Kiểm Toán Quả & Đối Soát Thu Hoạch\s*\((\d+)\s*mốc\)$/i, '结果审计与采收核对链条 (共 $1 个节点)'],
+      [/^An Toàn Thu Hoạch\s*\(([^)]+)\)$/i, '符合采收安全标准 ($1)'],
+      [/^Cách ly PHI:\s*Còn\s*(\d+)\s*ngày\s*\(([^)]+)\)$/i, '农药安全间隔期 PHI：剩余 $1 天 ($2)'],
       [/^Minh chứng hình ảnh & video thực địa\s*\((\d+)\):$/i, '实地照片与视频存证 ($1):'],
       [/Sầu riêng\s*\(durian\)\s*\(([^)]+)\)/gi, '越南出口榴莲 ($1)'],
       [/Sầu riêng\s*\(durian\)/gi, '越南出口榴莲'],
