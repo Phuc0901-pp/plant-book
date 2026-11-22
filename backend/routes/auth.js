@@ -46,8 +46,34 @@ router.post('/login', async (req, res) => {
     }
 
     const user = result.rows[0];
+    const MAX_FAILED_LOGIN_ATTEMPTS = 5;
+    const LOCKOUT_MINUTES = 15;
+    const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+
+    if (user.locked_until && new Date(user.locked_until).getTime() > Date.now()) {
+      const retryAfterSec = Math.max(1, Math.ceil((new Date(user.locked_until).getTime() - Date.now()) / 1000));
+      return res.status(429).json({
+        error: `Tài khoản tạm khóa ${LOCKOUT_MINUTES} phút do nhập sai mật khẩu quá số lần quy định.`,
+        code: 'ACCOUNT_LOCKED',
+        retry_after_sec: retryAfterSec
+      });
+    }
+
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) {
+      const nextAttempts = Number(user.failed_login_attempts || 0) + 1;
+      if (nextAttempts >= MAX_FAILED_LOGIN_ATTEMPTS) {
+        await pool.query(
+          `UPDATE users SET failed_login_attempts = $1, locked_until = NOW() + INTERVAL '15 minutes' WHERE id = $2`,
+          [nextAttempts, user.id]
+        );
+        return res.status(429).json({
+          error: `Tài khoản tạm khóa ${LOCKOUT_MINUTES} phút do nhập sai mật khẩu ${MAX_FAILED_LOGIN_ATTEMPTS} lần liên tiếp.`,
+          code: 'ACCOUNT_LOCKED',
+          retry_after_sec: LOCKOUT_MINUTES * 60
+        });
+      }
+      await pool.query('UPDATE users SET failed_login_attempts = $1 WHERE id = $2', [nextAttempts, user.id]);
       return res.status(401).json({ error: 'Thông tin tài khoản hoặc mật khẩu không đúng.' });
     }
 
@@ -61,6 +87,7 @@ router.post('/login', async (req, res) => {
     const effectiveSubRole = user.sub_role || 'farm_owner';
     const isRestrictedFinance = ['care_worker', 'auditor_readonly'].includes(effectiveSubRole);
     const allowViewFinance = isRestrictedFinance ? (user.allow_view_finance === true) : (user.allow_view_finance !== false);
+    const tokenVersion = Number(user.token_version || 1);
 
     const token = jwt.sign(
       {
@@ -71,14 +98,15 @@ router.post('/login', async (req, res) => {
         parent_user_id: user.parent_user_id || null,
         farm_id: user.farm_id,
         account_tier: user.account_tier || 'normal',
-        tier_expires_at: user.tier_expires_at
+        tier_expires_at: user.tier_expires_at,
+        tv: tokenVersion
       },
       process.env.JWT_SECRET,
-      { expiresIn: '30d' }
+      { expiresIn: JWT_EXPIRES_IN }
     );
 
     await pool.query(
-      'UPDATE users SET is_online = true, last_active_at = NOW() WHERE id = $1',
+      'UPDATE users SET is_online = true, last_active_at = NOW(), failed_login_attempts = 0, locked_until = NULL WHERE id = $1',
       [user.id]
     );
 
@@ -427,7 +455,7 @@ router.get('/check-phone', async (req, res) => {
 router.post('/logout', require('../middleware/auth'), async (req, res) => {
   try {
     await pool.query(
-      'UPDATE users SET is_online = false, last_active_at = NOW() WHERE id = $1',
+      'UPDATE users SET is_online = false, last_active_at = NOW(), token_version = COALESCE(token_version, 1) + 1 WHERE id = $1',
       [req.user.id]
     );
     await pool.query(
@@ -596,7 +624,10 @@ router.post('/change-password', require('../middleware/auth'), async (req, res) 
     }
 
     const hash = await bcrypt.hash(newPassword, 12);
-    await pool.query('UPDATE users SET password_hash=$1 WHERE id=$2', [hash, req.user.id]);
+    await pool.query(
+      'UPDATE users SET password_hash=$1, token_version = COALESCE(token_version, 1) + 1, failed_login_attempts = 0, locked_until = NULL WHERE id=$2',
+      [hash, req.user.id]
+    );
 
     await pool.query(
       `INSERT INTO user_activities (user_id, activity_type, description)
@@ -695,7 +726,10 @@ router.get('/approve-reset-password', async (req, res) => {
     const tempPassword = `Tanbao@${Math.floor(100000 + Math.random() * 900000)}`;
     const hash = await bcrypt.hash(tempPassword, 12);
 
-    await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, user.id]);
+    await pool.query(
+      'UPDATE users SET password_hash = $1, token_version = COALESCE(token_version, 1) + 1, failed_login_attempts = 0, locked_until = NULL WHERE id = $2',
+      [hash, user.id]
+    );
 
     await pool.query(
       "UPDATE password_reset_requests SET status = 'approved', approved_at = NOW() WHERE id = $1",
@@ -808,6 +842,38 @@ router.delete('/reset-requests', require('../middleware/auth'), async (req, res)
   } catch (err) {
     console.error('Error clearing reset requests:', err);
     res.status(500).json({ error: 'Lỗi server khi xóa danh sách yêu cầu: ' + err.message });
+  }
+});
+
+router.post('/refresh', require('../middleware/auth'), async (req, res) => {
+  try {
+    const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+    const userRes = await pool.query(
+      'SELECT id, email, role, sub_role, parent_user_id, farm_id, account_tier, tier_expires_at, COALESCE(token_version, 1) as token_version FROM users WHERE id = $1 LIMIT 1',
+      [req.user.id]
+    );
+    if (userRes.rows.length === 0) {
+      return res.status(401).json({ error: 'Tài khoản không tồn tại.' });
+    }
+    const u = userRes.rows[0];
+    const token = jwt.sign(
+      {
+        id: u.id,
+        email: u.email,
+        role: u.role,
+        sub_role: u.sub_role || 'farm_owner',
+        parent_user_id: u.parent_user_id || null,
+        farm_id: u.farm_id,
+        account_tier: u.account_tier || 'normal',
+        tier_expires_at: u.tier_expires_at,
+        tv: Number(u.token_version || 1)
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: JWT_EXPIRES_IN }
+    );
+    res.json({ success: true, token, expires_in: JWT_EXPIRES_IN, token_version: Number(u.token_version || 1) });
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi server khi làm mới phiên đăng nhập.' });
   }
 });
 

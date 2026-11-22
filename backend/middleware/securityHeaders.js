@@ -26,10 +26,6 @@ function isOriginAllowed(origin) {
     return true;
   }
 
-  if (/^https:\/\/[a-z0-9-]+\.onrender\.com$/i.test(origin)) {
-    return true;
-  }
-
   if (/^https:\/\/([a-z0-9-]+\.)?tanbaocorp(-agritech)?\.vn$/i.test(origin)) {
     return true;
   }
@@ -66,6 +62,8 @@ function securityHeaders(req, res, next) {
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'geolocation=(self), camera=(self), microphone=(self)');
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+  res.setHeader('Cross-Origin-Resource-Policy', 'same-site');
   res.setHeader('X-XSS-Protection', '0');
 
   const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https' || process.env.NODE_ENV === 'production';

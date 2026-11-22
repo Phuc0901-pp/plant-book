@@ -13,7 +13,8 @@ async function authMiddleware(req, res, next) {
 
     const userRes = await pool.query(
       `SELECT id, email, role, sub_role, parent_user_id, full_name, farm_id,
-              view_plants_scope, view_history_from_date, allow_shared_history, allow_view_supplies, allow_view_finance
+              view_plants_scope, view_history_from_date, allow_shared_history, allow_view_supplies, allow_view_finance,
+              COALESCE(token_version, 1) as token_version
        FROM users WHERE id=$1`,
       [decoded.id]
     );
@@ -22,6 +23,10 @@ async function authMiddleware(req, res, next) {
     }
 
     const u = userRes.rows[0];
+    const currentTv = Number(u.token_version || 1);
+    if ((decoded.tv !== undefined && Number(decoded.tv) !== currentTv) || (decoded.tv === undefined && currentTv > 1)) {
+      return res.status(401).json({ error: 'Phiên đăng nhập đã bị thu hồi hoặc hết hiệu lực. Vui lòng đăng nhập lại.', code: 'TOKEN_REVOKED' });
+    }
     const effectiveSubRole = u.sub_role || 'farm_owner';
     const isRestrictedFinanceRole = ['care_worker', 'auditor_readonly'].includes(effectiveSubRole);
     req.user = {
@@ -33,6 +38,7 @@ async function authMiddleware(req, res, next) {
       name: u.full_name,
       full_name: u.full_name,
       farm_id: u.farm_id,
+      token_version: currentTv,
       view_plants_scope: u.view_plants_scope || 'all',
       view_history_from_date: u.view_history_from_date ? u.view_history_from_date.toISOString().split('T')[0] : null,
       allow_shared_history: u.allow_shared_history !== false,

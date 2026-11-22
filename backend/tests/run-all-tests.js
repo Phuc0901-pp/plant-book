@@ -27,6 +27,7 @@ require('./suites/21_iso_29119_qc_qa_master.test');
 require('./suites/22_iso_19115_gps_gis_compliance.test');
 require('./suites/23_modular_architecture_and_schema_parity.test');
 require('./suites/24_be_mam_agent_iso42001.test');
+require('./suites/25_security_hardening_iso27001.test');
 
 async function main() {
   try {

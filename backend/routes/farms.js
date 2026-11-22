@@ -1312,9 +1312,42 @@ function generateDefaultFarmIoTData(farmId) {
   return deepCleanMojibake({ air_data, soil_data, water_data, weather_forecast });
 }
 
+async function verifyFarmOwnership(reqUser, farmId) {
+  if (!Number.isInteger(farmId) || farmId <= 0) {
+    return { ok: false, status: 400, error: 'Mã trang trại không hợp lệ.', code: 'INVALID_FARM_ID' };
+  }
+  const farmRes = await pool.query(
+    'SELECT id, user_id FROM farms WHERE id = $1 AND (is_deleted IS NOT TRUE) LIMIT 1',
+    [farmId]
+  );
+  if (farmRes.rows.length === 0) {
+    return { ok: false, status: 404, error: 'Không tìm thấy trang trại.', code: 'FARM_NOT_FOUND' };
+  }
+  const farm = farmRes.rows[0];
+  if (reqUser && reqUser.role === 'admin') {
+    return { ok: true, farm };
+  }
+  const isOwner = reqUser && Number(farm.user_id) === Number(reqUser.id);
+  const isParentOwner = reqUser && reqUser.parent_user_id && Number(farm.user_id) === Number(reqUser.parent_user_id);
+  const isAssignedFarm = reqUser && reqUser.farm_id && Number(farm.id) === Number(reqUser.farm_id);
+  if (isOwner || isParentOwner || isAssignedFarm) {
+    return { ok: true, farm };
+  }
+  return {
+    ok: false,
+    status: 403,
+    error: 'Bạn không có quyền truy cập dữ liệu IoT của trang trại này.',
+    code: 'FARM_ACCESS_DENIED'
+  };
+}
+
 router.get('/:id/iot-data', auth, async (req, res) => {
   try {
-    const farmId = parseInt(req.params.id);
+    const farmId = parseInt(req.params.id, 10);
+    const access = await verifyFarmOwnership(req.user, farmId);
+    if (!access.ok) {
+      return res.status(access.status).json({ error: access.error, code: access.code });
+    }
     const cacheKey = `farm_iot_${farmId}`;
     const cachedData = await getCache(cacheKey);
     if (cachedData) {
@@ -1367,7 +1400,11 @@ router.get('/:id/iot-data', auth, async (req, res) => {
 
 router.post('/:id/iot-data/refresh', auth, async (req, res) => {
   try {
-    const farmId = parseInt(req.params.id);
+    const farmId = parseInt(req.params.id, 10);
+    const access = await verifyFarmOwnership(req.user, farmId);
+    if (!access.ok) {
+      return res.status(access.status).json({ error: access.error, code: access.code });
+    }
     const randomOffset = Math.floor(Math.random() * 10) + 1;
     const defaultData = generateDefaultFarmIoTData(farmId + randomOffset);
 

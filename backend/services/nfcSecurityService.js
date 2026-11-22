@@ -1,7 +1,18 @@
 const crypto = require('crypto');
 
-const NFC_HMAC_SECRET = process.env.NFC_HMAC_SECRET || 'PlantBook_NTAG213_Sec_2026_TBP';
+const DEV_FALLBACK_NFC_SECRET = 'PlantBook_NTAG213_Sec_2026_TBP';
 const DEFAULT_GEOFENCE_RADIUS_METERS = 8.0;
+
+function getNfcHmacSecret() {
+  const envSecret = process.env.NFC_HMAC_SECRET;
+  if (envSecret && String(envSecret).trim().length >= 16) {
+    return String(envSecret).trim();
+  }
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('CRITICAL_SECURITY_CONFIG: NFC_HMAC_SECRET (>= 16 chars) is required in production.');
+  }
+  return DEV_FALLBACK_NFC_SECRET;
+}
 
 function normalizeNfcUid(uid) {
   if (!uid || typeof uid !== 'string') return '';
@@ -15,19 +26,21 @@ function normalizeNfcUid(uid) {
   return clean;
 }
 
-function generateHmacSignature(uid, plantId, secret = NFC_HMAC_SECRET) {
+function generateHmacSignature(uid, plantId, secret) {
   const normUid = normalizeNfcUid(uid);
   const payload = `${normUid}:${plantId}`;
-  return crypto.createHmac('sha256', secret).update(payload).digest('hex').substring(0, 32);
+  const resolvedSecret = secret || getNfcHmacSecret();
+  return crypto.createHmac('sha256', resolvedSecret).update(payload).digest('hex').substring(0, 32);
 }
 
-function verifyHmacSignature(uid, plantId, token, secret = NFC_HMAC_SECRET) {
+function verifyHmacSignature(uid, plantId, token, secret) {
   if (!token || typeof token !== 'string') return false;
-  const expected = generateHmacSignature(uid, plantId, secret);
-  return crypto.timingSafeEqual(
-    Buffer.from(token.toLowerCase()),
-    Buffer.from(expected.toLowerCase())
-  );
+  const resolvedSecret = secret || getNfcHmacSecret();
+  const expected = generateHmacSignature(uid, plantId, resolvedSecret);
+  const a = Buffer.from(token.toLowerCase());
+  const b = Buffer.from(expected.toLowerCase());
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
 }
 
 function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
@@ -154,7 +167,7 @@ function verifyNtag213Scan({
 function generatePivChuidHash(uid, plantId, issueLevel = 1) {
   const normUid = normalizeNfcUid(uid);
   const payload = `PIV_CHUID:${normUid}:PLANT:${plantId}:ISSUE:${issueLevel}`;
-  return crypto.createHmac('sha256', NFC_HMAC_SECRET).update(payload).digest('hex');
+  return crypto.createHmac('sha256', getNfcHmacSecret()).update(payload).digest('hex');
 }
 
 function buildNtag213MirrorConfig({ farmId, plantId, uid, issueLevel = 1, baseUrl = 'https://plant-book.onrender.com' }) {
@@ -189,6 +202,7 @@ function sanitizeUid(uid) {
 }
 
 module.exports = {
+  getNfcHmacSecret,
   normalizeNfcUid,
   sanitizeUid,
   generateHmacSignature,
