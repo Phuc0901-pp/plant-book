@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
 const multer = require('multer');
@@ -254,7 +255,7 @@ router.post('/register', async (req, res) => {
   }
 });
 
-router.post('/onboard-lead', async (req, res) => {
+router.post('/onboard-lead', require('../middleware/auth'), require('../middleware/admin'), async (req, res) => {
   const client = await pool.connect();
   try {
     const {
@@ -271,9 +272,12 @@ router.post('/onboard-lead', async (req, res) => {
     if (!phone || !phone.trim()) {
       return res.status(400).json({ error: 'Số điện thoại là bắt buộc để kích hoạt tài khoản.' });
     }
-    if (!password || !password.trim() || password.trim().length < 6) {
+    if (password && password.trim().length > 0 && password.trim().length < 6) {
       return res.status(400).json({ error: 'Mật khẩu phải có ít nhất 6 ký tự.' });
     }
+    const rawPassword = (password && password.trim().length >= 6)
+      ? password.trim()
+      : crypto.randomBytes(12).toString('base64url');
 
     const cleanPhone = phone.trim();
     const cleanName = full_name && full_name.trim() ? full_name.trim() : `Nông hộ ${cleanPhone}`;
@@ -292,17 +296,19 @@ router.post('/onboard-lead', async (req, res) => {
 
     if (existing.rows.length > 0) {
       user = existing.rows[0];
-      const valid = await bcrypt.compare(password.trim(), user.password_hash);
-      if (!valid) {
-        await client.query('ROLLBACK');
-        return res.status(401).json({
-          error: 'Số điện thoại này đã được đăng ký trên hệ thống. Vui lòng đăng nhập bằng mật khẩu của bạn để tiếp tục.',
-          user_exists: true
-        });
+      if (password && password.trim().length > 0) {
+        const valid = await bcrypt.compare(password.trim(), user.password_hash);
+        if (!valid) {
+          await client.query('ROLLBACK');
+          return res.status(401).json({
+            error: 'Số điện thoại này đã được đăng ký trên hệ thống. Mật khẩu cung cấp không khớp.',
+            user_exists: true
+          });
+        }
       }
     } else {
       isNewUser = true;
-      const hash = await bcrypt.hash(password.trim(), 12);
+      const hash = await bcrypt.hash(rawPassword, 12);
       const userRes = await client.query(
         `INSERT INTO users (email, password_hash, full_name, role, phone, approved, account_tier)
          VALUES ($1, $2, $3, 'user', $4, true, 'pro')
@@ -642,7 +648,6 @@ router.post('/change-password', require('../middleware/auth'), async (req, res) 
   }
 });
 
-const crypto = require('crypto');
 const { sendAdminResetNotification, sendCustomerNewPassword } = require('../services/emailService');
 
 router.post('/forgot-password', async (req, res) => {

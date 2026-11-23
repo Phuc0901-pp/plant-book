@@ -40,23 +40,22 @@ jobs:
             -alias tbsg_agtech \
             -keyalg RSA -keysize 2048 -validity 10000 \
             -storetype PKCS12 -noprompt \
-            -storepass "TanBaoAgtech2026@Secure" \
-            -keypass "TanBaoAgtech2026@Secure" \
+            -storepass "${{ secrets.ANDROID_KEYSTORE_PASS || 'CI_EPHEMERAL_KEYSTORE_PASS' }}" \
+            -keypass "${{ secrets.ANDROID_KEYSTORE_PASS || 'CI_EPHEMERAL_KEYSTORE_PASS' }}" \
             -dname "CN=TBSG Agtech Mobile Release, OU=AgTech Enterprise Division, O=CONG TY CO PHAN TAN BAO SAI GON, L=Ho Chi Minh City, ST=Ho Chi Minh, C=VN"
-          
-          # Mirror keystore to root android directory for seamless Gradle resolution
+
           cp app/upload-keystore.jks upload-keystore.jks
-          
+
           cat <<EOF > key.properties
           keyAlias=tbsg_agtech
-          keyPassword=TanBaoAgtech2026@Secure
-          storePassword=TanBaoAgtech2026@Secure
+          keyPassword=${{ secrets.ANDROID_KEYSTORE_PASS || 'CI_EPHEMERAL_KEYSTORE_PASS' }}
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASS || 'CI_EPHEMERAL_KEYSTORE_PASS' }}
           storeFile=upload-keystore.jks
           EOF
           cp key.properties app/key.properties
-          
+
           echo "=== Official TBSG AgTech Certificate Details ==="
-          keytool -list -v -keystore app/upload-keystore.jks -storepass "TanBaoAgtech2026@Secure" -alias tbsg_agtech > certificate_fingerprint.txt
+          keytool -list -v -keystore app/upload-keystore.jks -storepass "${{ secrets.ANDROID_KEYSTORE_PASS || 'CI_EPHEMERAL_KEYSTORE_PASS' }}" -alias tbsg_agtech > certificate_fingerprint.txt
           cat certificate_fingerprint.txt
 
       - name: Get Flutter dependencies
@@ -67,7 +66,7 @@ jobs:
 
       - name: Run Flutter Unit & Security Tests (FIPS 180-4 / RBAC / Carbon MRV)
         working-directory: mobile_app
-        run: flutter test --reporter expanded || true
+        run: flutter test --reporter expanded
 
       - name: Build Fat Release APK (Universal - Signed TBSG Agtech)
         working-directory: mobile_app

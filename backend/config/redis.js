@@ -142,23 +142,37 @@ async function delCacheByPattern(patternPrefix) {
     }
   }
 
+  const matchPattern = `${patternPrefix}*`;
+
   try {
     if (isRedisConnected && redisClient) {
-      const keys = await redisClient.keys(`${patternPrefix}*`);
-      if (keys && keys.length > 0) {
-        await redisClient.del(...keys);
-      }
+      let cursor = '0';
+      do {
+        const scanResult = await redisClient.scan(cursor, 'MATCH', matchPattern, 'COUNT', 100);
+        cursor = Array.isArray(scanResult) ? String(scanResult[0]) : '0';
+        const batchKeys = Array.isArray(scanResult) && Array.isArray(scanResult[1]) ? scanResult[1] : [];
+        if (batchKeys.length > 0) {
+          if (typeof redisClient.unlink === 'function') {
+            await redisClient.unlink(...batchKeys);
+          } else {
+            await redisClient.del(...batchKeys);
+          }
+        }
+      } while (cursor !== '0');
     }
   } catch (_) {}
 
   if (isUpstashConfigured) {
     try {
-      const keys = await upstashFetch(['KEYS', `${patternPrefix}*`]);
-      if (Array.isArray(keys) && keys.length > 0) {
-        for (const k of keys) {
-          await upstashFetch(['DEL', k]);
+      let cursor = '0';
+      do {
+        const scanResult = await upstashFetch(['SCAN', cursor, 'MATCH', matchPattern, 'COUNT', '100']);
+        cursor = Array.isArray(scanResult) ? String(scanResult[0]) : '0';
+        const batchKeys = Array.isArray(scanResult) && Array.isArray(scanResult[1]) ? scanResult[1] : [];
+        if (batchKeys.length > 0) {
+          await upstashFetch(['DEL', ...batchKeys]);
         }
-      }
+      } while (cursor !== '0');
     } catch (_) {}
   }
 }

@@ -893,18 +893,18 @@ async function loadResetRequests() {
 
       return `
         <tr>
-          <td><strong>${r.full_name || r.email}</strong><br><span style="font-size:12px; color:var(--text-muted);">${r.email}</span></td>
-          <td>${r.identity} ${r.note ? `<br><small style="color:var(--gray-500)">Ghi chú: "${escapeHtml(r.note)}"</small>` : ''}</td>
-          <td>${dateStr}</td>
+          <td><strong>${escapeHtml(r.full_name || r.email)}</strong><br><span style="font-size:12px; color:var(--text-muted);">${escapeHtml(r.email)}</span></td>
+          <td>${escapeHtml(r.identity)} ${r.note ? `<br><small style="color:var(--gray-500)">Ghi chú: "${escapeHtml(r.note)}"</small>` : ''}</td>
+          <td>${escapeHtml(dateStr)}</td>
           <td>${statusBadge}</td>
           <td style="text-align:center;">
             <div style="display:flex; gap:6px; justify-content:center; align-items:center; flex-wrap:nowrap;">
               ${isPending ? `
-                <button class="btn btn-sm btn-primary" onclick="approveResetRequestFromAdmin('${r.token}')" style="background:var(--green); font-size:11.5px; padding:4px 8px; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:4px; white-space:nowrap;" title="Phê duyệt cấp mật khẩu mới">
+                <button class="btn btn-sm btn-primary" onclick="approveResetRequestFromAdmin('${escapeHtml(r.token)}')" style="background:var(--green); font-size:11.5px; padding:4px 8px; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:4px; white-space:nowrap;" title="Phê duyệt cấp mật khẩu mới">
                   <i data-lucide="check" class="lucide-sm"></i> Duyệt &amp; Cấp MK
                 </button>
               ` : ''}
-              <button class="btn btn-sm" onclick="deleteResetRequest(${r.id})" style="background:#fee2e2; color:#dc2626; border:1px solid #fecdd3; font-size:11.5px; padding:4px 8px; font-weight:700; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; white-space:nowrap; transition:all 0.15s ease;" title="Xóa vĩnh viễn yêu cầu này khỏi hệ thống">
+              <button class="btn btn-sm" onclick="deleteResetRequest(${Number(r.id) || 0})" style="background:#fee2e2; color:#dc2626; border:1px solid #fecdd3; font-size:11.5px; padding:4px 8px; font-weight:700; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; white-space:nowrap; transition:all 0.15s ease;" title="Xóa vĩnh viễn yêu cầu này khỏi hệ thống">
                 <i data-lucide="trash-2" class="lucide-sm"></i> Xóa
               </button>
             </div>

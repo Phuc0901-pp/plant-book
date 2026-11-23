@@ -73,6 +73,40 @@ export function getCurrentUserRbac() {
 }
 window.getCurrentUserRbac = getCurrentUserRbac;
 
+let _refreshInFlight = null;
+
+async function tryRefreshJwtToken() {
+  if (!token) return false;
+  if (_refreshInFlight) return _refreshInFlight;
+  _refreshInFlight = (async () => {
+    try {
+      const r = await fetch(`${API}/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!r.ok) {
+        clearToken();
+        return false;
+      }
+      const d = await r.json().catch(() => ({}));
+      if (d && d.token) {
+        setToken(d.token);
+        return true;
+      }
+      clearToken();
+      return false;
+    } catch (_) {
+      return false;
+    } finally {
+      _refreshInFlight = null;
+    }
+  })();
+  return _refreshInFlight;
+}
+
 export async function api(path, opts = {}, retries = 2) {
   const headers = {
     Authorization: `Bearer ${token}`,
@@ -88,6 +122,13 @@ export async function api(path, opts = {}, retries = 2) {
     ...opts,
     headers
   });
+
+  if (res.status === 401 && !opts._retriedAfterRefresh && !path.includes('/auth/login') && !path.includes('/auth/refresh') && token) {
+    const refreshed = await tryRefreshJwtToken();
+    if (refreshed) {
+      return api(path, { ...opts, _retriedAfterRefresh: true }, retries);
+    }
+  }
 
   if (res.status === 429 && retries > 0) {
     const delay = (3 - retries) * 350 + Math.random() * 200;

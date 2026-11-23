@@ -11,6 +11,8 @@ class DistributedQueueService extends EventEmitter {
     this.workers = new Map();
     this.deadLetterQueue = [];
     this.isProcessing = false;
+    this.maxConcurrency = 5;
+    this.workerTimer = null;
     this.metrics = {
       published: 0,
       processed: 0,
@@ -35,13 +37,11 @@ class DistributedQueueService extends EventEmitter {
 
     this.metrics.published++;
 
-    let publishedToRedis = false;
     try {
       const client = redisModule ? redisModule.redisClient : null;
       if (client && client.status === 'ready' && typeof client.xadd === 'function') {
         const streamKey = `pb:stream:${topic}`;
-        await client.xadd(streamKey, '*', 'payload', JSON.stringify(payload), 'timestamp', String(eventRecord.timestamp));
-        publishedToRedis = true;
+        await client.xadd(streamKey, 'MAXLEN', '~', '10000', '*', 'payload', JSON.stringify(payload), 'timestamp', String(eventRecord.timestamp));
       }
     } catch (redisErr) {
       console.warn(`[QueueService] Redis Stream fallback to in-memory:`, redisErr.message);
@@ -69,8 +69,36 @@ class DistributedQueueService extends EventEmitter {
     console.log(`👷 [QueueWorker] Registered worker for topic: '${topic}'`);
   }
 
+  async processSingleJob(topic, job, handlers) {
+    job.status = 'processing';
+    for (const handler of handlers) {
+      try {
+        await handler(job.payload, job);
+        job.status = 'completed';
+        this.metrics.processed++;
+      } catch (handlerErr) {
+        job.retries++;
+        console.error(`❌ [QueueWorker Error] Topic: ${topic} Job: ${job.id} Retry: ${job.retries}/${job.maxRetries}:`, handlerErr.message);
+
+        if (job.retries >= job.maxRetries) {
+          job.status = 'failed';
+          this.metrics.failed++;
+          this.metrics.deadLetter++;
+          this.deadLetterQueue.push({
+            ...job,
+            error: handlerErr.message,
+            failedAt: Date.now()
+          });
+          if (this.deadLetterQueue.length > 500) this.deadLetterQueue.shift();
+        } else {
+          job.status = 'pending';
+        }
+      }
+    }
+  }
+
   startWorkerLoop() {
-    setInterval(async () => {
+    this.workerTimer = setInterval(async () => {
       if (this.isProcessing) return;
       this.isProcessing = true;
 
@@ -80,33 +108,9 @@ class DistributedQueueService extends EventEmitter {
           if (handlers.length === 0) continue;
 
           const pendingJobs = stream.filter(job => job.status === 'pending');
-          for (const job of pendingJobs) {
-            job.status = 'processing';
-
-            for (const handler of handlers) {
-              try {
-                await handler(job.payload, job);
-                job.status = 'completed';
-                this.metrics.processed++;
-              } catch (handlerErr) {
-                job.retries++;
-                console.error(`❌ [QueueWorker Error] Topic: ${topic} Job: ${job.id} Retry: ${job.retries}/${job.maxRetries}:`, handlerErr.message);
-
-                if (job.retries >= job.maxRetries) {
-                  job.status = 'failed';
-                  this.metrics.failed++;
-                  this.metrics.deadLetter++;
-                  this.deadLetterQueue.push({
-                    ...job,
-                    error: handlerErr.message,
-                    failedAt: Date.now()
-                  });
-                  if (this.deadLetterQueue.length > 500) this.deadLetterQueue.shift();
-                } else {
-                  job.status = 'pending';
-                }
-              }
-            }
+          for (let i = 0; i < pendingJobs.length; i += this.maxConcurrency) {
+            const batch = pendingJobs.slice(i, i + this.maxConcurrency);
+            await Promise.allSettled(batch.map(job => this.processSingleJob(topic, job, handlers)));
           }
 
           const now = Date.now();
@@ -119,6 +123,16 @@ class DistributedQueueService extends EventEmitter {
         this.isProcessing = false;
       }
     }, 250);
+    if (typeof this.workerTimer.unref === 'function') {
+      this.workerTimer.unref();
+    }
+  }
+
+  shutdown() {
+    if (this.workerTimer) {
+      clearInterval(this.workerTimer);
+      this.workerTimer = null;
+    }
   }
 
   getMetrics() {

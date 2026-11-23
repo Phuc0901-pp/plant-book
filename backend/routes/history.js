@@ -76,12 +76,18 @@ router.delete('/', auth, async (req, res) => {
 
 router.post('/:id/restore', auth, async (req, res) => {
   try {
+    if (req.user.role !== 'admin' && ['care_worker', 'auditor_readonly'].includes(req.user.sub_role)) {
+      return res.status(403).json({ error: 'Vai trò của bạn không có quyền khôi phục dữ liệu từ nhật ký kiểm toán.' });
+    }
     const id = parseInt(req.params.id);
     const auditRes = await pool.query('SELECT * FROM data_audit_logs WHERE id = $1', [id]);
     if (auditRes.rows.length === 0) {
       return res.status(404).json({ error: 'Không tìm thấy bản ghi kiểm toán.' });
     }
     const auditItem = auditRes.rows[0];
+    if (req.user.role !== 'admin' && Number(auditItem.user_id) !== Number(req.user.id)) {
+      return res.status(403).json({ error: 'Bạn không có quyền khôi phục bản ghi kiểm toán thuộc tài khoản khác.' });
+    }
 
     if (auditItem.target_type === 'Nhật ký canh tác' || auditItem.target_type === 'Nhật ký canh tác hàng loạt') {
       let targetIds = [];
@@ -100,14 +106,36 @@ router.post('/:id/restore', auth, async (req, res) => {
       }
       targetIds = [...new Set(targetIds.filter(n => !isNaN(n) && n > 0))];
 
+      if (targetIds.length > 0 && req.user.role !== 'admin') {
+        const unauthRes = await pool.query(
+          `SELECT pl.id FROM plant_logs pl
+           LEFT JOIN plants p ON p.id = pl.plant_id
+           LEFT JOIN farms f ON f.id = p.farm_id
+           WHERE pl.id = ANY($1::int[])
+             AND NOT (f.user_id = $2 OR pl.created_by = $2 OR (p.farm_id IS NOT NULL AND p.farm_id = $3))
+           LIMIT 1`,
+          [targetIds, req.user.id, req.user.farm_id || 0]
+        );
+        if (unauthRes.rows.length > 0) {
+          return res.status(403).json({ error: 'Tồn tại bản ghi nhật ký không thuộc trang trại của bạn.' });
+        }
+      }
+
       if (targetIds.length > 0) {
         await pool.query('UPDATE plant_logs SET is_deleted = false, deleted_at = NULL WHERE id = ANY($1::int[])', [targetIds]);
       }
 
-      await pool.query('UPDATE data_audit_logs SET note = $1 WHERE id = $2', [
-        `Đã khôi phục thành công ${targetIds.length} bản ghi bởi ${req.user.full_name || req.user.email} lúc ${new Date().toISOString()}`,
-        id
-      ]);
+      await logAuditAction(
+        req.user.id,
+        req.user.full_name || req.user.email,
+        'RESTORE',
+        auditItem.target_type,
+        id,
+        `Khôi phục ${targetIds.length} bản ghi từ kiểm toán #${id}`,
+        { restored_from_audit_id: id },
+        { restored_ids: targetIds },
+        `Đã khôi phục thành công ${targetIds.length} bản ghi bởi ${req.user.full_name || req.user.email} lúc ${new Date().toISOString()}`
+      );
 
       const broadcast = req.app.get('broadcast');
       if (broadcast) {
@@ -118,7 +146,27 @@ router.post('/:id/restore', auth, async (req, res) => {
     }
 
     if (auditItem.target_type === 'Trang trại' && auditItem.record_id) {
+      if (req.user.role !== 'admin') {
+        const fCheck = await pool.query('SELECT user_id FROM farms WHERE id = $1', [auditItem.record_id]);
+        if (fCheck.rows.length === 0) {
+          return res.status(404).json({ error: 'Không tìm thấy trang trại cần khôi phục.' });
+        }
+        if (Number(fCheck.rows[0].user_id) !== Number(req.user.id)) {
+          return res.status(403).json({ error: 'Bạn không có quyền khôi phục trang trại của tài khoản khác.' });
+        }
+      }
       await pool.query('UPDATE farms SET is_deleted = false, deleted_at = NULL WHERE id = $1', [auditItem.record_id]);
+      await logAuditAction(
+        req.user.id,
+        req.user.full_name || req.user.email,
+        'RESTORE',
+        'Trang trại',
+        auditItem.record_id,
+        `Khôi phục trang trại #${auditItem.record_id} từ kiểm toán #${id}`,
+        { restored_from_audit_id: id },
+        { farm_id: auditItem.record_id },
+        `Khôi phục trang trại bởi ${req.user.full_name || req.user.email}`
+      );
       return res.json({ success: true, message: 'Đã khôi phục trang trại thành công.' });
     }
 

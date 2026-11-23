@@ -346,7 +346,7 @@ class _NfcScannerPageState extends State<NfcScannerPage>
               if (payload.isNotEmpty) {
                 final prefix = payload[0];
                 String text;
-                if (prefix == 0x02 || prefix == 0x01) {
+                if (prefix >= 0x01 && prefix <= 0x04) {
                   const prefixes = {
                     0x01: 'http://www.',
                     0x02: 'https://www.',

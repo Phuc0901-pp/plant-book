@@ -29,13 +29,15 @@ jobs:
 
       - name: Syntax Check Modular Backend & Frontend JS
         run: |
-          node --check routes/plants.js
-          for f in routes/plants/*.js; do node --check "$f"; done
+          node --check server.js
+          for f in routes/*.js routes/plants/*.js services/*.js middleware/*.js config/*.js utils/*.js db/*.js scripts/*.js; do
+            if [ -f "$f" ]; then node --check "$f"; fi
+          done
           for f in ../frontend/public/js/*.js; do node --check "$f"; done
           for f in ../frontend/admin/js/*.js; do node --check "$f"; done
           for f in ../frontend/assets/js/*.js; do node --check "$f"; done
-          for f in ../frontend/user/js/*.js ../frontend/user/js/*/*.js; do node --check "$f"; done
+          for f in ../frontend/user/sw.js ../frontend/user/js/*.js ../frontend/user/js/*/*.js; do node --check "$f"; done
           node scripts/build-html.js
 
-      - name: Run 25 ISO Test Suites (164+ Cases)
+      - name: Run All ISO Test Suites (26+ Suites)
         run: npm run test:iso

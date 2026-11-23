@@ -1,5 +1,6 @@
 const https = require('https');
 const pool = require('../config/db');
+const { decryptSecret } = require('../utils/cryptoVault');
 
 const ZALO_OA_MESSAGE_URL = 'https://openapi.zalo.me/v3.0/oa/message/cs';
 const ZALO_ZNS_URL = 'https://business.openapi.zalo.me/message/template';
@@ -16,10 +17,18 @@ async function getZaloConfig() {
       }
     });
 
+    const rawSecret = config.zalo_secret_key || process.env.ZALO_SECRET_KEY || '';
+    let resolvedSecret = '';
+    try {
+      resolvedSecret = decryptSecret(rawSecret);
+    } catch (_) {
+      resolvedSecret = '';
+    }
+
     return {
       appId: config.zalo_app_id || process.env.ZALO_APP_ID || '',
       oaId: config.zalo_oa_id || process.env.ZALO_OA_ID || '',
-      secretKey: config.zalo_secret_key || process.env.ZALO_SECRET_KEY || '',
+      secretKey: resolvedSecret,
       templateId: config.zalo_template_id || process.env.ZALO_TEMPLATE_ID || '',
       enabled: config.enable_zalo_alerts === true || config.enable_zalo_alerts === 'true' || process.env.ENABLE_ZALO_ALERTS === 'true'
     };

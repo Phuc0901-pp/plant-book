@@ -41,6 +41,12 @@ export function openCareModal(plantId, treeCode, plantType, logId = null) {
       return;
     }
 
+    const opEl = document.getElementById('c-operator-name');
+    if (opEl) {
+      const cu = window.currentUser || {};
+      opEl.value = log.operator_name || cu.full_name || cu.name || cu.email || '';
+    }
+
     window._activeEditLogId = logId;
     window._existingMediaUrls = log.media_urls || [];
     window._activePlantTreeCode = treeCode || log.tree_code || plantId;
@@ -84,6 +90,11 @@ export function openCareModal(plantId, treeCode, plantType, logId = null) {
     if (saveTextEl) saveTextEl.innerHTML = `<i data-lucide="save" class="lucide-sm"></i> Lưu nhật ký`;
 
     if (noteEl) noteEl.value = '';
+    const opElNew = document.getElementById('c-operator-name');
+    if (opElNew) {
+      const cu = window.currentUser || {};
+      opElNew.value = cu.full_name || cu.name || cu.email || '';
+    }
     if (logTypeEl) {
       logTypeEl.value = 'Tưới nước';
       logTypeEl.disabled = false;
@@ -1868,16 +1879,34 @@ export async function saveCareLog() {
 
       let lastSavedResult = null;
       const totalSelectedCount = selectedPlants.length;
-      for (let i = 0; i < totalSelectedCount; i++) {
-        const plant = selectedPlants[i];
-        const reqBody = { ...body, details: { ...(body.details || {}) } };
-        if (logType === 'Nhân công' && totalSelectedCount > 1 && reqBody.details.batch_total_cost > 0) {
-          const baseTreeCost = Math.floor(reqBody.details.batch_total_cost / totalSelectedCount);
-          reqBody.details.total_cost = (i === totalSelectedCount - 1)
-            ? (reqBody.details.batch_total_cost - baseTreeCost * (totalSelectedCount - 1))
-            : baseTreeCost;
+      const batchPlantIds = selectedPlants.map(p => parseInt(p.id, 10)).filter(n => !isNaN(n) && n > 0);
+      if (totalSelectedCount > 1 && batchPlantIds.length === totalSelectedCount) {
+        const batchPayload = {
+          ...body,
+          plant_ids: batchPlantIds,
+          details: { ...(body.details || {}) }
+        };
+        const batchRes = await api('/plants/batch-care-logs', {
+          method: 'POST',
+          body: JSON.stringify(batchPayload)
+        });
+        if (batchRes && Array.isArray(batchRes.logs) && batchRes.logs.length > 0) {
+          lastSavedResult = batchRes.logs[batchRes.logs.length - 1];
+        } else {
+          lastSavedResult = batchRes;
         }
-        lastSavedResult = await api(`/plants/${plant.id}/logs`, { method: 'POST', body: JSON.stringify(reqBody) });
+      } else {
+        for (let i = 0; i < totalSelectedCount; i++) {
+          const plant = selectedPlants[i];
+          const reqBody = { ...body, details: { ...(body.details || {}) } };
+          if (logType === 'Nhân công' && totalSelectedCount > 1 && reqBody.details.batch_total_cost > 0) {
+            const baseTreeCost = Math.floor(reqBody.details.batch_total_cost / totalSelectedCount);
+            reqBody.details.total_cost = (i === totalSelectedCount - 1)
+              ? (reqBody.details.batch_total_cost - baseTreeCost * (totalSelectedCount - 1))
+              : baseTreeCost;
+          }
+          lastSavedResult = await api(`/plants/${plant.id}/logs`, { method: 'POST', body: JSON.stringify(reqBody) });
+        }
       }
 
       if (logType === 'Thu hoạch' && lastSavedResult && lastSavedResult.batch_code) {

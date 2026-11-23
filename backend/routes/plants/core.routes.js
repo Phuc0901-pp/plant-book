@@ -6,7 +6,7 @@ const {
   checkTier, crypto, normalizeGpsPayload, storageService,
   uploadFile, deleteFile, uuidv4, path, upload, queueService,
   withFarmHashChainLock, sealPlantLogHashChain, isUserFinanceRedacted,
-  sanitizeLogRowForUser, verifyPlantAccess, convertLogAmountToBaseSupplyQty,
+  sanitizeLogRowForUser, verifyPlantAccess, authorizeFarmAccess, authorizePlantAccess, convertLogAmountToBaseSupplyQty,
   generateSlug, generatePublicPlantUrl, formatStandardNfcUid,
   syncPlantNfcToInventory, ensureNfcInventoryColumns, reconcileFarmNfcInventory,
   buildLogFilterQuery, isFullNfcUid
@@ -28,8 +28,11 @@ router.get('/', auth, async (req, res) => {
                (SELECT COUNT(*) FROM plant_logs pl WHERE pl.plant_id = p.id AND (pl.is_deleted IS NOT TRUE)) as log_count,
                TO_CHAR((SELECT MAX(log_date) FROM plant_logs WHERE plant_id = p.id AND log_type = 'Tưới nước' AND (is_deleted IS NOT TRUE)), 'YYYY-MM-DD') as last_watered,
                TO_CHAR((SELECT MAX(log_date) FROM plant_logs WHERE plant_id = p.id AND log_type = 'Bón phân' AND (is_deleted IS NOT TRUE)), 'YYYY-MM-DD') as last_fertilized,
-               TO_CHAR((SELECT MAX(log_date) FROM plant_logs WHERE plant_id = p.id AND (is_deleted IS NOT TRUE)), 'YYYY-MM-DD') as last_care_date,
-               (SELECT log_type FROM plant_logs WHERE plant_id = p.id AND (is_deleted IS NOT TRUE) ORDER BY log_date DESC, id DESC LIMIT 1) as last_care_type,
+               lc.last_care_date,
+               lc.last_care_type,
+               lc.last_care_operator,
+               lc.last_care_at,
+               lc.last_care_material,
                CASE
                  WHEN p.phi_until_date IS NOT NULL AND p.phi_until_date >= CURRENT_DATE
                  THEN (p.phi_until_date - CURRENT_DATE)
@@ -46,6 +49,25 @@ router.get('/', auth, async (req, res) => {
         LEFT JOIN farms f ON f.id = p.farm_id
         LEFT JOIN users fu ON fu.id = f.user_id
         LEFT JOIN users fu_assigned ON fu_assigned.farm_id = f.id AND fu_assigned.role != 'admin'
+        LEFT JOIN LATERAL (
+          SELECT pl.log_type as last_care_type,
+                 TO_CHAR(pl.log_date, 'YYYY-MM-DD') as last_care_date,
+                 COALESCE(NULLIF(pl.operator_name, ''), u_op.full_name, u_op.email, 'Kỹ thuật viên') as last_care_operator,
+                 COALESCE(pl.details->>'performed_at', TO_CHAR(COALESCE(pl.updated_at, pl.created_at), 'YYYY-MM-DD"T"HH24:MI:SS"Z"')) as last_care_at,
+                 COALESCE(
+                   NULLIF(pl.details->>'material_name', ''),
+                   NULLIF(pl.details->>'supply_name', ''),
+                   NULLIF(pl.details->>'fertilizer_name', ''),
+                   NULLIF(pl.details->>'pesticide_name', ''),
+                   NULLIF(pl.details->>'work_content', ''),
+                   NULLIF(pl.note, '')
+                 ) as last_care_material
+          FROM plant_logs pl
+          LEFT JOIN users u_op ON u_op.id = pl.created_by
+          WHERE pl.plant_id = p.id AND (pl.is_deleted IS NOT TRUE)
+          ORDER BY pl.log_date DESC, pl.id DESC
+          LIMIT 1
+        ) lc ON true
         WHERE (p.deleted_at IS NULL)
       `;
       const params = [];
@@ -154,7 +176,15 @@ router.get('/nearby-gps', auth, async (req, res) => {
       return res.status(400).json({ error: 'Tọa độ GPS (lat, lng) không hợp lệ.' });
     }
 
-    const sfKey = `plants:nearby:${userLat.toFixed(5)}_${userLng.toFixed(5)}:${radiusMeters}:${farm_id || 'all'}`;
+    if (farm_id && req.user.role !== 'admin') {
+      const farmCheck = await authorizeFarmAccess(pool, req.user, farm_id, false);
+      if (!farmCheck.ok) {
+        return res.status(farmCheck.status).json({ error: farmCheck.error, code: farmCheck.code });
+      }
+    }
+
+    const userScope = req.user.role === 'admin' ? 'admin' : `u${req.user.id}_f${req.user.farm_id || 0}`;
+    const sfKey = `plants:nearby:${userScope}:${userLat.toFixed(5)}_${userLng.toFixed(5)}:${radiusMeters}:${farm_id || 'all'}`;
 
     const rows = await singleflight.do(sfKey, async () => {
       let query = `
@@ -182,9 +212,9 @@ router.get('/nearby-gps', auth, async (req, res) => {
       }
 
       if (req.user.role !== 'admin') {
-        query += ` AND (f.user_id = $${idx} OR p.farm_id = (SELECT farm_id FROM users WHERE id = $${idx}) OR p.created_by = $${idx})`;
-        params.push(req.user.id);
-        idx++;
+        query += ` AND (f.user_id = $${idx} OR f.user_id = $${idx + 1} OR p.farm_id = (SELECT farm_id FROM users WHERE id = $${idx}) OR p.created_by = $${idx})`;
+        params.push(req.user.id, req.user.parent_user_id || 0);
+        idx += 2;
       }
 
       query += ` AND (
@@ -215,18 +245,31 @@ router.get('/nearby-gps', auth, async (req, res) => {
 router.get('/smart-reminders', auth, async (req, res) => {
   try {
     const { farm_id } = req.query;
+    if (farm_id && req.user.role !== 'admin') {
+      const farmCheck = await authorizeFarmAccess(pool, req.user, farm_id, false);
+      if (!farmCheck.ok) {
+        return res.status(farmCheck.status).json({ error: farmCheck.error, code: farmCheck.code });
+      }
+    }
     let plantsQuery = 'SELECT * FROM plants WHERE (deleted_at IS NULL)';
     const params = [];
     if (farm_id) {
       plantsQuery += ' AND farm_id = $1';
       params.push(parseInt(farm_id, 10));
     } else if (req.user.role !== 'admin') {
-      plantsQuery += ' AND (created_by = $1 OR farm_id = (SELECT farm_id FROM users WHERE id = $1))';
-      params.push(req.user.id);
+      plantsQuery += ' AND (created_by = $1 OR farm_id = (SELECT farm_id FROM users WHERE id = $1) OR farm_id IN (SELECT id FROM farms WHERE user_id = $1 OR user_id = $2))';
+      params.push(req.user.id, req.user.parent_user_id || 0);
     }
 
     const plantsRes = await pool.query(plantsQuery, params);
-    const logsRes = await pool.query('SELECT * FROM plant_logs WHERE is_deleted IS NOT TRUE ORDER BY log_date DESC LIMIT 500');
+    const plantIds = plantsRes.rows.map(p => p.id);
+    if (plantIds.length === 0) {
+      return res.json([]);
+    }
+    const logsRes = await pool.query(
+      'SELECT * FROM plant_logs WHERE is_deleted IS NOT TRUE AND plant_id = ANY($1::int[]) ORDER BY log_date DESC LIMIT 500',
+      [plantIds]
+    );
 
     const reminders = calculateSmartReminders(plantsRes.rows, logsRes.rows);
     res.json(reminders);
@@ -370,11 +413,31 @@ router.get('/:id(\\d+)', auth, async (req, res) => {
     const plant = await pool.query(
       `SELECT p.*, ps.name as schema_name, ps.fields as schema_fields,
               f.name as farm_name, f.user_id as farm_owner_id,
-              u.full_name as owner_name, u.phone as owner_phone
+              u.full_name as owner_name, u.phone as owner_phone,
+              lc.last_care_type, lc.last_care_date, lc.last_care_operator, lc.last_care_at, lc.last_care_material
        FROM plants p
        LEFT JOIN plant_schemas ps ON ps.id = p.schema_id
        LEFT JOIN farms f ON f.id = p.farm_id
        LEFT JOIN users u ON u.id = f.user_id
+       LEFT JOIN LATERAL (
+         SELECT pl.log_type as last_care_type,
+                TO_CHAR(pl.log_date, 'YYYY-MM-DD') as last_care_date,
+                COALESCE(NULLIF(pl.operator_name, ''), u_op.full_name, u_op.email, 'Kỹ thuật viên') as last_care_operator,
+                COALESCE(pl.details->>'performed_at', TO_CHAR(COALESCE(pl.updated_at, pl.created_at), 'YYYY-MM-DD"T"HH24:MI:SS"Z"')) as last_care_at,
+                COALESCE(
+                  NULLIF(pl.details->>'material_name', ''),
+                  NULLIF(pl.details->>'supply_name', ''),
+                  NULLIF(pl.details->>'fertilizer_name', ''),
+                  NULLIF(pl.details->>'pesticide_name', ''),
+                  NULLIF(pl.details->>'work_content', ''),
+                  NULLIF(pl.note, '')
+                ) as last_care_material
+         FROM plant_logs pl
+         LEFT JOIN users u_op ON u_op.id = pl.created_by
+         WHERE pl.plant_id = p.id AND (pl.is_deleted IS NOT TRUE)
+         ORDER BY pl.log_date DESC, pl.id DESC
+         LIMIT 1
+       ) lc ON true
        WHERE p.id=$1`, [req.params.id]
     );
     if (plant.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy.' });
@@ -838,6 +901,10 @@ router.get('/farms/:farmId/plots', auth, async (req, res) => {
   try {
     const farmId = parseInt(req.params.farmId, 10);
     if (isNaN(farmId)) return res.status(400).json({ error: 'Mã trang trại không hợp lệ.' });
+    const access = await authorizeFarmAccess(pool, req.user, farmId, false);
+    if (!access.ok) {
+      return res.status(access.status).json({ error: access.error, code: access.code });
+    }
     const result = await pool.query(
       'SELECT id, farm_id, plot_code, plot_name, description, created_at FROM farm_plots WHERE farm_id = $1 ORDER BY plot_code ASC',
       [farmId]
@@ -1429,6 +1496,9 @@ router.get('/reports/:id(\\d+)', auth, async (req, res) => {
 
 router.post('/reports', auth, async (req, res) => {
   try {
+    if (req.user.role !== 'admin' && req.user.sub_role === 'auditor_readonly') {
+      return res.status(403).json({ error: 'Tài khoản Chỉ đọc (Auditor) không được phép lưu báo cáo mới.' });
+    }
     const {
       title,
       farm_id,
@@ -1453,6 +1523,23 @@ router.post('/reports', auth, async (req, res) => {
 
     const parsedFarmId = (farm_id && farm_id !== 'all' && !isNaN(parseInt(farm_id, 10))) ? parseInt(farm_id, 10) : null;
     const parsedPlantId = (plant_id && plant_id !== 'all' && !isNaN(parseInt(plant_id, 10))) ? parseInt(plant_id, 10) : null;
+    if (parsedFarmId && req.user.role !== 'admin') {
+      const farmCheck = await authorizeFarmAccess(pool, req.user, parsedFarmId, false);
+      if (!farmCheck.ok) {
+        return res.status(farmCheck.status).json({ error: farmCheck.error, code: farmCheck.code });
+      }
+    }
+    if (parsedPlantId && req.user.role !== 'admin') {
+      const plantCheck = await authorizePlantAccess(pool, req.user, parsedPlantId, false);
+      if (!plantCheck.ok) {
+        return res.status(plantCheck.status).json({ error: plantCheck.error, code: plantCheck.code });
+      }
+    }
+
+    const safeReportHtml = report_html
+      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+      .replace(/javascript\s*:/gi, '');
     const catsJson = JSON.stringify(Array.isArray(categories) ? categories : []);
     const metaJson = JSON.stringify(report_meta && typeof report_meta === 'object' ? report_meta : {});
 
@@ -1473,7 +1560,7 @@ router.post('/reports', auth, async (req, res) => {
         from_date ? String(from_date).slice(0, 20) : null,
         to_date ? String(to_date).slice(0, 20) : null,
         parseInt(total_logs, 10) || 0,
-        report_html,
+        safeReportHtml,
         metaJson
       ]
     );

@@ -33,6 +33,48 @@ async function withFarmHashChainLock(farmKey, fn) {
   }
 }
 
+function canonicalizeLogDetailsForHash(rawDetails) {
+  let obj = rawDetails;
+  if (typeof obj === 'string') {
+    try { obj = JSON.parse(obj); } catch (_) { obj = {}; }
+  }
+  if (!obj || typeof obj !== 'object') return '{}';
+  const volatileKeys = new Set(['edit_history', 'record_hash', 'prev_log_hash']);
+  function sortValue(val) {
+    if (Array.isArray(val)) return val.map(sortValue);
+    if (val && typeof val === 'object' && !(val instanceof Date)) {
+      const sorted = {};
+      for (const k of Object.keys(val).sort()) {
+        if (volatileKeys.has(k)) continue;
+        const v = val[k];
+        if (v !== undefined) sorted[k] = sortValue(v);
+      }
+      return sorted;
+    }
+    return val;
+  }
+  return JSON.stringify(sortValue(obj));
+}
+
+function normalizeHashLogDate(dVal) {
+  if (!dVal) return '';
+  if (dVal instanceof Date) return isNaN(dVal.getTime()) ? '' : dVal.toISOString().slice(0, 10);
+  const s = String(dVal).trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  const parsed = new Date(s);
+  return isNaN(parsed.getTime()) ? s : parsed.toISOString().slice(0, 10);
+}
+
+function computeCanonicalPlantLogHash(prevHash, logRow) {
+  const safePrev = prevHash || 'GENESIS_00000000000000000000000000000000000000000000000000000000';
+  const normDate = normalizeHashLogDate(logRow.log_date);
+  const normOp = String(logRow.operator_name || '').trim();
+  const normNote = String(logRow.note || '').trim();
+  const canonDetails = canonicalizeLogDetailsForHash(logRow.details);
+  const canonicalStr = `${safePrev}|${logRow.id}|${logRow.plant_id}|${logRow.log_type}|${normDate}|${logRow.batch_code || ''}|${normOp}|${normNote}|${canonDetails}`;
+  return crypto.createHash('sha256').update(canonicalStr).digest('hex');
+}
+
 async function sealPlantLogHashChain(pool, logRow) {
   if (!logRow || !logRow.id) return logRow;
   try {
@@ -56,8 +98,7 @@ async function sealPlantLogHashChain(pool, logRow) {
       const prevHash = (prevRes.rows[0] && prevRes.rows[0].record_hash)
         ? prevRes.rows[0].record_hash
         : 'GENESIS_00000000000000000000000000000000000000000000000000000000';
-      const canonicalStr = `${prevHash}|${logRow.id}|${logRow.plant_id}|${logRow.log_type}|${logRow.log_date}|${logRow.batch_code || ''}`;
-      const recordHash = crypto.createHash('sha256').update(canonicalStr).digest('hex');
+      const recordHash = computeCanonicalPlantLogHash(prevHash, logRow);
       await pool.query(
         `UPDATE plant_logs SET prev_log_hash = $1, record_hash = $2, is_locked = true WHERE id = $3`,
         [prevHash, recordHash, logRow.id]
@@ -103,7 +144,70 @@ function sanitizeLogRowForUser(log, user) {
   };
 }
 
+async function authorizeFarmAccess(db, reqUser, farmId, requireWrite = false) {
+  const fId = parseInt(farmId, 10);
+  if (isNaN(fId) || fId <= 0) {
+    return { ok: false, status: 400, code: 'INVALID_FARM_ID', error: 'Mã trang trại không hợp lệ.' };
+  }
+  const farmRes = await db.query('SELECT id, user_id, name FROM farms WHERE id = $1 AND (is_deleted IS NOT TRUE) LIMIT 1', [fId]);
+  if (farmRes.rows.length === 0) {
+    return { ok: false, status: 404, code: 'FARM_NOT_FOUND', error: 'Trang trại không tồn tại.' };
+  }
+  const farm = farmRes.rows[0];
+  if (reqUser && reqUser.role === 'admin') {
+    return { ok: true, farm };
+  }
+  if (requireWrite && reqUser && reqUser.sub_role === 'auditor_readonly') {
+    return { ok: false, status: 403, code: 'READONLY_ROLE_FORBIDDEN', error: 'Tài khoản Chỉ đọc (Auditor) không được phép thực hiện thao tác thay đổi dữ liệu.' };
+  }
+  const isOwner = reqUser && Number(farm.user_id) === Number(reqUser.id);
+  const isAssigned = reqUser && reqUser.farm_id && Number(reqUser.farm_id) === Number(farm.id);
+  const isParentOwner = reqUser && reqUser.parent_user_id && Number(reqUser.parent_user_id) === Number(farm.user_id);
+  if (!isOwner && !isAssigned && !isParentOwner) {
+    return { ok: false, status: 403, code: 'FARM_ACCESS_DENIED', error: 'Bạn không có quyền truy cập trang trại này.' };
+  }
+  return { ok: true, farm };
+}
+
+async function authorizePlantAccess(db, reqUser, plantId, requireWrite = false) {
+  const pId = parseInt(plantId, 10);
+  if (isNaN(pId) || pId <= 0) {
+    return { ok: false, status: 400, code: 'INVALID_PLANT_ID', error: 'Mã cây trồng không hợp lệ.' };
+  }
+  const plantRes = await db.query(
+    `SELECT p.id, p.farm_id, p.created_by, p.assigned_to_user_id, p.tree_code, p.nfc_uid, p.latitude, p.longitude, f.user_id as farm_owner_id, f.name as farm_name
+     FROM plants p
+     LEFT JOIN farms f ON f.id = p.farm_id
+     WHERE p.id = $1 AND (p.deleted_at IS NULL)
+     LIMIT 1`,
+    [pId]
+  );
+  if (plantRes.rows.length === 0) {
+    return { ok: false, status: 404, code: 'PLANT_NOT_FOUND', error: 'Không tìm thấy cây trồng.' };
+  }
+  const plant = plantRes.rows[0];
+  if (reqUser && reqUser.role === 'admin') {
+    return { ok: true, plant };
+  }
+  if (requireWrite && reqUser && reqUser.sub_role === 'auditor_readonly') {
+    return { ok: false, status: 403, code: 'READONLY_ROLE_FORBIDDEN', error: 'Tài khoản Chỉ đọc (Auditor) không được phép thực hiện thao tác thay đổi dữ liệu.' };
+  }
+  const isOwner = reqUser && Number(plant.farm_owner_id) === Number(reqUser.id);
+  const isSameFarm = reqUser && reqUser.farm_id && plant.farm_id && Number(reqUser.farm_id) === Number(plant.farm_id);
+  const isParentOwner = reqUser && reqUser.parent_user_id && Number(plant.farm_owner_id) === Number(reqUser.parent_user_id);
+  const isAssigned = reqUser && plant.assigned_to_user_id && Number(plant.assigned_to_user_id) === Number(reqUser.id);
+  const isCreator = reqUser && plant.created_by && Number(plant.created_by) === Number(reqUser.id);
+  if (!isOwner && !isSameFarm && !isParentOwner && !isAssigned && !isCreator) {
+    return { ok: false, status: 403, code: 'PLANT_ACCESS_DENIED', error: 'Bạn không có quyền truy cập cây trồng thuộc trang trại khác.' };
+  }
+  return { ok: true, plant };
+}
+
 async function verifyPlantAccess(req, plantId) {
+  if (req && req.user) {
+    const authRes = await authorizePlantAccess(pool, req.user, plantId, false);
+    return authRes.ok ? { ok: true, user: req.user, plant: authRes.plant } : authRes;
+  }
   const authHeader = req.headers['authorization'];
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return {
@@ -749,8 +853,8 @@ module.exports = {
   singleflight, invalidateAndBroadcast, logAudit, calculateSmartReminders,
   checkTier, crypto, normalizeGpsPayload, multer, storageService,
   uploadFile, deleteFile, uuidv4, path, upload, queueService,
-  withFarmHashChainLock, sealPlantLogHashChain, isUserFinanceRedacted,
-  sanitizeLogRowForUser, verifyPlantAccess, convertLogAmountToBaseSupplyQty,
+  withFarmHashChainLock, sealPlantLogHashChain, canonicalizeLogDetailsForHash, computeCanonicalPlantLogHash, isUserFinanceRedacted,
+  sanitizeLogRowForUser, verifyPlantAccess, authorizeFarmAccess, authorizePlantAccess, convertLogAmountToBaseSupplyQty,
   generateSlug, generatePublicPlantUrl, formatStandardNfcUid,
   syncPlantNfcToInventory, ensureNfcInventoryColumns, reconcileFarmNfcInventory,
   buildLogFilterQuery, isFullNfcUid, LEGACY_LABOR_LOG_TYPES, normalizeCareLogType,

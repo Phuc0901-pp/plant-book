@@ -559,18 +559,18 @@ export function renderUserLogsTable(logs) {
 
         if (l.log_type === 'Nhân công') {
           if (l.details.work_content) parts.push(`Nội dung: <strong style="color:#0f172a;">${esc(l.details.work_content)}</strong>`);
-          if (l.details.worker_count) parts.push(`Số lượng: <strong style="color:#0284c7;">${l.details.worker_count} người</strong>`);
+          if (l.details.worker_count) parts.push(`Số lượng: <strong style="color:#0284c7;">${esc(l.details.worker_count)} người</strong>`);
           if (l.details.time_range) parts.push(`Giờ làm: <strong>${esc(l.details.time_range)}</strong>`);
         } else if (l.log_type === 'Kiểm toán quả') {
           if (l.details.audit_stage) parts.push(`Giai đoạn: <strong style="color:#0f766e;">${esc(l.details.audit_stage)}</strong>`);
-          if (l.details.fruit_count !== undefined) parts.push(`Đếm thực tế: <strong style="color:#0f172a;">${l.details.fruit_count} quả</strong>`);
+          if (l.details.fruit_count !== undefined) parts.push(`Đếm thực tế: <strong style="color:#0f172a;">${esc(l.details.fruit_count)} quả</strong>`);
           if (l.details.reason) parts.push(`Nguyên nhân: ${esc(l.details.reason)}`);
           auditDeltaHtml = _buildFruitDeltaBadgeHtml(l.details, false);
         } else {
           if (supName) parts.push(`Vật tư: <strong style="color:#0f172a;">${esc(supName)}</strong>`);
-          if (qtyVal !== undefined && qtyVal !== null && qtyVal !== '' && qtyVal > 0) parts.push(`Tổng lượng: <strong style="color:#059669;">${qtyVal} ${unitVal}</strong>`);
+          if (qtyVal !== undefined && qtyVal !== null && qtyVal !== '' && qtyVal > 0) parts.push(`Tổng lượng: <strong style="color:#059669;">${esc(qtyVal)} ${esc(unitVal)}</strong>`);
         }
-        if (l.log_type !== 'Kiểm toán quả' && l.details.fruit_count) parts.push(`Số trái: <strong>${l.details.fruit_count}</strong>`);
+        if (l.log_type !== 'Kiểm toán quả' && l.details.fruit_count) parts.push(`Số trái: <strong>${esc(l.details.fruit_count)}</strong>`);
         if (l.log_type === 'Thu hoạch' && l.details.harvest_comparison_text) auditDeltaHtml = _buildFruitDeltaBadgeHtml(l.details, true);
         if (l.details.total_cost) parts.push(`Chi phí: <strong style="color:#dc2626;">${Number(l.details.total_cost).toLocaleString('vi-VN')} đ</strong>`);
         if (l.details.total_revenue) parts.push(`Doanh thu: <strong style="color:#059669;">${Number(l.details.total_revenue).toLocaleString('vi-VN')} đ</strong>`);
@@ -601,7 +601,7 @@ export function renderUserLogsTable(logs) {
               <i data-lucide="trees" class="lucide-sm" style="color: ${isDisease ? '#ef4444' : '#10b981'}; font-size: 12px;"></i>
               <span>${esc(targetDisplay)}</span>
             </strong>
-            ${farmName ? `<span style="font-size: 11px; color: #64748b; display: block; margin-top: 2px;">${farmName}</span>` : ''}
+            ${farmName ? `<span style="font-size: 11px; color: #64748b; display: block; margin-top: 2px;">${esc(farmName)}</span>` : ''}
           </td>
           <td data-label="Hoạt động" style="vertical-align: middle; padding: 12px 14px; white-space: nowrap;">
             <span class="badge ${badgeClass}" style="font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px;">

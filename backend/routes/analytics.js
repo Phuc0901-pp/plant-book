@@ -308,11 +308,19 @@ async function aggregateExecutiveBiData(ctx) {
     water_energy: 0
   };
 
+  const directPlantCostMap = {};
+  let unattachedOverheadVnd = 0;
+
   supplyUsages.forEach(u => {
     const cost = parseFloat(u.total_cost) || ((parseFloat(u.quantity) || 1) * (parseFloat(u.unit_price) || 0));
     const pillar = classifyCostPillar(u.category, u.name, u.note);
     pillarsVnd[pillar] += cost;
     pillarsUsageCount[pillar] += 1;
+    if (u.plant_id) {
+      directPlantCostMap[u.plant_id] = (directPlantCostMap[u.plant_id] || 0) + cost;
+    } else {
+      unattachedOverheadVnd += cost;
+    }
   });
 
   let actualHarvestRevenueVnd = 0;
@@ -372,6 +380,11 @@ async function aggregateExecutiveBiData(ctx) {
         pillarsVnd[pillar] += logCost;
         pillarsUsageCount[pillar] += 1;
         extraLogCostCount += 1;
+        if (l.plant_id) {
+          directPlantCostMap[l.plant_id] = (directPlantCostMap[l.plant_id] || 0) + logCost;
+        } else {
+          unattachedOverheadVnd += logCost;
+        }
         if (l.log_date) {
           extraCostEvents.push({ date: l.log_date, pillar, cost_vnd: logCost });
         }
@@ -394,13 +407,17 @@ async function aggregateExecutiveBiData(ctx) {
   const safeTotalInvestment = Math.max(1, totalInvestmentVnd);
   const costPerTreeVnd = totalTrees > 0 ? Math.round(totalInvestmentVnd / totalTrees) : 0;
   const costPerHectareVnd = totalAreaHa > 0 ? Math.round(totalInvestmentVnd / totalAreaHa) : 0;
+  const overheadPerTreeExact = totalTrees > 0 ? (unattachedOverheadVnd / totalTrees) : 0;
 
   const treeForecasts = plants.map(p => {
     const signals = plantSignalsMap[p.id] || {};
     const pred = predictTreeSeasonYieldKg(p, signals);
     const treeRevVnd = Math.round(pred.predictedYieldKg * pred.exportPricePerKgVnd);
-    const treeRoi = costPerTreeVnd > 0
-      ? Number((((treeRevVnd - costPerTreeVnd) / costPerTreeVnd) * 100).toFixed(1))
+    const treeDirectCost = Number((directPlantCostMap[p.id] || 0).toFixed(2));
+    const treeAllocatedOverhead = Number(overheadPerTreeExact.toFixed(2));
+    const treeTotalCostVnd = Math.round(treeDirectCost + treeAllocatedOverhead);
+    const treeRoi = treeTotalCostVnd > 0
+      ? Number((((treeRevVnd - treeTotalCostVnd) / treeTotalCostVnd) * 100).toFixed(1))
       : 0;
     return {
       plant_id: p.id,
@@ -419,8 +436,10 @@ async function aggregateExecutiveBiData(ctx) {
       predicted_yield_kg: pred.predictedYieldKg,
       export_price_vnd_per_kg: pred.exportPricePerKgVnd,
       predicted_revenue_vnd: treeRevVnd,
-      cost_per_tree_vnd: costPerTreeVnd,
-      net_profit_per_tree_vnd: treeRevVnd - costPerTreeVnd,
+      direct_cost_vnd: Math.round(treeDirectCost),
+      allocated_overhead_vnd: Math.round(treeAllocatedOverhead),
+      cost_per_tree_vnd: treeTotalCostVnd,
+      net_profit_per_tree_vnd: treeRevVnd - treeTotalCostVnd,
       tree_roi_percent: treeRoi
     };
   });
@@ -733,6 +752,8 @@ router.get('/plot-comparison', auth, async (req, res) => {
           tree_count: 0,
           healthy_count: 0,
           phi_safe_count: 0,
+          direct_cost_vnd: 0,
+          allocated_overhead_vnd: 0,
           total_cost_vnd: 0,
           predicted_yield_kg: 0,
           predicted_revenue_vnd: 0
@@ -742,6 +763,8 @@ router.get('/plot-comparison', auth, async (req, res) => {
       g.tree_count += 1;
       if (t.health_status === 'Tốt') g.healthy_count += 1;
       if (t.phi_status !== 'quarantine') g.phi_safe_count += 1;
+      g.direct_cost_vnd += t.direct_cost_vnd || 0;
+      g.allocated_overhead_vnd += t.allocated_overhead_vnd || 0;
       g.total_cost_vnd += t.cost_per_tree_vnd;
       g.predicted_yield_kg += t.predicted_yield_kg;
       g.predicted_revenue_vnd += t.predicted_revenue_vnd;
@@ -766,6 +789,8 @@ router.get('/plot-comparison', auth, async (req, res) => {
         estimated_area_ha: estAreaHa,
         healthy_rate_percent: Number(((g.healthy_count / Math.max(1, g.tree_count)) * 100).toFixed(1)),
         phi_safe_rate_percent: Number(((g.phi_safe_count / Math.max(1, g.tree_count)) * 100).toFixed(1)),
+        direct_cost_vnd: Math.round(g.direct_cost_vnd),
+        allocated_overhead_vnd: Math.round(g.allocated_overhead_vnd),
         total_cost_vnd: Math.round(g.total_cost_vnd),
         cost_per_tree_vnd: costPerTree,
         cost_per_hectare_vnd: costPerHa,
@@ -803,6 +828,50 @@ router.get('/predictive-yield', auth, async (req, res) => {
     const minYieldKg = Number((data.predictedTotalYieldKg * 0.91).toFixed(1));
     const maxYieldKg = Number((data.predictedTotalYieldKg * 1.09).toFixed(1));
 
+    const dynamicRecs = [];
+    if (data.dataSource === 'NO_COST_DATA' && data.fruitAuditCount === 0 && data.harvestCount === 0) {
+      dynamicRecs.push({
+        priority: 'MEDIUM',
+        title_vi: 'Chưa đủ dữ liệu nhật ký thực tế để tính toán khuyến nghị tối ưu hóa chi phí & năng suất',
+        title_en: 'Insufficient field logs to compute cost & yield optimization recommendations',
+        title_zh: '田间记录数据不足，暂无法生成量化优化建议',
+        impact_estimate: `Dữ liệu hiện có: ${data.totalTrees} cây · ${data.usageBatchesCount} đợt hạch toán`
+      });
+    } else {
+      const npkPillar = (data.costPillars || []).find(p => p.key === 'npk_fertilizer') || { share_percent: 0, amount_vnd: 0 };
+      const waterPillar = (data.costPillars || []).find(p => p.key === 'water_energy') || { share_percent: 0, amount_vnd: 0 };
+      const quarantineCount = (data.treeForecasts || []).filter(t => t.phi_status === 'quarantine').length;
+      dynamicRecs.push({
+        priority: npkPillar.share_percent > 45 ? 'HIGH' : 'MEDIUM',
+        title_vi: `Tỷ trọng phân bón hiện chiếm ${npkPillar.share_percent}% tổng chi phí (${Math.round(npkPillar.amount_vnd).toLocaleString('vi-VN')} đ)`,
+        title_en: `Fertilizer spend currently represents ${npkPillar.share_percent}% of total investment`,
+        title_zh: `当前肥料支出占总投入 ${npkPillar.share_percent}%`,
+        impact_estimate: `Dựa trên ${data.usageBatchesCount} đợt vật tư & ${data.fruitAuditCount} lần kiểm toán quả`
+      });
+      if (waterPillar.share_percent > 15 || waterPillar.amount_vnd > 0) {
+        dynamicRecs.push({
+          priority: waterPillar.share_percent > 20 ? 'HIGH' : 'MEDIUM',
+          title_vi: `Chi phí tưới tiêu & điện năng chiếm ${waterPillar.share_percent}% tổng đầu tư (${Math.round(waterPillar.amount_vnd).toLocaleString('vi-VN')} đ)`,
+          title_en: `Irrigation & energy currently accounts for ${waterPillar.share_percent}% of investment`,
+          title_zh: `灌溉水电当前占总投入 ${waterPillar.share_percent}%`,
+          impact_estimate: `Biên lợi nhuận gộp thực tế: ${data.grossMarginPercent}%`
+        });
+      }
+      dynamicRecs.push({
+        priority: quarantineCount > 0 ? 'HIGH' : 'MEDIUM',
+        title_vi: quarantineCount > 0
+          ? `Có ${quarantineCount}/${data.totalTrees} cây đang trong thời hạn cách ly thuốc BVTV (PHI) — Khóa thu hoạch VietGAP`
+          : `Toàn bộ ${data.totalTrees} cây đạt trạng thái an toàn cách ly thuốc BVTV (PHI Safe)`,
+        title_en: quarantineCount > 0
+          ? `${quarantineCount} trees are under active Pre-Harvest Interval (PHI) quarantine`
+          : `All ${data.totalTrees} trees satisfy Pre-Harvest Interval (PHI) compliance`,
+        title_zh: quarantineCount > 0
+          ? `${quarantineCount} 棵果树处于农药安全间隔期 (PHI) 管控中`
+          : `全部 ${data.totalTrees} 棵果树均符合采收安全间隔期 (PHI) 标准`,
+        impact_estimate: `Độ tin cậy mô hình ML: ${data.confidenceScore}% (R²=${data.rSquared})`
+      });
+    }
+
     res.json({
       status: 'success',
       model_metadata: {
@@ -823,29 +892,7 @@ router.get('/predictive-yield', auth, async (req, res) => {
         projected_net_profit_vnd: data.netProfitVnd,
         projected_roi_percent: data.roiPercent
       },
-      agronomic_recommendations: [
-        {
-          priority: 'HIGH',
-          title_vi: 'Tối ưu hóa tỷ lệ Kali & Hữu cơ vi sinh giai đoạn nuôi trái',
-          title_en: 'Optimize Potassium & Bio-Organic Humates during Fruit Development',
-          title_zh: '膨果期优化高钾肥与生物有机肥配比',
-          impact_estimate: '+8.5% năng suất thương phẩm loại 1 (Chuẩn xuất khẩu GACC)'
-        },
-        {
-          priority: 'MEDIUM',
-          title_vi: 'Kiểm soát tưới tiết kiệm thông minh giảm 14% chi phí điện nước/ha',
-          title_en: 'Smart Drip Irrigation Scheduling to Reduce Water/Energy Cost by 14%/ha',
-          title_zh: '智能滴灌调度降低每公顷 14% 水电成本',
-          impact_estimate: '+4.2% biên lợi nhuận ròng (Gross Margin)'
-        },
-        {
-          priority: 'HIGH',
-          title_vi: 'Tuân thủ tuyệt đối thời gian cách ly (PHI >= 15 ngày) trước thu hoạch xuất khẩu',
-          title_en: 'Enforce Strict Pre-Harvest Interval (PHI >= 15 days) for Export Compliance',
-          title_zh: '采收前严格执行 >= 15 天农药安全间隔期 (PHI) 确保海关检疫合格',
-          impact_estimate: '100% đạt chuẩn kiểm dịch GACC Trung Quốc & GlobalG.A.P.'
-        }
-      ],
+      agronomic_recommendations: dynamicRecs,
       tree_forecasts: data.treeForecasts.slice(0, 25)
     });
   } catch (err) {

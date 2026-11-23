@@ -45,6 +45,16 @@
     return Math.round(Number(amountVnd) || 0).toLocaleString('vi-VN') + ' ₫';
   }
 
+  function esc(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   function tr(key, fallback) {
     if (window.PlantBookI18n && typeof window.PlantBookI18n.t === 'function') {
       return window.PlantBookI18n.t(key, fallback);
@@ -246,8 +256,8 @@
          </div>`
       : recsList.map(r => `
       <div style="background:#f8fafc; border:1px solid #e2e8f0; border-left:3.5px solid ${r.priority === 'HIGH' ? '#059669' : '#0284c7'}; border-radius:8px; padding:7px 11px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
-        <div style="font-size:11.5px; font-weight:700; color:#0f172a;">${getRecLocalizedTitle(r)}</div>
-        <span style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:10.5px; font-weight:800; padding:2px 8px; border-radius:20px;">${r.impact_estimate}</span>
+        <div style="font-size:11.5px; font-weight:700; color:#0f172a;">${esc(getRecLocalizedTitle(r))}</div>
+        <span style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:10.5px; font-weight:800; padding:2px 8px; border-radius:20px;">${esc(r.impact_estimate)}</span>
       </div>
     `).join('');
 
@@ -255,7 +265,7 @@
       const plRoiSign = Number(pl.roi_percent) > 0 ? '+' : '';
       return `
       <tr>
-        <td style="padding:8px 12px; font-weight:800; color:#0f172a;">${pl.plot_code}</td>
+        <td style="padding:8px 12px; font-weight:800; color:#0f172a;">${esc(pl.plot_code)}</td>
         <td style="padding:8px 12px; font-weight:700;">${pl.tree_count} ${unitTree} <span style="color:#64748b; font-size:11px;">(${pl.estimated_area_ha} ${unitHa})</span></td>
         <td style="padding:8px 12px; font-weight:800; color:#0f172a;">${fmtMoney(pl.cost_per_tree_vnd)}</td>
         <td style="padding:8px 12px; font-weight:800; color:#0284c7;">${fmtMoney(pl.cost_per_hectare_vnd)}</td>
@@ -576,33 +586,32 @@
       `;
     }).join('');
 
-    const pillarsSummaryStr = pillars.map(p => `${p.label_vi}: <strong>${fmtMoney(p.amount_vnd)}</strong> (${p.share_percent}%)`).join(' · ');
+    const pillarsSummaryStr = pillars.map(p => `${esc(p.label_vi)}: <strong>${esc(fmtMoney(p.amount_vnd))}</strong> (${Number(p.share_percent) || 0}%)`).join(' · ');
 
     bodyEl.innerHTML = `
-      <!-- 1. Bảng Tóm Tắt Dữ Liệu Thực Tế Đã Đọc Từ Backend (Đọc Hiểu Ngay) -->
       <div style="background:#f0fdf4; border:1.5px solid #86efac; border-radius:12px; padding:12px 16px; flex-shrink:0;">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
-          <strong style="color:#065f46; font-size:13px;">✓ XÁC NHẬN DỮ LIỆU THỰC TẾ TRẢ VỀ TỪ BACKEND API (${ovJson.api_version || 'v2.4-AGTECH-BI-ML'})</strong>
+          <strong style="color:#065f46; font-size:13px;">✓ XÁC NHẬN DỮ LIỆU THỰC TẾ TRẢ VỀ TỪ BACKEND API (${esc(ovJson.api_version || 'v2.4-AGTECH-BI-ML')})</strong>
           <span style="background:#059669; color:#fff; font-size:11px; font-weight:800; padding:2px 10px; border-radius:20px;">
-            Nguồn: ${ovJson.data_source === 'LIVE_DATABASE_ACCOUNTING' ? `Hạch toán DB Thực tế (${ovJson.usage_batches_count || 0} đợt canh tác)` : 'Định mức Chuẩn'}
+            Nguồn: ${ovJson.data_source === 'LIVE_DATABASE_ACCOUNTING' ? `Hạch toán DB Thực tế (${Number(ovJson.usage_batches_count) || 0} đợt canh tác)` : 'Định mức Chuẩn'}
           </span>
         </div>
         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:8px; font-size:12px; color:#0f172a;">
           <div style="background:#fff; padding:7px 10px; border-radius:8px; border:1px solid #bbf7d0;">
             <span style="color:#64748b; font-size:11px;">Tổng Vốn Đầu Tư:</span><br>
-            <strong style="font-size:14px; color:#0f172a;">${fmtMoney(ovSum.total_investment_vnd)}</strong> (${ovSum.total_trees || 0} cây · ${ovSum.total_area_ha || 0} ha)
+            <strong style="font-size:14px; color:#0f172a;">${esc(fmtMoney(ovSum.total_investment_vnd))}</strong> (${Number(ovSum.total_trees) || 0} cây · ${Number(ovSum.total_area_ha) || 0} ha)
           </div>
           <div style="background:#fff; padding:7px 10px; border-radius:8px; border:1px solid #bbf7d0;">
             <span style="color:#64748b; font-size:11px;">Chi Phí Đơn Vị (/Cây & /Ha):</span><br>
-            <strong style="color:#059669;">${fmtMoney(ovSum.cost_per_tree_vnd)}/cây</strong> · <strong style="color:#0284c7;">${fmtMoney(ovSum.cost_per_hectare_vnd)}/ha</strong>
+            <strong style="color:#059669;">${esc(fmtMoney(ovSum.cost_per_tree_vnd))}/cây</strong> · <strong style="color:#0284c7;">${esc(fmtMoney(ovSum.cost_per_hectare_vnd))}/ha</strong>
           </div>
           <div style="background:#fff; padding:7px 10px; border-radius:8px; border:1px solid #bbf7d0;">
             <span style="color:#64748b; font-size:11px;">Dự Báo Học Máy (ML Vụ Tới):</span><br>
-            <strong style="color:#6d28d9;">${ovSum.predicted_yield_kg || 0} kg</strong> · DT: <strong>${fmtMoney(ovSum.projected_season_revenue_vnd)}</strong>
+            <strong style="color:#6d28d9;">${Number(ovSum.predicted_yield_kg) || 0} kg</strong> · DT: <strong>${esc(fmtMoney(ovSum.projected_season_revenue_vnd))}</strong>
           </div>
           <div style="background:#fff; padding:7px 10px; border-radius:8px; border:1px solid #bbf7d0;">
             <span style="color:#64748b; font-size:11px;">Tỷ Suất ROI & Lợi Nhuận Dự Báo:</span><br>
-            <strong style="color:#b45309;">ROI +${ovSum.roi_percent || 0}%</strong> · LN: <strong>${fmtMoney(ovSum.net_profit_vnd)}</strong>
+            <strong style="color:#b45309;">ROI +${Number(ovSum.roi_percent) || 0}%</strong> · LN: <strong>${esc(fmtMoney(ovSum.net_profit_vnd))}</strong>
           </div>
         </div>
         <div style="margin-top:8px; font-size:11.5px; color:#1e293b; background:#ffffff; padding:6px 10px; border-radius:8px; border:1px solid #dcfce7;">
@@ -610,28 +619,26 @@
         </div>
       </div>
 
-      <!-- 2. Thanh 5 Tab Chọn Cổng API Để Soi Chi Tiết JSON -->
       <div style="display:flex; gap:6px; flex-wrap:wrap; flex-shrink:0;">
         ${tabsHtml}
       </div>
 
-      <!-- 3. Khung Hiển Thị Chi Tiết JSON Rõ Nét (Chiều Cao Cố Định 310px, Không Bị Ép Dẹp) -->
       <div style="border:1.5px solid #334155; border-radius:12px; overflow:hidden; background:#0f172a; flex-shrink:0; display:flex; flex-direction:column;">
         <div style="padding:9px 14px; background:#1e293b; border-bottom:1px solid #334155; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
           <div>
-            <strong style="color:#f8fafc; font-size:13px;">${r.name}</strong>
-            <span style="font-family:monospace; font-size:12px; color:#38bdf8; margin-left:10px;">GET ${r.url}</span>
+            <strong style="color:#f8fafc; font-size:13px;">${esc(r.name)}</strong>
+            <span style="font-family:monospace; font-size:12px; color:#38bdf8; margin-left:10px;">GET ${esc(r.url)}</span>
           </div>
           <div style="display:flex; align-items:center; gap:8px;">
             <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('bi-diag-json-pre').innerText); this.innerText='Đã sao chép ✓';" style="background:#334155; color:#e2e8f0; border:1px solid #475569; border-radius:6px; padding:4px 10px; font-size:11.5px; font-weight:700; cursor:pointer;">
               Sao chép JSON
             </button>
             <span style="background:#dcfce7; color:#15803d; font-weight:900; font-size:11.5px; padding:3px 10px; border-radius:20px;">
-              HTTP ${r.status} ${r.ok ? 'OK' : 'ERR'} (${r.ms} ms)
+              HTTP ${Number(r.status) || 0} ${r.ok ? 'OK' : 'ERR'} (${Number(r.ms) || 0} ms)
             </span>
           </div>
         </div>
-        <pre id="bi-diag-json-pre" style="margin:0; padding:14px 16px; height:300px; overflow:auto; font-size:12.5px; line-height:1.5; background:#0f172a; color:#a7f3d0; font-family:Consolas,Monaco,monospace;">${jsonPreview.replace(/</g, '&lt;')}</pre>
+        <pre id="bi-diag-json-pre" style="margin:0; padding:14px 16px; height:300px; overflow:auto; font-size:12.5px; line-height:1.5; background:#0f172a; color:#a7f3d0; font-family:Consolas,Monaco,monospace;">${esc(jsonPreview)}</pre>
       </div>
     `;
   }

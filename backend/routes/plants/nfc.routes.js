@@ -6,7 +6,7 @@ const {
   checkTier, crypto, normalizeGpsPayload, storageService,
   uploadFile, deleteFile, uuidv4, path, upload, queueService,
   withFarmHashChainLock, sealPlantLogHashChain, isUserFinanceRedacted,
-  sanitizeLogRowForUser, verifyPlantAccess, convertLogAmountToBaseSupplyQty,
+  sanitizeLogRowForUser, verifyPlantAccess, authorizeFarmAccess, authorizePlantAccess, convertLogAmountToBaseSupplyQty,
   generateSlug, generatePublicPlantUrl, formatStandardNfcUid,
   syncPlantNfcToInventory, ensureNfcInventoryColumns, reconcileFarmNfcInventory,
   buildLogFilterQuery, isFullNfcUid
@@ -14,8 +14,11 @@ const {
 
 router.get(['/farms/:farmId/tags', '/farm/:farmId/tags', '/nfc/farm/:farmId/tags'], auth, async (req, res) => {
   try {
-    const farmId = parseInt(req.params.farmId, 10);
-    if (isNaN(farmId)) return res.status(400).json({ error: 'Mã trang trại không hợp lệ.' });
+    const farmAccess = await authorizeFarmAccess(pool, req.user, req.params.farmId, false);
+    if (!farmAccess.ok) {
+      return res.status(farmAccess.status).json({ error: farmAccess.error, code: farmAccess.code });
+    }
+    const farmId = farmAccess.farm.id;
     await reconcileFarmNfcInventory(pool, farmId);
     const items = await pool.query(
       `SELECT n.*, p.tree_code, p.plant_type, p.plant_variety, p.health_status, p.location, p.latitude, p.longitude, p.public_url, p.data as plant_data
@@ -174,9 +177,11 @@ router.put('/:id/nfc', auth, async (req, res) => {
 
 router.post('/plants/:id/nfc/provision-ntag213', auth, async (req, res) => {
   try {
-    const plantId = parseInt(req.params.id);
-    if (isNaN(plantId)) return res.status(400).json({ error: 'ID cây không hợp lệ.' });
-
+    const plantAccess = await authorizePlantAccess(pool, req.user, req.params.id, true);
+    if (!plantAccess.ok) {
+      return res.status(plantAccess.status).json({ error: plantAccess.error, code: plantAccess.code });
+    }
+    const plantId = plantAccess.plant.id;
     const plantRes = await pool.query('SELECT id, farm_id, tree_code, nfc_uid, latitude, longitude FROM plants WHERE id = $1', [plantId]);
     if (plantRes.rows.length === 0) {
       return res.status(404).json({ error: 'Không tìm thấy cây trồng.' });
@@ -370,8 +375,11 @@ router.post('/plants/nfc/verify-scan', async (req, res) => {
 
 router.get('/farms/:farmId/nfc-security-logs', auth, async (req, res) => {
   try {
-    const farmId = parseInt(req.params.farmId);
-    if (isNaN(farmId)) return res.status(400).json({ error: 'Mã trang trại không hợp lệ.' });
+    const farmAccess = await authorizeFarmAccess(pool, req.user, req.params.farmId, false);
+    if (!farmAccess.ok) {
+      return res.status(farmAccess.status).json({ error: farmAccess.error, code: farmAccess.code });
+    }
+    const farmId = farmAccess.farm.id;
 
     const limit = Math.min(parseInt(req.query.limit) || 50, 100);
     const logs = await pool.query(`
@@ -486,8 +494,11 @@ router.post('/farms/:farmId/nfc-inventory/sync', auth, async (req, res) => {
 router.post('/farms/:farmId/nfc-inventory/batch', auth, async (req, res) => {
   const client = await pool.connect();
   try {
-    const farmId = parseInt(req.params.farmId);
-    if (isNaN(farmId)) return res.status(400).json({ error: 'Mã trang trại không hợp lệ.' });
+    const farmAccess = await authorizeFarmAccess(client, req.user, req.params.farmId, true);
+    if (!farmAccess.ok) {
+      return res.status(farmAccess.status).json({ error: farmAccess.error, code: farmAccess.code });
+    }
+    const farmId = farmAccess.farm.id;
 
     const { uids, uid } = req.body;
     const rawList = Array.isArray(uids) ? uids : (uid ? [uid] : []);
@@ -847,8 +858,12 @@ router.delete('/farms/:farmId/nfc-inventory/:id', auth, async (req, res) => {
   const client = await pool.connect();
   try {
     const id = parseInt(req.params.id);
-    const farmId = parseInt(req.params.farmId);
-    if (isNaN(id) || isNaN(farmId)) return res.status(400).json({ error: 'Tham số không hợp lệ.' });
+    if (isNaN(id)) return res.status(400).json({ error: 'Tham số không hợp lệ.' });
+    const farmAccess = await authorizeFarmAccess(client, req.user, req.params.farmId, true);
+    if (!farmAccess.ok) {
+      return res.status(farmAccess.status).json({ error: farmAccess.error, code: farmAccess.code });
+    }
+    const farmId = farmAccess.farm.id;
 
     await client.query('BEGIN');
 
@@ -896,7 +911,11 @@ router.delete('/farms/:farmId/nfc-inventory/:id', auth, async (req, res) => {
 router.post('/farms/:farmId/tag-nfc-gps', auth, async (req, res) => {
   const client = await pool.connect();
   try {
-    const farmId = parseInt(req.params.farmId);
+    const farmAccess = await authorizeFarmAccess(client, req.user, req.params.farmId, true);
+    if (!farmAccess.ok) {
+      return res.status(farmAccess.status).json({ error: farmAccess.error, code: farmAccess.code });
+    }
+    const farmId = farmAccess.farm.id;
     const { plant_id, tree_code, nfc_uid, latitude, longitude } = req.body;
 
     if (!nfc_uid || typeof nfc_uid !== 'string') {
@@ -1536,7 +1555,11 @@ router.post(['/nfc/verify-write', '/plants/nfc/verify-write'], auth, async (req,
       return res.status(400).json({ error: 'Mã cây trồng là bắt buộc.' });
     }
 
-    const cleanPlantId = parseInt(plant_id);
+    const plantAccess = await authorizePlantAccess(client, req.user, plant_id, true);
+    if (!plantAccess.ok) {
+      return res.status(plantAccess.status).json({ error: plantAccess.error, code: plantAccess.code });
+    }
+    const cleanPlantId = plantAccess.plant.id;
     const cleanUid = nfc_uid && String(nfc_uid).trim() ? formatStandardNfcUid(nfc_uid) : null;
 
     await client.query('BEGIN');
@@ -1605,15 +1628,15 @@ router.post(['/nfc/verify-write', '/plants/nfc/verify-write'], auth, async (req,
 
 router.post('/:id(\\d+)/nfc-reissue', auth, async (req, res) => {
   try {
-    const plantId = parseInt(req.params.id, 10);
-    const access = await verifyPlantAccess(req, plantId);
+    const access = await authorizePlantAccess(pool, req.user, req.params.id, true);
     if (!access.ok) {
-      return res.status(access.status).json({ error: access.error });
+      return res.status(access.status).json({ error: access.error, code: access.code });
     }
-    const plantRes = await pool.query('SELECT id, farm_id, nfc_uid, nfc_tag_id FROM plants WHERE id = $1 LIMIT 1', [plantId]);
+    const plantId = access.plant.id;
+    const plantRes = await pool.query('SELECT id, farm_id, nfc_uid FROM plants WHERE id = $1 LIMIT 1', [plantId]);
     if (plantRes.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy cây trồng.' });
     const plant = plantRes.rows[0];
-    const uid = formatStandardNfcUid(req.body.uid || plant.nfc_uid || plant.nfc_tag_id || `NFC-TB-${plantId}`);
+    const uid = formatStandardNfcUid(req.body.uid || plant.nfc_uid || `NFC-TB-${plantId}`);
 
     await pool.query(`
       ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS issue_level INTEGER DEFAULT 1;
@@ -1632,14 +1655,14 @@ router.post('/:id(\\d+)/nfc-reissue', auth, async (req, res) => {
     if (existingTag.rows.length > 0) {
       const currLevel = parseInt(existingTag.rows[0].issue_level, 10) || 1;
       newIssueLevel = currLevel + 1;
-      const newSig = nfcSecurity.generateSignature(uid, plantId, newIssueLevel);
+      const newSig = nfcSecurity.generateHmacSignature(uid, `${plantId}:v${newIssueLevel}`);
       const newChuid = nfcSecurity.generatePivChuidHash(uid, plant.farm_id || 0, plantId, newIssueLevel);
       await pool.query(
         'UPDATE nfc_tags_inventory SET nfc_uid = COALESCE(nfc_uid, $1), farm_id = COALESCE(farm_id, $2), plant_id = $3, status = $4, issue_level = $5, signature = $6, hmac_signature = $6, chuid_hash = $7, updated_at = NOW() WHERE id = $8',
         [uid, plant.farm_id || null, plantId, 'assigned', newIssueLevel, newSig, newChuid, existingTag.rows[0].id]
       );
     } else {
-      const newSig = nfcSecurity.generateSignature(uid, plantId, newIssueLevel);
+      const newSig = nfcSecurity.generateHmacSignature(uid, `${plantId}:v${newIssueLevel}`);
       const newChuid = nfcSecurity.generatePivChuidHash(uid, plant.farm_id || 0, plantId, newIssueLevel);
       await pool.query(
         `INSERT INTO nfc_tags_inventory (nfc_uid, farm_id, plant_id, status, signature, hmac_signature, issue_level, card_type, chuid_hash, assigned_at, tagged_at, updated_at)
@@ -1648,10 +1671,10 @@ router.post('/:id(\\d+)/nfc-reissue', auth, async (req, res) => {
       ).catch(() => {});
     }
 
-    const oldSig = nfcSecurity.generateSignature(uid, plantId, newIssueLevel - 1);
-    const newSig = nfcSecurity.generateSignature(uid, plantId, newIssueLevel);
-    const oldCardCheck = nfcSecurity.verifySignature(uid, plantId, oldSig, newIssueLevel - 1, newIssueLevel);
-    const newCardCheck = nfcSecurity.verifySignature(uid, plantId, newSig, newIssueLevel, newIssueLevel);
+    const oldSig = nfcSecurity.generateHmacSignature(uid, `${plantId}:v${newIssueLevel - 1}`);
+    const newSig = nfcSecurity.generateHmacSignature(uid, `${plantId}:v${newIssueLevel}`);
+    const oldCardCheck = nfcSecurity.verifyHmacSignature(uid, `${plantId}:v${newIssueLevel}`, oldSig);
+    const newCardCheck = nfcSecurity.verifyHmacSignature(uid, `${plantId}:v${newIssueLevel}`, newSig);
 
     res.json({
       success: true,

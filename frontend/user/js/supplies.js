@@ -827,6 +827,19 @@ export async function updateSuppliesProfitCockpit() {
 window.updateSuppliesProfitCockpit = updateSuppliesProfitCockpit;
 window.renderSuppliesCockpitKpi = updateSuppliesProfitCockpit;
 
+function formatSupplyRealtimeVi(rawVal) {
+  if (!rawVal) return 'Vừa cập nhật';
+  const d = new Date(rawVal);
+  if (isNaN(d.getTime())) return String(rawVal);
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mi = String(d.getMinutes()).padStart(2, '0');
+  const ss = String(d.getSeconds()).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  return `${hh}:${mi}:${ss} ${dd}/${mm}/${yyyy}`;
+}
+
 export function renderSuppliesTable(supplies) {
   const tbody = document.getElementById('supplies-table-body');
   const countLabel = document.getElementById('supplies-table-count-label');
@@ -913,6 +926,9 @@ export function renderSuppliesTable(supplies) {
       ? `<div style="font-size:11px; color:#b45309; font-weight:700; margin-top:2px;"><i data-lucide="clock" class="lucide-xs"></i> Cách ly PHI: ${sp.phi_days} ngày</div>`
       : '';
 
+    const actorDisplay = sp.last_operator_name || sp.updated_by_name || sp.creator_name || 'Chủ trang trại';
+    const updatedTimeDisplay = formatSupplyRealtimeVi(sp.updated_at || sp.created_at);
+
     const nameHtml = `
       <div style="display:flex; align-items:center; gap:10px;">
         ${sp.image_url
@@ -925,6 +941,9 @@ export function renderSuppliesTable(supplies) {
           </div>
           ${activeIngDisplay}
           ${phiBadge}
+          <div style="font-size:11px; color:#0f766e; font-weight:700; margin-top:3px; display:flex; align-items:center; gap:4px;">
+            <i data-lucide="user-check" class="lucide-xs"></i> Cập nhật: ${esc(actorDisplay)} • Lúc: ${esc(updatedTimeDisplay)}
+          </div>
         </div>
       </div>
     `;
@@ -1447,18 +1466,20 @@ export async function openStockLedgerModal(id) {
 
     let timelineHtml = '<div class="stock-timeline" style="display:flex; flex-direction:column; gap:14px; position:relative; padding-left:24px; border-left:2px solid #e2e8f0; margin-left:10px;">';
 
-    const createdDate = sp.created_at ? new Date(sp.created_at).toLocaleDateString('vi-VN') : 'Đầu kỳ';
+    const createdDate = formatSupplyRealtimeVi(sp.updated_at || sp.created_at);
+    const ledgerActor = sp.last_operator_name || sp.updated_by_name || sp.creator_name || 'Chủ trang trại';
     timelineHtml += `
       <div class="stock-timeline-item" style="position:relative;">
         <div style="position:absolute; left:-31px; top:2px; width:14px; height:14px; border-radius:50%; background:#10b981; border:3px solid #fff; box-shadow:0 0 0 2px #10b981;"></div>
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 14px;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
-            <strong style="color:#059669; font-size:13px;"><i data-lucide="flag" class="lucide-sm"></i> Khai báo &amp; Nhập kho ban đầu</strong>
-            <span style="font-size:11.5px; color:#64748b; font-weight:600;">${createdDate}</span>
+            <strong style="color:#059669; font-size:13px;"><i data-lucide="flag" class="lucide-sm"></i> Khai báo &amp; Nhập kho (${esc(sp.name)})</strong>
+            <span style="font-size:11.5px; color:#64748b; font-weight:600;">${esc(createdDate)}</span>
           </div>
           <div style="font-size:12px; color:#334155; margin-top:4px;">
             Số lượng: <strong style="color:#059669;">+${sp.package_qty} ${sp.package_unit || sp.unit}</strong>${isFinanceRedacted ? '' : ` • Đơn giá: <strong>${formatVND(sp.package_price)}</strong>`}
           </div>
+          <div style="font-size:11.5px; color:#0f766e; font-weight:700; margin-top:3px;">Người thực hiện: ${esc(ledgerActor)} • Thời gian thực: ${esc(createdDate)}</div>
           ${sp.note ? `<div style="font-size:11.5px; color:#64748b; margin-top:2px;">Ghi chú: ${esc(sp.note)}</div>` : ''}
         </div>
       </div>
@@ -2630,5 +2651,5 @@ window.calculateRestockPreview = calculateRestockPreview;
 window.submitRestockSupply = submitRestockSupply;
 window.openStockLedgerModal = openStockLedgerModal;
 window.closeStockLedgerModal = closeStockLedgerModal;
-window.renderSuppliesCockpitKpi = renderSuppliesCockpitKpi;
+window.renderSuppliesCockpitKpi = updateSuppliesProfitCockpit;
 window.renderSuppliesTable = renderSuppliesTable;

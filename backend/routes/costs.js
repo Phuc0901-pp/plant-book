@@ -91,7 +91,7 @@ router.get('/consumables', auth, async (req, res) => {
   }
 });
 
-router.get('/fixed', auth, async (req, res) => {
+router.get(['/fixed', '/fixed-assets'], auth, async (req, res) => {
   try {
     const ctx = resolveCostContext(req);
     if (ctx.isRedacted) {
@@ -217,7 +217,7 @@ router.post('/consumables', auth, async (req, res) => {
   }
 });
 
-router.post('/fixed', auth, async (req, res) => {
+router.post(['/fixed', '/fixed-assets'], auth, async (req, res) => {
   try {
     const ctx = resolveCostContext(req);
     if (ctx.isRedacted) {
@@ -266,6 +266,174 @@ router.post('/fixed', auth, async (req, res) => {
   } catch (err) {
     console.error('Error adding fixed asset:', err);
     res.status(500).json({ error: 'Lỗi server khi thêm tài sản cố định: ' + err.message });
+  }
+});
+
+router.put(['/fixed/:id', '/fixed-assets/:id'], auth, async (req, res) => {
+  try {
+    const ctx = resolveCostContext(req);
+    if (ctx.isRedacted) {
+      return res.status(403).json({
+        error: 'Chế độ bảo mật RBAC: Tài khoản không có quyền cập nhật tài sản cố định.',
+        code: 'FINANCE_REDACTED_ROLE',
+        isFinanceRedacted: true
+      });
+    }
+    const assetId = parseInt(req.params.id, 10);
+    if (!Number.isInteger(assetId) || assetId <= 0) {
+      return res.status(400).json({ error: 'Mã tài sản cố định không hợp lệ.' });
+    }
+    const checkRes = await pool.query(
+      `SELECT fa.*, f.user_id as farm_owner_id FROM fixed_assets fa LEFT JOIN farms f ON f.id = fa.farm_id WHERE fa.id = $1 LIMIT 1`,
+      [assetId]
+    );
+    if (checkRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy tài sản cố định.' });
+    }
+    const existing = checkRes.rows[0];
+    const hasAccess = ctx.role === 'admin'
+      || Number(existing.user_id) === Number(ctx.targetOwnerId)
+      || Number(existing.farm_owner_id) === Number(ctx.targetOwnerId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Bạn không có quyền chỉnh sửa tài sản cố định thuộc trang trại khác.' });
+    }
+
+    const { farm_id, name, category, year, cost, life, note } = req.body || {};
+    let nextFarmId = existing.farm_id;
+    if (farm_id !== undefined && farm_id !== null && Number(farm_id) !== Number(existing.farm_id)) {
+      const farmAccess = await verifyCostFarmAccess(req, ctx, farm_id);
+      if (!farmAccess.ok) {
+        return res.status(farmAccess.status).json({ error: farmAccess.error, code: farmAccess.code });
+      }
+      nextFarmId = farmAccess.farmId;
+    }
+
+    const nextCost = cost !== undefined ? parseFloat(cost) : parseFloat(existing.cost);
+    const nextLife = life !== undefined ? parseInt(life, 10) : parseInt(existing.life, 10);
+    if (!Number.isFinite(nextCost) || nextCost <= 0 || !Number.isInteger(nextLife) || nextLife <= 0) {
+      return res.status(400).json({ error: 'Nguyên giá và số năm khấu hao phải lớn hơn 0.', code: 'INVALID_AMOUNT' });
+    }
+
+    const updatedRes = await pool.query(
+      `UPDATE fixed_assets
+       SET farm_id = $1, name = $2, category = $3, year = $4, cost = $5, life = $6, note = $7
+       WHERE id = $8
+       RETURNING *`,
+      [
+        nextFarmId,
+        name !== undefined && String(name).trim() ? String(name).trim() : existing.name,
+        category !== undefined ? category : existing.category,
+        year !== undefined ? (parseInt(year, 10) || existing.year) : existing.year,
+        nextCost,
+        nextLife,
+        note !== undefined ? note : existing.note,
+        assetId
+      ]
+    );
+    res.json(updatedRes.rows[0]);
+  } catch (err) {
+    console.error('Error updating fixed asset:', err);
+    res.status(500).json({ error: 'Lỗi server khi cập nhật tài sản cố định: ' + err.message });
+  }
+});
+
+router.delete(['/fixed/:id', '/fixed-assets/:id'], auth, async (req, res) => {
+  try {
+    const ctx = resolveCostContext(req);
+    if (ctx.isRedacted) {
+      return res.status(403).json({
+        error: 'Chế độ bảo mật RBAC: Tài khoản không có quyền xóa tài sản cố định.',
+        code: 'FINANCE_REDACTED_ROLE',
+        isFinanceRedacted: true
+      });
+    }
+    const assetId = parseInt(req.params.id, 10);
+    if (!Number.isInteger(assetId) || assetId <= 0) {
+      return res.status(400).json({ error: 'Mã tài sản cố định không hợp lệ.' });
+    }
+    const checkRes = await pool.query(
+      `SELECT fa.id, fa.user_id, f.user_id as farm_owner_id FROM fixed_assets fa LEFT JOIN farms f ON f.id = fa.farm_id WHERE fa.id = $1 LIMIT 1`,
+      [assetId]
+    );
+    if (checkRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy tài sản cố định.' });
+    }
+    const existing = checkRes.rows[0];
+    const hasAccess = ctx.role === 'admin'
+      || Number(existing.user_id) === Number(ctx.targetOwnerId)
+      || Number(existing.farm_owner_id) === Number(ctx.targetOwnerId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Bạn không có quyền xóa tài sản cố định thuộc trang trại khác.' });
+    }
+    await pool.query('DELETE FROM fixed_assets WHERE id = $1', [assetId]);
+    res.json({ success: true, id: assetId });
+  } catch (err) {
+    console.error('Error deleting fixed asset:', err);
+    res.status(500).json({ error: 'Lỗi server khi xóa tài sản cố định: ' + err.message });
+  }
+});
+
+router.get('/auto-summary', auth, async (req, res) => {
+  try {
+    const ctx = resolveCostContext(req);
+    if (ctx.isRedacted) {
+      return res.status(403).json({
+        error: 'Chế độ bảo mật RBAC: Tài khoản không có quyền xem tổng hợp chi phí.',
+        code: 'FINANCE_REDACTED_ROLE',
+        isFinanceRedacted: true
+      });
+    }
+    const { farm_id } = req.query;
+    let parsedFarmId = null;
+    if (farm_id && farm_id !== 'all') {
+      const farmAccess = await verifyCostFarmAccess(req, ctx, farm_id);
+      if (!farmAccess.ok) {
+        return res.status(farmAccess.status).json({ error: farmAccess.error, code: farmAccess.code });
+      }
+      parsedFarmId = farmAccess.farmId;
+    }
+
+    const usageRes = await pool.query(
+      `SELECT COALESCE(SUM(su.total_cost), 0)::numeric as supply_total
+       FROM supply_usages su
+       LEFT JOIN farms f ON f.id = su.farm_id
+       WHERE ($1::int IS NULL OR su.farm_id = $1)
+         AND ($2::int IS NULL OR su.user_id = $2 OR f.user_id = $2)`,
+      [parsedFarmId, ctx.targetOwnerId]
+    );
+    const activeLogsRes = await pool.query(
+      `SELECT COALESCE(SUM(COALESCE(NULLIF(pl.cost, 0), (pl.details->>'total_cost')::numeric, 0)), 0)::numeric as log_extra_total
+       FROM plant_logs pl
+       LEFT JOIN plants p ON p.id = pl.plant_id
+       LEFT JOIN farms f ON f.id = p.farm_id
+       WHERE COALESCE(pl.is_deleted, false) = false
+         AND NOT (pl.details ? 'supply_id')
+         AND ($1::int IS NULL OR p.farm_id = $1)
+         AND ($2::int IS NULL OR f.user_id = $2 OR pl.created_by = $2)`,
+      [parsedFarmId, ctx.targetOwnerId]
+    );
+    const fixedRes = await pool.query(
+      `SELECT COALESCE(SUM(fa.cost), 0)::numeric as fixed_total
+       FROM fixed_assets fa
+       LEFT JOIN farms f ON f.id = fa.farm_id
+       WHERE ($1::int IS NULL OR fa.farm_id = $1)
+         AND ($2::int IS NULL OR fa.user_id = $2 OR f.user_id = $2)`,
+      [parsedFarmId, ctx.targetOwnerId]
+    );
+
+    const supplyTotal = Math.round(Number(usageRes.rows[0]?.supply_total || 0));
+    const logExtraTotal = Math.round(Number(activeLogsRes.rows[0]?.log_extra_total || 0));
+    const fixedTotal = Math.round(Number(fixedRes.rows[0]?.fixed_total || 0));
+    res.json({
+      success: true,
+      consumables_cost_vnd: supplyTotal,
+      direct_logs_extra_cost_vnd: logExtraTotal,
+      fixed_assets_cost_vnd: fixedTotal,
+      total_cost_vnd: supplyTotal + logExtraTotal + fixedTotal
+    });
+  } catch (err) {
+    console.error('Error computing auto-summary:', err);
+    res.status(500).json({ error: 'Lỗi server khi tổng hợp chi phí tự động: ' + err.message });
   }
 });
 

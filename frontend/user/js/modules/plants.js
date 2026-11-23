@@ -315,6 +315,24 @@ export function renderUserPlantsTablePage() {
   }
 }
 
+function _formatRealtimeCareAtVi(rawVal) {
+  if (!rawVal) return '';
+  const s = String(rawVal).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    const parts = s.split('-');
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return s;
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mi = String(d.getMinutes()).padStart(2, '0');
+  const ss = String(d.getSeconds()).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  return `${hh}:${mi}:${ss} ${dd}/${mm}/${yyyy}`;
+}
+
 function _plantRow(p) {
   const nfcBadge = p.nfc_uid
     ? `<span class="badge-nfc-tag" title="Mã thẻ NFC: ${esc(p.nfc_uid)}" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-family:monospace;font-weight:700;color:#059669;background:#ecfdf5;border:1px solid #a7f3d0;padding:2px 7px;border-radius:6px;"><i data-lucide="tag" class="lucide-xs"></i> ${esc(p.nfc_uid)}</span>`
@@ -343,6 +361,13 @@ function _plantRow(p) {
   const nfcBtnText = p.nfc_uid ? 'Đổi thẻ NFC' : 'Gán thẻ NFC';
   const nfcBtnClass = p.nfc_uid ? 'btn-erp-plant-action btn-erp-plant-nfc btn-erp-plant-nfc-active' : 'btn-erp-plant-action btn-erp-plant-nfc';
   const nfcBtnTitle = p.nfc_uid ? `Thẻ hiện tại: ${esc(p.nfc_uid)} (Bấm để đổi thẻ hoặc cập nhật GPS)` : 'Gán hoặc định danh thẻ NFC cho cây';
+
+  const latestCareTimeText = _formatRealtimeCareAtVi(p.last_care_at || p.last_care_date);
+  const latestCareBadgeHtml = p.last_care_type ? `
+    <div class="plant-latest-care-pill" style="margin-top:4px;padding:4px 8px;border-radius:7px;background:#f0fdf4;border:1px solid #bbf7d0;font-size:10.5px;color:#065f46;line-height:1.35;">
+      <div><strong>Gần nhất:</strong> ${esc(p.last_care_type)}${p.last_care_material ? ` (${esc(p.last_care_material)})` : ''}</div>
+      <div style="color:#047857;font-weight:700;">${esc(p.last_care_operator || 'Kỹ thuật viên')} · ${esc(latestCareTimeText)}</div>
+    </div>` : '';
 
   return `
     <tr id="plant-row-${p.id}" style="transition:all 0.3s ease;">
@@ -379,7 +404,7 @@ function _plantRow(p) {
             </div>` : ''}
         </div>
       </td>
-      <td data-label="Vị trí"><div>${esc(p.location || '—')}</div></td>
+      <td data-label="Vị trí"><div>${esc(p.location || '—')}${latestCareBadgeHtml}</div></td>
       <td data-label="URL Công khai"><div>${publicUrlCell}</div></td>
       <td data-label="Thao tác" class="plant-actions-cell">
         <div class="erp-plant-action-btns">

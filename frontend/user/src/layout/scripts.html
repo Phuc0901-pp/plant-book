@@ -84,6 +84,13 @@ window.refreshIcons = window.refreshIcons || function() {
     if (modal) modal.style.display = 'none';
   };
 </script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/user/sw.js', { scope: '/user/' }).catch(function() {});
+  });
+}
+</script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script type="module" src="/user/js/auth.js?v={{APP_VERSION}}"></script>
 

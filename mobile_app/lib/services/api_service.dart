@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:math';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/farm.dart';
@@ -14,6 +16,12 @@ class ApiService {
   factory ApiService() => _instance;
   ApiService._internal();
 
+  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
+  static const String _secureTokenKey = 'pb_token';
+  static const String _secureOfflineVerifierKey = 'pb_offline_verifier';
+
   String get baseUrl => 'https://plant-book.onrender.com/api';
   String? _cachedMapboxToken;
 
@@ -21,9 +29,25 @@ class ApiService {
 
   Future<String?> get token async {
     if (_token != null) return _token;
+    final secureTok = await _secureStorage.read(key: _secureTokenKey);
+    if (secureTok != null && secureTok.isNotEmpty) {
+      _token = secureTok;
+      return _token;
+    }
     final prefs = await SharedPreferences.getInstance();
-    _token = prefs.getString('pb_token');
+    final legacyTok = prefs.getString('pb_token');
+    if (legacyTok != null && legacyTok.isNotEmpty) {
+      await _secureStorage.write(key: _secureTokenKey, value: legacyTok);
+      await prefs.remove('pb_token');
+      _token = legacyTok;
+    }
     return _token;
+  }
+
+  String _generateOfflineSalt() {
+    final rng = Random.secure();
+    final bytes = List<int>.generate(16, (_) => rng.nextInt(256));
+    return CryptoSecurityService.bytesToHex(bytes);
   }
 
   Future<Map<String, String>> _getHeaders({
@@ -64,11 +88,27 @@ class ApiService {
       if (response.statusCode == 200) {
         _token = data['token'] as String;
 
+        await _secureStorage.write(key: _secureTokenKey, value: _token!);
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('pb_token', _token!);
+        await prefs.remove('pb_token');
+
+        final salt = _generateOfflineSalt();
+        final normInput = email.toLowerCase().trim();
+        final verifierHash = CryptoSecurityService.sha256Hex('$salt:$password:$normInput');
+        final userObj = (data['user'] is Map) ? Map<String, dynamic>.from(data['user'] as Map) : <String, dynamic>{};
+        await _secureStorage.write(
+          key: _secureOfflineVerifierKey,
+          value: jsonEncode({
+            'email': (userObj['email'] ?? normInput).toString().toLowerCase().trim(),
+            'phone': (userObj['phone'] ?? '').toString().trim(),
+            'login_id': normInput,
+            'salt': salt,
+            'verifier': verifierHash,
+          }),
+        );
 
         if (data['user'] != null && data['user'] is Map) {
-          await CacheService().cacheUserProfile(Map<String, dynamic>.from(data['user'] as Map));
+          await CacheService().cacheUserProfile(userObj);
         }
         return {'success': true};
       }
@@ -78,11 +118,18 @@ class ApiService {
       try {
         final cachedProfile = CacheService().getCachedUserProfile();
         final savedToken = await token;
-        if (cachedProfile != null && savedToken != null && savedToken.isNotEmpty) {
+        final rawVerifier = await _secureStorage.read(key: _secureOfflineVerifierKey);
+        if (cachedProfile != null && savedToken != null && savedToken.isNotEmpty && rawVerifier != null && password.isNotEmpty) {
+          final vMap = jsonDecode(rawVerifier) as Map<String, dynamic>;
           final cachedEmail = (cachedProfile['email'] ?? '').toString().toLowerCase().trim();
           final cachedPhone = (cachedProfile['phone'] ?? '').toString().trim();
           final input = email.toLowerCase().trim();
-          if (input == cachedEmail || (cachedPhone.isNotEmpty && input == cachedPhone)) {
+          final salt = (vMap['salt'] ?? '').toString();
+          final expectedVerifier = (vMap['verifier'] ?? '').toString();
+          final loginId = (vMap['login_id'] ?? cachedEmail).toString();
+          final candidateVerifier = CryptoSecurityService.sha256Hex('$salt:$password:$loginId');
+          final idMatches = input == cachedEmail || (cachedPhone.isNotEmpty && input == cachedPhone);
+          if (idMatches && salt.isNotEmpty && expectedVerifier.isNotEmpty && CryptoSecurityService.constantTimeEquals(candidateVerifier, expectedVerifier)) {
             return {
               'success': true,
               'is_offline_auth': true,
@@ -91,7 +138,7 @@ class ApiService {
           }
         }
       } catch (_) {}
-      return {'success': false, 'message': 'Không thể kết nối tới máy chủ. Vui lòng kiểm tra mạng.'};
+      return {'success': false, 'message': 'Không thể kết nối tới máy chủ hoặc thông tin xác thực ngoại tuyến không hợp lệ.'};
     }
   }
 
@@ -139,6 +186,8 @@ class ApiService {
     }
 
     _token = null;
+    await _secureStorage.delete(key: _secureTokenKey);
+    await _secureStorage.delete(key: _secureOfflineVerifierKey);
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('pb_token');
   }

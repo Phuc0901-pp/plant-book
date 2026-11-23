@@ -3,13 +3,18 @@ const router = express.Router();
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
 const admin = require('../middleware/admin');
+const { encryptSecret } = require('../utils/cryptoVault');
+
+const SENSITIVE_KEY_PATTERN = /^(zalo_secret_key|smtp_pass|jwt_secret|nfc_hmac_secret)$|secret|password|private_key/i;
 
 router.get('/', async (req, res) => {
   try {
     const result = await pool.query('SELECT key, value FROM system_configs');
     const configs = {};
     result.rows.forEach(row => {
-      configs[row.key] = row.value;
+      if (row && row.key && !SENSITIVE_KEY_PATTERN.test(String(row.key))) {
+        configs[row.key] = row.value;
+      }
     });
     res.json(configs);
   } catch (err) {
@@ -94,7 +99,8 @@ router.post('/zalo', auth, admin, async (req, res) => {
         await client.query(`INSERT INTO system_configs (key, value, updated_at) VALUES ('zalo_oa_id', $1, NOW()) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`, [JSON.stringify(oaId)]);
       }
       if (secretKey !== undefined && secretKey.trim() !== '' && !secretKey.includes('••••')) {
-        await client.query(`INSERT INTO system_configs (key, value, updated_at) VALUES ('zalo_secret_key', $1, NOW()) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`, [JSON.stringify(secretKey)]);
+        const encryptedKey = encryptSecret(secretKey.trim());
+        await client.query(`INSERT INTO system_configs (key, value, updated_at) VALUES ('zalo_secret_key', $1, NOW()) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`, [JSON.stringify(encryptedKey)]);
       }
       if (templateId !== undefined) {
         await client.query(`INSERT INTO system_configs (key, value, updated_at) VALUES ('zalo_template_id', $1, NOW()) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`, [JSON.stringify(templateId)]);

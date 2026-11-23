@@ -1,6 +1,16 @@
 import { SubGpsEngine } from './sub-gps-engine.js';
 import { SubNfcBridge } from './sub-nfc-bridge.js';
 
+function escHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 class SubGatewayApp {
   constructor() {
     this.nfcBridge = new SubNfcBridge();
@@ -834,10 +844,10 @@ class SubGatewayApp {
         } else {
           select.innerHTML = this.state.farms.map(f => {
             const owner = f.user_name || (f.user && f.user.full_name) || '';
-            const ownerInfo = (isAdmin && owner) ? ` · Chủ: ${owner}` : '';
-            const treeCount = f.plant_count !== undefined ? ` · ${f.plant_count} cây` : '';
-            const puc = f.puc_code ? `Mã PUC: ${f.puc_code}` : `Lô #${f.id}`;
-            return `<option value="${f.id}" ${f.id === this.state.selectedFarmId ? 'selected' : ''}>${f.name} (${puc}${ownerInfo}${treeCount})</option>`;
+            const ownerInfo = (isAdmin && owner) ? ` · Chủ: ${escHtml(owner)}` : '';
+            const treeCount = f.plant_count !== undefined ? ` · ${Number(f.plant_count) || 0} cây` : '';
+            const puc = f.puc_code ? `Mã PUC: ${escHtml(f.puc_code)}` : `Lô #${Number(f.id) || 0}`;
+            return `<option value="${Number(f.id) || 0}" ${f.id === this.state.selectedFarmId ? 'selected' : ''}>${escHtml(f.name)} (${puc}${ownerInfo}${treeCount})</option>`;
           }).join('');
         }
       }
@@ -878,19 +888,19 @@ class SubGatewayApp {
       }
 
       listEl.innerHTML = plantArray.map(p => {
-        const treeCode = p.tree_code || `#${p.id}`;
-        const variety = p.plant_variety || p.plant_type || 'Cây trồng';
-        const plot = p.plot_code || 'A1';
-        const row = p.row_number || 1;
+        const treeCode = escHtml(p.tree_code || `#${p.id}`);
+        const variety = escHtml(p.plant_variety || p.plant_type || 'Cây trồng');
+        const plot = escHtml(p.plot_code || 'A1');
+        const row = escHtml(p.row_number || 1);
         const nfcBadge = p.nfc_uid
-          ? `<span style="display:inline-flex; align-items:center; gap:3px; background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px; font-weight:700; font-size:11px;"><i data-lucide="radio" style="width:11px; height:11px;"></i> ${p.nfc_uid}</span>`
+          ? `<span style="display:inline-flex; align-items:center; gap:3px; background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px; font-weight:700; font-size:11px;"><i data-lucide="radio" style="width:11px; height:11px;"></i> ${escHtml(p.nfc_uid)}</span>`
           : `<span style="background:#f1f5f9; color:#64748b; padding:2px 6px; border-radius:4px; font-size:11px;">Chưa gắn thẻ</span>`;
         const healthBadge = p.health_status === 'Kém'
-          ? `<span style="display:inline-flex; align-items:center; gap:3px; background:#fef2f2; color:#dc2626; padding:2px 6px; border-radius:4px; font-size:11px; font-weight:600;"><i data-lucide="alert-triangle" style="width:11px; height:11px;"></i> ${p.health_status}</span>`
-          : `<span style="display:inline-flex; align-items:center; gap:3px; background:#ecfdf5; color:#059669; padding:2px 6px; border-radius:4px; font-size:11px; font-weight:600;"><i data-lucide="sprout" style="width:11px; height:11px;"></i> ${p.health_status || 'Tốt'}</span>`;
+          ? `<span style="display:inline-flex; align-items:center; gap:3px; background:#fef2f2; color:#dc2626; padding:2px 6px; border-radius:4px; font-size:11px; font-weight:600;"><i data-lucide="alert-triangle" style="width:11px; height:11px;"></i> ${escHtml(p.health_status)}</span>`
+          : `<span style="display:inline-flex; align-items:center; gap:3px; background:#ecfdf5; color:#059669; padding:2px 6px; border-radius:4px; font-size:11px; font-weight:600;"><i data-lucide="sprout" style="width:11px; height:11px;"></i> ${escHtml(p.health_status || 'Tốt')}</span>`;
 
         return `
-          <div class="tree-select-item" data-id="${p.id}" data-code="${treeCode}">
+          <div class="tree-select-item" data-id="${Number(p.id) || 0}" data-code="${treeCode}">
             <div>
               <strong style="color:#059669; font-size:14px;">${treeCode}</strong>
               <span style="color:#0f172a; font-weight:700;">· ${variety}</span>
@@ -900,7 +910,7 @@ class SubGatewayApp {
                 ${healthBadge}
               </div>
             </div>
-            <button class="btn btn-sm btn-outline-green btn-bind-existing-tree" data-id="${p.id}">
+            <button class="btn btn-sm btn-outline-green btn-bind-existing-tree" data-id="${Number(p.id) || 0}">
               <i data-lucide="link" class="lucide-xs"></i> Chọn Gán Thẻ
             </button>
           </div>
@@ -918,7 +928,7 @@ class SubGatewayApp {
         });
       });
     } catch (err) {
-      listEl.innerHTML = `<div style="padding:14px; text-align:center; color:#dc2626;">Lỗi tải danh sách cây: ${err.message}</div>`;
+      listEl.innerHTML = `<div style="padding:14px; text-align:center; color:#dc2626;">Lỗi tải danh sách cây: ${escHtml(err.message)}</div>`;
     }
   }
 
@@ -1012,7 +1022,7 @@ class SubGatewayApp {
         }
 
         if (guidance && data.statusText) {
-          guidance.innerHTML = `<i data-lucide="satellite" class="lucide-xs"></i> <strong>Trạng thái:</strong> ${data.statusText}`;
+          guidance.innerHTML = `<i data-lucide="satellite" class="lucide-xs"></i> <strong>Trạng thái:</strong> ${escHtml(data.statusText)}`;
           this.renderIcons();
         }
       },

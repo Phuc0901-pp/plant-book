@@ -14,20 +14,79 @@ const METRIC_LABELS = {
   water_level: { name: 'Mực nước bể lưu', unit: '%' }
 };
 
+router.get('/telemetry-status', auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const isAdmin = req.user.role === 'admin';
+    const farmIdParam = req.query.farm_id ? parseInt(req.query.farm_id, 10) : null;
+
+    if (req.query.farm_id && (!Number.isInteger(farmIdParam) || farmIdParam <= 0)) {
+      return res.status(400).json({ error: 'farm_id không hợp lệ.' });
+    }
+
+    let farmIds = [];
+    if (farmIdParam) {
+      if (!isAdmin) {
+        const accessRes = await pool.query(
+          'SELECT f.id FROM farms f LEFT JOIN users u ON u.id = $2 WHERE f.id = $1 AND (f.user_id = $2 OR u.farm_id = f.id)',
+          [farmIdParam, userId]
+        );
+        if (accessRes.rows.length === 0) {
+          return res.status(403).json({ error: 'Bạn không có quyền truy cập dữ liệu cảm biến của trang trại này.' });
+        }
+      }
+      farmIds = [farmIdParam];
+    } else if (!isAdmin) {
+      const farmsRes = await pool.query(
+        'SELECT DISTINCT f.id FROM farms f LEFT JOIN users u ON u.id = $1 WHERE f.user_id = $1 OR f.id = u.farm_id',
+        [userId]
+      );
+      farmIds = farmsRes.rows.map(r => r.id);
+    }
+
+    let devicesRows = [];
+    let sensorsRows = [];
+    if (isAdmin && !farmIdParam) {
+      const devRes = await pool.query(
+        'SELECT id, name, device_type, status, farm_id, last_connection, last_seen, battery_level FROM devices ORDER BY last_seen DESC NULLS LAST, id DESC LIMIT 50'
+      );
+      const senRes = await pool.query(
+        'SELECT farm_id, air_data, soil_data, water_data, weather_forecast, updated_at FROM farm_iot_sensors ORDER BY updated_at DESC NULLS LAST LIMIT 50'
+      );
+      devicesRows = devRes.rows;
+      sensorsRows = senRes.rows;
+    } else if (farmIds.length > 0) {
+      const devRes = await pool.query(
+        'SELECT id, name, device_type, status, farm_id, last_connection, last_seen, battery_level FROM devices WHERE farm_id = ANY($1::int[]) ORDER BY last_seen DESC NULLS LAST, id DESC',
+        [farmIds]
+      );
+      const senRes = await pool.query(
+        'SELECT farm_id, air_data, soil_data, water_data, weather_forecast, updated_at FROM farm_iot_sensors WHERE farm_id = ANY($1::int[]) ORDER BY updated_at DESC NULLS LAST',
+        [farmIds]
+      );
+      devicesRows = devRes.rows;
+      sensorsRows = senRes.rows;
+    }
+
+    const connected = devicesRows.length > 0 || sensorsRows.length > 0;
+    return res.json({
+      success: true,
+      status: connected ? 'CONNECTED' : 'NO_DEVICE_CONNECTED',
+      device_connected: connected,
+      device_count: devicesRows.length,
+      sensor_records: sensorsRows.length,
+      devices: devicesRows,
+      latest_telemetry: sensorsRows[0] || null
+    });
+  } catch (err) {
+    console.error('Lỗi kiểm tra trạng thái cảm biến IoT:', err);
+    return res.status(500).json({ error: 'Lỗi máy chủ khi kiểm tra trạng thái IoT.' });
+  }
+});
+
 router.get('/', auth, async (req, res) => {
   try {
     const userId = req.user.id;
-
-    const checkRes = await pool.query('SELECT COUNT(*)::int as count FROM user_notifications WHERE user_id = $1', [userId]);
-    if (checkRes.rows[0].count === 0) {
-      await pool.query(`
-        INSERT INTO user_notifications (user_id, title, message, type, is_read, is_archived)
-        VALUES
-          ($1, 'Cảnh Báo Độ Ẩm Đất Tầng 20cm Dưới Ngưỡng An Toàn', 'Cảm biến IoT ghi nhận độ ẩm đất tầng 20cm giảm còn 42% (dưới ngưỡng 50%). Khuyến nghị kích hoạt tưới nhỏ giọt bổ sung nước cho bộ rễ.', 'danger', false, false),
-          ($1, 'Dự Báo Khí Tượng & Khuyến Cáo Phun Thuốc Phòng Bệnh', 'Khả năng mưa rào rải rác 65% kèm độ ẩm không khí tăng cao (>80%). Khuyến nghị tạm hoãn phun thuốc phòng trừ sâu bệnh để tránh thất thoát do rửa trôi.', 'warning', false, false),
-          ($1, 'Lịch Trình Chăm Sóc & Bổ Sung Dinh Dưỡng Định Kỳ', 'Đến chu kỳ bón phân hữu cơ vi sinh và kiểm tra sức khỏe tán cây theo quy trình kỹ thuật VietGAP.', 'info', true, false)
-      `, [userId]);
-    }
 
     const result = await pool.query(`
       SELECT * FROM user_notifications
@@ -148,8 +207,30 @@ router.post('/rules', auth, async (req, res) => {
       frequency
     } = req.body;
 
+    if (req.user.role !== 'admin' && req.user.sub_role === 'auditor_readonly') {
+      return res.status(403).json({ error: 'Tài khoản Chỉ đọc (Auditor) không được phép tạo quy tắc cảnh báo.' });
+    }
+
     if (!title || !action_recommendation) {
       return res.status(400).json({ error: 'Vui lòng điền đầy đủ Tên thông báo và Nội dung khuyến nghị.' });
+    }
+
+    if (farm_id && req.user.role !== 'admin') {
+      const parsedFarmId = parseInt(farm_id, 10);
+      if (isNaN(parsedFarmId) || parsedFarmId <= 0) {
+        return res.status(400).json({ error: 'Mã trang trại không hợp lệ.' });
+      }
+      const farmCheck = await pool.query('SELECT id, user_id FROM farms WHERE id = $1 AND (is_deleted IS NOT TRUE)', [parsedFarmId]);
+      if (farmCheck.rows.length === 0) {
+        return res.status(404).json({ error: 'Trang trại không tồn tại.' });
+      }
+      const fRow = farmCheck.rows[0];
+      const allowedFarm = Number(fRow.user_id) === Number(req.user.id)
+        || (req.user.parent_user_id && Number(fRow.user_id) === Number(req.user.parent_user_id))
+        || (req.user.farm_id && Number(req.user.farm_id) === Number(fRow.id));
+      if (!allowedFarm) {
+        return res.status(403).json({ error: 'Bạn không có quyền tạo quy tắc cảnh báo cho trang trại này.' });
+      }
     }
 
     const catType = category_type || alert_level || 'warning';

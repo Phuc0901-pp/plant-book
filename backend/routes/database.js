@@ -7,16 +7,46 @@ const { delCacheByPattern } = require('../config/redis');
 const { resolveSslConfig, isPrivateHost, extractHost, maskConnectionString } = require('../config/dbSsl');
 
 const ALLOWED_TABLES = [
-  'users', 'farms', 'plants', 'nfc_inventory', 'farm_iot_sensors', 'supplies',
-  'plant_logs', 'costs', 'user_notifications', 'data_audit_logs',
-  'devices', 'crop_schemas', 'user_activities'
+  'users', 'farms', 'plants', 'nfc_tags_inventory', 'nfc_inventory', 'farm_iot_sensors',
+  'supplies', 'supply_usages', 'plant_logs', 'fixed_assets', 'costs', 'saved_reports',
+  'user_notifications', 'data_audit_logs', 'devices', 'plant_schemas', 'crop_schemas', 'user_activities'
 ];
+
+const FORBIDDEN_MUTATION_COLUMNS = new Set(['id', 'password_hash', 'token_version', 'record_hash', 'prev_log_hash', 'is_locked']);
 
 function sanitizeTableName(name) {
   if (!ALLOWED_TABLES.includes(name)) {
     throw new Error(`Bảng ${name} không nằm trong danh sách CSDL hợp lệ.`);
   }
   return name;
+}
+
+async function validateTableColumns(tableName, rawKeys) {
+  const safeIdentifierRe = /^[a-z_][a-z0-9_]{0,62}$/;
+  for (const k of rawKeys) {
+    if (!safeIdentifierRe.test(String(k)) || FORBIDDEN_MUTATION_COLUMNS.has(String(k))) {
+      const err = new Error(`Tên cột không hợp lệ hoặc bị cấm thay đổi trực tiếp: ${k}`);
+      err.status = 400;
+      err.code = 'INVALID_COLUMN_NAME';
+      throw err;
+    }
+  }
+  const colRes = await pool.query(
+    `SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = $1`,
+    [tableName]
+  );
+  if (colRes && Array.isArray(colRes.rows) && colRes.rows.length > 0) {
+    const allowedSet = new Set(colRes.rows.map(r => r.column_name));
+    for (const k of rawKeys) {
+      if (!allowedSet.has(k)) {
+        const err = new Error(`Cột "${k}" không tồn tại trong bảng "${tableName}".`);
+        err.status = 400;
+        err.code = 'INVALID_COLUMN_NAME';
+        throw err;
+      }
+    }
+  }
+  return rawKeys;
 }
 
 router.get('/infrastructure', auth, admin, async (req, res) => {
@@ -146,13 +176,20 @@ router.get('/tables/:tableName/records', auth, admin, async (req, res) => {
       [limit, offset]
     );
 
+    const safeRecords = tableName === 'users'
+      ? recordsRes.rows.map(r => {
+          const { password_hash, ...rest } = r;
+          return rest;
+        })
+      : recordsRes.rows;
+
     res.json({
       success: true,
       table_name: tableName,
       total_records: totalRecords,
       page,
       limit,
-      records: recordsRes.rows
+      records: safeRecords
     });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -168,8 +205,8 @@ router.post('/tables/:tableName/records', auth, admin, async (req, res) => {
       return res.status(400).json({ error: 'Dữ liệu thêm mới không được rỗng.' });
     }
 
-    const keys = Object.keys(data);
-    const values = Object.values(data).map(v => typeof v === 'object' ? JSON.stringify(v) : v);
+    const keys = await validateTableColumns(tableName, Object.keys(data));
+    const values = keys.map(k => (typeof data[k] === 'object' && data[k] !== null) ? JSON.stringify(data[k]) : data[k]);
     const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
 
     const queryStr = `
@@ -188,6 +225,9 @@ router.post('/tables/:tableName/records', auth, admin, async (req, res) => {
       record: result.rows[0]
     });
   } catch (err) {
+    if (err.code === 'INVALID_COLUMN_NAME') {
+      return res.status(400).json({ error: err.message, code: 'INVALID_COLUMN_NAME' });
+    }
     res.status(500).json({ error: 'Lỗi khi thêm bản ghi: ' + err.message });
   }
 });
@@ -202,9 +242,13 @@ router.put('/tables/:tableName/records/:id', auth, admin, async (req, res) => {
       return res.status(400).json({ error: 'Dữ liệu cập nhật không được rỗng.' });
     }
 
-    const keys = Object.keys(data).filter(k => k !== 'id');
+    const rawKeys = Object.keys(data).filter(k => k !== 'id');
+    const keys = await validateTableColumns(tableName, rawKeys);
+    if (keys.length === 0) {
+      return res.status(400).json({ error: 'Không có trường hợp lệ để cập nhật.', code: 'INVALID_COLUMN_NAME' });
+    }
     const setClause = keys.map((k, i) => `"${k}" = $${i + 1}`).join(', ');
-    const values = keys.map(k => typeof data[k] === 'object' ? JSON.stringify(data[k]) : data[k]);
+    const values = keys.map(k => (typeof data[k] === 'object' && data[k] !== null) ? JSON.stringify(data[k]) : data[k]);
     values.push(recordId);
 
     const queryStr = `
@@ -224,6 +268,9 @@ router.put('/tables/:tableName/records/:id', auth, admin, async (req, res) => {
       record: result.rows[0]
     });
   } catch (err) {
+    if (err.code === 'INVALID_COLUMN_NAME') {
+      return res.status(400).json({ error: err.message, code: 'INVALID_COLUMN_NAME' });
+    }
     res.status(500).json({ error: 'Lỗi khi cập nhật bản ghi: ' + err.message });
   }
 });

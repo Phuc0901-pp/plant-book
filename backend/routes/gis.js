@@ -1,8 +1,18 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
+const auth = require('../middleware/auth');
 const { getCache, setCache } = require('../config/redis');
 const queueService = require('../services/queueService');
+
+function getGisUserScope(user) {
+  if (!user || user.role === 'admin') {
+    return { isAdmin: true, ownerId: null, userFarmId: null, cacheKeySuffix: 'adm' };
+  }
+  const ownerId = Number(user.parent_user_id || user.id);
+  const userFarmId = user.farm_id ? Number(user.farm_id) : 0;
+  return { isAdmin: false, ownerId, userFarmId, cacheKeySuffix: `u${ownerId}_f${userFarmId}` };
+}
 
 let isPostGISAvailable = null;
 
@@ -37,7 +47,7 @@ function tileToBBox(x, y, z) {
   };
 }
 
-router.get('/tiles/:z/:x/:y.pbf', async (req, res) => {
+router.get('/tiles/:z/:x/:y.pbf', auth, async (req, res) => {
   const z = parseInt(req.params.z, 10);
   const x = parseInt(req.params.x, 10);
   const y = parseInt(req.params.y, 10);
@@ -47,7 +57,8 @@ router.get('/tiles/:z/:x/:y.pbf', async (req, res) => {
     return res.status(400).send('Invalid tile coordinates');
   }
 
-  const cacheKey = `mvt_tile_${z}_${x}_${y}_f${farmId || 'all'}`;
+  const scope = getGisUserScope(req.user);
+  const cacheKey = `mvt_tile_${scope.cacheKeySuffix}_${z}_${x}_${y}_f${farmId || 'all'}`;
 
   try {
     const cachedTile = await getCache(cacheKey);
@@ -89,6 +100,7 @@ router.get('/tiles/:z/:x/:y.pbf', async (req, res) => {
             AND p.longitude IS NOT NULL
             AND p.deleted_at IS NULL
             AND ($4::int IS NULL OR p.farm_id = $4::int)
+            AND ($5::boolean OR p.farm_id IN (SELECT id FROM farms WHERE user_id = $6 OR id = $7))
             AND ST_Intersects(
               ST_Transform(ST_SetSRID(ST_Point(p.longitude, p.latitude), 4326), 3857),
               tile_bounds.geom_3857
@@ -97,7 +109,7 @@ router.get('/tiles/:z/:x/:y.pbf', async (req, res) => {
         SELECT ST_AsMVT(mvt_data, 'plants', 4096, 'geom') AS tile FROM mvt_data;
       `;
 
-      const result = await pool.readQuery(mvtQuery, [z, x, y, farmId]);
+      const result = await pool.readQuery(mvtQuery, [z, x, y, farmId, scope.isAdmin, scope.ownerId || 0, scope.userFarmId || 0]);
       const tileBuffer = result.rows[0]?.tile || Buffer.alloc(0);
 
       if (tileBuffer.length > 0) {
@@ -118,8 +130,9 @@ router.get('/tiles/:z/:x/:y.pbf', async (req, res) => {
           AND p.latitude BETWEEN $1 AND $2
           AND p.longitude BETWEEN $3 AND $4
           AND ($5::int IS NULL OR p.farm_id = $5::int)
+          AND ($6::boolean OR p.farm_id IN (SELECT id FROM farms WHERE user_id = $7 OR id = $8))
       `;
-      const pts = await pool.readQuery(fallbackQuery, [bbox.minLat, bbox.maxLat, bbox.minLon, bbox.maxLon, farmId]);
+      await pool.readQuery(fallbackQuery, [bbox.minLat, bbox.maxLat, bbox.minLon, bbox.maxLon, farmId, scope.isAdmin, scope.ownerId || 0, scope.userFarmId || 0]);
 
       const emptyTileBuffer = Buffer.alloc(0);
       res.setHeader('Content-Type', 'application/x-protobuf');
@@ -133,11 +146,12 @@ router.get('/tiles/:z/:x/:y.pbf', async (req, res) => {
   }
 });
 
-router.get('/clusters', async (req, res) => {
+router.get('/clusters', auth, async (req, res) => {
   try {
     const { bbox, zoom = 14, farm_id } = req.query;
     const currentZoom = parseFloat(zoom);
     const farmId = farm_id ? parseInt(farm_id, 10) : null;
+    const scope = getGisUserScope(req.user);
 
     let minLon = 100, minLat = 8, maxLon = 110, maxLat = 24;
     if (bbox) {
@@ -147,7 +161,7 @@ router.get('/clusters', async (req, res) => {
       }
     }
 
-    const cacheKey = `spatial_cluster_${farmId || 'all'}_z${Math.floor(currentZoom)}_${minLon.toFixed(3)}_${minLat.toFixed(3)}_${maxLon.toFixed(3)}_${maxLat.toFixed(3)}`;
+    const cacheKey = `spatial_cluster_${scope.cacheKeySuffix}_${farmId || 'all'}_z${Math.floor(currentZoom)}_${minLon.toFixed(3)}_${minLat.toFixed(3)}_${maxLon.toFixed(3)}_${maxLat.toFixed(3)}`;
     const cached = await getCache(cacheKey);
     if (cached) {
       return res.json(cached);
@@ -157,7 +171,7 @@ router.get('/clusters', async (req, res) => {
       const detailQuery = `
         SELECT p.id, p.tree_code, p.farm_id, p.plant_type, p.plant_variety,
                p.health_status, p.phi_status, p.plot_code, p.row_number,
-               p.latitude, p.longitude, p.nfc_uid, p.last_care_date,
+               p.latitude, p.longitude, p.nfc_uid,
                f.name as farm_name
         FROM plants p
         LEFT JOIN farms f ON f.id = p.farm_id
@@ -165,9 +179,10 @@ router.get('/clusters', async (req, res) => {
           AND p.latitude BETWEEN $1 AND $2
           AND p.longitude BETWEEN $3 AND $4
           AND ($5::int IS NULL OR p.farm_id = $5::int)
+          AND ($6::boolean OR p.farm_id IN (SELECT id FROM farms WHERE user_id = $7 OR id = $8))
         LIMIT 2500
       `;
-      const result = await pool.readQuery(detailQuery, [minLat, maxLat, minLon, maxLon, farmId]);
+      const result = await pool.readQuery(detailQuery, [minLat, maxLat, minLon, maxLon, farmId, scope.isAdmin, scope.ownerId || 0, scope.userFarmId || 0]);
 
       const features = result.rows.map(p => ({
         type: 'Feature',
@@ -186,7 +201,6 @@ router.get('/clusters', async (req, res) => {
           plot_code: p.plot_code,
           row_number: p.row_number,
           nfc_uid: p.nfc_uid,
-          last_care_date: p.last_care_date,
           is_cluster: false
         }
       }));
@@ -222,11 +236,12 @@ router.get('/clusters', async (req, res) => {
         AND p.latitude BETWEEN $2 AND $3
         AND p.longitude BETWEEN $4 AND $5
         AND ($6::int IS NULL OR p.farm_id = $6::int)
+        AND ($7::boolean OR p.farm_id IN (SELECT id FROM farms WHERE user_id = $8 OR id = $9))
       GROUP BY grid_lon, grid_lat
       LIMIT 1000
     `;
 
-    const clusterRes = await pool.readQuery(clusterQuery, [gridSize, minLat, maxLat, minLon, maxLon, farmId]);
+    const clusterRes = await pool.readQuery(clusterQuery, [gridSize, minLat, maxLat, minLon, maxLon, farmId, scope.isAdmin, scope.ownerId || 0, scope.userFarmId || 0]);
 
     const features = clusterRes.rows.map((c, idx) => ({
       type: 'Feature',
@@ -263,12 +278,16 @@ router.get('/clusters', async (req, res) => {
   }
 });
 
-router.get('/metrics', async (req, res) => {
+router.get('/metrics', auth, async (req, res) => {
   try {
     const hasPostGIS = await checkPostGIS();
     const queueMetrics = queueService.getMetrics();
+    const scope = getGisUserScope(req.user);
 
-    const countRes = await pool.readQuery("SELECT COUNT(*) as total FROM plants WHERE deleted_at IS NULL AND latitude IS NOT NULL");
+    const countRes = await pool.readQuery(
+      'SELECT COUNT(*) as total FROM plants WHERE deleted_at IS NULL AND latitude IS NOT NULL AND ($1::boolean OR farm_id IN (SELECT id FROM farms WHERE user_id = $2 OR id = $3))',
+      [scope.isAdmin, scope.ownerId || 0, scope.userFarmId || 0]
+    );
     const totalGpsPlants = parseInt(countRes.rows[0]?.total || 0, 10);
 
     res.json({

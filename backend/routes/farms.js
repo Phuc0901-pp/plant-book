@@ -5,6 +5,7 @@ const auth = require('../middleware/auth');
 const admin = require('../middleware/admin');
 const { getCache, setCache, delCache, delCacheByPattern } = require('../config/redis');
 const { normalizeGpsPayload, validateGeoJsonPolygon } = require('../utils/geoIsoValidator');
+const { computeCanonicalPlantLogHash } = require('./plants/helpers');
 
 router.get('/', auth, async (req, res) => {
   try {
@@ -252,6 +253,14 @@ router.get(['/:id/full-dataset', '/:id/export-json'], async (req, res) => {
       });
     }
 
+function timingSafeCompareStr(a, b) {
+  if (!a || !b) return false;
+  const bufA = Buffer.from(String(a), 'utf8');
+  const bufB = Buffer.from(String(b), 'utf8');
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
     const providedApiKey = req.query.api_key || req.headers['x-api-key'];
     const expectedApiKey = generateFarmLiveApiKey(farmId, farm.current_api_key_version);
     const legacyApiKeyV1 = `tb_live_${farmId}_` + crypto.createHmac('sha256', process.env.JWT_SECRET || 'tanbao-agtech-erp-secret').update(`farm_live_dataset_v1_${farmId}`).digest('hex').slice(0, 32);
@@ -259,7 +268,7 @@ router.get(['/:id/full-dataset', '/:id/export-json'], async (req, res) => {
     let authorizedViaApiKey = false;
     let authUser = null;
 
-    if (providedApiKey && (providedApiKey === expectedApiKey || (Number(farm.current_api_key_version) === 1 && providedApiKey === legacyApiKeyV1))) {
+    if (providedApiKey && (timingSafeCompareStr(providedApiKey, expectedApiKey) || (Number(farm.current_api_key_version) === 1 && timingSafeCompareStr(providedApiKey, legacyApiKeyV1)))) {
       authorizedViaApiKey = true;
     } else if (providedApiKey) {
       return res.status(401).json({
@@ -276,11 +285,16 @@ router.get(['/:id/full-dataset', '/:id/export-json'], async (req, res) => {
       }
       try {
         const decoded = jwt.verify(rawToken, process.env.JWT_SECRET);
-        const uRes = await pool.query("SELECT id, role, COALESCE(sub_role, 'owner') as sub_role, farm_id FROM users WHERE id = $1 LIMIT 1", [decoded.id]);
+        const uRes = await pool.query("SELECT id, role, COALESCE(sub_role, 'owner') as sub_role, parent_user_id, farm_id, allow_view_finance, COALESCE(token_version, 1) as token_version FROM users WHERE id = $1 LIMIT 1", [decoded.id]);
         if (uRes.rows.length === 0) {
           return res.status(401).json({ error: 'Tài khoản không tồn tại.' });
         }
-        authUser = uRes.rows[0];
+        const candidateUser = uRes.rows[0];
+        const currentTv = Number(candidateUser.token_version || 1);
+        if ((decoded.tv !== undefined && Number(decoded.tv) !== currentTv) || (decoded.tv === undefined && currentTv > 1)) {
+          return res.status(401).json({ error: 'Phiên đăng nhập đã bị thu hồi.', code: 'TOKEN_REVOKED' });
+        }
+        authUser = candidateUser;
       } catch (_) {
         return res.status(401).json({ error: 'Token không hợp lệ hoặc đã hết hạn.' });
       }
@@ -288,15 +302,18 @@ router.get(['/:id/full-dataset', '/:id/export-json'], async (req, res) => {
 
     if (!authorizedViaApiKey && authUser) {
       const isAssigned = authUser.farm_id && Number(farm.id) === Number(authUser.farm_id);
-      if (authUser.role !== 'admin' && Number(farm.user_id) !== Number(authUser.id) && !isAssigned) {
+      const isParentOwner = authUser.parent_user_id && Number(farm.user_id) === Number(authUser.parent_user_id);
+      if (authUser.role !== 'admin' && Number(farm.user_id) !== Number(authUser.id) && !isAssigned && !isParentOwner) {
         return res.status(403).json({ error: 'Bạn không có quyền truy cập dữ liệu trang trại này.' });
       }
     }
 
     const updatedAfterRaw = req.query.updated_after ? new Date(String(req.query.updated_after)) : null;
     const hasValidUpdatedAfter = updatedAfterRaw && !isNaN(updatedAfterRaw.getTime());
-    const effectiveSubRole = String(req.query.role || (authUser && authUser.sub_role) || 'owner').toLowerCase();
-    const isRestrictedCareWorker = effectiveSubRole === 'care_worker' || effectiveSubRole === 'auditor_readonly';
+    const effectiveSubRole = String((authUser && authUser.sub_role) || 'owner').toLowerCase();
+    const isRestrictedCareWorker = !authorizedViaApiKey && authUser && authUser.role !== 'admin' && (
+      effectiveSubRole === 'care_worker' || effectiveSubRole === 'auditor_readonly' || authUser.allow_view_finance === false
+    );
 
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.setHeader('Pragma', 'no-cache');
@@ -384,18 +401,30 @@ router.get(['/:id/full-dataset', '/:id/export-json'], async (req, res) => {
     let runningPrevHash = 'GENESIS_00000000000000000000000000000000000000000000000000000000';
     let genesisHash = runningPrevHash;
     let chainIntact = true;
+    const tamperedLogIds = [];
 
     const hashVerifiedLogs = allLogsRaw.map((log, idx) => {
-      const prevH = log.prev_log_hash || runningPrevHash;
-      const canonicalStr = `${prevH}|${log.id}|${log.plant_id}|${log.log_type}|${log.log_date}|${log.batch_code || ''}`;
-      const computedHash = crypto.createHash('sha256').update(canonicalStr).digest('hex');
-      const finalRecordHash = log.record_hash || computedHash;
-      if (idx === 0) genesisHash = prevH;
+      const expectedPrevH = runningPrevHash;
+      const prevMatch = !log.prev_log_hash || log.prev_log_hash === expectedPrevH;
+      const prevForHash = log.prev_log_hash || expectedPrevH;
+      const canonicalHash = computeCanonicalPlantLogHash(prevForHash, log);
+      const legacyStr = `${prevForHash}|${log.id}|${log.plant_id}|${log.log_type}|${log.log_date}|${log.batch_code || ''}`;
+      const legacyHash = crypto.createHash('sha256').update(legacyStr).digest('hex');
+      const hasStoredHash = Boolean(log.record_hash);
+      const hashMatch = !hasStoredHash || log.record_hash === canonicalHash || log.record_hash === legacyHash;
+      const isEntryValid = prevMatch && hashMatch;
+      if (!isEntryValid) {
+        chainIntact = false;
+        tamperedLogIds.push(log.id);
+      }
+      const finalRecordHash = log.record_hash || canonicalHash;
+      if (idx === 0) genesisHash = prevForHash;
       runningPrevHash = finalRecordHash;
       return {
         ...log,
-        prev_log_hash: prevH,
+        prev_log_hash: prevForHash,
         record_hash: finalRecordHash,
+        hash_verified: isEntryValid,
         is_locked: log.is_locked !== false
       };
     });
@@ -603,6 +632,13 @@ router.get(['/:id/full-dataset', '/:id/export-json'], async (req, res) => {
         : (farm.polygon_coordinates || []);
     } catch (_) {}
 
+    const ageStrataBreakdown = {
+      juvenile_lt_3yr: { count: 0, factor_tco2e: 0.009, annual_tco2e: 0 },
+      mature_3_to_7yr: { count: 0, factor_tco2e: 0.022, annual_tco2e: 0 },
+      prime_gt_7yr: { count: 0, factor_tco2e: 0.034, annual_tco2e: 0 }
+    };
+    let annualAgeStratifiedCo2Tco2e = 0;
+
     let totalAboveGroundBiomassKg = 0;
     const formattedPlants = plants.map(p => {
       const pLogs = logsByPlant[p.id] || [];
@@ -624,13 +660,45 @@ router.get(['/:id/full-dataset', '/:id/export-json'], async (req, res) => {
       const rawUid = p.nfc_uid || p.nfc_tag_id || (nfcTagObj ? nfcTagObj.uid : null);
       const issueLevel = nfcTagObj ? nfcTagObj.issue_level : 1;
 
-      const dbhCm = parseFloat(p.biomass_dbh_cm) || 18.5;
-      const heightM = parseFloat(p.canopy_height_m) || 4.5;
+      let ageYears = 5;
+      if (p.plant_age) {
+        const ageMatch = String(p.plant_age).match(/(\d+(\.\d+)?)/);
+        if (ageMatch) {
+          const v = parseFloat(ageMatch[1]);
+          ageYears = /tháng|month/i.test(String(p.plant_age)) ? Math.max(0.5, v / 12) : Math.max(0.5, v);
+        }
+      } else if (p.planting_date) {
+        const dt = new Date(p.planting_date);
+        if (!isNaN(dt.getTime())) {
+          ageYears = Math.max(0.5, (Date.now() - dt.getTime()) / (365.25 * 24 * 3600 * 1000));
+        }
+      }
+
+      const defaultDbh = ageYears < 3 ? 8.5 : (ageYears <= 7 ? 18.5 : 26.0);
+      const defaultHeight = ageYears < 3 ? 2.4 : (ageYears <= 7 ? 4.5 : 6.2);
+      const dbhCm = parseFloat(p.biomass_dbh_cm) || defaultDbh;
+      const heightM = parseFloat(p.canopy_height_m) || defaultHeight;
       const woodDensity = 0.58;
       const plantAgbKg = entityClass === 'plant'
         ? parseFloat((0.0673 * Math.pow(woodDensity * Math.pow(dbhCm, 2) * heightM, 0.976)).toFixed(2))
         : 0;
       totalAboveGroundBiomassKg += plantAgbKg;
+
+      if (entityClass === 'plant') {
+        if (ageYears < 3) {
+          ageStrataBreakdown.juvenile_lt_3yr.count += 1;
+          ageStrataBreakdown.juvenile_lt_3yr.annual_tco2e = parseFloat((ageStrataBreakdown.juvenile_lt_3yr.annual_tco2e + 0.009).toFixed(4));
+          annualAgeStratifiedCo2Tco2e += 0.009;
+        } else if (ageYears <= 7) {
+          ageStrataBreakdown.mature_3_to_7yr.count += 1;
+          ageStrataBreakdown.mature_3_to_7yr.annual_tco2e = parseFloat((ageStrataBreakdown.mature_3_to_7yr.annual_tco2e + 0.022).toFixed(4));
+          annualAgeStratifiedCo2Tco2e += 0.022;
+        } else {
+          ageStrataBreakdown.prime_gt_7yr.count += 1;
+          ageStrataBreakdown.prime_gt_7yr.annual_tco2e = parseFloat((ageStrataBreakdown.prime_gt_7yr.annual_tco2e + 0.034).toFixed(4));
+          annualAgeStratifiedCo2Tco2e += 0.034;
+        }
+      }
 
       return {
         plant_id: p.id,
@@ -843,12 +911,15 @@ router.get(['/:id/full-dataset', '/:id/export-json'], async (req, res) => {
           hash_algorithm: 'SHA-256',
           chain_status: chainIntact ? 'VERIFIED_IMMUTABLE' : 'TAMPER_DETECTED',
           verified_logs_count: hashVerifiedLogs.length,
+          tampered_log_ids: tamperedLogIds,
           genesis_hash: genesisHash,
           latest_chain_head_hash: runningPrevHash
         },
         carbon_footprint_and_credits_mrv: {
-          methodology: 'IPCC 2006 AFOLU Tier-2 / Chave et al. (2014) Allometric Biomass Equation',
+          methodology: 'IPCC 2006 AFOLU Tier-2 / Chave et al. (2014) Age-Stratified Allometric Biomass Equation',
           active_woody_plants_count: formattedPlants.filter(p => p.entity_class === 'plant').length,
+          annual_age_stratified_co2_tco2e: parseFloat(annualAgeStratifiedCo2Tco2e.toFixed(4)),
+          age_strata_breakdown: ageStrataBreakdown,
           above_ground_biomass_kg: parseFloat(totalAboveGroundBiomassKg.toFixed(2)),
           below_ground_biomass_kg: belowGroundBiomassKg,
           total_biomass_kg: totalBiomassKg,
@@ -995,7 +1066,8 @@ router.put('/:id', auth, async (req, res) => {
     }
     const farm = farmCheck.rows[0];
 
-    const isOwner = farm.user_id === req.user.id || (req.user.farm_id && req.user.farm_id === farm.id);
+    const isRestrictedFarmRole = req.user.role !== 'admin' && ['care_worker', 'auditor_readonly'].includes(req.user.sub_role);
+    const isOwner = farm.user_id === req.user.id || (!isRestrictedFarmRole && req.user.farm_id && req.user.farm_id === farm.id && req.user.sub_role === 'manager');
     if (req.user.role !== 'admin' && !isOwner) {
       return res.status(403).json({ error: 'Bạn không có quyền chỉnh sửa trang trại này.' });
     }
@@ -1027,7 +1099,7 @@ router.put('/:id', auth, async (req, res) => {
       }
     }
 
-    const assignedUserId = user_id !== undefined ? user_id : farm.user_id;
+    const assignedUserId = (req.user.role === 'admin' && user_id !== undefined) ? user_id : farm.user_id;
     const parsedArea = area !== undefined && area !== null && area !== '' ? parseFloat(area) : farm.area;
     const parsedTotalPlants = total_plants !== undefined && total_plants !== null && total_plants !== '' ? parseInt(total_plants) : farm.total_plants;
     const coordsJson = finalCoords ? JSON.stringify(finalCoords) : JSON.stringify(farm.polygon_coordinates);
@@ -1083,7 +1155,8 @@ router.post('/:id/clear-gps', auth, async (req, res) => {
       return res.status(404).json({ error: 'Không tìm thấy trang trại.' });
     }
     const farm = farmCheck.rows[0];
-    const isOwner = farm.user_id === req.user.id || (req.user.farm_id && req.user.farm_id === farm.id);
+    const isRestrictedRole = req.user.role !== 'admin' && ['care_worker', 'auditor_readonly'].includes(req.user.sub_role);
+    const isOwner = farm.user_id === req.user.id || (!isRestrictedRole && req.user.farm_id && req.user.farm_id === farm.id && req.user.sub_role === 'manager');
     if (req.user.role !== 'admin' && !isOwner) {
       return res.status(403).json({ error: 'Bạn không có quyền thực hiện thao tác này.' });
     }
@@ -1356,13 +1429,16 @@ router.get('/:id/iot-data', auth, async (req, res) => {
 
     let result = await pool.query('SELECT * FROM farm_iot_sensors WHERE farm_id = $1', [farmId]);
     if (result.rows.length === 0) {
-      const defaultData = generateDefaultFarmIoTData(farmId);
-      const insertRes = await pool.query(`
-        INSERT INTO farm_iot_sensors (farm_id, air_data, soil_data, water_data, weather_forecast)
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING *
-      `, [farmId, JSON.stringify(defaultData.air_data), JSON.stringify(defaultData.soil_data), JSON.stringify(defaultData.water_data), JSON.stringify(defaultData.weather_forecast)]);
-      result = insertRes;
+      return res.json({
+        success: true,
+        farm_id: farmId,
+        status: 'NO_DEVICE_CONNECTED',
+        device_connected: false,
+        air_data: null,
+        soil_data: null,
+        water_data: null,
+        weather_forecast: []
+      });
     }
 
     const row = result.rows[0];
@@ -1405,16 +1481,25 @@ router.post('/:id/iot-data/refresh', auth, async (req, res) => {
     if (!access.ok) {
       return res.status(access.status).json({ error: access.error, code: access.code });
     }
-    const randomOffset = Math.floor(Math.random() * 10) + 1;
-    const defaultData = generateDefaultFarmIoTData(farmId + randomOffset);
+    if (req.user && (req.user.role === 'auditor_readonly' || req.user.sub_role === 'auditor_readonly')) {
+      return res.status(403).json({ error: 'Tài khoản kiểm toán viên chỉ có quyền xem (Read-Only).' });
+    }
 
-    const updateRes = await pool.query(`
-      INSERT INTO farm_iot_sensors (farm_id, air_data, soil_data, water_data, weather_forecast, updated_at)
-      VALUES ($1, $2, $3, $4, $5, NOW())
-      ON CONFLICT (farm_id) DO UPDATE
-      SET air_data = EXCLUDED.air_data, soil_data = EXCLUDED.soil_data, water_data = EXCLUDED.water_data, weather_forecast = EXCLUDED.weather_forecast, updated_at = NOW()
-      RETURNING *
-    `, [farmId, JSON.stringify(defaultData.air_data), JSON.stringify(defaultData.soil_data), JSON.stringify(defaultData.water_data), JSON.stringify(defaultData.weather_forecast)]);
+    const updateRes = await pool.query('SELECT * FROM farm_iot_sensors WHERE farm_id = $1', [farmId]);
+    if (updateRes.rows.length === 0) {
+      await delCache(`farm_iot_${farmId}`);
+      return res.json({
+        success: true,
+        message: 'Chưa kết nối thiết bị cảm biến IoT thực tế.',
+        farm_id: farmId,
+        status: 'NO_DEVICE_CONNECTED',
+        device_connected: false,
+        air_data: null,
+        soil_data: null,
+        water_data: null,
+        weather_forecast: []
+      });
+    }
 
     const row = updateRes.rows[0];
     const rawAir = typeof row.air_data === 'string' ? JSON.parse(row.air_data) : row.air_data;
@@ -1462,7 +1547,8 @@ router.delete('/:id', auth, async (req, res) => {
     const farm = farmCheck.rows[0];
     const userName = req.user.full_name || req.user.email || `User #${req.user.id}`;
 
-    const isOwner = req.user.role === 'admin' || farm.user_id === req.user.id || farm.created_by === req.user.id || (req.user.farm_id && req.user.farm_id === farm.id);
+    const isRestrictedDeleteRole = req.user.role !== 'admin' && ['care_worker', 'auditor_readonly'].includes(req.user.sub_role);
+    const isOwner = req.user.role === 'admin' || farm.user_id === req.user.id || farm.created_by === req.user.id || (!isRestrictedDeleteRole && req.user.farm_id && req.user.farm_id === farm.id && req.user.sub_role === 'manager');
     if (!isOwner) {
       return res.status(403).json({ error: 'Bạn không có quyền xóa trang trại này.' });
     }

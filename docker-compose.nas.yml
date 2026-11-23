@@ -91,9 +91,10 @@ services:
       STORAGE_DRIVER: ${STORAGE_DRIVER:-local}
       STORAGE_PUBLIC_URL: ${STORAGE_PUBLIC_URL:-}
       JWT_SECRET: ${JWT_SECRET:?Vui lòng cấu hình JWT_SECRET trong file .env.nas}
+      NFC_HMAC_SECRET: ${NFC_HMAC_SECRET:?Vui lòng cấu hình NFC_HMAC_SECRET trong file .env.nas}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-24h}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@tanbaocorp.vn}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Tanbao@123}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Vui lòng cấu hình ADMIN_PASSWORD trong file .env.nas}
       ENABLE_ZALO_ALERTS: ${ENABLE_ZALO_ALERTS:-false}
     volumes:
       # Lưu ảnh trực tiếp vào ổ đĩa của NAS (không mất khi update container)

@@ -499,6 +499,7 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
 
   _enrichErpAuditChain(enrichedLogs);
   window._currentErpEnrichedLogs = enrichedLogs;
+  _renderErpLatestCareBanner(enrichedLogs, plant);
   _populateErpSupplyFilter(enrichedLogs);
   if (typeof window.resetErpModalLogFilters === 'function') {
     window.resetErpModalLogFilters(true);
@@ -669,6 +670,60 @@ function _fmtErpShortDate(dVal) {
   return str.slice(0, 10);
 }
 
+function _formatErpRealtimeVi(rawVal) {
+  if (!rawVal) return '—';
+  const d = new Date(rawVal);
+  if (isNaN(d.getTime())) return _fmtErpShortDate(rawVal) || '—';
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mi = String(d.getMinutes()).padStart(2, '0');
+  const ss = String(d.getSeconds()).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  return `${hh}:${mi}:${ss} ${dd}/${mm}/${yyyy}`;
+}
+
+function _renderErpLatestCareBanner(logs, plant) {
+  const banner = document.getElementById('erp-plant-latest-care-banner');
+  if (!banner) return;
+  const sortedLogs = Array.isArray(logs) ? [...logs].sort((a, b) => {
+    const da = String(a.log_date || a.created_at || '').slice(0, 10);
+    const db = String(b.log_date || b.created_at || '').slice(0, 10);
+    if (da !== db) return db.localeCompare(da);
+    return (Number(b.id) || 0) - (Number(a.id) || 0);
+  }) : [];
+
+  const latest = sortedLogs[0] || null;
+  if (!latest && !(plant && plant.last_care_type)) {
+    banner.style.display = 'none';
+    banner.innerHTML = '';
+    return;
+  }
+
+  let latestDetails = latest ? (latest.details || {}) : {};
+  if (typeof latestDetails === 'string') {
+    try { latestDetails = JSON.parse(latestDetails); } catch (_) { latestDetails = {}; }
+  }
+  const latestType = (latest && latest.log_type) || (plant && plant.last_care_type) || 'Chăm sóc';
+  const latestMat = (latest && (latest._materialName || latestDetails.material_name || latestDetails.supply_name || latestDetails.fertilizer_name || latestDetails.pesticide_name || latestDetails.work_content)) || (plant && plant.last_care_material) || '';
+  const latestOp = (latest && (latest.operator_name || latestDetails.performed_by_name || latest.creator_name)) || (plant && plant.last_care_operator) || 'Kỹ thuật viên trang trại';
+  const latestRawTime = (latest && (latestDetails.performed_at || latest.updated_at || latest.created_at || latest.log_date)) || (plant && (plant.last_care_at || plant.last_care_date));
+  const latestTimeFormatted = _formatErpRealtimeVi(latestRawTime);
+
+  banner.style.display = 'block';
+  banner.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+      <div style="font-size:12.5px; color:#065f46; font-weight:800; display:inline-flex; align-items:center; gap:6px;">
+        <i data-lucide="clock-check" class="lucide-xs" style="color:#059669;"></i>
+        <span>Lần chăm sóc gần nhất: <strong>${esc(latestType)}</strong>${latestMat ? ` (${esc(latestMat)})` : ''}</span>
+      </div>
+      <div style="font-size:12px; color:#047857; font-weight:700;">
+        Người thực hiện: <strong>${esc(latestOp)}</strong> · Lúc: <strong>${esc(latestTimeFormatted)}</strong>
+      </div>
+    </div>
+  `;
+}
+
 export function _formatErpLogDateTime(log) {
   if (!log) return '—';
   const details = (typeof log.details === 'string') ? (() => { try { return JSON.parse(log.details); } catch (_) { return {}; } })() : (log.details || {});
@@ -676,12 +731,17 @@ export function _formatErpLogDateTime(log) {
   let timePart = '';
   if (details.audit_time && /^\d{1,2}:\d{2}/.test(String(details.audit_time))) {
     timePart = String(details.audit_time).slice(0, 5);
-  } else if (details.performed_at || log.created_at) {
-    const d = new Date(details.performed_at || log.created_at);
+  } else if (details.performed_at || log.updated_at || log.created_at) {
+    const d = new Date(details.performed_at || log.updated_at || log.created_at);
     if (!isNaN(d.getTime())) {
       const hh = String(d.getHours()).padStart(2, '0');
       const mi = String(d.getMinutes()).padStart(2, '0');
-      if (hh !== '00' || mi !== '00') timePart = `${hh}:${mi}`;
+      const ss = String(d.getSeconds()).padStart(2, '0');
+      if (details.performed_at) {
+        timePart = `${hh}:${mi}:${ss}`;
+      } else if (hh !== '00' || mi !== '00') {
+        timePart = ss !== '00' ? `${hh}:${mi}:${ss}` : `${hh}:${mi}`;
+      }
     }
   }
   if (!datePart) return '—';

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pb-farmer-cache-v1.3.7';
+const CACHE_NAME = 'pb-farmer-cache-v1.3.7-ops1';
 
 const STATIC_ASSETS = [
   '/user/',
@@ -7,17 +7,10 @@ const STATIC_ASSETS = [
   '/user/css/user-layout.css',
   '/user/js/auth.js',
   '/user/js/app.js',
+  '/user/js/supplies.js',
   '/user/js/core/api.js',
   '/user/js/core/config.js',
   '/user/js/core/router.js',
-  '/user/js/core/view-loader.js',
-  '/user/views/dashboard.html',
-  '/user/views/plants.html',
-  '/user/views/supplies.html',
-  '/user/views/logs.html',
-  '/user/views/guide.html',
-  '/user/views/profile.html',
-  '/user/views/reminders.html',
   '/user/js/core/utils.js',
   '/user/js/core/websocket.js',
   '/user/js/core/offline-db.js',
@@ -38,6 +31,14 @@ const STATIC_ASSETS = [
   '/user/js/modules/mascot-chibi.js',
   '/user/js/modules/countup.js',
   '/user/js/modules/nfc.js',
+  '/js/i18n-engine.js',
+  '/js/bi-analytics-widget.js',
+  '/assets/js/lucide-auto-hydrator.js',
+  '/assets/js/chibi-iso-icons.js',
+  '/assets/js/enterprise-security-guard.js',
+  '/user/img/chibi_mascot.png',
+  '/user/img/iot_sensors.jpg',
+  '/user/img/nfc_tag.png',
   '/assets/favicon.png',
   '/assets/logo.png',
   '/assets/login-hero.jpg'

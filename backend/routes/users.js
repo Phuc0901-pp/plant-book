@@ -241,6 +241,15 @@ router.put('/my-team/:id', ensureFarmOwnerPrivilege, async (req, res) => {
     const nextSupplies = allow_view_supplies !== undefined ? Boolean(allow_view_supplies) : (existing.allow_view_supplies !== false);
     const nextApproved = approved !== undefined ? Boolean(approved) : (existing.approved !== false);
     const nextFarmId = farm_id ? parseInt(farm_id) : existing.farm_id;
+    if (farm_id && nextFarmId) {
+      const farmOwnRes = await pool.query(
+        'SELECT id FROM farms WHERE id = $1 AND user_id = $2 AND (is_deleted IS NOT TRUE)',
+        [nextFarmId, req.user.id]
+      );
+      if (farmOwnRes.rows.length === 0) {
+        return res.status(403).json({ error: 'Bạn không có quyền gán nhân sự vào trang trại của chủ sở hữu khác.' });
+      }
+    }
 
     if (nextPhone) {
       const dupPhone = await pool.query('SELECT id FROM users WHERE phone = $1 AND id <> $2', [nextPhone, memberId]);
@@ -262,7 +271,7 @@ router.put('/my-team/:id', ensureFarmOwnerPrivilege, async (req, res) => {
 
     if (password && password.trim().length > 0) {
       const hash = await bcrypt.hash(password.trim(), 12);
-      updateQuery += `, password_hash = $11 WHERE id = $12 RETURNING *`;
+      updateQuery += `, password_hash = $11, token_version = COALESCE(token_version, 1) + 1 WHERE id = $12 RETURNING *`;
       params.push(hash, memberId);
     } else {
       updateQuery += ` WHERE id = $11 RETURNING *`;
@@ -276,7 +285,10 @@ router.put('/my-team/:id', ensureFarmOwnerPrivilege, async (req, res) => {
       await pool.query('UPDATE plants SET assigned_to_user_id = NULL WHERE assigned_to_user_id = $1', [memberId]);
       const validIds = assigned_plant_ids.map(x => parseInt(x)).filter(x => !isNaN(x));
       if (validIds.length > 0) {
-        await pool.query('UPDATE plants SET assigned_to_user_id = $1 WHERE id = ANY($2::int[])', [memberId, validIds]);
+        await pool.query(
+          'UPDATE plants SET assigned_to_user_id = $1 WHERE id = ANY($2::int[]) AND farm_id IN (SELECT id FROM farms WHERE user_id = $3)',
+          [memberId, validIds, req.user.id]
+        );
       }
     }
 
@@ -605,7 +617,7 @@ router.put('/:id', async (req, res) => {
 
     if (password && password.trim().length > 0) {
       const hash = await bcrypt.hash(password, 12);
-      query += ', password_hash=$11 WHERE id=$12';
+      query += ', password_hash=$11, token_version=COALESCE(token_version, 1)+1 WHERE id=$12';
       params.push(hash, targetUserId);
     } else {
       query += ' WHERE id=$11';

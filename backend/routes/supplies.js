@@ -114,6 +114,23 @@ async function autoReconcileSuppliesData(userId, force = false) {
   }
 }
 
+function isSupplyExpired(supply) {
+  if (!supply || !supply.expiry_date) return false;
+  const expStr = supply.expiry_date instanceof Date
+    ? supply.expiry_date.toISOString().slice(0, 10)
+    : String(supply.expiry_date).slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(expStr)) return false;
+  return expStr < new Date().toISOString().slice(0, 10);
+}
+
+function isSupplyLowStock(supply) {
+  if (!supply) return false;
+  if (['Tiền nước', 'Nhân công'].includes(supply.category)) return false;
+  const alertMin = parseFloat(supply.min_stock_alert) || 0;
+  if (alertMin <= 0) return false;
+  return (parseFloat(supply.stock_quantity) || 0) <= alertMin;
+}
+
 router.get('/', auth, async (req, res) => {
   try {
     const { category, search, user_id, farm_id } = req.query;
@@ -127,11 +144,13 @@ router.get('/', auth, async (req, res) => {
     let query = `
       SELECT s.*,
              u.full_name as creator_name,
+             COALESCE(NULLIF(s.updated_by_name, ''), u_upd.full_name, u.full_name, u.email) as last_operator_name,
              COALESCE(SUM(su.total_cost), 0) as total_spent,
              COALESCE(SUM(su.quantity), 0) as total_used_qty
       FROM supplies s
       LEFT JOIN supply_usages su ON su.supply_id = s.id
       LEFT JOIN users u ON u.id = s.user_id
+      LEFT JOIN users u_upd ON u_upd.id = s.updated_by
       WHERE 1=1
     `;
     const params = [];
@@ -173,13 +192,22 @@ router.get('/', auth, async (req, res) => {
       idx++;
     }
 
-    query += ` GROUP BY s.id, u.id ORDER BY s.category ASC, s.name ASC`;
+    query += ` GROUP BY s.id, u.id, u_upd.id ORDER BY s.category ASC, s.name ASC`;
     const result = await pool.query(query, params);
 
     const hideFinance = isSupplyFinanceRedacted(req.user, req.query.role);
 
+    const enrichedRows = result.rows.map(r => ({
+      ...r,
+      batch_no: r.batch_no || null,
+      expiry_date: r.expiry_date || null,
+      min_stock_alert: Number(r.min_stock_alert) || 0,
+      is_expired: isSupplyExpired(r),
+      is_low_stock: isSupplyLowStock(r)
+    }));
+
     const rows = hideFinance
-      ? result.rows.map(r => ({
+      ? enrichedRows.map(r => ({
           ...r,
           package_price: 0,
           unit_price: 0,
@@ -187,7 +215,7 @@ router.get('/', auth, async (req, res) => {
           total_spent: 0,
           finance_redacted: true
         }))
-      : result.rows;
+      : enrichedRows;
 
     res.json(rows);
   } catch (err) {
@@ -202,7 +230,16 @@ const multer = require('multer');
 const storageService = require('../services/storageService');
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 15 * 1024 * 1024 }
+  limits: { fileSize: 15 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowedExt = /\.(jpg|jpeg|png|webp|gif)$/i;
+    const isImgMime = file.mimetype && file.mimetype.startsWith('image/');
+    if (allowedExt.test(path.extname(file.originalname || '')) && isImgMime) {
+      cb(null, true);
+    } else {
+      cb(new Error('Chỉ chấp nhận tệp hình ảnh hợp lệ (jpg, jpeg, png, webp, gif).'));
+    }
+  }
 });
 
 router.post('/upload-image', auth, upload.single('file'), async (req, res) => {
@@ -375,6 +412,19 @@ router.post('/scan-image', auth, upload.single('file'), async (req, res) => {
   }
 });
 
+function resolveSupplyActorName(reqUser) {
+  return String((reqUser && (reqUser.full_name || reqUser.name || reqUser.email)) || 'Chủ trang trại').trim();
+}
+
+function canUserAccessSupply(reqUser, supplyRow) {
+  if (!reqUser || !supplyRow) return false;
+  if (reqUser.role === 'admin') return true;
+  if (Number(supplyRow.user_id) === Number(reqUser.id)) return true;
+  if (reqUser.parent_user_id && Number(supplyRow.user_id) === Number(reqUser.parent_user_id)) return true;
+  if (reqUser.farm_id && supplyRow.farm_id && Number(supplyRow.farm_id) === Number(reqUser.farm_id)) return true;
+  return false;
+}
+
 router.post('/', auth, async (req, res) => {
   try {
     if (req.user.role !== 'admin' && ['care_worker', 'auditor_readonly'].includes(req.user.sub_role)) {
@@ -384,8 +434,15 @@ router.post('/', auth, async (req, res) => {
       category, name, unit, package_size, package_qty, package_unit,
       package_price, unit_price, unit_price_small, stock_quantity, note,
       image_url, fertilizer_type, fertilizer_composition, user_id,
-      phi_days, active_ingredient, target_pests, safety_interval_note
+      phi_days, active_ingredient, target_pests, safety_interval_note,
+      batch_no, expiry_date, min_stock_alert
     } = req.body;
+
+    const cleanBatchNo = batch_no && String(batch_no).trim() ? String(batch_no).trim().slice(0, 120) : null;
+    const cleanExpiryDate = expiry_date && /^\d{4}-\d{2}-\d{2}/.test(String(expiry_date).trim()) ? String(expiry_date).trim().slice(0, 10) : null;
+    const cleanMinStockAlert = (min_stock_alert !== undefined && min_stock_alert !== null && !isNaN(parseFloat(min_stock_alert)))
+      ? Math.max(0, parseFloat(min_stock_alert))
+      : 0;
 
     const validCategories = ['Bón phân', 'Tiền nước', 'Phun thuốc', 'Nhân công'];
     const safeCategory = validCategories.includes(category) ? category : normalizeSupplyCategory(category, name);
@@ -404,12 +461,26 @@ router.post('/', auth, async (req, res) => {
     if (isNaN(stock) || stock <= 0) {
       stock = (category === 'Tiền nước' || category === 'Nhân công') ? 999999 : pkgQty;
     }
-    const targetUserId = (user_id && req.user.role === 'admin') ? parseInt(user_id) : req.user.id;
+    const targetUserId = (user_id && req.user.role === 'admin') ? parseInt(user_id) : (req.user.parent_user_id || req.user.id);
+    const actorName = resolveSupplyActorName(req.user);
     const phiDaysInt = parseInt(phi_days) || 0;
 
     let targetFarmId = req.body.farm_id ? parseInt(req.body.farm_id) : null;
+    if (targetFarmId && req.user.role !== 'admin') {
+      const fCheck = await pool.query('SELECT id, user_id FROM farms WHERE id = $1 AND (is_deleted IS NOT TRUE)', [targetFarmId]);
+      if (fCheck.rows.length === 0) {
+        return res.status(404).json({ error: 'Trang trại không tồn tại.' });
+      }
+      const fRow = fCheck.rows[0];
+      const allowedFarm = Number(fRow.user_id) === Number(req.user.id)
+        || (req.user.parent_user_id && Number(fRow.user_id) === Number(req.user.parent_user_id))
+        || (req.user.farm_id && Number(req.user.farm_id) === Number(fRow.id));
+      if (!allowedFarm) {
+        return res.status(403).json({ error: 'Bạn không có quyền thêm vật tư vào trang trại của tài khoản khác.' });
+      }
+    }
     if (!targetFarmId) {
-      const uRes = await pool.query('SELECT farm_id FROM users WHERE id = $1', [targetUserId]);
+      const uRes = await pool.query('SELECT farm_id FROM users WHERE id = $1', [req.user.id]);
       if (uRes.rows.length > 0 && uRes.rows[0].farm_id) {
         targetFarmId = uRes.rows[0].farm_id;
       } else {
@@ -432,7 +503,19 @@ router.post('/', auth, async (req, res) => {
 
     if (existingCheck.rows.length > 0) {
       const existing = existingCheck.rows[0];
-      const updatedStock = parseFloat(existing.stock_quantity || 0) + stock;
+      const oldStock = Math.max(0, parseFloat(existing.stock_quantity) || 0);
+      const oldUnitPrice = parseFloat(existing.unit_price) || 0;
+      const updatedStock = oldStock + stock;
+      let mergedUnitPrice = price || existing.unit_price;
+      let mergedPkgPrice = pkgPrice || existing.package_price;
+      let mergedUnitPriceSmall = unitPriceSmall || existing.unit_price_small;
+      if (price > 0 && stock > 0 && updatedStock > 0 && oldUnitPrice > 0) {
+        mergedUnitPrice = Number((((oldStock * oldUnitPrice) + (stock * price)) / updatedStock).toFixed(2));
+        const usedPkgQty = pkgQty || existing.package_qty || 1;
+        mergedPkgPrice = Number((mergedUnitPrice * usedPkgQty).toFixed(2));
+        mergedUnitPriceSmall = usedPkgQty > 0 ? Number((mergedUnitPrice / usedPkgQty).toFixed(4)) : mergedUnitPriceSmall;
+      }
+      const mergedMinAlert = (min_stock_alert !== undefined && min_stock_alert !== null) ? cleanMinStockAlert : (parseFloat(existing.min_stock_alert) || 0);
       const updatedRes = await pool.query(
         `UPDATE supplies
          SET stock_quantity = $1, package_price = $2, unit_price = $3, unit_price_small = $4,
@@ -442,14 +525,19 @@ router.post('/', auth, async (req, res) => {
              target_pests = COALESCE($13, target_pests), safety_interval_note = COALESCE($14, safety_interval_note),
              farm_id = COALESCE(farm_id, $15),
              fertilizer_composition = COALESCE($16, fertilizer_composition),
+             batch_no = COALESCE($17, batch_no),
+             expiry_date = COALESCE($18::date, expiry_date),
+             min_stock_alert = $19,
+             updated_by = $20,
+             updated_by_name = $21,
              updated_at = NOW()
-         WHERE id = $17
+         WHERE id = $22
          RETURNING *`,
         [
           updatedStock,
-          pkgPrice || existing.package_price,
-          price || existing.unit_price,
-          unitPriceSmall || existing.unit_price_small,
+          mergedPkgPrice,
+          mergedUnitPrice,
+          mergedUnitPriceSmall,
           pkgQty || existing.package_qty,
           safePkgUnit || existing.package_unit,
           package_size ? package_size.trim() : existing.package_size,
@@ -462,19 +550,32 @@ router.post('/', auth, async (req, res) => {
           safety_interval_note || null,
           targetFarmId,
           fertilizer_composition ? fertilizer_composition.trim() : null,
+          cleanBatchNo,
+          cleanExpiryDate,
+          mergedMinAlert,
+          req.user.id,
+          actorName,
           existing.id
         ]
       );
-      return res.status(200).json(updatedRes.rows[0]);
+      const mergedRow = updatedRes.rows[0];
+      return res.status(200).json({
+        ...mergedRow,
+        is_expired: isSupplyExpired(mergedRow),
+        is_low_stock: isSupplyLowStock(mergedRow),
+        last_operator_name: actorName
+      });
     }
 
     const result = await pool.query(
       `INSERT INTO supplies (
         user_id, farm_id, category, name, unit, package_size, package_qty, package_unit,
         package_price, unit_price, unit_price_small, stock_quantity, note,
-        image_url, fertilizer_type, fertilizer_composition, phi_days, active_ingredient, target_pests, safety_interval_note
+        image_url, fertilizer_type, fertilizer_composition, phi_days, active_ingredient, target_pests, safety_interval_note,
+        batch_no, expiry_date, min_stock_alert,
+        updated_by, updated_by_name
        )
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22::date, $23, $24, $25)
        RETURNING *`,
       [
         targetUserId,
@@ -496,11 +597,22 @@ router.post('/', auth, async (req, res) => {
         phiDaysInt,
         active_ingredient ? active_ingredient.trim() : null,
         target_pests ? target_pests.trim() : null,
-        safety_interval_note ? safety_interval_note.trim() : null
+        safety_interval_note ? safety_interval_note.trim() : null,
+        cleanBatchNo,
+        cleanExpiryDate,
+        cleanMinStockAlert,
+        req.user.id,
+        actorName
       ]
     );
 
-    res.status(201).json(result.rows[0]);
+    const createdRow = result.rows[0];
+    res.status(201).json({
+      ...createdRow,
+      is_expired: isSupplyExpired(createdRow),
+      is_low_stock: isSupplyLowStock(createdRow),
+      last_operator_name: actorName
+    });
   } catch (err) {
     console.error('Error creating supply:', err);
     res.status(500).json({ error: 'Lỗi server khi thêm vật tư.' });
@@ -509,21 +621,26 @@ router.post('/', auth, async (req, res) => {
 
 router.put('/:id', auth, async (req, res) => {
   try {
+    if (req.user.role !== 'admin' && ['care_worker', 'auditor_readonly'].includes(req.user.sub_role)) {
+      return res.status(403).json({ error: 'Vai trò của bạn không được cấp quyền sửa vật tư.' });
+    }
     const { id } = req.params;
     const {
       category, name, unit, package_size, package_qty, package_unit,
       package_price, unit_price, unit_price_small, stock_quantity, note,
-      image_url, fertilizer_type, fertilizer_composition, phi_days, active_ingredient, target_pests, safety_interval_note
+      image_url, fertilizer_type, fertilizer_composition, phi_days, active_ingredient, target_pests, safety_interval_note,
+      batch_no, expiry_date, min_stock_alert
     } = req.body;
 
     const check = await pool.query('SELECT * FROM supplies WHERE id = $1', [id]);
     if (check.rows.length === 0) {
       return res.status(404).json({ error: 'Không tìm thấy vật tư.' });
     }
-    if (req.user.role !== 'admin' && check.rows[0].user_id !== req.user.id) {
+    if (!canUserAccessSupply(req.user, check.rows[0])) {
       return res.status(403).json({ error: 'Bạn không có quyền sửa vật tư này.' });
     }
 
+    const actorName = resolveSupplyActorName(req.user);
     const price = parseFloat(unit_price) || 0;
     const pkgQty = parseFloat(package_qty) || check.rows[0].package_qty || 1;
     const pkgPrice = parseFloat(package_price) || check.rows[0].package_price || price;
@@ -535,16 +652,23 @@ router.put('/:id', auth, async (req, res) => {
     }
 
     const phiDaysInt = phi_days !== undefined ? (parseInt(phi_days) || 0) : check.rows[0].phi_days;
-
     const farmIdVal = req.body.farm_id !== undefined ? (req.body.farm_id ? parseInt(req.body.farm_id) : null) : check.rows[0].farm_id;
+    const cleanBatchNo = batch_no !== undefined ? (batch_no && String(batch_no).trim() ? String(batch_no).trim().slice(0, 120) : null) : check.rows[0].batch_no;
+    const cleanExpiryDate = expiry_date !== undefined
+      ? (expiry_date && /^\d{4}-\d{2}-\d{2}/.test(String(expiry_date).trim()) ? String(expiry_date).trim().slice(0, 10) : null)
+      : check.rows[0].expiry_date;
+    const cleanMinStockAlert = (min_stock_alert !== undefined && min_stock_alert !== null && !isNaN(parseFloat(min_stock_alert)))
+      ? Math.max(0, parseFloat(min_stock_alert))
+      : (parseFloat(check.rows[0].min_stock_alert) || 0);
 
     const result = await pool.query(
       `UPDATE supplies
        SET category = $1, name = $2, unit = $3, package_size = $4, package_qty = $5, package_unit = $6,
            package_price = $7, unit_price = $8, unit_price_small = $9, stock_quantity = $10, note = $11,
            image_url = $12, fertilizer_type = $13, fertilizer_composition = $14, phi_days = $15, active_ingredient = $16, target_pests = $17,
-           safety_interval_note = $18, farm_id = $19, updated_at = NOW()
-       WHERE id = $20
+           safety_interval_note = $18, farm_id = $19, batch_no = $20, expiry_date = $21::date, min_stock_alert = $22,
+           updated_by = $23, updated_by_name = $24, updated_at = NOW()
+       WHERE id = $25
        RETURNING *`,
       [
         category || check.rows[0].category,
@@ -566,12 +690,23 @@ router.put('/:id', auth, async (req, res) => {
         target_pests !== undefined ? target_pests : check.rows[0].target_pests,
         safety_interval_note !== undefined ? safety_interval_note : check.rows[0].safety_interval_note,
         farmIdVal,
+        cleanBatchNo,
+        cleanExpiryDate,
+        cleanMinStockAlert,
+        req.user.id,
+        actorName,
         id
       ]
     );
 
-    logAuditAction(req.user.id, req.user.full_name || req.user.email, 'UPDATE', 'Vật tư', id, `Chỉnh sửa thông tin vật tư "${result.rows[0].name}"`, check.rows[0], result.rows[0]);
-    res.json(result.rows[0]);
+    const updatedRow = result.rows[0];
+    logAuditAction(req.user.id, actorName, 'UPDATE', 'Vật tư', id, `Chỉnh sửa thông tin vật tư "${updatedRow.name}"`, check.rows[0], updatedRow);
+    res.json({
+      ...updatedRow,
+      is_expired: isSupplyExpired(updatedRow),
+      is_low_stock: isSupplyLowStock(updatedRow),
+      last_operator_name: actorName
+    });
   } catch (err) {
     console.error('Error updating supply:', err);
     res.status(500).json({ error: 'Lỗi server khi cập nhật vật tư.' });
@@ -605,8 +740,11 @@ router.delete('/:id', auth, async (req, res) => {
 
 router.post('/:id/restock', auth, async (req, res) => {
   try {
+    if (req.user.role !== 'admin' && ['care_worker', 'auditor_readonly'].includes(req.user.sub_role)) {
+      return res.status(403).json({ error: 'Vai trò của bạn không được cấp quyền nhập kho vật tư.' });
+    }
     const { id } = req.params;
-    const { added_qty, new_package_price, note, batch_no } = req.body;
+    const { added_qty, new_package_price, new_unit_price, note, batch_no, expiry_date, min_stock_alert } = req.body;
 
     const qty = parseFloat(added_qty);
     if (isNaN(qty) || qty <= 0) {
@@ -619,13 +757,17 @@ router.post('/:id/restock', auth, async (req, res) => {
     }
     const supply = check.rows[0];
 
-    if (req.user.role !== 'admin' && supply.user_id !== req.user.id) {
+    if (!canUserAccessSupply(req.user, supply)) {
       return res.status(403).json({ error: 'Bạn không có quyền nhập kho cho vật tư này.' });
     }
 
-    let updatedPkgPrice = supply.package_price;
-    let updatedUnitPrice = supply.unit_price;
-    let updatedUnitPriceSmall = supply.unit_price_small;
+    const actorName = resolveSupplyActorName(req.user);
+
+    const oldStock = Math.max(0, parseFloat(supply.stock_quantity) || 0);
+    const oldUnitPrice = parseFloat(supply.unit_price) || 0;
+    let updatedPkgPrice = parseFloat(supply.package_price) || 0;
+    let updatedUnitPrice = oldUnitPrice;
+    let updatedUnitPriceSmall = parseFloat(supply.unit_price_small) || 0;
 
     const pkgQty = parseFloat(supply.package_qty) || 1;
     let addedBaseQty = qty * pkgQty;
@@ -633,26 +775,61 @@ router.post('/:id/restock', auth, async (req, res) => {
       addedBaseQty = qty;
     }
 
-    if (new_package_price && parseFloat(new_package_price) > 0) {
-      updatedPkgPrice = parseFloat(new_package_price);
-      updatedUnitPrice = updatedPkgPrice / pkgQty;
-      updatedUnitPriceSmall = (pkgQty > 0) ? updatedUnitPrice / pkgQty : 0;
+    const incomingPkgPrice = parseFloat(new_package_price) || 0;
+    const incomingUnitPriceRaw = parseFloat(new_unit_price) || 0;
+    const incomingUnitPrice = incomingUnitPriceRaw > 0
+      ? incomingUnitPriceRaw
+      : (incomingPkgPrice > 0 ? (req.body.is_base_unit ? incomingPkgPrice : (incomingPkgPrice / pkgQty)) : oldUnitPrice);
+
+    const newStock = oldStock + addedBaseQty;
+    if (incomingUnitPrice > 0 && newStock > 0) {
+      updatedUnitPrice = Number((((oldStock * oldUnitPrice) + (addedBaseQty * incomingUnitPrice)) / newStock).toFixed(2));
+      updatedPkgPrice = req.body.is_base_unit
+        ? Number(updatedUnitPrice.toFixed(2))
+        : Number((updatedUnitPrice * pkgQty).toFixed(2));
+      updatedUnitPriceSmall = pkgQty > 0 ? Number((updatedUnitPrice / pkgQty).toFixed(4)) : 0;
     }
 
-    const newStock = (parseFloat(supply.stock_quantity) || 0) + addedBaseQty;
-    const restockNote = note ? `${supply.note ? supply.note + ' | ' : ''}Nhập kho +${qty} ${supply.package_unit || 'gói'} (+${addedBaseQty} ${supply.unit}) (${new Date().toLocaleDateString('vi-VN')}): ${note}${batch_no ? ' [Lô: ' + batch_no + ']' : ''}` : supply.note;
+    const cleanBatchNo = batch_no && String(batch_no).trim() ? String(batch_no).trim().slice(0, 120) : supply.batch_no;
+    const cleanExpiryDate = expiry_date && /^\d{4}-\d{2}-\d{2}/.test(String(expiry_date).trim())
+      ? String(expiry_date).trim().slice(0, 10)
+      : supply.expiry_date;
+    const cleanMinStockAlert = (min_stock_alert !== undefined && min_stock_alert !== null && !isNaN(parseFloat(min_stock_alert)))
+      ? Math.max(0, parseFloat(min_stock_alert))
+      : (parseFloat(supply.min_stock_alert) || 0);
+
+    const restockNote = note ? `${supply.note ? supply.note + ' | ' : ''}Nhập kho +${qty} ${supply.package_unit || 'gói'} (+${addedBaseQty} ${supply.unit}) (${new Date().toLocaleDateString('vi-VN')}): ${note}${cleanBatchNo ? ' [Lô: ' + cleanBatchNo + ']' : ''}` : supply.note;
 
     const restockFarmId = req.body.farm_id ? parseInt(req.body.farm_id) : supply.farm_id;
 
     const updatedRes = await pool.query(
       `UPDATE supplies
-       SET stock_quantity = $1, package_price = $2, unit_price = $3, unit_price_small = $4, note = $5, farm_id = $6, updated_at = NOW()
-       WHERE id = $7
+       SET stock_quantity = $1, package_price = $2, unit_price = $3, unit_price_small = $4, note = $5, farm_id = $6,
+           batch_no = COALESCE($7, batch_no), expiry_date = COALESCE($8::date, expiry_date), min_stock_alert = $9,
+           updated_by = $10, updated_by_name = $11, updated_at = NOW()
+       WHERE id = $12
        RETURNING *`,
-      [newStock, updatedPkgPrice, updatedUnitPrice, updatedUnitPriceSmall, restockNote, restockFarmId, id]
+      [newStock, updatedPkgPrice, updatedUnitPrice, updatedUnitPriceSmall, restockNote, restockFarmId, cleanBatchNo || null, cleanExpiryDate || null, cleanMinStockAlert, req.user.id, actorName, id]
     );
 
-    const updatedSupply = updatedRes.rows[0];
+    const logIncomingPkgPrice = incomingPkgPrice > 0 ? incomingPkgPrice : (incomingUnitPrice * (req.body.is_base_unit ? 1 : pkgQty));
+    await pool.query(
+      `INSERT INTO supply_restock_logs (
+        supply_id, farm_id, user_id, operator_name, added_qty, added_base_qty,
+        package_price, unit_price, batch_no, expiry_date, note
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::date, $11)`,
+      [
+        id, restockFarmId || null, req.user.id, actorName, qty, addedBaseQty,
+        logIncomingPkgPrice, incomingUnitPrice, cleanBatchNo || null, cleanExpiryDate || null, note || null
+      ]
+    ).catch(logErr => console.warn('supply_restock_logs insert warn:', logErr.message));
+
+    const updatedSupply = {
+      ...updatedRes.rows[0],
+      is_expired: isSupplyExpired(updatedRes.rows[0]),
+      is_low_stock: isSupplyLowStock(updatedRes.rows[0]),
+      last_operator_name: actorName
+    };
 
     logAuditAction(
       req.user.id,
@@ -678,6 +855,39 @@ router.post('/:id/restock', auth, async (req, res) => {
   } catch (err) {
     console.error('Error restocking supply:', err);
     res.status(500).json({ error: 'Lỗi server khi nhập thêm hàng vào kho: ' + err.message });
+  }
+});
+
+router.get('/:id(\\d+)/restock-history', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin' && req.user.allow_view_supplies === false) {
+      return res.status(403).json({ error: 'Tài khoản của bạn không có quyền xem lịch sử nhập kho vật tư.' });
+    }
+    const { id } = req.params;
+    const check = await pool.query('SELECT * FROM supplies WHERE id = $1', [id]);
+    if (check.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy vật tư.' });
+    }
+    if (!canUserAccessSupply(req.user, check.rows[0])) {
+      return res.status(403).json({ error: 'Bạn không có quyền xem lịch sử nhập kho vật tư thuộc trang trại khác.' });
+    }
+    const histRes = await pool.query(
+      `SELECT id, supply_id, farm_id, user_id, operator_name, added_qty, added_base_qty,
+              package_price, unit_price, batch_no, expiry_date, note, created_at
+       FROM supply_restock_logs
+       WHERE supply_id = $1
+       ORDER BY created_at DESC, id DESC
+       LIMIT 100`,
+      [id]
+    );
+    const hideFinance = isSupplyFinanceRedacted(req.user, req.query.role);
+    const restocks = hideFinance
+      ? histRes.rows.map(r => ({ ...r, package_price: 0, unit_price: 0, finance_redacted: true }))
+      : histRes.rows;
+    res.json({ success: true, supply_id: Number(id), count: restocks.length, restocks });
+  } catch (err) {
+    console.error('Error fetching supply restock history:', err);
+    res.status(500).json({ error: 'Lỗi server khi tải lịch sử nhập kho vật tư.' });
   }
 });
 
@@ -750,11 +960,26 @@ router.post('/usages', auth, async (req, res) => {
       return res.status(400).json({ error: 'Vui lòng chọn vật tư và nhập số lượng tiêu hao.' });
     }
 
+    if (req.user.role !== 'admin' && req.user.sub_role === 'auditor_readonly') {
+      return res.status(403).json({ error: 'Tài khoản Chỉ đọc (Auditor) không được phép ghi nhận tiêu hao vật tư.' });
+    }
+
     const supplyRes = await pool.query('SELECT * FROM supplies WHERE id = $1', [supply_id]);
     if (supplyRes.rows.length === 0) {
       return res.status(404).json({ error: 'Vật tư không tồn tại.' });
     }
     const supply = supplyRes.rows[0];
+    if (!canUserAccessSupply(req.user, supply)) {
+      return res.status(403).json({ error: 'Bạn không có quyền sử dụng vật tư thuộc trang trại khác.' });
+    }
+    if (isSupplyExpired(supply)) {
+      return res.status(400).json({
+        error: `Vật tư "${supply.name}" đã hết hạn sử dụng (${supply.expiry_date}). Không thể xuất kho theo chuẩn VietGAP / GlobalG.A.P.`,
+        code: 'SUPPLY_EXPIRED',
+        supply_id: supply.id,
+        expiry_date: supply.expiry_date
+      });
+    }
 
     const rawQty = parseFloat(quantity);
     if (isNaN(rawQty) || rawQty <= 0) {
@@ -767,11 +992,25 @@ router.post('/usages', auth, async (req, res) => {
 
     const uDate = usage_date ? new Date(usage_date) : new Date();
 
-    let resolvedFarmId = farm_id;
+    let resolvedFarmId = farm_id ? parseInt(farm_id, 10) : null;
     if (!resolvedFarmId && plant_id) {
-      const plantRes = await pool.query('SELECT farm_id FROM plants WHERE id = $1', [plant_id]);
-      if (plantRes.rows.length > 0) {
-        resolvedFarmId = plantRes.rows[0].farm_id;
+      const plantRes = await pool.query('SELECT farm_id FROM plants WHERE id = $1 AND (deleted_at IS NULL)', [plant_id]);
+      if (plantRes.rows.length === 0) {
+        return res.status(404).json({ error: 'Không tìm thấy cây trồng.' });
+      }
+      resolvedFarmId = plantRes.rows[0].farm_id;
+    }
+    if (resolvedFarmId && req.user.role !== 'admin') {
+      const fCheck = await pool.query('SELECT id, user_id FROM farms WHERE id = $1 AND (is_deleted IS NOT TRUE)', [resolvedFarmId]);
+      if (fCheck.rows.length === 0) {
+        return res.status(404).json({ error: 'Trang trại không tồn tại.' });
+      }
+      const fRow = fCheck.rows[0];
+      const allowedFarm = Number(fRow.user_id) === Number(req.user.id)
+        || (req.user.parent_user_id && Number(fRow.user_id) === Number(req.user.parent_user_id))
+        || (req.user.farm_id && Number(req.user.farm_id) === Number(fRow.id));
+      if (!allowedFarm) {
+        return res.status(403).json({ error: 'Bạn không có quyền ghi nhận tiêu hao vật tư cho trang trại khác.' });
       }
     }
 

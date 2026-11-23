@@ -26,6 +26,11 @@ function scrubPublicPlantLogRow(log) {
     delete rawDetails.cost;
     delete rawDetails.package_price;
     delete rawDetails.package_unit;
+    delete rawDetails.unit_price_small;
+    delete rawDetails.total_revenue;
+    delete rawDetails.revenue;
+    delete rawDetails.price_per_tree;
+    delete rawDetails.avg_price_per_fruit;
     delete rawDetails.formula_secret;
     delete rawDetails.supplier_price;
     delete rawDetails.vendor_name;
@@ -80,6 +85,24 @@ async function fetchAndScrubPublicPlantLogs(dbPool, plantId) {
   };
 }
 
+function scrubPublicSupplyRow(s) {
+  if (!s) return s;
+  const { package_price, unit_price, unit_price_small, total_spent, total_cost, ...safe } = s;
+  return safe;
+}
+
+function scrubPublicSupplyUsageRow(u) {
+  if (!u) return u;
+  const { unit_price, total_cost, ...safe } = u;
+  return safe;
+}
+
+function scrubPublicEntityPII(entity) {
+  if (!entity) return entity;
+  const { owner_phone, owner_email, total_investment, total_cost, ...safe } = entity;
+  return safe;
+}
+
 router.scrubPublicPlantLogRow = scrubPublicPlantLogRow;
 
 router.get('/farms/:farmId/public-portal', async (req, res) => {
@@ -92,7 +115,7 @@ router.get('/farms/:farmId/public-portal', async (req, res) => {
     const farmRes = await pool.query(`
       SELECT f.id, f.name, f.description, f.address, f.puc_code, f.vietgap_cert_number, f.vietgap_cert_org,
              f.polygon_coordinates, f.latitude, f.longitude, f.user_id,
-             u.full_name as owner_name, u.phone as owner_phone, u.email as owner_email
+             u.full_name as owner_name
       FROM farms f
       LEFT JOIN users u ON u.id = f.user_id
       WHERE f.id = $1 AND (f.is_deleted IS NOT TRUE)
@@ -109,7 +132,7 @@ router.get('/farms/:farmId/public-portal', async (req, res) => {
       SELECT p.id, p.tree_code, p.plant_type, p.plant_variety, p.health_status, p.location,
              p.latitude, p.longitude, p.nfc_uid, p.public_url, p.public_slug
       FROM plants p
-      WHERE p.farm_id = $1 AND (p.deleted_at IS NULL)
+      WHERE p.farm_id = $1 AND (p.deleted_at IS NULL) AND (p.is_public IS NOT FALSE)
       ORDER BY CAST(NULLIF(regexp_replace(p.tree_code, '\\D', '', 'g'), '') AS INTEGER) ASC NULLS LAST, p.tree_code ASC, p.id ASC
     `, [farmId]);
 
@@ -118,43 +141,36 @@ router.get('/farms/:farmId/public-portal', async (req, res) => {
     const unassignedCount = totalPlants - assignedCount;
 
     let supplies = [];
-    let totalInvestment = 0;
     try {
       const suppliesRes = await pool.query(`
-        SELECT s.id, s.name, s.category, s.package_size, s.package_qty, s.package_price,
-               s.unit_price, s.unit, s.stock_quantity, s.image_url, s.active_ingredient,
-               s.target_pests, s.phi_days, s.note,
-               COALESCE(SUM(su.total_cost), 0) as total_spent,
-               COALESCE(SUM(su.quantity), 0) as total_used_qty
+        SELECT s.id, s.name, s.category, s.package_size, s.package_qty,
+               s.unit, s.stock_quantity, s.image_url, s.active_ingredient,
+               s.target_pests, s.phi_days, s.note
         FROM supplies s
-        LEFT JOIN supply_usages su ON su.supply_id = s.id AND su.farm_id = $1
         WHERE (
           s.farm_id = $1
           OR s.user_id = $2
           OR s.user_id IN (SELECT id FROM users WHERE farm_id = $1)
           OR s.id IN (SELECT supply_id FROM supply_usages WHERE farm_id = $1)
         )
-        GROUP BY s.id
         ORDER BY s.category ASC, s.name ASC
       `, [farmId, farm.user_id]);
-      supplies = suppliesRes.rows;
-      totalInvestment = supplies.reduce((sum, s) => sum + parseFloat(s.total_spent || 0), 0);
-    } catch(supErr) {
+      supplies = suppliesRes.rows.map(scrubPublicSupplyRow);
+    } catch (supErr) {
       console.warn('Error fetching farm supplies for portal:', supErr.message);
     }
 
     res.json({
       success: true,
       farm: {
-        ...farm,
+        ...scrubPublicEntityPII(farm),
         total_plants: totalPlants,
         assigned_count: assignedCount,
         unassigned_count: unassignedCount,
-        total_investment: totalInvestment,
         total_supplies_count: supplies.length
       },
       plants: plantsRes.rows,
-      supplies: supplies
+      supplies
     });
   } catch (err) {
     console.error('Error loading public farm portal:', err);
@@ -190,7 +206,7 @@ router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
               ps.name as schema_name, ps.fields as schema_fields,
               f.name as farm_name, f.address as farm_address, f.puc_code, f.vietgap_cert_number, f.vietgap_cert_org,
               f.polygon_coordinates as farm_polygon, f.user_id as farm_owner_user_id,
-              u.full_name as owner_name, u.phone as owner_phone, u.email as owner_email
+              u.full_name as owner_name
        FROM plants p
        LEFT JOIN plant_schemas ps ON ps.id = p.schema_id
        LEFT JOIN farms f ON f.id = p.farm_id
@@ -203,7 +219,7 @@ router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
            OR UPPER(p.nfc_uid) = UPPER($3)
          )
        )
-       AND (p.deleted_at IS NULL)
+       AND (p.deleted_at IS NULL) AND (p.is_public IS NOT FALSE)
        ORDER BY (CASE WHEN p.farm_id = $4 THEN 1 ELSE 2 END) ASC, p.id DESC
        LIMIT 1`,
       [cleanUid, cleanRawUid, nfcUidRaw, farmId]
@@ -328,13 +344,12 @@ router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
         farm_id: farmId,
         nfc_uid: cleanUid,
         plant: {
-          ...row,
+          ...scrubPublicEntityPII(row),
           media: media.rows,
           logs: scrubbedLogs,
           farm_boundary,
-          supply_usages: supplyUsages,
-          total_cost: totalCareCost,
-          farm_supplies: farmSupplies
+          supply_usages: supplyUsages.map(scrubPublicSupplyUsageRow),
+          farm_supplies: farmSupplies.map(scrubPublicSupplyRow)
         }
       });
     }
@@ -408,12 +423,12 @@ router.get('/public/:slug', async (req, res) => {
               ps.name as schema_name, ps.fields as schema_fields,
               f.name as farm_name, f.address as farm_address, f.puc_code, f.vietgap_cert_number, f.vietgap_cert_org,
               f.polygon_coordinates as farm_polygon, f.user_id as farm_owner_user_id,
-              u.full_name as owner_name, u.phone as owner_phone, u.email as owner_email
+              u.full_name as owner_name
        FROM plants p
        LEFT JOIN plant_schemas ps ON ps.id = p.schema_id
        LEFT JOIN farms f ON f.id = p.farm_id
        LEFT JOIN users u ON u.id = f.user_id
-       WHERE (p.public_slug=$1 OR p.id::text=$1 OR UPPER(p.nfc_uid)=UPPER($1)) AND p.is_public=true`, [slugParam]
+       WHERE (p.public_slug=$1 OR p.id::text=$1 OR UPPER(p.nfc_uid)=UPPER($1)) AND p.is_public=true AND (p.deleted_at IS NULL)`, [slugParam]
     );
     if (plant.rows.length === 0) {
       const invRevoked = await pool.query(
@@ -559,13 +574,12 @@ router.get('/public/:slug', async (req, res) => {
     }
 
     res.json({
-      ...row,
+      ...scrubPublicEntityPII(row),
       media: media.rows,
       logs: scrubbedLogs,
       farm_boundary,
-      supply_usages: supplyUsages,
-      total_cost: totalCareCost,
-      farm_supplies: farmSupplies
+      supply_usages: supplyUsages.map(scrubPublicSupplyUsageRow),
+      farm_supplies: farmSupplies.map(scrubPublicSupplyRow)
     });
   } catch (err) {
     console.error(err);
@@ -606,12 +620,15 @@ router.patch('/public/:slug/health', async (req, res) => {
   }
 });
 
-router.all('/public/:slug/gps', async (req, res) => {
+router.all('/public/:slug/gps', auth, async (req, res) => {
   if (req.method !== 'POST' && req.method !== 'PATCH') {
     return res.status(405).json({ error: 'Phương thức không được hỗ trợ.' });
   }
 
   try {
+    if (req.user.role !== 'admin' && req.user.sub_role === 'auditor_readonly') {
+      return res.status(403).json({ error: 'Tài khoản Chỉ đọc không được phép cập nhật tọa độ GPS.', code: 'READONLY_ROLE_FORBIDDEN' });
+    }
     const { latitude, longitude, nfc_uid } = req.body;
     const targetParam = req.params.slug ? req.params.slug.trim() : '';
     const activeNfcUid = nfc_uid || targetParam;
@@ -639,9 +656,12 @@ router.all('/public/:slug/gps', async (req, res) => {
     }
 
     const plantRes = await pool.query(
-      `SELECT id, tree_code, plant_type, plant_variety, farm_id, nfc_uid, latitude, longitude
-       FROM plants
-       WHERE (id::text = $1 OR public_slug = $1 OR UPPER(nfc_uid) = UPPER($1) OR UPPER(nfc_uid) = UPPER($2))
+      `SELECT p.id, p.tree_code, p.plant_type, p.plant_variety, p.farm_id, p.nfc_uid, p.latitude, p.longitude,
+              p.created_by, p.assigned_to_user_id, f.user_id as farm_owner_id
+       FROM plants p
+       LEFT JOIN farms f ON f.id = p.farm_id
+       WHERE (p.id::text = $1 OR p.public_slug = $1 OR UPPER(p.nfc_uid) = UPPER($1) OR UPPER(p.nfc_uid) = UPPER($2))
+         AND (p.deleted_at IS NULL)
        LIMIT 1`,
       [targetParam, activeNfcUid]
     );
@@ -651,6 +671,10 @@ router.all('/public/:slug/gps', async (req, res) => {
     }
 
     const currentPlant = plantRes.rows[0];
+    const access = await verifyPlantAccess(req, currentPlant.id);
+    if (!access.ok) {
+      return res.status(access.status || 403).json({ error: access.error, code: 'PLANT_ACCESS_DENIED' });
+    }
     const cleanNfcUid = activeNfcUid || currentPlant.nfc_uid || '';
     const publicUrl = generatePublicPlantUrl(currentPlant.farm_id, currentPlant.id, cleanNfcUid);
 
@@ -822,7 +846,7 @@ router.post('/public/:slug/logs', upload.array('files', 12), async (req, res) =>
 
       if (!resolvedSupplyId && supplyName) {
         const foundSup = await pool.query(
-          `SELECT id, unit, unit_price FROM supplies WHERE (farm_id = $1 OR 1=1) AND (name ILIKE $2 OR $2 ILIKE '%' || name || '%') LIMIT 1`,
+          `SELECT id, unit, unit_price FROM supplies WHERE farm_id = $1 AND (name ILIKE $2 OR $2 ILIKE '%' || name || '%') LIMIT 1`,
           [access.plant?.farm_id || null, supplyName]
         );
         if (foundSup.rows.length > 0) {
@@ -865,21 +889,26 @@ router.get('/:id(\\d+)/export-vietgap', async (req, res) => {
   try {
     const plantId = parseInt(req.params.id);
     const plantRes = await pool.query(
-      `SELECT p.*, f.name as farm_name, f.location as farm_address, u.full_name as owner_name, u.phone as owner_phone
+      `SELECT p.*, f.name as farm_name, COALESCE(f.address, '') as farm_address, u.full_name as owner_name
        FROM plants p
        LEFT JOIN farms f ON f.id = p.farm_id
        LEFT JOIN users u ON u.id = f.user_id
-       WHERE p.id = $1`, [plantId]
+       WHERE p.id = $1 AND (p.is_public IS NOT FALSE) AND (p.deleted_at IS NULL)`, [plantId]
     );
 
     if (plantRes.rows.length === 0) {
-      return res.status(404).json({ error: 'Không tìm thấy cây trồng.' });
+      return res.status(404).json({ error: 'Không tìm thấy cây trồng hoặc cây chưa công khai.' });
     }
 
     const plant = plantRes.rows[0];
     const logsRes = await pool.query(
-      `SELECT * FROM plant_logs WHERE plant_id = $1 ORDER BY log_date ASC`, [plantId]
+      `SELECT pl.*, u.full_name as creator_name
+       FROM plant_logs pl
+       LEFT JOIN users u ON u.id = pl.created_by
+       WHERE pl.plant_id = $1 AND (pl.is_deleted IS NOT TRUE)
+       ORDER BY pl.log_date ASC, pl.id ASC`, [plantId]
     );
+    const scrubbedLogs = logsRes.rows.map(scrubPublicPlantLogRow);
 
     res.json({
       title: 'BÁO CÁO NHẬT KÝ CANH TÁC CHUẨN VIETGAP / GLOBALGAP',
@@ -891,12 +920,11 @@ router.get('/:id(\\d+)/export-vietgap', async (req, res) => {
         farm_name: plant.farm_name,
         farm_address: plant.farm_address,
         owner_name: plant.owner_name,
-        owner_phone: plant.owner_phone,
         nfc_uid: plant.nfc_uid,
         public_url: generatePublicPlantUrl(plant.farm_id, plant.id, plant.nfc_uid)
       },
-      total_logs: logsRes.rows.length,
-      logs: logsRes.rows
+      total_logs: scrubbedLogs.length,
+      logs: scrubbedLogs
     });
   } catch (err) {
     console.error('VietGAP export error:', err);

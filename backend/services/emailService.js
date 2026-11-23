@@ -1,24 +1,25 @@
 const nodemailer = require('nodemailer');
 require('dotenv').config();
 
-const ADMIN_EMAIL = 'phphuc0539@gmail.com';
+const ADMIN_EMAIL = process.env.ADMIN_ALERT_EMAIL || process.env.ADMIN_EMAIL || process.env.SMTP_USER || '';
 
 function createTransporter() {
-  const user = process.env.SMTP_USER || 'phphuc0539@gmail.com';
-  const pass = process.env.SMTP_PASS || 'urtu ugxu pang qxjt';
+  const user = process.env.SMTP_USER || '';
+  const pass = process.env.SMTP_PASS || '';
 
-  if (user && pass) {
-    return nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT || '465'),
-      secure: process.env.SMTP_SECURE !== 'false',
-      connectionTimeout: 5000,
-      greetingTimeout: 5000,
-      socketTimeout: 5000,
-      auth: { user, pass },
-    });
+  if (!user || !pass) {
+    return null;
   }
-  return null;
+
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.SMTP_PORT || '465', 10),
+    secure: process.env.SMTP_SECURE !== 'false',
+    connectionTimeout: 5000,
+    greetingTimeout: 5000,
+    socketTimeout: 5000,
+    auth: { user, pass }
+  });
 }
 
 async function sendAdminResetNotification({ user, requestToken, baseUrl, note }) {
@@ -63,21 +64,15 @@ async function sendAdminResetNotification({ user, requestToken, baseUrl, note })
     </div>
   `;
 
-  console.log('\n======================================================');
-  console.log(`✉️ EMAIL DUYỆT CẤP MẬT KHẨU ĐẾN ADMIN (${ADMIN_EMAIL}):`);
-  console.log(`👉 ĐƯỜNG DẪN DUYỆT 1-CLICK: ${approveUrl}`);
-  console.log('======================================================\n');
-
   const transporter = createTransporter();
-  if (transporter) {
+  if (transporter && ADMIN_EMAIL) {
     try {
       await transporter.sendMail({
-        from: `"Tanbao AgTech System" <${process.env.SMTP_USER}>`,
+        from: `"Tanbao AgTech System" <${process.env.SMTP_USER || ADMIN_EMAIL}>`,
         to: ADMIN_EMAIL,
         subject: `[Yêu cầu cấp lại mật khẩu] Tài khoản: ${user.email}`,
         html,
       });
-      console.log(`✅ Đã gửi email thông báo phê duyệt tới Admin (${ADMIN_EMAIL}) thành công!`);
     } catch (err) {
       console.error('⚠️ Lỗi gửi mail qua SMTP:', err.message);
     }
@@ -109,21 +104,15 @@ async function sendCustomerNewPassword({ user, newPassword }) {
     </div>
   `;
 
-  console.log('\n======================================================');
-  console.log(`✉️ GỬI MẬT KHẨU MỚI CHO KHÁCH HÀNG (${user.email}):`);
-  console.log(`🔑 MẬT KHẨU MỚI: ${newPassword}`);
-  console.log('======================================================\n');
-
   const transporter = createTransporter();
   if (transporter) {
     try {
       await transporter.sendMail({
-        from: `"Tanbao AgTech Support" <${process.env.SMTP_USER}>`,
+        from: `"Tanbao AgTech Support" <${process.env.SMTP_USER || ADMIN_EMAIL}>`,
         to: user.email,
         subject: `[Tanbao AgTech] Thông báo cấp lại mật khẩu tài khoản ${user.email}`,
         html,
       });
-      console.log(`✅ Đã gửi mail chứa mật khẩu mới đến khách hàng (${user.email})!`);
     } catch (err) {
       console.error('⚠️ Lỗi gửi mail tới khách hàng:', err.message);
     }

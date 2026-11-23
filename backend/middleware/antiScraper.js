@@ -1,5 +1,30 @@
 const rateLimit = require('express-rate-limit');
 
+const MAX_BUCKET_SIZE = 50000;
+const PUBLIC_NFC_WINDOW_MS = 60 * 1000;
+const PUBLIC_NFC_MAX_REQ = 90;
+const globalBucket = new Map();
+
+function pruneBucket(now) {
+  for (const [k, entry] of globalBucket.entries()) {
+    if (now >= entry.resetAt) {
+      globalBucket.delete(k);
+    }
+    if (globalBucket.size <= Math.floor(MAX_BUCKET_SIZE * 0.8)) {
+      break;
+    }
+  }
+  while (globalBucket.size > MAX_BUCKET_SIZE) {
+    const oldestKey = globalBucket.keys().next().value;
+    if (oldestKey === undefined) break;
+    globalBucket.delete(oldestKey);
+  }
+}
+
+function getClientIp(req) {
+  return req.ip || req.socket?.remoteAddress || 'unknown';
+}
+
 const SUSPICIOUS_UA_PATTERNS = [
   /python/i,
   /scrapy/i,
@@ -26,14 +51,39 @@ const SUSPICIOUS_UA_PATTERNS = [
 ];
 
 function antiScraper(req, res, next) {
-  const reqPath = req.path || req.originalUrl || '';
+  const reqPath = req.originalUrl || req.path || '';
   if (reqPath.includes('/health') || reqPath === '/' || reqPath === '/healthz') {
     return next();
   }
 
-  const hasApiKey = req.headers['x-api-key'] || (req.query && req.query.api_key);
+  if (/\/api\/public|\/api\/nfc|\/nfc\//i.test(reqPath) || reqPath.startsWith('/public')) {
+    const now = Date.now();
+    const clientIp = getClientIp(req);
+    const key = `pub_${clientIp}`;
+    let entry = globalBucket.get(key);
+    if (!entry || now >= entry.resetAt) {
+      entry = { count: 1, resetAt: now + PUBLIC_NFC_WINDOW_MS };
+    } else {
+      entry.count += 1;
+    }
+    globalBucket.set(key, entry);
+    if (globalBucket.size > MAX_BUCKET_SIZE) {
+      pruneBucket(now);
+    }
+    if (entry.count > PUBLIC_NFC_MAX_REQ) {
+      return res.status(429).json({
+        error: 'Quá nhiều yêu cầu truy vấn công khai/NFC. Vui lòng thử lại sau 1 phút.',
+        code: 'TOO_MANY_PUBLIC_REQUESTS',
+        limit: PUBLIC_NFC_MAX_REQ
+      });
+    }
+  }
+
+  const hasApiKey = Boolean(req.headers['x-api-key'] || (req.query && req.query.api_key));
+  const authHeader = req.headers['authorization'] || '';
+  const hasBearer = authHeader.startsWith('Bearer ') && authHeader.length > 20;
   const isB2BDataset = reqPath.includes('/full-dataset') || reqPath.includes('/api-link') || reqPath.includes('/offline-batch-sync');
-  if (hasApiKey || isB2BDataset) {
+  if (hasApiKey || (isB2BDataset && hasBearer)) {
     return next();
   }
 
@@ -61,13 +111,13 @@ const apiLimiter = rateLimit({
   max: 3000,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req) => getClientIp(req),
   skip: (req) => {
-    const p = req.path || req.originalUrl || '';
-    if (p.includes('/health') || p === '/' || p === '/healthz' || p.includes('/config/mapbox-token')) {
-      return true;
+    const p = req.originalUrl || req.path || '';
+    if (p.includes('/auth')) {
+      return false;
     }
-    const authHeader = req.headers['authorization'] || '';
-    if (authHeader.startsWith('Bearer ') && authHeader.length > 20) {
+    if (p.includes('/health') || p === '/' || p === '/healthz' || p.includes('/config/mapbox-token')) {
       return true;
     }
     if (req.headers['x-api-key'] || (req.query && req.query.api_key)) {
@@ -80,4 +130,4 @@ const apiLimiter = rateLimit({
   }
 });
 
-module.exports = { antiScraper, apiLimiter };
+module.exports = { antiScraper, apiLimiter, globalBucket, pruneBucket };

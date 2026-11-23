@@ -317,13 +317,16 @@ class CryptoSecurityService {
       issueLevel: safeScannedIl,
       secretKey: hmacSecretKey,
     );
+    final String expectedFullSig = hmacSha256Hex(
+      hmacSecretKey,
+      '$cleanScannedUid:IL$safeScannedIl',
+    ).toLowerCase();
     bool layer3HmacValid = true;
     if (scannedHmacSignature != null &&
         scannedHmacSignature.trim().isNotEmpty) {
       final String cleanSig = scannedHmacSignature.trim().toLowerCase();
-      final bool isHex16 = RegExp(r'^[0-9a-f]{16,64}$').hasMatch(cleanSig);
-      layer3HmacValid =
-          constantTimeEquals(cleanSig, expectedSig) || isHex16;
+      layer3HmacValid = constantTimeEquals(cleanSig, expectedSig) ||
+          constantTimeEquals(cleanSig, expectedFullSig);
       auditLog.add(layer3HmacValid
           ? '[L3-HMAC-SHA256] PASS: Chữ ký mật mã NTAG213 hợp lệ (${cleanSig.substring(0, min(16, cleanSig.length))}).'
           : '[L3-HMAC-SHA256] FAIL: Chữ ký NTAG213 không hợp lệ hoặc bị giả mạo.');

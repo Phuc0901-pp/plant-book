@@ -1,4 +1,5 @@
 import { api } from '../core/api.js';
+import { esc } from '../core/utils.js';
 
 let _notificationsCache = [];
 let _activeNotifFilter = 'all';
@@ -77,7 +78,7 @@ export function renderNotificationsUI(unreadCount, list, activeFilter = 'all') {
         <div style="width:48px; height:48px; border-radius:50%; background:#f1f5f9; display:flex; align-items:center; justify-content:center; margin:0 auto 10px auto;">
           <i data-lucide="bell-off" style="width:24px; height:24px; color:#94a3b8;"></i>
         </div>
-        <div style="font-weight:700; color:#1e293b; margin-bottom:3px;">${emptyMsg}</div>
+        <div style="font-weight:700; color:#1e293b; margin-bottom:3px;">${esc(emptyMsg)}</div>
         <div style="font-size:11.5px; color:#94a3b8;">Hệ thống sẽ gửi cảnh báo tự động khi có biến động môi trường.</div>
       </div>
     `;
@@ -138,7 +139,7 @@ export function renderNotificationsUI(unreadCount, list, activeFilter = 'all') {
     const timeAgo = formatTimeAgo(n.created_at);
 
     return `
-      <div id="notif-item-${n.id}" onclick="readSingleNotification(${n.id})"
+      <div id="notif-item-${Number(n.id) || 0}" onclick="readSingleNotification(${Number(n.id) || 0})"
         style="background:${isUnread ? cfg.cardBg : '#ffffff'};
                border: 1px solid ${isUnread ? cfg.tagBorder : '#e2e8f0'};
                border-left: ${cfg.borderLeft};
@@ -151,16 +152,15 @@ export function renderNotificationsUI(unreadCount, list, activeFilter = 'all') {
         onmouseenter="this.style.transform='translateY(-1.5px)'; this.style.boxShadow='0 6px 16px rgba(0,0,0,0.06)';"
         onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='${isUnread ? '0 2px 8px rgba(0,0,0,0.04)' : '0 1px 2px rgba(0,0,0,0.02)'}';"
       >
-        <!-- Header Row: Tag & Close Button -->
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
           <div style="display:flex; align-items:center; gap:6px;">
             <span style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:20px; font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.3px; background:${cfg.tagBg}; color:${cfg.tagColor}; border:1px solid ${cfg.tagBorder};">
-              <i data-lucide="${cfg.icon}" style="width:12px; height:12px;"></i> ${cfg.tag}
+              <i data-lucide="${esc(cfg.icon)}" style="width:12px; height:12px;"></i> ${esc(cfg.tag)}
             </span>
             ${isUnread ? `<span style="display:inline-flex; align-items:center; gap:3px; font-size:10.5px; font-weight:700; color:#dc2626; background:#fee2e2; padding:2px 6px; border-radius:12px;"><span style="width:5px; height:5px; border-radius:50%; background:#dc2626;"></span> Mới</span>` : ''}
           </div>
 
-          <button onclick="dismissSingleNotification(event, ${n.id})" title="Xóa thông báo này"
+          <button onclick="dismissSingleNotification(event, ${Number(n.id) || 0})" title="Xóa thông báo này"
             style="background:transparent; border:none; color:#94a3b8; cursor:pointer; width:24px; height:24px; border-radius:6px; display:flex; align-items:center; justify-content:center; transition:all 0.2s;"
             onmouseenter="this.style.color='#dc2626'; this.style.background='#fee2e2';"
             onmouseleave="this.style.color='#94a3b8'; this.style.background='transparent';"
@@ -169,21 +169,20 @@ export function renderNotificationsUI(unreadCount, list, activeFilter = 'all') {
           </button>
         </div>
 
-        <!-- Body: Icon Box + Title + Message -->
         <div style="display:flex; align-items:flex-start; gap:12px;">
           <div style="width:36px; height:36px; border-radius:10px; background:${cfg.iconBg}; border:1px solid ${cfg.tagBorder}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-            <i data-lucide="${cfg.icon}" style="width:18px; height:18px; color:${cfg.iconColor};"></i>
+            <i data-lucide="${esc(cfg.icon)}" style="width:18px; height:18px; color:${cfg.iconColor};"></i>
           </div>
           <div style="flex:1; min-width:0;">
             <div style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:3px; line-height:1.35; letter-spacing:-0.2px;">
-              ${n.title}
+              ${esc(n.title)}
             </div>
             <div style="font-size:12px; color:#334155; line-height:1.45; font-weight:500;">
-              ${n.message}
+              ${esc(n.message)}
             </div>
             <div style="display:flex; align-items:center; gap:5px; font-size:11px; color:#64748b; margin-top:6px; font-weight:600;">
               <i data-lucide="clock" style="width:12px; height:12px;"></i>
-              <span>${timeAgo}</span>
+              <span>${esc(timeAgo)}</span>
             </div>
           </div>
         </div>

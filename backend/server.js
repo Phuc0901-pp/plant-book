@@ -5,11 +5,91 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const pool = require('./config/db');
 const { ensureBucket } = require('./config/supabase');
 const initDB = require('./db/init');
 const http = require('http');
 const WebSocket = require('ws');
 const compression = require('compression');
+const jwt = require('jsonwebtoken');
+
+function extractWsTokenFromReq(req) {
+  if (!req || !req.headers) return { provided: false, token: null };
+  const authHeader = req.headers.authorization || req.headers.Authorization || '';
+  if (typeof authHeader === 'string' && authHeader.trim().length > 0) {
+    const raw = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : authHeader.trim();
+    return { provided: true, token: raw };
+  }
+  const proto = req.headers['sec-websocket-protocol'];
+  if (typeof proto === 'string' && proto.trim().length > 0) {
+    const parts = proto.split(',').map(p => p.trim()).filter(Boolean);
+    if (parts.length > 0) {
+      const candidate = parts.length >= 2 && parts[0].toLowerCase() === 'bearer' ? parts[1] : parts[0];
+      return { provided: true, token: candidate };
+    }
+  }
+  try {
+    const urlObj = new URL(req.url || '/', 'http://localhost');
+    if (urlObj.searchParams.has('token')) {
+      return { provided: true, token: (urlObj.searchParams.get('token') || '').trim() };
+    }
+  } catch (_) {}
+  return { provided: false, token: null };
+}
+
+function authenticateWsToken(rawToken) {
+  if (!rawToken || !process.env.JWT_SECRET) return null;
+  try {
+    const decoded = jwt.verify(rawToken, process.env.JWT_SECRET);
+    if (!decoded || !decoded.id) return null;
+    return {
+      id: decoded.id,
+      role: decoded.role || 'farmer',
+      sub_role: decoded.sub_role || null,
+      farm_id: decoded.farm_id || null,
+      parent_user_id: decoded.parent_user_id || null
+    };
+  } catch (_) {
+    return null;
+  }
+}
+
+function shouldDeliverBroadcast(wsUser, event, data) {
+  const payload = data && typeof data === 'object' ? data : {};
+  const scopedFarmId = payload.farmId ?? payload.farm_id ?? null;
+  const scopedUserId = payload.userId ?? payload.user_id ?? null;
+  const isSensitiveUserEvent = event === 'user_status_changed' || event === 'user_registered';
+  if (scopedFarmId !== null || scopedUserId !== null || isSensitiveUserEvent) {
+    if (!wsUser) return false;
+    if (wsUser.role === 'admin') return true;
+    if (scopedFarmId !== null && wsUser.farm_id && Number(wsUser.farm_id) === Number(scopedFarmId)) return true;
+    if (scopedUserId !== null && (Number(wsUser.id) === Number(scopedUserId) || (wsUser.parent_user_id && Number(wsUser.parent_user_id) === Number(scopedUserId)))) return true;
+    if (isSensitiveUserEvent && payload.id && Number(wsUser.id) === Number(payload.id)) return true;
+    return false;
+  }
+  return Boolean(wsUser || payload.public === true);
+}
+
+function createScopedBroadcast(clients) {
+  return (event, data) => {
+    try {
+      const payload = JSON.stringify({ event, data });
+      for (const client of clients) {
+        if (client.readyState === WebSocket.OPEN && shouldDeliverBroadcast(client.user || null, event, data)) {
+          try {
+            client.send(payload, (err) => {
+              if (err) clients.delete(client);
+            });
+          } catch (e) {
+            clients.delete(client);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('⚠️ Broadcast error:', err);
+    }
+  };
+}
 
 const app = express();
 app.set('trust proxy', 1);
@@ -80,8 +160,45 @@ app.use(['/build_output', '/'], express.static(path.join(__dirname, '../build_ou
 }));
 
 const { getAppVersion } = require('./config/appConfig');
-app.get(['/health', '/healthz', '/api/health'], (req, res) => {
-  res.status(200).json({ status: 'ok', time: new Date().toISOString(), app: `Plant Book API ${getAppVersion()}` });
+app.get(['/health', '/healthz', '/api/health'], async (req, res) => {
+  let dbStatus = 'up';
+  try {
+    await Promise.race([
+      pool.query('SELECT 1'),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('DB_HEALTH_TIMEOUT')), 2000))
+    ]);
+  } catch (err) {
+    dbStatus = 'down';
+  }
+
+  let cacheMode = 'memory';
+  let cacheStatus = 'up';
+  try {
+    const redisModule = require('./config/redis');
+    if (redisModule && typeof redisModule.isRedisConnected === 'function' && redisModule.isRedisConnected()) {
+      cacheMode = 'redis';
+      if (redisModule.redisClient && typeof redisModule.redisClient.ping === 'function') {
+        await Promise.race([
+          redisModule.redisClient.ping(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('REDIS_HEALTH_TIMEOUT')), 1500))
+        ]);
+      }
+    }
+  } catch (err) {
+    cacheStatus = 'degraded';
+  }
+
+  const healthy = dbStatus === 'up';
+  return res.status(healthy ? 200 : 503).json({
+    status: healthy ? 'ok' : 'degraded',
+    time: new Date().toISOString(),
+    app: `Plant Book API ${getAppVersion()}`,
+    checks: {
+      database: dbStatus,
+      cache: cacheStatus,
+      cache_mode: cacheMode
+    }
+  });
 });
 
 const { antiScraper, apiLimiter } = require('./middleware/antiScraper');
@@ -261,25 +378,129 @@ app.use((err, req, res, next) => {
   const isApi = req.originalUrl && req.originalUrl.startsWith('/api');
   const statusCode = err.status || err.statusCode || 500;
   console.error(`[Server Error] [${req.method}] ${req.originalUrl}:`, err.message || err);
+  const isProd = process.env.NODE_ENV === 'production';
+  const safeMessage = (isProd && statusCode >= 500)
+    ? 'Lỗi hệ thống máy chủ. Vui lòng thử lại sau.'
+    : (err.message || 'Lỗi xử lý yêu cầu hệ thống.');
 
   if (isApi) {
     return res.status(statusCode).json({
       success: false,
-      error: err.message || 'Lỗi xử lý yêu cầu hệ thống.',
+      error: safeMessage,
       code: err.code || 'INTERNAL_SERVER_ERROR'
     });
   }
   return res.status(statusCode).send('<h3>500 - Lỗi hệ thống</h3><p>Vui lòng thử lại sau.</p>');
 });
 
+let activeHttpServer = null;
+let activeWss = null;
+let sessionTimer = null;
+let keepAliveTimer = null;
+let isShuttingDown = false;
+
+async function gracefulShutdown(signal) {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+  console.log(`🛑 [Process Guard] Nhận tín hiệu ${signal}, bắt đầu đóng kết nối an toàn...`);
+
+  const forceExitTimer = setTimeout(() => {
+    process.exit(1);
+  }, 10000);
+  if (typeof forceExitTimer.unref === 'function') forceExitTimer.unref();
+
+  if (sessionTimer) {
+    clearInterval(sessionTimer);
+    sessionTimer = null;
+  }
+  if (keepAliveTimer) {
+    clearInterval(keepAliveTimer);
+    keepAliveTimer = null;
+  }
+
+  try {
+    const queueService = require('./services/queueService');
+    if (queueService && typeof queueService.shutdown === 'function') {
+      queueService.shutdown();
+    }
+  } catch (_) {}
+
+  if (activeWss) {
+    try {
+      for (const client of activeWss.clients) {
+        try { client.close(1001, 'SERVER_SHUTDOWN'); } catch (_) {}
+      }
+      await new Promise((resolve) => activeWss.close(() => resolve()));
+    } catch (_) {}
+  }
+
+  if (activeHttpServer) {
+    try {
+      await new Promise((resolve) => activeHttpServer.close(() => resolve()));
+    } catch (_) {}
+  }
+
+  try {
+    const redisModule = require('./config/redis');
+    if (redisModule && redisModule.redisClient && typeof redisModule.redisClient.quit === 'function') {
+      await redisModule.redisClient.quit().catch(() => {});
+    }
+  } catch (_) {}
+
+  try {
+    if (pool && typeof pool.end === 'function') {
+      await pool.end();
+    }
+  } catch (_) {}
+
+  process.exit(0);
+}
+
 async function start() {
   try {
     const server = http.createServer(app);
     const wss = new WebSocket.Server({ server });
+    activeHttpServer = server;
+    activeWss = wss;
     const clients = new Set();
 
-    wss.on('connection', (ws) => {
+    app.set('wsSecurity', {
+      extractWsTokenFromReq,
+      authenticateWsToken,
+      shouldDeliverBroadcast,
+      createScopedBroadcast
+    });
+
+    wss.on('connection', (ws, req) => {
+      const { provided, token } = extractWsTokenFromReq(req);
+      if (provided) {
+        const decodedUser = authenticateWsToken(token);
+        if (!decodedUser) {
+          try { ws.close(4001, 'INVALID_WS_TOKEN'); } catch (_) {}
+          return;
+        }
+        ws.user = decodedUser;
+      } else {
+        ws.user = null;
+      }
+
       clients.add(ws);
+
+      ws.on('message', (rawMsg) => {
+        try {
+          const parsed = JSON.parse(String(rawMsg || ''));
+          if (parsed && parsed.type === 'auth') {
+            const decodedUser = authenticateWsToken(parsed.token);
+            if (!decodedUser) {
+              try { ws.close(4001, 'INVALID_WS_TOKEN'); } catch (_) {}
+              clients.delete(ws);
+              return;
+            }
+            ws.user = decodedUser;
+          }
+        } catch (_) {}
+      });
+
       ws.on('error', (err) => {
         console.warn('⚠️ WebSocket client error:', err.message);
         clients.delete(ws);
@@ -289,24 +510,7 @@ async function start() {
       });
     });
 
-    const broadcast = (event, data) => {
-      try {
-        const payload = JSON.stringify({ event, data });
-        for (const client of clients) {
-          if (client.readyState === WebSocket.OPEN) {
-            try {
-              client.send(payload, (err) => {
-                if (err) clients.delete(client);
-              });
-            } catch (e) {
-              clients.delete(client);
-            }
-          }
-        }
-      } catch (err) {
-        console.error('⚠️ Broadcast error:', err);
-      }
-    };
+    const broadcast = createScopedBroadcast(clients);
 
     global.broadcastWS = broadcast;
     app.set('broadcast', broadcast);
@@ -329,8 +533,7 @@ async function start() {
       }
 
       try {
-        const pool = require('./config/db');
-        setInterval(async () => {
+        sessionTimer = setInterval(async () => {
           try {
             const res = await pool.query(`
               UPDATE users
@@ -356,6 +559,7 @@ async function start() {
             console.error('[Session Error] ⚠️ Lỗi dọn dẹp tài khoản không hoạt động:', err.message);
           }
         }, 30 * 60 * 1000);
+        if (typeof sessionTimer.unref === 'function') sessionTimer.unref();
       } catch (poolErr) {
         console.error('[Session Timer Warning] ⚠️ Lỗi khởi tạo bộ hẹn giờ:', poolErr.message);
       }
@@ -364,13 +568,14 @@ async function start() {
       if (appUrl) {
         const pingUrl = `${appUrl.replace(/\/$/, '')}/api/health`;
         const httpModule = pingUrl.startsWith('https') ? require('https') : require('http');
-        setInterval(() => {
+        keepAliveTimer = setInterval(() => {
           httpModule.get(pingUrl, (res) => {
             console.log(`[Keep-Alive Engine] ⏰ Ping duy trì dịch vụ: ${pingUrl} (Mã phản hồi: ${res.statusCode})`);
           }).on('error', (e) => {
             console.warn(`[Keep-Alive Warning] ⚠️ Không thể ping dịch vụ: ${e.message}`);
           });
         }, 10 * 60 * 1000);
+        if (typeof keepAliveTimer.unref === 'function') keepAliveTimer.unref();
       }
     });
 
@@ -380,6 +585,9 @@ async function start() {
   }
 }
 
+process.on('SIGTERM', () => { gracefulShutdown('SIGTERM'); });
+process.on('SIGINT', () => { gracefulShutdown('SIGINT'); });
+
 process.on('unhandledRejection', (reason, promise) => {
   console.error('⚠️ [Process Guard] Unhandled Rejection at:', promise, 'reason:', reason);
 });
@@ -388,4 +596,16 @@ process.on('uncaughtException', (err) => {
   console.error('⚠️ [Process Guard] Uncaught Exception:', err);
 });
 
-start();
+if (require.main === module) {
+  start();
+}
+
+module.exports = {
+  app,
+  start,
+  gracefulShutdown,
+  extractWsTokenFromReq,
+  authenticateWsToken,
+  shouldDeliverBroadcast,
+  createScopedBroadcast
+};

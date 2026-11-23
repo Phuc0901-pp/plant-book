@@ -5,8 +5,8 @@ const {
   singleflight, invalidateAndBroadcast, logAudit, calculateSmartReminders,
   checkTier, crypto, normalizeGpsPayload, storageService,
   uploadFile, deleteFile, uuidv4, path, upload, queueService,
-  withFarmHashChainLock, sealPlantLogHashChain, isUserFinanceRedacted,
-  sanitizeLogRowForUser, verifyPlantAccess, convertLogAmountToBaseSupplyQty,
+  withFarmHashChainLock, sealPlantLogHashChain, canonicalizeLogDetailsForHash, computeCanonicalPlantLogHash, isUserFinanceRedacted,
+  sanitizeLogRowForUser, verifyPlantAccess, authorizeFarmAccess, authorizePlantAccess, convertLogAmountToBaseSupplyQty,
   generateSlug, generatePublicPlantUrl, formatStandardNfcUid,
   syncPlantNfcToInventory, ensureNfcInventoryColumns, reconcileFarmNfcInventory,
   buildLogFilterQuery, isFullNfcUid, LEGACY_LABOR_LOG_TYPES, normalizeCareLogType,
@@ -116,6 +116,8 @@ router.post('/:id/restore', auth, admin, async (req, res) => {
 router.get('/:id(\\d+)/growth-photos', auth, async (req, res) => {
   try {
     const plantId = req.params.id;
+    const access = await authorizePlantAccess(pool, req.user, plantId, false);
+    if (!access.ok) return res.status(access.status).json({ error: access.error, code: access.code });
     const media = await pool.query(
       `SELECT * FROM plant_media
        WHERE plant_id=$1
@@ -133,6 +135,8 @@ router.get('/:id(\\d+)/growth-photos', auth, async (req, res) => {
 router.get('/:id(\\d+)/disease-media', auth, async (req, res) => {
   try {
     const plantId = req.params.id;
+    const access = await authorizePlantAccess(pool, req.user, plantId, false);
+    if (!access.ok) return res.status(access.status).json({ error: access.error, code: access.code });
     const media = await pool.query(
       `SELECT * FROM plant_media
        WHERE plant_id=$1
@@ -149,6 +153,8 @@ router.get('/:id(\\d+)/disease-media', auth, async (req, res) => {
 router.get('/:id(\\d+)/media', auth, async (req, res) => {
   try {
     const plantId = req.params.id;
+    const access = await authorizePlantAccess(pool, req.user, plantId, false);
+    if (!access.ok) return res.status(access.status).json({ error: access.error, code: access.code });
     const media = await pool.query('SELECT * FROM plant_media WHERE plant_id=$1 ORDER BY uploaded_at DESC', [plantId]);
     res.json({ success: true, count: media.rows.length, media: media.rows });
   } catch (err) {
@@ -159,8 +165,11 @@ router.get('/:id(\\d+)/media', auth, async (req, res) => {
 router.post(['/:id/media', '/:id/growth-photo'], auth, upload.array('files', 20), async (req, res) => {
   try {
     const plantId = req.params.id;
-    const plant = await pool.query('SELECT id FROM plants WHERE id=$1', [plantId]);
-    if (plant.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy cây.' });
+    const access = await authorizePlantAccess(pool, req.user, plantId, true);
+    if (!access.ok) return res.status(access.status).json({ error: access.error, code: access.code });
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'Vui lòng chọn ít nhất một tệp ảnh hoặc video.' });
+    }
 
     const uploaded = [];
     const growthStage = (req.body.growth_stage || req.body.caption || 'Cập nhật sinh trưởng').trim();
@@ -255,8 +264,329 @@ router.post('/:plantId/media/:mediaId/reject-delete', auth, admin, async (req, r
   }
 });
 
+function resolveRealtimeOperatorName(reqUser, bodyOperatorName) {
+  const accountName = String((reqUser && (reqUser.full_name || reqUser.name || reqUser.email)) || '').trim();
+  const provided = String(bodyOperatorName || '').trim();
+  const isSubAccount = Boolean(reqUser && (reqUser.parent_user_id || ['manager', 'care_worker'].includes(reqUser.sub_role)));
+  if (isSubAccount && accountName) {
+    return accountName;
+  }
+  return provided || accountName || 'Kỹ thuật viên';
+}
+
+function isResolvedSupplyExpired(sup) {
+  if (!sup || !sup.expiry_date) return false;
+  const expStr = sup.expiry_date instanceof Date
+    ? sup.expiry_date.toISOString().slice(0, 10)
+    : String(sup.expiry_date).slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(expStr)) return false;
+  return expStr < new Date().toISOString().slice(0, 10);
+}
+
+router.post('/batch-care-logs', auth, async (req, res) => {
+  if (req.user.role !== 'admin' && req.user.sub_role === 'auditor_readonly') {
+    return res.status(403).json({
+      error: 'Tài khoản Chỉ đọc (Auditor) không được phép ghi nhật ký canh tác.',
+      code: 'READONLY_ROLE_FORBIDDEN'
+    });
+  }
+
+  const rawIds = Array.isArray(req.body?.plant_ids) ? req.body.plant_ids : [];
+  const plantIds = [...new Set(rawIds.map(id => parseInt(id, 10)).filter(n => !isNaN(n) && n > 0))];
+  if (plantIds.length === 0) {
+    return res.status(400).json({ error: 'Danh sách cây trồng không hợp lệ.', code: 'INVALID_PLANT_IDS' });
+  }
+
+  const {
+    log_date, log_type, note, media_urls, details,
+    operator_name, equipment_used, phi_days: customPhiDays
+  } = req.body || {};
+
+  let client = null;
+  let db = pool;
+  let usingTxn = false;
+
+  try {
+    if (typeof pool.connect === 'function') {
+      client = await pool.connect();
+      if (client && typeof client.query === 'function') {
+        db = client;
+        await client.query('BEGIN');
+        usingTxn = true;
+      }
+    }
+
+    const plantsRes = await db.query(
+      `SELECT p.*, f.user_id as farm_owner_id, f.puc_code as farm_puc_code
+       FROM plants p
+       LEFT JOIN farms f ON f.id = p.farm_id
+       WHERE p.id = ANY($1::int[]) AND (p.deleted_at IS NULL)`,
+      [plantIds]
+    );
+
+    if (plantsRes.rows.length !== plantIds.length) {
+      if (usingTxn) await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Một hoặc nhiều cây trồng không tồn tại.', code: 'PLANT_NOT_FOUND' });
+    }
+
+    const plantById = new Map();
+    for (const p of plantsRes.rows) {
+      const isOwner = Number(p.farm_owner_id) === Number(req.user.id);
+      const isSameFarm = req.user.farm_id && p.farm_id && Number(req.user.farm_id) === Number(p.farm_id);
+      const isParentFarm = req.user.parent_user_id && Number(p.farm_owner_id) === Number(req.user.parent_user_id);
+      const isDirectlyAssigned = p.assigned_to_user_id && Number(p.assigned_to_user_id) === Number(req.user.id);
+      if (req.user.role !== 'admin' && !isOwner && !isSameFarm && !isParentFarm && !isDirectlyAssigned) {
+        if (usingTxn) await client.query('ROLLBACK');
+        return res.status(403).json({
+          error: 'Bạn không có quyền ghi nhật ký cho một số cây thuộc trang trại khác.',
+          code: 'FARM_ACCESS_DENIED'
+        });
+      }
+      plantById.set(Number(p.id), p);
+    }
+
+    const orderedPlants = plantIds.map(id => plantById.get(id)).filter(Boolean);
+    const primaryPlant = orderedPlants[0];
+    const effectiveDate = log_date || new Date().toISOString().slice(0, 10);
+    const baseDetails = typeof details === 'string' ? JSON.parse(details || '{}') : { ...(details || {}) };
+    const effectiveLogType = normalizeCareLogType(log_type || 'Nhật ký chăm sóc', baseDetails);
+    const resolvedOperatorName = resolveRealtimeOperatorName(req.user, operator_name);
+    const nowIso = new Date().toISOString();
+
+    let resolvedSupply = null;
+    let resolvedUsageQty = 0;
+    let resolvedUnitPrice = 0;
+    let perTreeCost = parseFloat(baseDetails.total_cost) || 0;
+
+    if (effectiveLogType !== 'Thu hoạch' && effectiveLogType !== 'Kiểm toán quả') {
+      try {
+        let resolvedSupplyId = baseDetails.supply_id || null;
+        const rawAmount = parseFloat(baseDetails.quantity || baseDetails.volume || baseDetails.amount || 0);
+        const rawUnit = (baseDetails.unit || '').toLowerCase().trim();
+        const supplyName = baseDetails.supply_name || baseDetails.material_name || baseDetails.fertilizer_name || baseDetails.pesticide_name || null;
+        const farmOwnerId = primaryPlant.farm_owner_id || req.user.parent_user_id || req.user.id;
+
+        if (!resolvedSupplyId && supplyName) {
+          const foundSup = await db.query(
+            `SELECT id, name, unit, unit_price, category, stock_quantity, farm_id, user_id, expiry_date
+             FROM supplies
+             WHERE (user_id = $1 OR user_id = $2 OR ($3::int IS NOT NULL AND farm_id = $3))
+               AND (name ILIKE $4 OR $4 ILIKE '%' || name || '%')
+             LIMIT 1`,
+            [req.user.id, farmOwnerId, primaryPlant.farm_id || null, supplyName]
+          );
+          if (foundSup.rows.length > 0) {
+            resolvedSupply = foundSup.rows[0];
+            resolvedSupplyId = resolvedSupply.id;
+          }
+        } else if (resolvedSupplyId) {
+          const foundSup = await db.query(
+            `SELECT id, name, unit, unit_price, category, stock_quantity, farm_id, user_id, expiry_date
+             FROM supplies
+             WHERE id = $1
+               AND ($2 = 'admin' OR user_id = $3 OR user_id = $4 OR ($5::int IS NOT NULL AND farm_id = $5))
+             LIMIT 1`,
+            [resolvedSupplyId, req.user.role, req.user.id, farmOwnerId, primaryPlant.farm_id || null]
+          );
+          if (foundSup.rows.length > 0) {
+            resolvedSupply = foundSup.rows[0];
+          }
+        }
+
+        if (resolvedSupply && (rawAmount > 0 || (effectiveLogType === 'Nhân công' && perTreeCost > 0))) {
+          if (effectiveLogType === 'Nhân công') {
+            resolvedUsageQty = parseFloat(baseDetails.quantity || baseDetails.worker_count || rawAmount || 1) || 1;
+            resolvedUnitPrice = parseFloat(baseDetails.cost_per_worker || baseDetails.unit_price || resolvedSupply.unit_price) || 0;
+            perTreeCost = perTreeCost > 0 ? perTreeCost : (resolvedUsageQty * resolvedUnitPrice);
+          } else {
+            const supUnit = (resolvedSupply.unit || 'kg').toLowerCase().trim();
+            resolvedUsageQty = convertLogAmountToBaseSupplyQty(rawAmount, rawUnit, supUnit, effectiveLogType);
+            resolvedUnitPrice = parseFloat(resolvedSupply.unit_price) || 0;
+            perTreeCost = perTreeCost > 0 ? perTreeCost : (resolvedUsageQty * resolvedUnitPrice);
+          }
+          baseDetails.supply_id = resolvedSupply.id;
+          baseDetails.supply_name = baseDetails.supply_name || resolvedSupply.name;
+          baseDetails.material_name = baseDetails.material_name || resolvedSupply.name;
+          baseDetails.unit_price = resolvedUnitPrice;
+          baseDetails.total_cost = perTreeCost;
+          baseDetails.usage_quantity = resolvedUsageQty;
+        }
+      } catch (supErr) {
+        console.warn('Batch supply resolution warning:', supErr.message);
+      }
+    }
+
+    if (resolvedSupply && isResolvedSupplyExpired(resolvedSupply)) {
+      if (usingTxn && client) await client.query('ROLLBACK').catch(() => {});
+      return res.status(400).json({
+        error: `Vật tư "${resolvedSupply.name}" đã hết hạn sử dụng (${resolvedSupply.expiry_date}). Không thể xuất dùng theo chuẩn VietGAP / GlobalG.A.P.`,
+        code: 'SUPPLY_EXPIRED',
+        supply_id: resolvedSupply.id,
+        expiry_date: resolvedSupply.expiry_date
+      });
+    }
+
+    const insertedLogs = [];
+    const totalCount = orderedPlants.length;
+
+    for (let i = 0; i < totalCount; i++) {
+      const p = orderedPlants[i];
+      const farmPuc = p.farm_puc_code || 'VN-TB';
+      const treeCode = p.tree_code || `#${p.id}`;
+      const plantDetails = {
+        ...baseDetails,
+        performed_at: baseDetails.performed_at || nowIso,
+        performed_by_user_id: req.user.id,
+        performed_by_name: resolvedOperatorName,
+        performed_by_sub_role: req.user.sub_role || 'farm_owner'
+      };
+
+      if (effectiveLogType === 'Nhân công' && totalCount > 1 && Number(plantDetails.batch_total_cost) > 0) {
+        const baseTreeCost = Math.floor(Number(plantDetails.batch_total_cost) / totalCount);
+        plantDetails.total_cost = (i === totalCount - 1)
+          ? (Number(plantDetails.batch_total_cost) - baseTreeCost * (totalCount - 1))
+          : baseTreeCost;
+      }
+
+      await enrichFruitAuditAndHarvestDetails(db, {
+        plantId: p.id,
+        logDate: effectiveDate,
+        logType: effectiveLogType,
+        details: plantDetails
+      });
+
+      let generatedBatchCode = null;
+      let isPhiViolation = false;
+
+      if (effectiveLogType === 'Phun thuốc') {
+        const phiDays = parseInt(customPhiDays || plantDetails.phi_days, 10) || 0;
+        const pesticideName = plantDetails.name || plantDetails.pesticide_name || note || 'Thuốc BVTV';
+        if (phiDays > 0) {
+          plantDetails.phi_days = phiDays;
+          const sprayDateObj = new Date(effectiveDate);
+          sprayDateObj.setDate(sprayDateObj.getDate() + phiDays);
+          const phiUntilDateStr = sprayDateObj.toISOString().slice(0, 10);
+          plantDetails.phi_until_date = phiUntilDateStr;
+          await db.query(
+            `UPDATE plants
+             SET phi_until_date = $1, phi_status = 'quarantine', last_pesticide_date = $2, last_pesticide_name = $3, updated_at = NOW()
+             WHERE id = $4`,
+            [phiUntilDateStr, effectiveDate, pesticideName, p.id]
+          );
+        }
+      }
+
+      if (effectiveLogType === 'Thu hoạch') {
+        const dateClean = effectiveDate.replace(/-/g, '');
+        const codeClean = String(treeCode || 'TB').replace(/[^a-zA-Z0-9]/g, '');
+        generatedBatchCode = `${farmPuc}-${dateClean}-${codeClean}`;
+        plantDetails.batch_code = generatedBatchCode;
+        plantDetails.puc_code = farmPuc;
+
+        if (p.phi_until_date) {
+          const harvestTime = new Date(effectiveDate).getTime();
+          const phiUntilTime = new Date(p.phi_until_date).getTime();
+          if (harvestTime <= phiUntilTime) {
+            const adminOverride = req.user.role === 'admin' && (
+              req.body.force_phi_override === true ||
+              plantDetails.force_phi_override === true
+            );
+            if (!adminOverride) {
+              if (usingTxn && client) await client.query('ROLLBACK').catch(() => {});
+              return res.status(409).json({
+                error: `CHẶN THU HOẠCH (VIETGAP / GLOBALG.A.P. PHI GATE): Cây ${treeCode} đang trong thời gian cách ly thuốc BVTV đến hết ngày ${p.phi_until_date}.`,
+                code: 'PHI_VIOLATION_BLOCKED',
+                plant_id: p.id,
+                tree_code: treeCode,
+                phi_until_date: p.phi_until_date
+              });
+            }
+            isPhiViolation = true;
+            plantDetails.is_phi_violation = true;
+            plantDetails.phi_override_by_admin = req.user.id;
+            plantDetails.phi_violation_warning = `CẢNH BÁO VI PHẠM VIETGAP: Thu hoạch sớm trong thời gian cách ly thuốc BVTV (Hết hạn cách ly: ${p.phi_until_date})`;
+          }
+        }
+      }
+
+      const insRes = await db.query(
+        `INSERT INTO plant_logs (
+          plant_id, log_date, log_type, note, media_urls, details, created_by,
+          batch_code, puc_code, operator_name, equipment_used, is_phi_violation
+         )
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
+        [
+          p.id, effectiveDate, effectiveLogType, note || '',
+          JSON.stringify(media_urls || []), JSON.stringify(plantDetails), req.user.id,
+          generatedBatchCode, farmPuc, resolvedOperatorName,
+          equipment_used || null, isPhiViolation
+        ]
+      );
+      const inserted = insRes.rows[0];
+      await sealPlantLogHashChain(db, inserted);
+      insertedLogs.push(inserted);
+
+      if (resolvedSupply && resolvedUsageQty > 0) {
+        const usageCost = parseFloat(plantDetails.total_cost) || perTreeCost || 0;
+        await db.query(
+          `INSERT INTO supply_usages (user_id, supply_id, farm_id, plant_id, usage_date, quantity, unit_price, total_cost, note)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+          [req.user.id, resolvedSupply.id, p.farm_id || null, p.id, effectiveDate, resolvedUsageQty, resolvedUnitPrice, usageCost, `Nhật ký [${effectiveLogType}] cho cây ${treeCode} bởi ${resolvedOperatorName}`]
+        );
+      }
+    }
+
+    if (resolvedSupply && resolvedUsageQty > 0 && resolvedSupply.category !== 'Tiền nước' && resolvedSupply.category !== 'Nhân công' && resolvedSupply.stock_quantity > 0) {
+      await db.query(
+        'UPDATE supplies SET stock_quantity = GREATEST(0, stock_quantity - $1), updated_at = NOW() WHERE id = $2',
+        [resolvedUsageQty * totalCount, resolvedSupply.id]
+      );
+    }
+
+    if (effectiveLogType === 'Bệnh cây') {
+      await db.query(`UPDATE plants SET health_status = 'Bệnh', updated_at = NOW() WHERE id = ANY($1::int[])`, [plantIds]);
+    } else {
+      await db.query(`UPDATE plants SET updated_at = NOW() WHERE id = ANY($1::int[])`, [plantIds]);
+    }
+
+    if (usingTxn) await client.query('COMMIT');
+
+    await invalidateAndBroadcast('plants_updated', {
+      plant_ids: plantIds,
+      farm_id: primaryPlant.farm_id,
+      operator_name: resolvedOperatorName,
+      performed_at: nowIso,
+      action: 'batch_care_log'
+    }, ['plants_', 'supplies_']);
+
+    res.status(201).json({
+      success: true,
+      count: insertedLogs.length,
+      operator_name: resolvedOperatorName,
+      performed_at: nowIso,
+      logs: insertedLogs
+    });
+  } catch (err) {
+    if (usingTxn && client) {
+      await client.query('ROLLBACK').catch(() => {});
+    }
+    console.error('Error in POST /batch-care-logs:', err);
+    res.status(500).json({ error: 'Lỗi server khi ghi nhật ký hàng loạt.' });
+  } finally {
+    if (client && typeof client.release === 'function') {
+      client.release();
+    }
+  }
+});
+
 router.post(['/:id/logs', '/:id/care-log'], auth, async (req, res) => {
   try {
+    if (req.user.role !== 'admin' && req.user.sub_role === 'auditor_readonly') {
+      return res.status(403).json({
+        error: 'Tài khoản Chỉ đọc (Auditor) không được phép ghi nhật ký canh tác.',
+        code: 'READONLY_ROLE_FORBIDDEN'
+      });
+    }
     const {
       log_date, log_type, note, media_urls, details,
       operator_name, equipment_used, phi_days: customPhiDays
@@ -280,8 +610,10 @@ router.post(['/:id/logs', '/:id/care-log'], auth, async (req, res) => {
       );
       if (plant.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy cây.' });
 
-      const isAssignedFarmer = req.user.farm_id && plant.rows[0].farm_id && req.user.farm_id === plant.rows[0].farm_id;
-      if (req.user.role !== 'admin' && plant.rows[0].farm_owner_id !== req.user.id && !isAssignedFarmer) {
+      const isAssignedFarmer = req.user.farm_id && plant.rows[0].farm_id && Number(req.user.farm_id) === Number(plant.rows[0].farm_id);
+      const isParentFarm = req.user.parent_user_id && Number(plant.rows[0].farm_owner_id) === Number(req.user.parent_user_id);
+      const isDirectlyAssigned = plant.rows[0].assigned_to_user_id && Number(plant.rows[0].assigned_to_user_id) === Number(req.user.id);
+      if (req.user.role !== 'admin' && Number(plant.rows[0].farm_owner_id) !== Number(req.user.id) && !isAssignedFarmer && !isParentFarm && !isDirectlyAssigned) {
         return res.status(403).json({ error: 'Bạn không có quyền ghi nhật ký cho cây này.' });
       }
       existingPlant = plant.rows[0];
@@ -348,8 +680,21 @@ router.post(['/:id/logs', '/:id/care-log'], auth, async (req, res) => {
         const harvestTime = new Date(effectiveDate).getTime();
         const phiUntilTime = new Date(existingPlant.phi_until_date).getTime();
         if (harvestTime <= phiUntilTime) {
+          const adminOverride = req.user.role === 'admin' && (
+            req.body.force_phi_override === true ||
+            parsedDetails.force_phi_override === true
+          );
+          if (!adminOverride) {
+            return res.status(409).json({
+              error: `CHẶN THU HOẠCH (VIETGAP / GLOBALG.A.P. PHI GATE): Cây đang trong thời gian cách ly thuốc BVTV đến hết ngày ${existingPlant.phi_until_date}.`,
+              code: 'PHI_VIOLATION_BLOCKED',
+              plant_id: targetPlantId,
+              phi_until_date: existingPlant.phi_until_date
+            });
+          }
           isPhiViolation = true;
           parsedDetails.is_phi_violation = true;
+          parsedDetails.phi_override_by_admin = req.user.id;
           parsedDetails.phi_violation_warning = `CẢNH BÁO VI PHẠM VIETGAP: Thu hoạch sớm trong thời gian cách ly thuốc BVTV (Hết hạn cách ly: ${existingPlant.phi_until_date})`;
         }
       }
@@ -367,10 +712,11 @@ router.post(['/:id/logs', '/:id/care-log'], auth, async (req, res) => {
         const rawUnit = (parsedDetails.unit || '').toLowerCase().trim();
         const supplyName = parsedDetails.supply_name || parsedDetails.material_name || parsedDetails.fertilizer_name || parsedDetails.pesticide_name || null;
 
+        const supplyFarmOwnerId = (existingPlant && existingPlant.farm_owner_id) || req.user.parent_user_id || req.user.id;
         if (!resolvedSupplyId && supplyName) {
           const foundSup = await pool.query(
-            `SELECT id, name, unit, unit_price, category, stock_quantity FROM supplies WHERE (user_id = $1 OR farm_id = $2) AND (name ILIKE $3 OR $3 ILIKE '%' || name || '%') LIMIT 1`,
-            [req.user.id, farmId || null, supplyName]
+            `SELECT id, name, unit, unit_price, category, stock_quantity, expiry_date FROM supplies WHERE (user_id = $1 OR user_id = $2 OR ($3::int IS NOT NULL AND farm_id = $3)) AND (name ILIKE $4 OR $4 ILIKE '%' || name || '%') LIMIT 1`,
+            [req.user.id, supplyFarmOwnerId, farmId || null, supplyName]
           );
           if (foundSup.rows.length > 0) {
             resolvedSupplyId = foundSup.rows[0].id;
@@ -378,8 +724,8 @@ router.post(['/:id/logs', '/:id/care-log'], auth, async (req, res) => {
           }
         } else if (resolvedSupplyId) {
           const foundSup = await pool.query(
-            `SELECT id, name, unit, unit_price, category, stock_quantity FROM supplies WHERE id = $1`,
-            [resolvedSupplyId]
+            `SELECT id, name, unit, unit_price, category, stock_quantity, expiry_date FROM supplies WHERE id = $1 AND ($2 = 'admin' OR user_id = $3 OR user_id = $4 OR ($5::int IS NOT NULL AND farm_id = $5)) LIMIT 1`,
+            [resolvedSupplyId, req.user.role, req.user.id, supplyFarmOwnerId, farmId || null]
           );
           if (foundSup.rows.length > 0) {
             resolvedSupply = foundSup.rows[0];
@@ -388,7 +734,7 @@ router.post(['/:id/logs', '/:id/care-log'], auth, async (req, res) => {
 
         if (effectiveLogType === 'Nhân công' && !resolvedSupply) {
           const laborSup = await pool.query(
-            `SELECT id, name, unit, unit_price, category, stock_quantity FROM supplies WHERE (user_id = $1 OR ($2::int IS NOT NULL AND farm_id = $2)) AND category = 'Nhân công' ORDER BY id ASC LIMIT 1`,
+            `SELECT id, name, unit, unit_price, category, stock_quantity, expiry_date FROM supplies WHERE (user_id = $1 OR ($2::int IS NOT NULL AND farm_id = $2)) AND category = 'Nhân công' ORDER BY id ASC LIMIT 1`,
             [req.user.id, farmId || null]
           );
           if (laborSup.rows.length > 0) {
@@ -399,7 +745,7 @@ router.post(['/:id/logs', '/:id/care-log'], auth, async (req, res) => {
             const createdLaborSup = await pool.query(
               `INSERT INTO supplies (user_id, farm_id, category, name, unit, package_size, package_qty, package_unit, package_price, unit_price, unit_price_small, stock_quantity, note)
                VALUES ($1, $2, 'Nhân công', 'Nhân công canh tác', 'ngày công', '1 ngày công', 1, 'ngày công', $3, $3, $3, 999999, 'Tự động tạo từ Nhật ký thuê nhân công')
-               RETURNING id, name, unit, unit_price, category, stock_quantity`,
+               RETURNING id, name, unit, unit_price, category, stock_quantity, expiry_date`,
               [req.user.id, farmId || null, defaultWorkerPrice]
             );
             if (createdLaborSup.rows.length > 0) {
@@ -438,7 +784,23 @@ router.post(['/:id/logs', '/:id/care-log'], auth, async (req, res) => {
       } catch (supErr) {
         console.warn('Cảnh báo tính toán chi phí vật tư trước khi lưu:', supErr.message);
       }
+
+      if (resolvedSupply && isResolvedSupplyExpired(resolvedSupply)) {
+        return res.status(400).json({
+          error: `Vật tư "${resolvedSupply.name}" đã hết hạn sử dụng (${resolvedSupply.expiry_date}). Không thể xuất dùng theo chuẩn VietGAP / GlobalG.A.P.`,
+          code: 'SUPPLY_EXPIRED',
+          supply_id: resolvedSupply.id,
+          expiry_date: resolvedSupply.expiry_date
+        });
+      }
     }
+
+    const resolvedOperatorName = resolveRealtimeOperatorName(req.user, operator_name);
+    const nowIso = new Date().toISOString();
+    parsedDetails.performed_at = parsedDetails.performed_at || nowIso;
+    parsedDetails.performed_by_user_id = req.user.id;
+    parsedDetails.performed_by_name = resolvedOperatorName;
+    parsedDetails.performed_by_sub_role = req.user.sub_role || 'farm_owner';
 
     const result = await pool.query(
       `INSERT INTO plant_logs (
@@ -449,7 +811,7 @@ router.post(['/:id/logs', '/:id/care-log'], auth, async (req, res) => {
       [
         targetPlantId, effectiveDate, effectiveLogType, note,
         JSON.stringify(media_urls || []), JSON.stringify(parsedDetails), req.user.id,
-        generatedBatchCode, farmPuc, operator_name || req.user.full_name || req.user.name,
+        generatedBatchCode, farmPuc, resolvedOperatorName,
         equipment_used || null, isPhiViolation
       ]
     );
@@ -507,11 +869,17 @@ router.post(['/:id/logs', '/:id/care-log'], auth, async (req, res) => {
 
 router.put('/:plantId/logs/:logId', auth, async (req, res) => {
   try {
+    if (req.user.role !== 'admin' && req.user.sub_role === 'auditor_readonly') {
+      return res.status(403).json({
+        error: 'Tài khoản Chỉ đọc (Auditor) không được phép chỉnh sửa nhật ký canh tác.',
+        code: 'READONLY_ROLE_FORBIDDEN'
+      });
+    }
     const { plantId, logId } = req.params;
-    const { log_date, log_type, note, details, media_urls } = req.body;
+    const { log_date, log_type, note, details, media_urls, operator_name } = req.body;
 
     const plant = await pool.query(
-      `SELECT p.id, f.user_id
+      `SELECT p.id, p.farm_id, p.assigned_to_user_id, f.user_id
        FROM plants p
        LEFT JOIN farms f ON f.id = p.farm_id
        WHERE p.id = $1`, [plantId]
@@ -520,7 +888,12 @@ router.put('/:plantId/logs/:logId', auth, async (req, res) => {
       return res.status(404).json({ error: 'Cây trồng không tồn tại.' });
     }
 
-    if (req.user.role !== 'admin' && plant.rows[0].user_id !== req.user.id) {
+    const pRow = plant.rows[0];
+    const isOwner = Number(pRow.user_id) === Number(req.user.id);
+    const isSubMember = (req.user.farm_id && pRow.farm_id && Number(req.user.farm_id) === Number(pRow.farm_id))
+      || (req.user.parent_user_id && Number(pRow.user_id) === Number(req.user.parent_user_id))
+      || (pRow.assigned_to_user_id && Number(pRow.assigned_to_user_id) === Number(req.user.id));
+    if (req.user.role !== 'admin' && !isOwner && !isSubMember) {
       return res.status(403).json({ error: 'Bạn không có quyền chỉnh sửa nhật ký của cây trồng này.' });
     }
 
@@ -530,11 +903,22 @@ router.put('/:plantId/logs/:logId', auth, async (req, res) => {
     }
 
     const currentLog = logRes.rows[0];
+    if ((currentLog.is_locked === true || currentLog.record_hash) && req.user.role !== 'admin') {
+      const createdAtMs = new Date(currentLog.created_at || currentLog.log_date).getTime();
+      if (!isNaN(createdAtMs) && (Date.now() - createdAtMs) > (15 * 60 * 1000)) {
+        return res.status(409).json({
+          error: 'Nhật ký đã được niêm phong chuỗi băm SHA-256 quá 15 phút (chuẩn ISO 22005 / GlobalG.A.P.), không thể chỉnh sửa.',
+          code: 'LOG_SEALED_IMMUTABLE'
+        });
+      }
+    }
+    const resolvedOperatorName = resolveRealtimeOperatorName(req.user, operator_name || currentLog.operator_name);
+    const nowIso = new Date().toISOString();
 
     const historyItem = {
-      edited_at: new Date().toISOString(),
+      edited_at: nowIso,
       edited_by: req.user.id,
-      edited_by_name: req.user.full_name || req.user.email,
+      edited_by_name: resolvedOperatorName,
       previous_version: {
         log_date: currentLog.log_date,
         log_type: currentLog.log_type,
@@ -547,6 +931,10 @@ router.put('/:plantId/logs/:logId', auth, async (req, res) => {
     const editHistory = [...(currentLog.edit_history || []), historyItem];
 
     const parsedPutDetails = details ? { ...(typeof details === 'string' ? JSON.parse(details || '{}') : details) } : { ...(currentLog.details || {}) };
+    parsedPutDetails.performed_at = nowIso;
+    parsedPutDetails.last_updated_at = nowIso;
+    parsedPutDetails.last_updated_by_id = req.user.id;
+    parsedPutDetails.last_updated_by_name = resolvedOperatorName;
     const targetLogType = normalizeCareLogType(log_type || currentLog.log_type, parsedPutDetails);
     await enrichFruitAuditAndHarvestDetails(pool, {
       plantId: parseInt(plantId, 10),
@@ -558,8 +946,8 @@ router.put('/:plantId/logs/:logId', auth, async (req, res) => {
 
     const updated = await pool.query(
       `UPDATE plant_logs
-       SET log_date = $1, log_type = $2, note = $3, details = $4, media_urls = $5, edit_history = $6, updated_at = NOW()
-       WHERE id = $7 AND plant_id = $8 RETURNING *`,
+       SET log_date = $1, log_type = $2, note = $3, details = $4, media_urls = $5, edit_history = $6, operator_name = $7, updated_at = NOW()
+       WHERE id = $8 AND plant_id = $9 RETURNING *`,
       [
         log_date || currentLog.log_date,
         targetLogType,
@@ -567,10 +955,15 @@ router.put('/:plantId/logs/:logId', auth, async (req, res) => {
         JSON.stringify(parsedPutDetails),
         JSON.stringify(media_urls || currentLog.media_urls || []),
         JSON.stringify(editHistory),
+        resolvedOperatorName,
         logId,
         plantId
       ]
     );
+
+    if (updated.rows[0]) {
+      await sealPlantLogHashChain(pool, updated.rows[0]);
+    }
 
     await pool.query(
       `INSERT INTO user_activities (user_id, activity_type, description)
@@ -622,6 +1015,9 @@ router.post('/logs/batch-delete/preview', auth, async (req, res) => {
 
 router.post('/logs/batch-delete', auth, async (req, res) => {
   try {
+    if (req.user.role !== 'admin' && ['auditor_readonly', 'care_worker'].includes(req.user.sub_role)) {
+      return res.status(403).json({ error: 'Vai trò của bạn không có quyền xóa hàng loạt nhật ký canh tác.' });
+    }
     const { baseQuery, params } = buildLogFilterQuery(req, req.body || {});
     const isPermanent = req.body.permanent === true && req.user.role === 'admin';
 
@@ -678,6 +1074,9 @@ router.post('/logs/batch-delete', auth, async (req, res) => {
 
 router.post('/logs/:logId/restore', auth, async (req, res) => {
   try {
+    if (req.user.role !== 'admin' && ['auditor_readonly', 'care_worker'].includes(req.user.sub_role)) {
+      return res.status(403).json({ error: 'Vai trò của bạn không có quyền khôi phục nhật ký đã xóa.' });
+    }
     const logId = parseInt(req.params.logId);
     const logRes = await pool.query(
       `SELECT pl.*, p.farm_id, f.user_id as farm_owner_id
@@ -691,9 +1090,10 @@ router.post('/logs/:logId/restore', auth, async (req, res) => {
     const row = logRes.rows[0];
 
     const isAuthorized = req.user.role === 'admin'
-      || row.farm_owner_id === req.user.id
-      || row.created_by === req.user.id
-      || (req.user.farm_id && req.user.farm_id === row.farm_id);
+      || Number(row.farm_owner_id) === Number(req.user.id)
+      || (req.user.parent_user_id && Number(row.farm_owner_id) === Number(req.user.parent_user_id))
+      || Number(row.created_by) === Number(req.user.id)
+      || (req.user.farm_id && Number(req.user.farm_id) === Number(row.farm_id));
     if (!isAuthorized) return res.status(403).json({ error: 'Bạn không có quyền khôi phục nhật ký này.' });
 
     await pool.query('UPDATE plant_logs SET is_deleted = false, deleted_at = NULL WHERE id = $1', [logId]);
@@ -723,6 +1123,9 @@ router.post('/logs/:logId/restore', auth, async (req, res) => {
 
 router.delete(['/:plantId/logs/:logId', '/logs/:logId'], auth, async (req, res) => {
   try {
+    if (req.user.role !== 'admin' && req.user.sub_role === 'auditor_readonly') {
+      return res.status(403).json({ error: 'Tài khoản Chỉ đọc (Auditor) không được phép xóa nhật ký canh tác.' });
+    }
     const logId = parseInt(req.params.logId);
     const plantId = req.params.plantId ? parseInt(req.params.plantId) : null;
 
@@ -746,11 +1149,21 @@ router.delete(['/:plantId/logs/:logId', '/logs/:logId'], auth, async (req, res) 
     const logRow = currentLog.rows[0];
 
     const isAuthorized = req.user.role === 'admin'
-      || logRow.farm_owner_id === req.user.id
-      || logRow.created_by === req.user.id
-      || (req.user.farm_id && req.user.farm_id === logRow.farm_id);
+      || Number(logRow.farm_owner_id) === Number(req.user.id)
+      || (req.user.parent_user_id && Number(logRow.farm_owner_id) === Number(req.user.parent_user_id))
+      || Number(logRow.created_by) === Number(req.user.id)
+      || (req.user.farm_id && Number(req.user.farm_id) === Number(logRow.farm_id));
     if (!isAuthorized) {
       return res.status(403).json({ error: 'Bạn không có quyền xóa nhật ký này.' });
+    }
+    if (req.user.role !== 'admin' && req.user.sub_role === 'care_worker' && Number(logRow.created_by) !== Number(req.user.id)) {
+      return res.status(403).json({ error: 'Nhân công chăm sóc chỉ được phép xóa nhật ký do chính mình tạo.' });
+    }
+    if ((logRow.is_locked === true || logRow.record_hash) && req.user.role !== 'admin') {
+      return res.status(409).json({
+        error: 'Nhật ký đã được niêm phong chuỗi băm SHA-256 (chuẩn ISO 22005), chỉ Quản trị viên mới có quyền thu hồi.',
+        code: 'LOG_SEALED_IMMUTABLE'
+      });
     }
 
     const isPermanent = req.query.permanent === 'true' && req.user.role === 'admin';
@@ -809,7 +1222,14 @@ router.post('/offline-batch-sync', auth, async (req, res) => {
         const rawNote = item.note || item.description || '';
         const noteText = rawNote.trim() ? `${rawNote} (Đồng bộ ngoại tuyến)` : '(Đồng bộ ngoại tuyến)';
         const mediaJson = JSON.stringify(Array.isArray(item.media_urls) ? item.media_urls : []);
-        const detailsJson = JSON.stringify(item.details || {});
+        const resolvedOp = resolveRealtimeOperatorName(req.user, item.operator_name);
+        const syncDetails = {
+          ...(item.details && typeof item.details === 'object' ? item.details : {}),
+          performed_at: (item.details && item.details.performed_at) || new Date().toISOString(),
+          performed_by_user_id: req.user.id,
+          performed_by_name: resolvedOp
+        };
+        const detailsJson = JSON.stringify(syncDetails);
 
         const insRes = await pool.query(
           `INSERT INTO plant_logs (plant_id, created_by, log_date, log_type, note, media_urls, details, operator_name, equipment_used)
@@ -823,7 +1243,7 @@ router.post('/offline-batch-sync', auth, async (req, res) => {
             noteText,
             mediaJson,
             detailsJson,
-            item.operator_name || req.user.full_name || 'Nông hộ',
+            resolvedOp,
             item.equipment_used || null
           ]
         );
@@ -902,7 +1322,5 @@ router.post('/offline-batch-sync', auth, async (req, res) => {
     res.status(500).json({ error: 'Lỗi đồng bộ hàng loạt: ' + err.message });
   }
 });
-
-module.exports = router;
 
 module.exports = router;

@@ -52,7 +52,8 @@ router.post('/chat', auth, async (req, res) => {
     }
 
     const isAdmin = currentUser.role === 'admin';
-    const cacheKey = `ai_context_${currentUser.id}_${isAdmin ? 'adm' : 'usr'}`;
+    const hideFinance = !isAdmin && (currentUser.allow_view_finance === false || ['care_worker', 'auditor_readonly'].includes(currentUser.sub_role));
+    const cacheKey = `ai_context_${currentUser.id}_${isAdmin ? 'adm' : 'usr'}_${hideFinance ? 'red' : 'fin'}`;
 
     let cachedContextData = memoryCache.get(cacheKey);
     let systemContext = '';
@@ -267,9 +268,13 @@ ${farmLines}
           }));
 
           userLogs = logsRes.rows || [];
-          userSuppliesCost = Number(costRes.rows?.[0]?.total || 0);
-          userRecentSupplies = usagesRes.rows || [];
-          userSuppliesInventory = suppliesInvRes.rows || [];
+          userSuppliesCost = hideFinance ? 0 : Number(costRes.rows?.[0]?.total || 0);
+          userRecentSupplies = hideFinance
+            ? (usagesRes.rows || []).map(s => ({ ...s, total_cost: 0, finance_redacted: true }))
+            : (usagesRes.rows || []);
+          userSuppliesInventory = hideFinance
+            ? (suppliesInvRes.rows || []).map(s => ({ ...s, package_price: 0, unit_price: 0, finance_redacted: true }))
+            : (suppliesInvRes.rows || []);
           userIotSensors = iotRes.rows || [];
 
           const farmLines = userFarms.map(f =>
@@ -281,8 +286,14 @@ ${farmLines}
           ).join('\n');
 
           const supplyLines = userRecentSupplies.map(s =>
-            `- ${s.name} (${s.category}): ${s.quantity} ${s.unit} - Thành tiền: ${Number(s.total_cost).toLocaleString('vi-VN')} VNĐ (${s.farm_name})`
+            hideFinance
+              ? `- ${s.name} (${s.category}): ${s.quantity} ${s.unit} (${s.farm_name})`
+              : `- ${s.name} (${s.category}): ${s.quantity} ${s.unit} - Thành tiền: ${Number(s.total_cost).toLocaleString('vi-VN')} VNĐ (${s.farm_name})`
           ).join('\n');
+
+          const financeSummaryLine = hideFinance
+            ? '- Chi phí vật tư: [Đã ẩn theo phân quyền tài khoản nhân sự].'
+            : `- Tổng chi phí vật tư đã chi: ${userSuppliesCost.toLocaleString('vi-VN')} VNĐ.`;
 
           systemContext = `[THÔNG TIN TÀI KHOẢN ĐANG ĐĂNG NHẬP]:
 - Chủ tài khoản Nông hộ: ${currentUser.name} (${currentUser.email})
@@ -293,7 +304,7 @@ ${farmLines || '- Bác chưa tạo trang trại nào (Tài khoản mới).'}
 ${logLines || '- Chưa có nhật ký chăm sóc nào gần đây.'}
 
 [VẬT TƯ & CHI PHÍ TIÊU HAO ĐÃ DÙNG]:
-- Tổng chi phí vật tư đã chi: ${userSuppliesCost.toLocaleString('vi-VN')} VNĐ.
+${financeSummaryLine}
 ${supplyLines || '- Chưa ghi nhận tiêu hao vật tư gần đây.'}`;
         }
 

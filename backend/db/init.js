@@ -343,6 +343,8 @@ async function initDB() {
         last_connection TIMESTAMPTZ DEFAULT NOW(),
         ip_address VARCHAR(50),
         battery_level INTEGER,
+        secret_token VARCHAR(255),
+        last_seen TIMESTAMPTZ,
         created_at TIMESTAMPTZ DEFAULT NOW(),
         updated_at TIMESTAMPTZ DEFAULT NOW()
       )
@@ -419,6 +421,27 @@ async function initDB() {
       ALTER TABLE supplies ADD COLUMN IF NOT EXISTS target_pests VARCHAR(255);
       ALTER TABLE supplies ADD COLUMN IF NOT EXISTS safety_interval_note TEXT;
       ALTER TABLE supplies ADD COLUMN IF NOT EXISTS fertilizer_composition TEXT;
+      ALTER TABLE supplies ADD COLUMN IF NOT EXISTS updated_by INTEGER REFERENCES users(id) ON DELETE SET NULL;
+      ALTER TABLE supplies ADD COLUMN IF NOT EXISTS updated_by_name VARCHAR(255);
+      ALTER TABLE supplies ADD COLUMN IF NOT EXISTS batch_no VARCHAR(120);
+      ALTER TABLE supplies ADD COLUMN IF NOT EXISTS expiry_date DATE;
+      ALTER TABLE supplies ADD COLUMN IF NOT EXISTS min_stock_alert NUMERIC(12,3) DEFAULT 0;
+
+      CREATE TABLE IF NOT EXISTS supply_restock_logs (
+        id SERIAL PRIMARY KEY,
+        supply_id INTEGER REFERENCES supplies(id) ON DELETE CASCADE,
+        farm_id INTEGER REFERENCES farms(id) ON DELETE SET NULL,
+        user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        operator_name VARCHAR(255),
+        added_qty NUMERIC(12,3) NOT NULL,
+        added_base_qty NUMERIC(12,3) NOT NULL,
+        package_price NUMERIC(15,2) DEFAULT 0,
+        unit_price NUMERIC(15,2) DEFAULT 0,
+        batch_no VARCHAR(120),
+        expiry_date DATE,
+        note TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
 
       ALTER TABLE farms ADD COLUMN IF NOT EXISTS puc_code VARCHAR(100);
       ALTER TABLE farms ADD COLUMN IF NOT EXISTS vietgap_cert_number VARCHAR(100);
@@ -591,6 +614,21 @@ async function initDB() {
       ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version INTEGER NOT NULL DEFAULT 1;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_login_attempts INTEGER NOT NULL DEFAULT 0;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_until TIMESTAMPTZ;
+      CREATE INDEX IF NOT EXISTS idx_plant_logs_plant_active_latest ON plant_logs(plant_id, log_date DESC, id DESC) WHERE is_deleted IS NOT TRUE;
+      CREATE INDEX IF NOT EXISTS idx_supply_restock_logs_supply ON supply_restock_logs(supply_id, created_at DESC);
+      ALTER TABLE devices ADD COLUMN IF NOT EXISTS secret_token VARCHAR(255);
+      ALTER TABLE devices ADD COLUMN IF NOT EXISTS last_seen TIMESTAMPTZ;
+      CREATE TABLE IF NOT EXISTS iot_readings (
+        id SERIAL PRIMARY KEY,
+        device_id INTEGER REFERENCES devices(id) ON DELETE CASCADE,
+        farm_id INTEGER REFERENCES farms(id) ON DELETE CASCADE,
+        metric_key VARCHAR(100) NOT NULL,
+        metric_value NUMERIC(12, 4) NOT NULL,
+        unit VARCHAR(32),
+        battery_level INTEGER,
+        recorded_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_iot_readings_farm_recorded ON iot_readings(farm_id, recorded_at DESC);
     `);
 
     const defaultConfigs = [
@@ -710,35 +748,6 @@ async function initDB() {
 
       try {
         await client.query(`
-          UPDATE plants
-          SET latitude = NULL, longitude = NULL, updated_at = NOW()
-          WHERE farm_id IN (
-            SELECT id FROM farms WHERE name ILIKE '%Bùi Văn Dũng%' OR name ILIKE '%Bui Van Dung%'
-          ) AND (latitude IS NOT NULL OR longitude IS NOT NULL);
-        `);
-      } catch (_) {}
-
-      try {
-        await client.query(`
-          UPDATE plant_logs
-          SET log_type = 'Bón phân',
-              note = 'Bón phân hữu cơ vi sinh nở Bỉ phục hồi rễ',
-              details = jsonb_set(
-                jsonb_set(
-                  jsonb_set(
-                    jsonb_set(
-                      COALESCE(details, '{}'::jsonb),
-                      '{method}', '"Bón gốc"'
-                    ),
-                    '{operator_name}', '"Kỹ thuật viên Nguyễn Văn A"'
-                  ),
-                  '{equipment_used}', '"Xẻng định lượng VietGAP"'
-                ),
-                '{fertilizer_name}', '"Phân hữu cơ vi sinh nở Bỉ (Belgo Organic)"'
-              )
-          WHERE id = 2683740 OR log_type LIKE '%B%n%ph%n%' OR log_type LIKE '%\uFFFD%';
-
-          -- Chuẩn hóa Thu hoạch TRƯỚC HẾT để không bị các từ khóa khác bắt nhầm (bảo vệ tuyệt đối Kiểm toán quả)
           UPDATE plant_logs SET log_type = 'Thu hoạch' WHERE (log_type ILIKE '%thu%ho%ch%' OR log_type ILIKE '%harvest%' OR details::text ILIKE '%fruit_count%' OR details::text ILIKE '%price_per_tree%') AND log_type != 'Thu hoạch' AND log_type != 'Kiểm toán quả' AND NOT (details ? 'audit_stage') AND details->>'fruit_stage' IS NULL;
           UPDATE plant_logs SET log_type = 'Bón phân' WHERE (log_type ILIKE '%ph%n%' AND log_type ILIKE '%B%') AND log_type NOT ILIKE '%thu%ho%ch%' AND log_type != 'Bón phân';
           UPDATE plant_logs SET log_type = 'Phun thuốc' WHERE (log_type ILIKE '%phun%' OR (log_type ILIKE '%thu%c%' AND log_type NOT ILIKE '%thu%ho%ch%' AND log_type NOT ILIKE '%harvest%')) AND log_type != 'Phun thuốc';
@@ -748,7 +757,6 @@ async function initDB() {
           UPDATE plant_logs SET log_type = 'Thụ phấn' WHERE log_type ILIKE '%th%ph%n%' AND log_type != 'Thụ phấn';
           UPDATE plant_logs SET log_type = 'Bệnh cây' WHERE (log_type ILIKE '%b%nh%c%y%' OR log_type ILIKE '%b%nh%') AND log_type != 'Bệnh cây';
 
-          -- Phục hồi dứt điểm mọi bản ghi thu hoạch từng bị gán nhãn sai thành Phun thuốc (bảo vệ Kiểm toán quả)
           UPDATE plant_logs
           SET log_type = 'Thu hoạch'
           WHERE (
@@ -760,13 +768,7 @@ async function initDB() {
             OR (equipment_used ILIKE '%kéo%' AND details::text ILIKE '%"kg"%' AND log_type = 'Phun thuốc')
           ) AND log_type != 'Thu hoạch' AND log_type != 'Kiểm toán quả' AND NOT (details ? 'audit_stage') AND details->>'fruit_stage' IS NULL;
 
-          -- Dọn dẹp chi phí vật tư bị ghi nhận nhầm từ các log thu hoạch
-          DELETE FROM supply_usages
-          WHERE (note ILIKE '%[Phun thuốc]%' OR note ILIKE '%Thuốc BVTV%')
-            AND (note ILIKE '%600 kg%' OR note ILIKE '%kg cho cây%' OR note ILIKE '%kg toàn vườn%');
-
           UPDATE supply_usages SET note = 'Tự động từ nhật ký [Bón phân] tại vườn' WHERE note LIKE '%T%đ%ng t%nh%t k%[B%' OR note LIKE '%[B%n%ph%n]%';
-          UPDATE supply_usages SET note = 'Bón phân hữu cơ vi sinh nở Bỉ phục hồi rễ' WHERE note LIKE '%B%n%ph%n%h%u%';
         `);
         await client.query(`
           INSERT INTO system_configs (key, value)
