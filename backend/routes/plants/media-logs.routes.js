@@ -1097,7 +1097,7 @@ router.post('/logs/batch-delete/preview', auth, async (req, res) => {
   }
 });
 
-router.post('/logs/batch-delete', auth, async (req, res) => {
+router.post(['/logs/batch-delete', '/logs/batch-soft-delete'], auth, async (req, res) => {
   try {
     if (req.user.role !== 'admin' && ['auditor_readonly', 'care_worker'].includes(req.user.sub_role)) {
       return res.status(403).json({ error: 'Vai trò của bạn không có quyền xóa hàng loạt nhật ký canh tác.' });

@@ -123,20 +123,24 @@ function validateGeoJsonPolygon(input) {
     if (parsed.length === 0) {
       return { valid: true, format: 'legacy_empty', value: [] };
     }
-    for (const pt of parsed) {
-      let lat;
-      let lng;
+    const ring = (Array.isArray(parsed[0]) && Array.isArray(parsed[0][0])) ? parsed[0] : parsed;
+    for (const pt of ring) {
       if (Array.isArray(pt) && pt.length >= 2) {
-        lat = Number(pt[0]);
-        lng = Number(pt[1]);
+        const a = Number(pt[0]);
+        const b = Number(pt[1]);
+        const validLngLat = Number.isFinite(a) && Number.isFinite(b) && a >= -180 && a <= 180 && b >= -90 && b <= 90;
+        const validLatLng = Number.isFinite(a) && Number.isFinite(b) && a >= -90 && a <= 90 && b >= -180 && b <= 180;
+        if (!validLngLat && !validLatLng) {
+          return { valid: false, error: 'Tọa độ trong polygon_coordinates vượt ngưỡng WGS 84.' };
+        }
       } else if (pt && typeof pt === 'object') {
-        lat = Number(pt.lat ?? pt.latitude);
-        lng = Number(pt.lng ?? pt.lon ?? pt.longitude);
+        const lat = Number(pt.lat ?? pt.latitude);
+        const lng = Number(pt.lng ?? pt.lon ?? pt.longitude);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+          return { valid: false, error: 'Tọa độ trong polygon_coordinates vượt ngưỡng WGS 84.' };
+        }
       } else {
         return { valid: false, error: 'Phần tử tọa độ trong polygon_coordinates không hợp lệ.' };
-      }
-      if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-        return { valid: false, error: 'Tọa độ trong polygon_coordinates vượt ngưỡng WGS 84.' };
       }
     }
     return { valid: true, format: 'legacy_array', value: parsed };

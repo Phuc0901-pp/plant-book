@@ -100,7 +100,7 @@ router.get('/tiles/:z/:x/:y.pbf', auth, async (req, res) => {
             AND p.longitude IS NOT NULL
             AND p.deleted_at IS NULL
             AND ($4::int IS NULL OR p.farm_id = $4::int)
-            AND ($5::boolean OR p.farm_id IN (SELECT id FROM farms WHERE user_id = $6 OR id = $7))
+            AND ($5::boolean OR p.farm_id IN (SELECT id FROM farms WHERE (is_deleted IS NOT TRUE) AND (user_id = $6 OR id = $7)))
             AND ST_Intersects(
               ST_Transform(ST_SetSRID(ST_Point(p.longitude, p.latitude), 4326), 3857),
               tile_bounds.geom_3857
@@ -130,7 +130,7 @@ router.get('/tiles/:z/:x/:y.pbf', auth, async (req, res) => {
           AND p.latitude BETWEEN $1 AND $2
           AND p.longitude BETWEEN $3 AND $4
           AND ($5::int IS NULL OR p.farm_id = $5::int)
-          AND ($6::boolean OR p.farm_id IN (SELECT id FROM farms WHERE user_id = $7 OR id = $8))
+          AND ($6::boolean OR p.farm_id IN (SELECT id FROM farms WHERE (is_deleted IS NOT TRUE) AND (user_id = $7 OR id = $8)))
       `;
       await pool.readQuery(fallbackQuery, [bbox.minLat, bbox.maxLat, bbox.minLon, bbox.maxLon, farmId, scope.isAdmin, scope.ownerId || 0, scope.userFarmId || 0]);
 
@@ -179,7 +179,7 @@ router.get('/clusters', auth, async (req, res) => {
           AND p.latitude BETWEEN $1 AND $2
           AND p.longitude BETWEEN $3 AND $4
           AND ($5::int IS NULL OR p.farm_id = $5::int)
-          AND ($6::boolean OR p.farm_id IN (SELECT id FROM farms WHERE user_id = $7 OR id = $8))
+          AND ($6::boolean OR p.farm_id IN (SELECT id FROM farms WHERE (is_deleted IS NOT TRUE) AND (user_id = $7 OR id = $8)))
         LIMIT 2500
       `;
       const result = await pool.readQuery(detailQuery, [minLat, maxLat, minLon, maxLon, farmId, scope.isAdmin, scope.ownerId || 0, scope.userFarmId || 0]);
@@ -236,7 +236,7 @@ router.get('/clusters', auth, async (req, res) => {
         AND p.latitude BETWEEN $2 AND $3
         AND p.longitude BETWEEN $4 AND $5
         AND ($6::int IS NULL OR p.farm_id = $6::int)
-        AND ($7::boolean OR p.farm_id IN (SELECT id FROM farms WHERE user_id = $8 OR id = $9))
+        AND ($7::boolean OR p.farm_id IN (SELECT id FROM farms WHERE (is_deleted IS NOT TRUE) AND (user_id = $8 OR id = $9)))
       GROUP BY grid_lon, grid_lat
       LIMIT 1000
     `;
@@ -285,7 +285,7 @@ router.get('/metrics', auth, async (req, res) => {
     const scope = getGisUserScope(req.user);
 
     const countRes = await pool.readQuery(
-      'SELECT COUNT(*) as total FROM plants WHERE deleted_at IS NULL AND latitude IS NOT NULL AND ($1::boolean OR farm_id IN (SELECT id FROM farms WHERE user_id = $2 OR id = $3))',
+      'SELECT COUNT(*) as total FROM plants WHERE deleted_at IS NULL AND latitude IS NOT NULL AND ($1::boolean OR farm_id IN (SELECT id FROM farms WHERE (is_deleted IS NOT TRUE) AND (user_id = $2 OR id = $3)))',
       [scope.isAdmin, scope.ownerId || 0, scope.userFarmId || 0]
     );
     const totalGpsPlants = parseInt(countRes.rows[0]?.total || 0, 10);

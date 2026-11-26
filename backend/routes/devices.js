@@ -316,7 +316,7 @@ async function authenticateIngestRequest(req) {
 
     if (decoded.role !== 'admin') {
       const accessRes = await pool.query(
-        'SELECT f.id FROM farms f LEFT JOIN users u ON u.id = $2 WHERE f.id = $1 AND (f.user_id = $2 OR f.created_by = $2 OR u.farm_id = f.id)',
+        'SELECT f.id FROM farms f LEFT JOIN users u ON u.id = $2 WHERE f.id = $1 AND (f.is_deleted IS NOT TRUE) AND (f.user_id = $2 OR f.created_by = $2 OR u.farm_id = f.id)',
         [Number(farmId), decoded.id]
       );
       if (accessRes.rows.length === 0) {

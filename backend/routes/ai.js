@@ -96,7 +96,7 @@ router.post('/chat', auth, async (req, res) => {
               LEFT JOIN farms f ON p.farm_id = f.id
               WHERE (f.is_deleted IS NOT TRUE) AND (p.is_deleted IS NOT TRUE) AND (p.deleted_at IS NULL)
             `),
-            safeReadQuery("SELECT COUNT(*) as count FROM plants WHERE health_status IN ('Cần chú ý', 'Bệnh', 'Nguy cấp')"),
+            safeReadQuery("SELECT COUNT(*) as count FROM plants WHERE (is_deleted IS NOT TRUE) AND (deleted_at IS NULL) AND health_status IN ('Cần chú ý', 'Bệnh', 'Nguy cấp')"),
             safeReadQuery("SELECT COALESCE(SUM(total_cost), 0) as total FROM supply_usages"),
             safeReadQuery(`
               SELECT pl.log_date, pl.log_type, pl.note, pl.details, p.tree_code, p.plant_type, f.name as farm_name

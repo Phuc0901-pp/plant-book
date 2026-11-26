@@ -28,7 +28,7 @@ router.get('/telemetry-status', auth, async (req, res) => {
     if (farmIdParam) {
       if (!isAdmin) {
         const accessRes = await pool.query(
-          'SELECT f.id FROM farms f LEFT JOIN users u ON u.id = $2 WHERE f.id = $1 AND (f.user_id = $2 OR u.farm_id = f.id)',
+          'SELECT f.id FROM farms f LEFT JOIN users u ON u.id = $2 WHERE f.id = $1 AND (f.is_deleted IS NOT TRUE) AND (f.user_id = $2 OR u.farm_id = f.id)',
           [farmIdParam, userId]
         );
         if (accessRes.rows.length === 0) {
@@ -38,7 +38,7 @@ router.get('/telemetry-status', auth, async (req, res) => {
       farmIds = [farmIdParam];
     } else if (!isAdmin) {
       const farmsRes = await pool.query(
-        'SELECT DISTINCT f.id FROM farms f LEFT JOIN users u ON u.id = $1 WHERE f.user_id = $1 OR f.id = u.farm_id',
+        'SELECT DISTINCT f.id FROM farms f LEFT JOIN users u ON u.id = $1 WHERE (f.is_deleted IS NOT TRUE) AND (f.user_id = $1 OR f.id = u.farm_id)',
         [userId]
       );
       farmIds = farmsRes.rows.map(r => r.id);
