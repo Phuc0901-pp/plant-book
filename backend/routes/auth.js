@@ -75,6 +75,25 @@ router.post('/login', async (req, res) => {
           `UPDATE users SET failed_login_attempts = $1, locked_until = NOW() + INTERVAL '15 minutes' WHERE id = $2`,
           [nextAttempts, user.id]
         );
+        try {
+          const { notifyUser, notifyAdmins } = require('../services/notificationDispatcher');
+          notifyUser(user.id, {
+            eventCode: 'ACCOUNT_LOCKED',
+            severity: 'danger',
+            title: 'Cảnh báo: Tài khoản bị tạm khóa 15 phút',
+            message: `Tài khoản ${user.email || user.phone} vừa nhập sai mật khẩu ${MAX_FAILED_LOGIN_ATTEMPTS} lần liên tiếp.`,
+            actorUserId: user.id,
+            sendZalo: false
+          }).catch(() => {});
+          notifyAdmins({
+            eventCode: 'ACCOUNT_LOCKED',
+            severity: 'danger',
+            title: 'Khóa tài khoản do brute-force đăng nhập',
+            message: `Tài khoản ${user.email || user.phone} (IP: ${req.ip || 'N/A'}) vừa bị khóa 15 phút.`,
+            actorUserId: user.id,
+            sendZalo: false
+          }).catch(() => {});
+        } catch (_) {}
         return res.status(429).json({
           error: `Tài khoản tạm khóa ${LOCKOUT_MINUTES} phút do nhập sai mật khẩu ${MAX_FAILED_LOGIN_ATTEMPTS} lần liên tiếp.`,
           code: 'ACCOUNT_LOCKED',
@@ -120,6 +139,15 @@ router.post('/login', async (req, res) => {
              VALUES ('INVALID_MFA_LOGIN', 'high', $1, $2, '/api/auth/login', $3)`,
             [user.id, req.ip || null, JSON.stringify({ email: user.email })]
           );
+          const { notifyAdmins } = require('../services/notificationDispatcher');
+          notifyAdmins({
+            eventCode: 'INVALID_MFA_LOGIN',
+            severity: 'danger',
+            title: 'Cảnh báo: Sai mã 2FA OTP khi đăng nhập',
+            message: `Tài khoản ${user.email} vừa nhập sai mã TOTP 2FA từ IP ${req.ip || 'N/A'}.`,
+            actorUserId: user.id,
+            sendZalo: false
+          }).catch(() => {});
         } catch (_) {}
         return res.status(401).json({
           error: 'Mã xác thực 2 lớp (OTP) không chính xác hoặc đã hết hạn.',
@@ -191,6 +219,21 @@ router.post('/login', async (req, res) => {
         maxAge: 30 * 60 * 1000
       });
     }
+
+    try {
+      const { notifyUser } = require('../services/notificationDispatcher');
+      if (user.parent_user_id) {
+        notifyUser(user.parent_user_id, {
+          eventCode: 'SUB_ACCOUNT_LOGIN',
+          severity: 'audit_silent',
+          title: `Tài khoản phụ ${user.full_name || user.email} vừa đăng nhập`,
+          message: `${user.full_name || user.email} (${effectiveSubRole}) đăng nhập lúc ${new Date().toLocaleTimeString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })} từ IP ${req.ip || 'N/A'}.`,
+          actorUserId: user.id,
+          farmId: primaryFarmId,
+          sendZalo: false
+        }).catch(() => {});
+      }
+    } catch (_) {}
 
     res.json({
       token,
@@ -290,6 +333,20 @@ router.post('/register', async (req, res) => {
         created_at: newUser.created_at
       });
     }
+
+    try {
+      const { notifyAdmins } = require('../services/notificationDispatcher');
+      notifyAdmins({
+        eventCode: 'USER_REGISTERED',
+        severity: 'warning',
+        title: 'Đăng ký tài khoản nông hộ mới',
+        message: `${newUser.full_name || newUser.phone || newUser.email} vừa đăng ký tài khoản (${plant_type || 'Chưa khai báo'}).`,
+        entityType: 'user',
+        entityId: newUser.id,
+        actorUserId: newUser.id,
+        sendZalo: false
+      }).catch(() => {});
+    } catch (_) {}
 
     const encUserId = encodeUserId(newUser.id);
     newUser.encrypted_user_id = encUserId;
@@ -1035,6 +1092,15 @@ router.post('/revoke-all-sessions', require('../middleware/auth'), async (req, r
          VALUES ('SESSION_KILL_SWITCH', 'critical', $1, $2, '/api/auth/revoke-all-sessions', $3)`,
         [req.user.id, req.ip || null, JSON.stringify({ scope, targetUserId, revokedCount })]
       );
+      const { notifyAdmins } = require('../services/notificationDispatcher');
+      notifyAdmins({
+        eventCode: 'SESSION_KILL_SWITCH',
+        severity: 'danger',
+        title: 'Khẩn cấp: Đã kích hoạt Session Kill-Switch',
+        message: `${req.user.email} vừa thu hồi ${revokedCount} phiên JWT (scope: ${scope}) từ IP ${req.ip || 'N/A'}.`,
+        actorUserId: req.user.id,
+        sendZalo: false
+      }).catch(() => {});
     } catch (_) {}
 
     res.json({

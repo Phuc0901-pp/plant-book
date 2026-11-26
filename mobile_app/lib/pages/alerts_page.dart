@@ -3,6 +3,7 @@ import '../models/farm.dart';
 import '../models/plant.dart';
 import '../models/plant_log.dart';
 import '../services/api_service.dart';
+import '../services/notification_service.dart';
 import '../utils/theme.dart';
 import '../components/loading_indicator.dart';
 import 'plant_detail_page.dart';
@@ -16,6 +17,7 @@ class AlertsPage extends StatefulWidget {
 
 class _AlertsPageState extends State<AlertsPage> {
   final ApiService _apiService = ApiService();
+  final NotificationService _notificationService = NotificationService();
   bool _isLoading = true;
   String? _error;
 
@@ -27,12 +29,14 @@ class _AlertsPageState extends State<AlertsPage> {
   List<Map<String, dynamic>> _scheduleAlerts = [];
 
   String? _selectedFarmId;
+  String _inboxFilter = 'all';
   DateTime _lastRefreshTime = DateTime.now();
 
   @override
   void initState() {
     super.initState();
     _loadAlertData();
+    _notificationService.init();
   }
 
   Future<void> _loadAlertData() async {
@@ -42,6 +46,7 @@ class _AlertsPageState extends State<AlertsPage> {
     });
 
     try {
+      await _notificationService.refreshNotifications();
       final farms = await _apiService.fetchFarms();
       final plants = await _apiService.fetchPlants();
 
@@ -70,6 +75,65 @@ class _AlertsPageState extends State<AlertsPage> {
         _isLoading = false;
       });
     }
+  }
+
+  void _openPreferencesSheet() {
+    final currentPrefs = _notificationService.preferences;
+    bool soundEnabled = currentPrefs['sound_enabled'] != false;
+    bool quietHours = currentPrefs['quiet_hours_enabled'] == true;
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Cài đặt Chuông & Giờ yên lặng',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 12),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Phát âm thanh & Rung thông báo'),
+                      subtitle: const Text('Cảnh báo Khẩn cấp luôn ưu tiên báo động'),
+                      value: soundEnabled,
+                      onChanged: (v) {
+                        setModalState(() => soundEnabled = v);
+                        _notificationService.updatePreferences({'sound_enabled': v});
+                      },
+                    ),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Giờ yên lặng (22:00 – 06:00)'),
+                      subtitle: const Text('Tắt chuông tin thường ban đêm, giữ nguyên còi khẩn cấp'),
+                      value: quietHours,
+                      onChanged: (v) {
+                        setModalState(() => quietHours = v);
+                        _notificationService.updatePreferences({
+                          'quiet_hours_enabled': v,
+                          'quiet_start': '22:00',
+                          'quiet_end': '06:00',
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   void _computeAlerts() {
@@ -233,72 +297,221 @@ class _AlertsPageState extends State<AlertsPage> {
 
     final totalAlerts = filteredDiseases.length + filteredSchedules.length;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Trung tâm Cảnh báo'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            onPressed: _loadAlertData,
-          )
-        ],
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Trung tâm Thông báo & Cảnh báo'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.done_all_rounded),
+              tooltip: 'Đánh dấu đã đọc hết',
+              onPressed: () => _notificationService.markAllRead(),
+            ),
+            IconButton(
+              icon: const Icon(Icons.notifications_active_outlined),
+              tooltip: 'Cài đặt chuông & Giờ yên lặng',
+              onPressed: _openPreferencesSheet,
+            ),
+            IconButton(
+              icon: const Icon(Icons.refresh_rounded),
+              onPressed: _loadAlertData,
+            ),
+          ],
+          bottom: TabBar(
+            tabs: [
+              Tab(
+                child: ValueListenableBuilder<int>(
+                  valueListenable: _notificationService.unreadCount,
+                  builder: (_, unread, __) {
+                    return Text(unread > 0 ? 'Hộp thư ($unread)' : 'Hộp thư Thông báo');
+                  },
+                ),
+              ),
+              Tab(text: 'Thực địa ($totalAlerts)'),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            _buildInboxTab(),
+            _buildFieldAlertsTab(filteredDiseases, filteredSchedules, totalAlerts),
+          ],
+        ),
       ),
-      body: _isLoading
-          ? const LoadingIndicator(message: 'Đang rà soát trạng thái cây trồng...')
-          : _error != null
-              ? _buildErrorView()
-              : RefreshIndicator(
-                  onRefresh: _loadAlertData,
-                  child: ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      if (_farms.isNotEmpty) ...[
-                        DropdownButtonFormField<String>(
-                          value: _selectedFarmId,
-                          decoration: InputDecoration(
-                            labelText: 'Lọc cảnh báo theo trang trại',
-                            labelStyle: const TextStyle(fontSize: 13, color: AppTheme.textMuted),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(color: AppTheme.grayBorder),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(color: AppTheme.green),
+    );
+  }
+
+  Widget _buildInboxTab() {
+    return ValueListenableBuilder<List<Map<String, dynamic>>>(
+      valueListenable: _notificationService.notifications,
+      builder: (context, items, _) {
+        final filtered = items.where((n) {
+          if (_inboxFilter == 'unread') return n['is_read'] != true;
+          if (_inboxFilter == 'danger') return n['type'] == 'danger' || n['severity'] == 'danger';
+          return true;
+        }).toList();
+
+        return RefreshIndicator(
+          onRefresh: _notificationService.refreshNotifications,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+                child: Row(
+                  children: [
+                    _buildFilterChip('Tất cả', 'all'),
+                    const SizedBox(width: 8),
+                    _buildFilterChip('Chưa đọc', 'unread'),
+                    const SizedBox(width: 8),
+                    _buildFilterChip('Khẩn cấp', 'danger'),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: filtered.isEmpty
+                    ? ListView(
+                        children: const [
+                          SizedBox(height: 80),
+                          Center(
+                            child: Text(
+                              'Chưa có thông báo hệ thống nào.',
+                              style: TextStyle(color: AppTheme.textMuted),
                             ),
                           ),
-                          items: [
-                            const DropdownMenuItem(value: null, child: Text('Tất cả trang trại sở hữu', style: TextStyle(fontSize: 13))),
-                            ..._farms.map((f) => DropdownMenuItem(value: f.id.toString(), child: Text(f.name, style: const TextStyle(fontSize: 13)))),
-                          ],
-                          onChanged: (val) {
-                            setState(() {
-                              _selectedFarmId = val;
-                            });
-                          },
-                        ),
-                        const SizedBox(height: 14),
-                      ],
+                        ],
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(14),
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) {
+                          final n = filtered[index];
+                          final bool isUnread = n['is_read'] != true;
+                          final String sev = (n['severity'] ?? n['type'] ?? 'info').toString();
+                          final Color accent = sev == 'danger'
+                              ? AppTheme.red
+                              : (sev == 'warning' ? AppTheme.amber : AppTheme.green);
 
-                      _buildStatsBanner(totalAlerts),
-                      const SizedBox(height: 16),
+                          return Card(
+                            elevation: 0,
+                            margin: const EdgeInsets.only(bottom: 10),
+                            color: isUnread ? accent.withOpacity(0.06) : Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: BorderSide(color: accent.withOpacity(isUnread ? 0.45 : 0.2)),
+                            ),
+                            child: ListTile(
+                              onTap: () {
+                                final int? id = n['id'] is int ? n['id'] as int : int.tryParse(n['id']?.toString() ?? '');
+                                if (id != null) _notificationService.markRead(id);
+                              },
+                              leading: Icon(
+                                sev == 'danger'
+                                    ? Icons.security_rounded
+                                    : (sev == 'warning' ? Icons.warning_amber_rounded : Icons.notifications_rounded),
+                                color: accent,
+                              ),
+                              title: Text(
+                                n['title']?.toString() ?? 'Thông báo',
+                                style: TextStyle(
+                                  fontWeight: isUnread ? FontWeight.bold : FontWeight.w600,
+                                  fontSize: 13.5,
+                                ),
+                              ),
+                              subtitle: Text(
+                                n['message']?.toString() ?? '',
+                                style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                              ),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.close_rounded, size: 18),
+                                onPressed: () {
+                                  final int? id = n['id'] is int ? n['id'] as int : int.tryParse(n['id']?.toString() ?? '');
+                                  if (id != null) _notificationService.archive(id);
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
-                      if (filteredDiseases.isNotEmpty) ...[
-                        _sectionTitle('⚠️ CẢNH BÁO SÂU BỆNH HẠI & SỨC KHỎE (ƯU TIÊN 1)', AppTheme.red),
-                        ...filteredDiseases.map((a) => _buildAlertCard(a)),
-                        const SizedBox(height: 20),
-                      ],
+  Widget _buildFilterChip(String label, String key) {
+    final selected = _inboxFilter == key;
+    return ChoiceChip(
+      label: Text(label, style: const TextStyle(fontSize: 12)),
+      selected: selected,
+      onSelected: (_) => setState(() => _inboxFilter = key),
+    );
+  }
 
-                      if (filteredSchedules.isNotEmpty) ...[
-                        _sectionTitle('📅 LỊCH TRÌNH CANH TÁC CẦN XỬ LÝ (TƯỚI NƯỚC & BÓN PHÂN)', AppTheme.amber),
-                        ...filteredSchedules.map((a) => _buildAlertCard(a)),
-                      ],
-
-                      if (totalAlerts == 0) _buildCleanStateView(),
-                    ],
-                  ),
+  Widget _buildFieldAlertsTab(
+    List<Map<String, dynamic>> filteredDiseases,
+    List<Map<String, dynamic>> filteredSchedules,
+    int totalAlerts,
+  ) {
+    if (_isLoading) {
+      return const LoadingIndicator(message: 'Đang rà soát trạng thái cây trồng...');
+    }
+    if (_error != null) {
+      return _buildErrorView();
+    }
+    return RefreshIndicator(
+      onRefresh: _loadAlertData,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          if (_farms.isNotEmpty) ...[
+            DropdownButtonFormField<String>(
+              value: _selectedFarmId,
+              decoration: InputDecoration(
+                labelText: 'Lọc cảnh báo theo trang trại',
+                labelStyle: const TextStyle(fontSize: 13, color: AppTheme.textMuted),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: AppTheme.grayBorder),
                 ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: AppTheme.green),
+                ),
+              ),
+              items: [
+                const DropdownMenuItem(value: null, child: Text('Tất cả trang trại sở hữu', style: TextStyle(fontSize: 13))),
+                ..._farms.map((f) => DropdownMenuItem(value: f.id.toString(), child: Text(f.name, style: const TextStyle(fontSize: 13)))),
+              ],
+              onChanged: (val) {
+                setState(() {
+                  _selectedFarmId = val;
+                });
+              },
+            ),
+            const SizedBox(height: 14),
+          ],
+
+          _buildStatsBanner(totalAlerts),
+          const SizedBox(height: 16),
+
+          if (filteredDiseases.isNotEmpty) ...[
+            _sectionTitle('⚠️ CẢNH BÁO SÂU BỆNH HẠI & SỨC KHỎE (ƯU TIÊN 1)', AppTheme.red),
+            ...filteredDiseases.map((a) => _buildAlertCard(a)),
+            const SizedBox(height: 20),
+          ],
+
+          if (filteredSchedules.isNotEmpty) ...[
+            _sectionTitle('📅 LỊCH TRÌNH CANH TÁC CẦN XỬ LÝ (TƯỚI NƯỚC & BÓN PHÂN)', AppTheme.amber),
+            ...filteredSchedules.map((a) => _buildAlertCard(a)),
+          ],
+
+          if (totalAlerts == 0) _buildCleanStateView(),
+        ],
+      ),
     );
   }
 

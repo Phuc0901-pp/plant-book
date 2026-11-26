@@ -1330,4 +1330,120 @@ class ApiService {
       return defaultList[i % defaultList.length];
     });
   }
+
+  Future<Map<String, dynamic>> fetchNotifications() async {
+    try {
+      final headers = await _getHeaders(method: 'GET', endpointPath: '/api/notifications');
+      final response = await http
+          .get(Uri.parse('$baseUrl/notifications'), headers: headers)
+          .timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map<String, dynamic>) return decoded;
+      }
+    } catch (_) {}
+    return {'success': false, 'unread_count': 0, 'notifications': []};
+  }
+
+  Future<bool> markNotificationRead(int id) async {
+    try {
+      final endpoint = '/api/notifications/$id/read';
+      final headers = await _getHeaders(method: 'PUT', endpointPath: endpoint);
+      final response = await http
+          .put(Uri.parse('$baseUrl/notifications/$id/read'), headers: headers)
+          .timeout(const Duration(seconds: 8));
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> markAllNotificationsRead() async {
+    try {
+      final headers = await _getHeaders(method: 'PUT', endpointPath: '/api/notifications/read-all');
+      final response = await http
+          .put(Uri.parse('$baseUrl/notifications/read-all'), headers: headers)
+          .timeout(const Duration(seconds: 8));
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> deleteNotification(int id) async {
+    try {
+      final endpoint = '/api/notifications/$id';
+      final headers = await _getHeaders(method: 'DELETE', endpointPath: endpoint);
+      final response = await http
+          .delete(Uri.parse('$baseUrl/notifications/$id'), headers: headers)
+          .timeout(const Duration(seconds: 8));
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchNotificationPreferences() async {
+    try {
+      final headers = await _getHeaders(method: 'GET', endpointPath: '/api/notifications/preferences');
+      final response = await http
+          .get(Uri.parse('$baseUrl/notifications/preferences'), headers: headers)
+          .timeout(const Duration(seconds: 8));
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map<String, dynamic> && decoded['preferences'] is Map) {
+          return Map<String, dynamic>.from(decoded['preferences'] as Map);
+        }
+      }
+    } catch (_) {}
+    return {
+      'sound_enabled': true,
+      'sound_profile': 'chime',
+      'quiet_hours_enabled': false,
+      'quiet_start': '22:00',
+      'quiet_end': '06:00'
+    };
+  }
+
+  Future<bool> updateNotificationPreferences(Map<String, dynamic> prefs) async {
+    try {
+      final bodyStr = jsonEncode(prefs);
+      final headers = await _getHeaders(
+        method: 'PUT',
+        endpointPath: '/api/notifications/preferences',
+        bodyJson: bodyStr,
+      );
+      final response = await http
+          .put(Uri.parse('$baseUrl/notifications/preferences'), headers: headers, body: bodyStr)
+          .timeout(const Duration(seconds: 8));
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> registerPushToken({
+    required String platform,
+    required String token,
+    String? deviceLabel,
+  }) async {
+    try {
+      final bodyStr = jsonEncode({
+        'platform': platform,
+        'token': token,
+        if (deviceLabel != null) 'device_label': deviceLabel,
+      });
+      final headers = await _getHeaders(
+        method: 'POST',
+        endpointPath: '/api/notifications/push-token',
+        bodyJson: bodyStr,
+      );
+      final response = await http
+          .post(Uri.parse('$baseUrl/notifications/push-token'), headers: headers, body: bodyStr)
+          .timeout(const Duration(seconds: 8));
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
 }

@@ -42,7 +42,10 @@ async function connectWebSocket() {
   }
 
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const wsUrl = `${protocol}//${window.location.host}`;
+  const wsToken = (typeof token !== 'undefined' && token) ? token : (localStorage.getItem('pb_token') || '');
+  const wsUrl = wsToken
+    ? `${protocol}//${window.location.host}?token=${encodeURIComponent(wsToken)}`
+    : `${protocol}//${window.location.host}`;
 
   try {
     socket = new WebSocket(wsUrl);
@@ -135,6 +138,22 @@ if (typeof window !== 'undefined') {
 
 function handleRealtimeEvent(msg) {
   const { event, data } = msg;
+
+  if (event === 'new_notification') {
+    if (typeof window.handleAdminRealtimeNotification === 'function') {
+      window.handleAdminRealtimeNotification(data);
+    }
+    return;
+  }
+
+  if (event === 'user_registered') {
+    if (typeof window.loadAdminNotifications === 'function') {
+      window.loadAdminNotifications();
+    }
+    if (typeof toast === 'function' && data && data.name) {
+      toast(`Đăng ký mới chờ duyệt: ${data.name}`, 'info');
+    }
+  }
 
   if (event === 'user_status_changed') {
     const u = allUsers.find(x => x.id === data.id);

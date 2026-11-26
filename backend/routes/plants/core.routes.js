@@ -1202,6 +1202,19 @@ router.put('/:id', auth, admin, async (req, res) => {
         farm_id: updatedPlant.farm_id,
         action: 'update'
       }, ['farms_', 'plants_']);
+      const { notifyFarmEvent } = require('../../services/notificationDispatcher');
+      if (updatedPlant.farm_id) {
+        notifyFarmEvent(updatedPlant.farm_id, {
+          eventCode: 'PLANT_UPDATED',
+          severity: 'warning',
+          title: `Chỉnh sửa hồ sơ cây #${updatedPlant.tree_code || updatedPlant.id}`,
+          message: `${req.user.full_name || req.user.email} vừa cập nhật thông tin cây trồng #${updatedPlant.tree_code || updatedPlant.id}.`,
+          entityType: 'plant',
+          entityId: updatedPlant.id,
+          actorUserId: req.user.id,
+          sendZalo: false
+        }).catch(() => {});
+      }
     } catch(wsErr) {
       console.warn('Broadcast warning:', wsErr.message);
     }
@@ -1275,6 +1288,23 @@ router.put('/:id/gps', auth, async (req, res) => {
       farm_id: updated.rows[0].farm_id || plant.farm_id,
       action: 'gps_updated'
     }, ['farms_', 'plants_']);
+
+    try {
+      const { notifyFarmEvent } = require('../../services/notificationDispatcher');
+      const gpsFarmId = updated.rows[0].farm_id || plant.farm_id;
+      if (gpsFarmId) {
+        notifyFarmEvent(gpsFarmId, {
+          eventCode: 'PLANT_GPS_UPDATED',
+          severity: 'info',
+          title: `Cập nhật GPS cây #${plant.tree_code || plantId}`,
+          message: `${req.user.full_name || req.user.email} vừa cập nhật tọa độ/vị trí cây #${plant.tree_code || plantId}.`,
+          entityType: 'plant',
+          entityId: plantId,
+          actorUserId: req.user.id,
+          sendZalo: false
+        }).catch(() => {});
+      }
+    } catch (_) {}
 
     let msg = 'Đã cập nhật vị trí cho cây thành công.';
     if (latVal !== null && lngVal !== null) {

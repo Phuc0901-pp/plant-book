@@ -46,7 +46,7 @@ export async function connectWebSocket() {
   }
 
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const wsUrl = `${protocol}//${window.location.host}`;
+  const wsUrl = `${protocol}//${window.location.host}?token=${encodeURIComponent(token)}`;
 
   try {
     socket = new WebSocket(wsUrl);
@@ -141,6 +141,19 @@ let _syncDebounceTimer = null;
 
 function handleUserRealtimeEvent(msg) {
   const { event, data } = msg;
+
+  if (event === 'new_notification') {
+    if (typeof window.handleIncomingRealtimeNotification === 'function') {
+      window.handleIncomingRealtimeNotification(data);
+    }
+    return;
+  }
+
+  if (event === 'iot_telemetry_updated') {
+    if (typeof window.loadNotifications === 'function') {
+      window.loadNotifications();
+    }
+  }
 
   if (event === 'version_updated') {
     const vTag = data?.version_tag || data?.versionTag || `v${data?.version_number}`;

@@ -120,6 +120,18 @@ async function adminIpGuard(req, res, next) {
     );
   } catch (_) {}
 
+  try {
+    const { notifyAdmins } = require('../services/notificationDispatcher');
+    notifyAdmins({
+      eventCode: 'ADMIN_IP_FORBIDDEN',
+      severity: 'danger',
+      title: 'Cảnh báo truy cập Admin từ IP lạ',
+      message: `Phát hiện IP ${clientIp || 'không rõ'} cố truy cập ${req.originalUrl || req.path || '/api/admin'} ngoài danh sách IP Allowlist.`,
+      actorUserId: req.user ? req.user.id : null,
+      metadata: { ip: clientIp, route: req.originalUrl || req.path || '' }
+    }).catch(() => {});
+  } catch (_) {}
+
   return res.status(403).json({
     error: 'Địa chỉ IP không nằm trong danh sách cho phép truy cập quản trị (ISO 27001 IP Allowlist).',
     code: 'ADMIN_IP_FORBIDDEN',

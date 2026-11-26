@@ -847,12 +847,13 @@ function isFullNfcUid(uid) {
 }
 
 const queueService = require('../../services/queueService');
+const notificationDispatcher = require('../../services/notificationDispatcher');
 
 module.exports = {
   pool, auth, admin, logAuditAction, jwt, nfcSecurity, zaloService,
   singleflight, invalidateAndBroadcast, logAudit, calculateSmartReminders,
   checkTier, crypto, normalizeGpsPayload, multer, storageService,
-  uploadFile, deleteFile, uuidv4, path, upload, queueService,
+  uploadFile, deleteFile, uuidv4, path, upload, queueService, notificationDispatcher,
   withFarmHashChainLock, sealPlantLogHashChain, canonicalizeLogDetailsForHash, computeCanonicalPlantLogHash, isUserFinanceRedacted,
   sanitizeLogRowForUser, verifyPlantAccess, authorizeFarmAccess, authorizePlantAccess, convertLogAmountToBaseSupplyQty,
   generateSlug, generatePublicPlantUrl, formatStandardNfcUid,

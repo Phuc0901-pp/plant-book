@@ -32,9 +32,12 @@ class WebSocketService {
 
     try {
       final url = wsUrl;
-      print('🔌 Connecting to WebSocket: $url');
+      final authToken = await ApiService().token;
+      final Map<String, dynamic>? headers = (authToken != null && authToken.isNotEmpty)
+          ? {'Authorization': 'Bearer $authToken'}
+          : null;
 
-      _socket = await WebSocket.connect(url).timeout(const Duration(seconds: 15));
+      _socket = await WebSocket.connect(url, headers: headers).timeout(const Duration(seconds: 15));
       _isConnecting = false;
       print('✅ WebSocket Connected!');
 

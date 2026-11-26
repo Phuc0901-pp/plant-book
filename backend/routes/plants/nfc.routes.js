@@ -4,7 +4,7 @@ const {
   pool, auth, admin, logAuditAction, jwt, nfcSecurity, zaloService,
   singleflight, invalidateAndBroadcast, logAudit, calculateSmartReminders,
   checkTier, crypto, normalizeGpsPayload, storageService,
-  uploadFile, deleteFile, uuidv4, path, upload, queueService,
+  uploadFile, deleteFile, uuidv4, path, upload, queueService, notificationDispatcher,
   withFarmHashChainLock, sealPlantLogHashChain, isUserFinanceRedacted,
   sanitizeLogRowForUser, verifyPlantAccess, authorizeFarmAccess, authorizePlantAccess, convertLogAmountToBaseSupplyQty,
   generateSlug, generatePublicPlantUrl, formatStandardNfcUid,
@@ -125,6 +125,20 @@ router.put('/:id/nfc', auth, async (req, res) => {
       const broadcast = req.app.get('broadcast');
       if (broadcast) broadcast('plants_updated', { plant_id: plantId, farm_id: plant.farm_id, nfc_uid: cleanUid, action: 'nfc_assigned' });
 
+      notificationDispatcher.notifyFarmEvent(plant.farm_id, {
+        eventCode: 'NFC_TAG_ASSIGNED',
+        severity: 'info',
+        title: `Gắn thẻ NFC cho cây #${plant.tree_code || plantId}`,
+        message: `${req.user.full_name || req.user.email} vừa gắn thẻ ${cleanUid} vào cây #${plant.tree_code || plantId}.`,
+        entityType: 'plant',
+        entityId: plantId,
+        actorUserId: req.user.id,
+        batchKey: `nfc_assign:${plant.farm_id}:${req.user.id}`,
+        batchMessage: c => `${req.user.full_name || req.user.email} vừa gắn ${c} thẻ NFC vào cây trồng.`,
+        metadata: { nfc_uid: cleanUid, tree_code: plant.tree_code },
+        sendZalo: false
+      }).catch(() => {});
+
       return res.json({
         success: true,
         plant: updated.rows[0],
@@ -155,6 +169,17 @@ router.put('/:id/nfc', auth, async (req, res) => {
 
       const broadcast = req.app.get('broadcast');
       if (broadcast) broadcast('plants_updated', { plant_id: plantId, farm_id: plant.farm_id, action: 'nfc_unassigned' });
+
+      notificationDispatcher.notifyFarmEvent(plant.farm_id, {
+        eventCode: 'NFC_TAG_UNASSIGNED',
+        severity: 'warning',
+        title: `Gỡ thẻ NFC khỏi cây #${plant.tree_code || plantId}`,
+        message: `${req.user.full_name || req.user.email} vừa hủy liên kết thẻ NFC của cây #${plant.tree_code || plantId}.`,
+        entityType: 'plant',
+        entityId: plantId,
+        actorUserId: req.user.id,
+        sendZalo: false
+      }).catch(() => {});
 
       return res.json({
         success: true,
@@ -346,6 +371,17 @@ router.post('/plants/nfc/verify-scan', async (req, res) => {
           reason: verification.message,
           severity: verification.severity
         }).catch(e => console.warn('Zalo alert non-blocking error:', e.message));
+
+        notificationDispatcher.notifyFarmEvent(plant.farm_id, {
+          eventCode: 'NFC_SECURITY_ALERT',
+          severity: 'danger',
+          title: `Cảnh báo an ninh NFC #${plant.tree_code || plant.id}`,
+          message: `${verification.message} (Nông trại: ${plant.farm_name || plant.farm_id}).`,
+          entityType: 'plant',
+          entityId: plant.id,
+          includeAdmins: true,
+          sendZalo: false
+        }).catch(() => {});
       } catch (zaloErr) {
         console.warn('Failed to query farm owner for Zalo alert:', zaloErr.message);
       }
@@ -841,6 +877,17 @@ router.post('/farms/:farmId/nfc-inventory/:id/unassign', auth, async (req, res) 
     const broadcast = req.app.get('broadcast');
     if (broadcast) broadcast('plants_updated', { farm_id: farmId, tag_id: id, action: 'nfc_unassigned' });
 
+    notificationDispatcher.notifyFarmEvent(farmId, {
+      eventCode: 'NFC_TAG_UNASSIGNED',
+      severity: 'warning',
+      title: `Gỡ thẻ NFC ${tag.nfc_uid}`,
+      message: `${req.user.full_name || req.user.email} vừa gỡ thẻ ${tag.nfc_uid} khỏi cây tại trang trại #${farmId}.`,
+      entityType: 'nfc_tag',
+      entityId: id,
+      actorUserId: req.user.id,
+      sendZalo: false
+    }).catch(() => {});
+
     res.json({
       success: true,
       message: `Đã gỡ thẻ ${tag.nfc_uid} khỏi cây trồng thành công.`
@@ -1327,6 +1374,24 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
 
     const broadcast = req.app.get('broadcast');
     if (broadcast) broadcast('plants_updated', { plant_id: updatedPlant.id, farm_id: farmId, action: 'nfc_tagged_quick' });
+
+    notificationDispatcher.notifyFarmEvent(farmId, {
+      eventCode: replacedOldUid ? 'NFC_TAG_REPLACED' : 'NFC_TAG_ASSIGNED',
+      severity: replacedOldUid ? 'warning' : 'info',
+      title: replacedOldUid
+        ? `Thay thế thẻ NFC cây #${updatedPlant.tree_code || updatedPlant.id}`
+        : `Gắn thẻ NFC cho cây #${updatedPlant.tree_code || updatedPlant.id}`,
+      message: replacedOldUid
+        ? `${req.user.full_name || req.user.email} vừa thay thẻ cũ ${replacedOldUid} bằng ${cleanUid} cho cây #${updatedPlant.tree_code || updatedPlant.id}.`
+        : `${req.user.full_name || req.user.email} vừa gắn thẻ NFC ${cleanUid} vào cây #${updatedPlant.tree_code || updatedPlant.id}.`,
+      entityType: 'plant',
+      entityId: updatedPlant.id,
+      actorUserId: req.user.id,
+      batchKey: replacedOldUid ? null : `nfc_assign:${farmId}:${req.user.id}`,
+      batchMessage: replacedOldUid ? null : (c => `${req.user.full_name || req.user.email} vừa gắn ${c} thẻ NFC tại trang trại #${farmId}.`),
+      metadata: { nfc_uid: cleanUid, old_uid: replacedOldUid || null, tree_code: updatedPlant.tree_code },
+      sendZalo: false
+    }).catch(() => {});
 
     res.json({
       success: true,

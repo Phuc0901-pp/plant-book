@@ -56,6 +56,10 @@ function authenticateWsToken(rawToken) {
 
 function shouldDeliverBroadcast(wsUser, event, data) {
   const payload = data && typeof data === 'object' ? data : {};
+  if (event === 'new_notification') {
+    const targetUserId = payload.target_user_id ?? payload.targetUserId ?? null;
+    return Boolean(wsUser && targetUserId !== null && Number(wsUser.id) === Number(targetUserId));
+  }
   const scopedFarmId = payload.farmId ?? payload.farm_id ?? null;
   const scopedUserId = payload.userId ?? payload.user_id ?? null;
   const isSensitiveUserEvent = event === 'user_status_changed' || event === 'user_registered';

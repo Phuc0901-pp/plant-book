@@ -1612,6 +1612,20 @@ router.delete('/:id', auth, async (req, res) => {
         broadcast('supplies_updated');
       }
 
+      try {
+        const { notifyAdmins } = require('../services/notificationDispatcher');
+        notifyAdmins({
+          eventCode: 'FARM_DELETED',
+          severity: 'danger',
+          title: 'Cảnh báo: Xóa vĩnh viễn nông trại',
+          message: `${userName} vừa xóa vĩnh viễn nông trại "${farm.name}" (#${farmId}).`,
+          actorUserId: req.user.id,
+          entityType: 'farm',
+          entityId: farmId,
+          sendZalo: false
+        }).catch(() => {});
+      } catch (_) {}
+
       return res.json({
         success: true,
         permanent: true,
@@ -1655,6 +1669,32 @@ router.delete('/:id', auth, async (req, res) => {
       broadcast('farms_updated');
       broadcast('plants_updated');
     }
+
+    try {
+      const { notifyAdmins, notifyUser } = require('../services/notificationDispatcher');
+      notifyAdmins({
+        eventCode: 'FARM_SOFT_DELETED',
+        severity: 'danger',
+        title: 'Xóa mềm nông trại',
+        message: `${userName} đã chuyển nông trại "${farm.name}" vào thùng rác.`,
+        actorUserId: req.user.id,
+        entityType: 'farm',
+        entityId: farmId,
+        sendZalo: false
+      }).catch(() => {});
+      if (farm.user_id && Number(farm.user_id) !== Number(req.user.id)) {
+        notifyUser(farm.user_id, {
+          eventCode: 'FARM_SOFT_DELETED',
+          severity: 'danger',
+          title: 'Nông trại vừa bị tạm xóa',
+          message: `${userName} đã chuyển nông trại "${farm.name}" vào thùng rác.`,
+          actorUserId: req.user.id,
+          entityType: 'farm',
+          entityId: farmId,
+          sendZalo: false
+        }).catch(() => {});
+      }
+    } catch (_) {}
 
     return res.json({
       success: true,

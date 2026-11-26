@@ -11,7 +11,10 @@ import 'ai_chat_page.dart';
 import '../components/qr_nfc_scanner.dart';
 import '../components/log_edit_dialog.dart';
 import '../services/api_service.dart';
+import '../services/websocket_service.dart';
+import '../services/notification_service.dart';
 import '../models/plant.dart';
+import 'alerts_page.dart';
 
 class DashboardPage extends StatefulWidget {
   final bool isAdminView;
@@ -36,6 +39,8 @@ class _DashboardPageState extends State<DashboardPage> {
   void initState() {
     super.initState();
     _loadAvailablePlants();
+    WebSocketService().connect();
+    NotificationService().init();
   }
 
   Future<void> _loadAvailablePlants() async {
@@ -258,6 +263,42 @@ class _DashboardPageState extends State<DashboardPage> {
           ],
         ),
         actions: [
+          ValueListenableBuilder<int>(
+            valueListenable: NotificationService().unreadCount,
+            builder: (_, unread, __) {
+              return IconButton(
+                tooltip: 'Thông báo & Cảnh báo',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AlertsPage()),
+                  );
+                },
+                icon: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    const Icon(Icons.notifications_none_rounded, size: 22, color: AppTheme.fluentTextMain),
+                    if (unread > 0)
+                      Positioned(
+                        right: -4,
+                        top: -4,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: AppTheme.red,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            unread > 99 ? '99+' : '$unread',
+                            style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const LucideIcon(LucideIconName.scan, size: 20, color: AppTheme.fluentTextMain),
             tooltip: 'Quét QR / NFC',

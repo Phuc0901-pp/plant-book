@@ -142,6 +142,20 @@ router.post('/:id/restore', auth, async (req, res) => {
         broadcast('plants_updated', { message: `Restored ${targetIds.length} care logs` });
       }
 
+      try {
+        const { notifyAdmins } = require('../services/notificationDispatcher');
+        notifyAdmins({
+          eventCode: 'DATA_RESTORED',
+          severity: 'info',
+          title: 'Khôi phục dữ liệu canh tác',
+          message: `${req.user.full_name || req.user.email} vừa khôi phục ${targetIds.length} bản ghi từ lịch sử kiểm toán #${id}.`,
+          actorUserId: req.user.id,
+          entityType: 'audit',
+          entityId: id,
+          sendZalo: false
+        }).catch(() => {});
+      } catch (_) {}
+
       return res.json({ success: true, count: targetIds.length, message: `Đã khôi phục thành công ${targetIds.length} nhật ký canh tác.` });
     }
 

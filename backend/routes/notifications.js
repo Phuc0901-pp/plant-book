@@ -159,11 +159,11 @@ router.get('/rules', auth, async (req, res) => {
       if (countRes.rows[0].count === 0) {
         await pool.query(`
           INSERT INTO user_alert_rules
-            (user_id, title, category_type, metric_key, metric_name, operator, threshold_value, unit, action_type, action_recommendation, alert_level, check_offline_iot, check_disease_history, reconfirm_event_type, is_enabled)
+            (user_id, title, category_type, metric_key, metric_name, operator, threshold_value, unit, action_type, action_recommendation, alert_level, check_offline_iot, check_disease_history, reconfirm_event_type, conditions_json, is_enabled)
           VALUES
-            ($1, 'Cảnh Báo Độ Ẩm Đất Tầng 10cm & Trạng Thái IoT', 'danger', 'soil_moisture_10cm', 'Độ ẩm đất tầng 10cm', '<', 50, '%', 'Tưới nước', 'Độ ẩm đất tầng 10cm xuống dưới 50%. Tự động quét kiểm tra các thiết bị cảm biến IoT không có dữ liệu (null/0). Khuyến nghị tưới bổ sung đến khi độ ẩm >= 50%!', 'danger', true, false, NULL, true),
-            ($1, 'Khuyến Cáo Chăm Sóc Cây Từng Ghi Nhận Sâu Bệnh', 'warning', 'air_humidity', 'Độ ẩm không khí', '>=', 80, '%', 'Phun thuốc', 'Độ ẩm không khí cao (>= 80%) kết hợp kiểm tra lịch sử canh tác các cây từng bị bệnh. Khuyến nghị phun phòng ngừa và chăm sóc đặc biệt!', 'warning', false, true, NULL, true),
-            ($1, 'Xác Nhận Cập Nhật Dữ Liệu Canh Tác Thực Địa', 'info', 'system_event', 'Sự kiện Hệ thống', '=', 1, '', 'Hệ thống', 'Xác nhận toàn bộ hoạt động cập nhật nhật ký canh tác (Tưới nước, Bón phân, Thu hoạch) được đồng bộ an toàn!', 'info', false, false, 'log_update', true)
+            ($1, 'Cảnh Báo Độ Ẩm Đất Tầng 10cm & Trạng Thái IoT', 'danger', 'soil_moisture_10cm', 'Độ ẩm đất tầng 10cm', '<', 50, '%', 'Tưới nước', 'Độ ẩm đất tầng 10cm xuống dưới 50%. Tự động quét kiểm tra các thiết bị cảm biến IoT không có dữ liệu (null/0). Khuyến nghị tưới bổ sung đến khi độ ẩm >= 50%!', 'danger', true, false, NULL, '[{"metric":"soil_moisture_10cm","operator":"<","value":50}]', true),
+            ($1, 'Khuyến Cáo Chăm Sóc Cây Từng Ghi Nhận Sâu Bệnh', 'warning', 'air_humidity', 'Độ ẩm không khí', '>=', 80, '%', 'Phun thuốc', 'Độ ẩm không khí cao (>= 80%) kết hợp kiểm tra lịch sử canh tác các cây từng bị bệnh. Khuyến nghị phun phòng ngừa và chăm sóc đặc biệt!', 'warning', false, true, NULL, '[{"metric":"air_humidity","operator":">=","value":80}]', true),
+            ($1, 'Xác Nhận Cập Nhật Dữ Liệu Canh Tác Thực Địa', 'info', 'system_event', 'Sự kiện Hệ thống', '=', 1, '', 'Hệ thống', 'Xác nhận toàn bộ hoạt động cập nhật nhật ký canh tác (Tưới nước, Bón phân, Thu hoạch) được đồng bộ an toàn!', 'info', false, false, 'log_update', '[]', true)
         `, [userId]);
       }
       await pool.query('UPDATE users SET rules_initialized = true WHERE id = $1', [userId]);
@@ -394,6 +394,113 @@ router.delete('/rules/:id', auth, async (req, res) => {
   } catch (err) {
     console.error('Error deleting alert rule:', err);
     res.status(500).json({ error: 'Lỗi server khi xóa quy tắc.' });
+  }
+});
+
+const { notifyUser } = require('../services/notificationDispatcher');
+
+router.get('/preferences', auth, async (req, res) => {
+  try {
+    const r = await pool.query('SELECT * FROM user_notification_preferences WHERE user_id = $1 LIMIT 1', [req.user.id]);
+    const pref = (r.rows && r.rows[0]) || {
+      user_id: req.user.id,
+      sound_enabled: true,
+      sound_profile: 'chime',
+      quiet_hours_enabled: false,
+      quiet_start: '22:00',
+      quiet_end: '06:00',
+      muted_categories: []
+    };
+    res.json({ success: true, preferences: pref });
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi tải cài đặt thông báo: ' + err.message });
+  }
+});
+
+router.put('/preferences', auth, async (req, res) => {
+  try {
+    const soundEnabled = req.body.sound_enabled !== undefined ? Boolean(req.body.sound_enabled) : true;
+    const rawProfile = String(req.body.sound_profile || 'chime');
+    const soundProfile = ['siren', 'alert_double', 'chime', 'silent'].includes(rawProfile) ? rawProfile : 'chime';
+    const quietEnabled = Boolean(req.body.quiet_hours_enabled);
+    const quietStart = /^\d{1,2}:\d{2}$/.test(String(req.body.quiet_start || '')) ? String(req.body.quiet_start) : '22:00';
+    const quietEnd = /^\d{1,2}:\d{2}$/.test(String(req.body.quiet_end || '')) ? String(req.body.quiet_end) : '06:00';
+    const mutedCategories = Array.isArray(req.body.muted_categories) ? req.body.muted_categories.map(String) : [];
+
+    const r = await pool.query(
+      `INSERT INTO user_notification_preferences (user_id, sound_enabled, sound_profile, quiet_hours_enabled, quiet_start, quiet_end, muted_categories, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+       ON CONFLICT (user_id) DO UPDATE SET
+         sound_enabled = EXCLUDED.sound_enabled,
+         sound_profile = EXCLUDED.sound_profile,
+         quiet_hours_enabled = EXCLUDED.quiet_hours_enabled,
+         quiet_start = EXCLUDED.quiet_start,
+         quiet_end = EXCLUDED.quiet_end,
+         muted_categories = EXCLUDED.muted_categories,
+         updated_at = NOW()
+       RETURNING *`,
+      [req.user.id, soundEnabled, soundProfile, quietEnabled, quietStart, quietEnd, JSON.stringify(mutedCategories)]
+    );
+    res.json({ success: true, preferences: r.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi cập nhật cài đặt thông báo: ' + err.message });
+  }
+});
+
+router.post('/push-token', auth, async (req, res) => {
+  try {
+    const platform = String(req.body.platform || 'web_push').slice(0, 30);
+    const tokenVal = typeof req.body.token === 'string' ? req.body.token.trim() : JSON.stringify(req.body.subscription || '');
+    const deviceLabel = req.body.device_label ? String(req.body.device_label).slice(0, 120) : null;
+    if (!tokenVal || tokenVal === '""') {
+      return res.status(400).json({ error: 'Thiếu push token hoặc subscription.' });
+    }
+    const r = await pool.query(
+      `INSERT INTO user_push_tokens (user_id, platform, token, device_label, is_active, updated_at)
+       VALUES ($1, $2, $3, $4, true, NOW())
+       ON CONFLICT (user_id, platform, token) DO UPDATE SET
+         device_label = COALESCE(EXCLUDED.device_label, user_push_tokens.device_label),
+         is_active = true,
+         updated_at = NOW()
+       RETURNING id, platform, device_label, is_active`,
+      [req.user.id, platform, tokenVal, deviceLabel]
+    );
+    res.json({ success: true, registration: r.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi đăng ký thiết bị nhận push: ' + err.message });
+  }
+});
+
+router.delete('/push-token', auth, async (req, res) => {
+  try {
+    const tokenVal = req.body && req.body.token ? String(req.body.token) : null;
+    if (tokenVal) {
+      await pool.query('UPDATE user_push_tokens SET is_active = false, updated_at = NOW() WHERE user_id = $1 AND token = $2', [req.user.id, tokenVal]);
+    } else {
+      await pool.query('UPDATE user_push_tokens SET is_active = false, updated_at = NOW() WHERE user_id = $1', [req.user.id]);
+    }
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi hủy đăng ký push: ' + err.message });
+  }
+});
+
+router.post('/test', auth, async (req, res) => {
+  try {
+    const severity = ['danger', 'warning', 'info', 'success'].includes(req.body && req.body.severity) ? req.body.severity : 'info';
+    const soundProfile = req.body && req.body.sound_profile ? String(req.body.sound_profile) : undefined;
+    const rows = await notifyUser(req.user.id, {
+      eventCode: 'TEST_NOTIFICATION',
+      severity,
+      soundProfile,
+      title: req.body?.title || 'Kiểm tra Chuông Thông báo Hệ thống',
+      message: req.body?.message || 'Thông báo thử nghiệm đa kênh (WebSocket + Nhạc chuông + Mobile Tray).',
+      actorUserId: req.user.id,
+      sendZalo: false
+    });
+    res.json({ success: true, dispatched: rows });
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi gửi thông báo thử nghiệm: ' + err.message });
   }
 });
 

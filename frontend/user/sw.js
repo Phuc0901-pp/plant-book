@@ -186,3 +186,43 @@ self.addEventListener('fetch', (event) => {
     })()
   );
 });
+
+self.addEventListener('push', (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch (_) {
+    payload = { title: 'Sổ Nông Nhàn TBSG', message: event.data ? event.data.text() : 'Có thông báo mới từ hệ thống.' };
+  }
+  const title = payload.title || 'Tân Bảo AgTech — Thông báo';
+  const body = payload.message || payload.body || 'Kiểm tra cập nhật mới từ trang trại.';
+  const isDanger = payload.severity === 'danger' || payload.type === 'danger';
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      icon: '/assets/logo.png',
+      badge: '/assets/favicon.png',
+      tag: payload.event_code || 'tbsg-notif',
+      vibrate: isDanger ? [250, 120, 250, 120, 250] : [120, 60, 120],
+      data: { url: payload.url || '/user/' }
+    })
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = (event.notification.data && event.notification.data.url) || '/user/';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ('focus' in client) {
+          client.focus();
+          return;
+        }
+      }
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(targetUrl);
+      }
+    })
+  );
+});

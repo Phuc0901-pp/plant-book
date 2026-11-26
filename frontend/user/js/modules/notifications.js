@@ -3,6 +3,68 @@ import { esc } from '../core/utils.js';
 
 let _notificationsCache = [];
 let _activeNotifFilter = 'all';
+let _notifPrefs = { sound_enabled: true, sound_profile: 'chime', quiet_hours_enabled: false, quiet_start: '22:00', quiet_end: '06:00' };
+
+function isInUserQuietHours() {
+  if (!_notifPrefs.quiet_hours_enabled) return false;
+  const now = new Date();
+  const nowM = now.getHours() * 60 + now.getMinutes();
+  const [sh, sm] = String(_notifPrefs.quiet_start || '22:00').split(':').map(Number);
+  const [eh, em] = String(_notifPrefs.quiet_end || '06:00').split(':').map(Number);
+  const sM = sh * 60 + sm;
+  const eM = eh * 60 + em;
+  return sM < eM ? (nowM >= sM && nowM < eM) : (nowM >= sM || nowM < eM);
+}
+
+export async function loadNotificationPreferences() {
+  try {
+    const res = await api('/notifications/preferences');
+    if (res && res.success && res.preferences) {
+      _notifPrefs = { ..._notifPrefs, ...res.preferences };
+      updatePrefButtonsUi();
+    }
+  } catch (_) {}
+}
+window.loadNotificationPreferences = loadNotificationPreferences;
+
+function updatePrefButtonsUi() {
+  const muteBtn = document.getElementById('user-notif-mute-btn');
+  const quietBtn = document.getElementById('user-notif-quiet-btn');
+  if (muteBtn) {
+    muteBtn.textContent = _notifPrefs.sound_enabled ? 'Chuông: Bật' : 'Chuông: Tắt';
+    muteBtn.style.opacity = _notifPrefs.sound_enabled ? '1' : '0.65';
+  }
+  if (quietBtn) {
+    quietBtn.textContent = _notifPrefs.quiet_hours_enabled ? 'Yên lặng 22-6h: Bật' : 'Yên lặng 22-6h: Tắt';
+    quietBtn.style.background = _notifPrefs.quiet_hours_enabled ? '#eff6ff' : '#f8fafc';
+  }
+}
+
+export async function saveNotificationPreferences(patch) {
+  _notifPrefs = { ..._notifPrefs, ...(patch || {}) };
+  updatePrefButtonsUi();
+  try {
+    await api('/notifications/preferences', {
+      method: 'PUT',
+      body: JSON.stringify(_notifPrefs)
+    });
+  } catch (_) {}
+}
+window.saveNotificationPreferences = saveNotificationPreferences;
+
+export function toggleUserNotifSound() {
+  const next = !_notifPrefs.sound_enabled;
+  saveNotificationPreferences({ sound_enabled: next });
+  if (window.toast) window.toast(next ? 'Đã bật âm thanh thông báo.' : 'Đã tắt tiếng thông báo (trừ khẩn cấp).', 'info');
+}
+window.toggleUserNotifSound = toggleUserNotifSound;
+
+export function toggleUserQuietHours() {
+  const next = !_notifPrefs.quiet_hours_enabled;
+  saveNotificationPreferences({ quiet_hours_enabled: next });
+  if (window.toast) window.toast(next ? 'Đã bật Giờ yên lặng 22:00–06:00.' : 'Đã tắt Giờ yên lặng.', 'info');
+}
+window.toggleUserQuietHours = toggleUserQuietHours;
 
 export async function loadNotifications() {
   try {
@@ -291,20 +353,78 @@ export function playStrongAlert() {
 }
 window.playStrongAlert = playStrongAlert;
 
-export function playNotificationSound(type = 'info') {
-  if (type === 'danger') {
+export function playDoubleAlert() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    [0, 0.18].forEach((delay) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(784, ctx.currentTime + delay);
+      osc.frequency.setValueAtTime(987.77, ctx.currentTime + delay + 0.07);
+      gain.gain.setValueAtTime(0.26, ctx.currentTime + delay);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.15);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + delay);
+      osc.stop(ctx.currentTime + delay + 0.15);
+    });
+  } catch (e) {
+    console.warn('Audio play prevented:', e);
+  }
+}
+window.playDoubleAlert = playDoubleAlert;
+
+export function playNotificationSound(typeOrProfile = 'info') {
+  const key = String(typeOrProfile || 'info').toLowerCase();
+  if (key === 'silent' || key === 'audit_silent') return;
+  const isDanger = key === 'danger' || key === 'siren';
+  if (!isDanger && (!_notifPrefs.sound_enabled || isInUserQuietHours())) return;
+  if (isDanger) {
     playStrongAlert();
+  } else if (key === 'warning' || key === 'alert_double') {
+    playDoubleAlert();
   } else {
     playCheerfulChime();
   }
 }
 window.playNotificationSound = playNotificationSound;
 
+export function handleIncomingRealtimeNotification(payload) {
+  const row = payload && payload.notification ? payload.notification : payload;
+  if (!row) return;
+  const idx = _notificationsCache.findIndex(n => n.id === row.id);
+  if (idx >= 0) _notificationsCache[idx] = row;
+  else _notificationsCache.unshift(row);
+
+  const unreadCount = _notificationsCache.filter(n => !n.is_read).length;
+  renderNotificationsUI(unreadCount, _notificationsCache, _activeNotifFilter);
+
+  const soundProfile = (payload && payload.sound_profile) || row.sound_profile || row.severity || row.type || 'info';
+  playNotificationSound(soundProfile);
+
+  if (window.toast && row.severity !== 'audit_silent') {
+    window.toast(`${row.title}: ${row.message}`, row.type === 'danger' ? 'error' : 'info');
+  }
+  if ('Notification' in window && Notification.permission === 'granted' && document.hidden && row.severity !== 'audit_silent') {
+    try {
+      new Notification(row.title || 'Sổ Nông Nhàn TBSG', {
+        body: row.message || '',
+        icon: '/assets/logo.png',
+        tag: row.event_code || 'tbsg-live'
+      });
+    } catch (_) {}
+  }
+}
+window.handleIncomingRealtimeNotification = handleIncomingRealtimeNotification;
+
 export async function readSingleNotification(id) {
   try {
     const item = _notificationsCache.find(n => n.id === id);
     if (item) {
-      playNotificationSound(item.type);
+      playNotificationSound(item.sound_profile || item.type);
     }
     await api(`/notifications/${id}/read`, { method: 'PUT' });
     loadNotifications();
@@ -337,6 +457,9 @@ window.requestWebPushPermission = requestWebPushPermission;
 
 window.addEventListener('DOMContentLoaded', () => {
   if (localStorage.getItem('pb_token')) {
-    setTimeout(loadNotifications, 1000);
+    setTimeout(() => {
+      loadNotifications();
+      loadNotificationPreferences();
+    }, 1000);
   }
 });

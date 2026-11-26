@@ -780,6 +780,18 @@ router.put('/:id/approve', async (req, res) => {
       broadcast('user_approved', { id: parseInt(id), approved: true });
     }
 
+    try {
+      const { notifyUser } = require('../services/notificationDispatcher');
+      notifyUser(parseInt(id, 10), {
+        eventCode: 'ACCOUNT_APPROVED',
+        severity: 'success',
+        title: 'Tài khoản đã được phê duyệt',
+        message: 'Quản trị viên đã kích hoạt tài khoản của bạn. Chúc bạn canh tác hiệu quả!',
+        actorUserId: req.user ? req.user.id : null,
+        sendZalo: false
+      }).catch(() => {});
+    } catch (_) {}
+
     res.json({ success: true, message: 'Đã phê duyệt và kích hoạt tài khoản nông hộ thành công!' });
   } catch (err) {
     console.error('Approve user error:', err);

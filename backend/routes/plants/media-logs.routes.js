@@ -49,6 +49,23 @@ router.delete('/:id', auth, admin, async (req, res) => {
       action: 'soft_delete'
     }, ['farms_', 'plants_']);
 
+    try {
+      const { notifyFarmEvent } = require('../../services/notificationDispatcher');
+      if (oldPlant.farm_id) {
+        notifyFarmEvent(oldPlant.farm_id, {
+          eventCode: 'DATA_DELETED',
+          severity: 'danger',
+          title: `Xóa mềm cây #${oldPlant.tree_code || plantId}`,
+          message: `${req.user.full_name || req.user.email} vừa chuyển cây #${oldPlant.tree_code || plantId} vào thùng rác.`,
+          entityType: 'plant',
+          entityId: plantId,
+          actorUserId: req.user.id,
+          includeAdmins: true,
+          sendZalo: false
+        }).catch(() => {});
+      }
+    } catch (_) {}
+
     res.json({
       success: true,
       message: `Đã đưa cây #${oldPlant.tree_code || plantId} vào thùng rác an toàn (có thể khôi phục).`,
@@ -699,6 +716,21 @@ router.post(['/:id/logs', '/:id/care-log'], auth, async (req, res) => {
             parsedDetails.force_phi_override === true
           );
           if (!adminOverride) {
+            try {
+              const { notifyFarmEvent } = require('../../services/notificationDispatcher');
+              if (existingPlant.farm_id) {
+                notifyFarmEvent(existingPlant.farm_id, {
+                  eventCode: 'PHI_HARVEST_BLOCKED',
+                  severity: 'danger',
+                  title: `Cảnh báo vi phạm cách ly PHI cây #${treeCode || targetPlantId}`,
+                  message: `${req.user.full_name || req.user.email} cố thu hoạch cây #${treeCode || targetPlantId} khi đang cách ly đến ${existingPlant.phi_until_date}.`,
+                  entityType: 'plant',
+                  entityId: targetPlantId,
+                  actorUserId: req.user.id,
+                  sendZalo: false
+                }).catch(() => {});
+              }
+            } catch (_) {}
             return res.status(409).json({
               error: `CHẶN THU HOẠCH (VIETGAP / GLOBALG.A.P. PHI GATE): Cây đang trong thời gian cách ly thuốc BVTV đến hết ngày ${existingPlant.phi_until_date}.`,
               code: 'PHI_VIOLATION_BLOCKED',
@@ -874,6 +906,28 @@ router.post(['/:id/logs', '/:id/care-log'], auth, async (req, res) => {
       broadcast('plants_updated');
     }
 
+    try {
+      const { notifyFarmEvent } = require('../../services/notificationDispatcher');
+      const isDisease = effectiveLogType === 'Bệnh cây';
+      const farmIdForNotif = existingPlant ? existingPlant.farm_id : (req.body.farm_id ? parseInt(req.body.farm_id, 10) : null);
+      if (farmIdForNotif) {
+        notifyFarmEvent(farmIdForNotif, {
+          eventCode: isDisease ? 'PLANT_DISEASE_DETECTED' : 'CARE_LOG_CREATED',
+          severity: isDisease ? 'danger' : 'info',
+          title: isDisease ? `Cảnh báo bệnh cây #${treeCode || targetPlantId}` : `Cập nhật nhật ký [${effectiveLogType}]`,
+          message: `${req.user.full_name || req.user.name || req.user.email} vừa ghi [${effectiveLogType}] cho ${targetPlantId ? 'cây #' + (treeCode || targetPlantId) : 'toàn vườn'}.`,
+          farmId: farmIdForNotif,
+          entityType: 'plant_log',
+          entityId: result.rows[0]?.id || null,
+          actorUserId: req.user.id,
+          batchKey: isDisease ? null : `care_log:${farmIdForNotif}:${req.user.id}:${effectiveLogType}`,
+          batchMessage: isDisease ? null : (cnt => `${req.user.full_name || req.user.name || req.user.email} vừa ghi ${cnt} nhật ký [${effectiveLogType}].`),
+          metadata: { tree_code: treeCode, log_type: effectiveLogType },
+          sendZalo: isDisease
+        }).catch(() => {});
+      }
+    } catch (_) {}
+
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error('Error inserting log:', err);
@@ -1001,6 +1055,22 @@ router.put('/:plantId/logs/:logId', auth, async (req, res) => {
       broadcast('plants_updated', { message: `Care log edited on plant #${plantId}` });
       broadcast('supplies_updated', { message: `Care log edited on plant #${plantId}` });
     }
+
+    try {
+      const { notifyFarmEvent } = require('../../services/notificationDispatcher');
+      if (pRow.farm_id) {
+        notifyFarmEvent(pRow.farm_id, {
+          eventCode: 'CARE_LOG_UPDATED',
+          severity: 'warning',
+          title: `Chỉnh sửa nhật ký canh tác #${logId}`,
+          message: `${resolvedOperatorName} vừa sửa nhật ký [${targetLogType}] của cây #${plantId}.`,
+          entityType: 'plant_log',
+          entityId: parseInt(logId, 10),
+          actorUserId: req.user.id,
+          sendZalo: false
+        }).catch(() => {});
+      }
+    } catch (_) {}
 
     res.json(updated.rows[0]);
   } catch (err) {
@@ -1204,6 +1274,23 @@ router.delete(['/:plantId/logs/:logId', '/logs/:logId'], auth, async (req, res) 
       broadcast('plants_updated', { message: `Care log deleted on plant #${logRow.plant_id}` });
       broadcast('supplies_updated', { message: `Care log deleted on plant #${logRow.plant_id}` });
     }
+
+    try {
+      const { notifyFarmEvent } = require('../../services/notificationDispatcher');
+      if (logRow.farm_id) {
+        notifyFarmEvent(logRow.farm_id, {
+          eventCode: 'DATA_DELETED',
+          severity: 'danger',
+          title: `${isPermanent ? 'Xóa vĩnh viễn' : 'Xóa mềm'} nhật ký canh tác`,
+          message: `${req.user.full_name || req.user.email} vừa ${isPermanent ? 'xóa vĩnh viễn' : 'xóa mềm'} nhật ký [${logRow.log_type}] cây #${logRow.tree_code || logRow.plant_id}.`,
+          entityType: 'plant_log',
+          entityId: logId,
+          actorUserId: req.user.id,
+          includeAdmins: true,
+          sendZalo: false
+        }).catch(() => {});
+      }
+    } catch (_) {}
 
     res.json({ success: true, message: `Đã ${isPermanent ? 'xóa vĩnh viễn' : 'xóa mềm'} nhật ký.` });
   } catch (err) {

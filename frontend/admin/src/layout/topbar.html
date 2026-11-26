@@ -6,6 +6,29 @@
         <h1 id="page-title" style="margin:0;"><i data-lucide="layers" class="lucide-sm" style="color:#059669; font-size:16px;"></i> Dashboard</h1>
       </div>
       <div class="topbar-actions" id="topbar-actions" style="display:flex; align-items:center; gap:10px;">
+        <div style="position:relative;">
+          <button id="admin-notif-btn" onclick="if(window.toggleAdminNotificationDropdown)window.toggleAdminNotificationDropdown()" title="Trung tâm Thông báo Admin" style="position:relative; background:#ffffff; border:1.5px solid #cbd5e1; border-radius:10px; width:36px; height:36px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; color:#334155;">
+            <i data-lucide="bell" class="lucide-sm"></i>
+            <span id="admin-notif-badge" style="display:none; position:absolute; top:-4px; right:-4px; background:#ef4444; color:#ffffff; font-size:10px; font-weight:800; border-radius:10px; padding:1px 5px; border:2px solid #ffffff;">0</span>
+          </button>
+          <div id="admin-notif-overlay" onclick="if(window.closeAdminNotificationDropdown)window.closeAdminNotificationDropdown()" style="display:none; position:fixed; inset:0; z-index:9990;"></div>
+          <div id="admin-notif-dropdown" style="display:none; flex-direction:column; position:absolute; right:0; top:44px; width:360px; max-width:92vw; background:#ffffff; border:1px solid #cbd5e1; border-radius:14px; box-shadow:0 12px 32px rgba(0,0,0,0.16); z-index:9995; overflow:hidden;">
+            <div style="padding:12px 14px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+              <strong style="font-size:13px; color:#0f172a;">Thông báo Quản trị &amp; An ninh</strong>
+              <button onclick="if(window.markAllAdminNotificationsRead)window.markAllAdminNotificationsRead()" style="border:1px solid #cbd5e1; background:#f8fafc; color:#334155; font-size:11px; font-weight:700; border-radius:6px; padding:3px 8px; cursor:pointer;">Đọc hết</button>
+            </div>
+            <div style="display:flex; gap:6px; padding:6px 10px; border-bottom:1px solid #f1f5f9;">
+              <button onclick="if(window.filterAdminNotifications)window.filterAdminNotifications('all')" style="flex:1; border:1px solid #e2e8f0; background:#f8fafc; border-radius:6px; padding:4px; font-size:11px; font-weight:700; cursor:pointer;">Tất cả</button>
+              <button onclick="if(window.filterAdminNotifications)window.filterAdminNotifications('danger')" style="flex:1; border:1px solid #fecaca; background:#fef2f2; color:#dc2626; border-radius:6px; padding:4px; font-size:11px; font-weight:700; cursor:pointer;">Khẩn cấp</button>
+              <button onclick="if(window.filterAdminNotifications)window.filterAdminNotifications('unread')" style="flex:1; border:1px solid #e2e8f0; background:#f8fafc; border-radius:6px; padding:4px; font-size:11px; font-weight:700; cursor:pointer;">Chưa đọc</button>
+            </div>
+            <div id="admin-notif-list" style="max-height:320px; overflow-y:auto; padding:10px; display:flex; flex-direction:column; gap:8px; background:#f8fafc;"></div>
+            <div style="padding:8px 10px; border-top:1px solid #e2e8f0; display:flex; gap:6px;">
+              <button onclick="if(window.playAdminNotificationSound)window.playAdminNotificationSound('chime')" style="flex:1; border:1px solid #a7f3d0; background:#f0fdf4; color:#15803d; border-radius:6px; padding:5px; font-size:11px; font-weight:700; cursor:pointer;">Thử chuông</button>
+              <button onclick="if(window.playAdminNotificationSound)window.playAdminNotificationSound('siren')" style="flex:1; border:1px solid #fecaca; background:#fef2f2; color:#dc2626; border-radius:6px; padding:5px; font-size:11px; font-weight:700; cursor:pointer;">Thử còi</button>
+            </div>
+          </div>
+        </div>
         <div style="display:inline-flex; align-items:center; gap:2px; background:#f1f5f9; border:1.5px solid #cbd5e1; border-radius:10px; padding:2px;" title="Chuyển đổi ngôn ngữ (Tiếng Việt / English / 中文)">
           <i data-lucide="globe" class="lucide-xs" style="color:#059669; margin:0 4px;"></i>
           <button type="button" data-lang-btn="vi" onclick="if(window.switchExportLanguage)window.switchExportLanguage('vi')" style="border:none; border-radius:7px; padding:4px 7px; font-size:11px; font-weight:800; cursor:pointer; background:#059669; color:#ffffff;">VI</button>

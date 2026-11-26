@@ -439,11 +439,19 @@ router.post('/telemetry-ingest', async (req, res) => {
       const message = `Thiết bị IoT ghi nhận vượt ngưỡng cấu hình (${summaryParts.join(', ')}).`;
       const alertType = rule.category_type || 'warning';
 
-      await pool.query(
-        `INSERT INTO user_notifications (user_id, title, message, type, is_read, is_archived)
-         VALUES ($1, $2, $3, $4, false, false)`,
-        [rule.user_id, title, message, alertType]
-      );
+      const { dispatchNotification } = require('../services/notificationDispatcher');
+      await dispatchNotification({
+        dbPool: pool,
+        recipients: [rule.user_id],
+        farmId,
+        eventCode: 'IOT_THRESHOLD_EXCEEDED',
+        severity: alertType,
+        title,
+        message,
+        entityType: 'device',
+        entityId: device ? device.id : null,
+        metadata: { rule_id: rule.id, readings: summaryParts }
+      });
       triggeredAlertsCount += 1;
     }
 

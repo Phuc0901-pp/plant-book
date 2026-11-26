@@ -122,6 +122,18 @@ async function dlpAntiExfiltration(req, res, next) {
     } catch (_) {}
   }
 
+  try {
+    const { notifyAdmins } = require('../services/notificationDispatcher');
+    notifyAdmins({
+      eventCode: 'DLP_EXFILTRATION_BLOCKED',
+      severity: 'danger',
+      title: 'Báo động DLP: Chặn xuất dữ liệu hàng loạt',
+      message: `Tài khoản #${actor.userId || 'ẩn danh'} (IP: ${clientIp || 'N/A'}) vượt ngưỡng truy xuất tại ${urlPath}${autoRevoked ? ' và đã bị thu hồi phiên JWT.' : '.'}`,
+      actorUserId: actor.userId,
+      metadata: { ip: clientIp, route: urlPath, auto_revoked: autoRevoked }
+    }).catch(() => {});
+  } catch (_) {}
+
   return res.status(429).json({
     error: 'Phát hiện hành vi trích xuất dữ liệu hàng loạt bất thường (ISO 27001 DLP Anti-Exfiltration).',
     code: 'DLP_EXFILTRATION_BLOCKED',

@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_constants.dart';
 import '../../services/api_service.dart';
+import '../../services/websocket_service.dart';
+import '../../services/notification_service.dart';
 import '../../models/plant.dart';
 import '../../models/farm.dart';
 import '../../utils/theme.dart';
 import '../../components/loading_indicator.dart';
 import '../login_page.dart';
 import '../dashboard_page.dart';
+import '../alerts_page.dart';
 import 'admin_user_page.dart';
 import 'admin_plant_page.dart';
 import 'admin_gis_page.dart';
@@ -47,6 +50,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   void initState() {
     super.initState();
     _loadMetrics();
+    WebSocketService().connect();
+    NotificationService().init();
   }
 
   Future<void> _loadMetrics() async {
@@ -175,6 +180,42 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           ],
         ),
         actions: [
+          ValueListenableBuilder<int>(
+            valueListenable: NotificationService().unreadCount,
+            builder: (_, unread, __) {
+              return IconButton(
+                tooltip: 'Thông báo Quản trị & An ninh',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AlertsPage()),
+                  );
+                },
+                icon: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    const Icon(Icons.notifications_none_rounded, size: 22),
+                    if (unread > 0)
+                      Positioned(
+                        right: -4,
+                        top: -4,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: AppTheme.red,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            unread > 99 ? '99+' : '$unread',
+                            style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded, size: 20),
             tooltip: 'Làm mới dữ liệu',
