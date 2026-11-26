@@ -624,6 +624,7 @@ function initGisMap(farms, plants) {
   gMap.on('draw.create', updateAreaDisplay);
   gMap.on('draw.update', updateAreaDisplay);
   gMap.on('draw.delete', updateAreaDisplay);
+  gMap.on('draw.modechange', () => ensureDrawLayersOnTop(gMap));
 
   gMap.on('click', (e) => {
     if (!isGisImportMode && !pinningPlantTargetId) return;
@@ -680,6 +681,9 @@ function initGisMap(farms, plants) {
         });
       }
 
+      const firstDrawLayer = (gMap.getStyle()?.layers || []).find(l => l.id && l.id.startsWith('gl-draw-'));
+      const beforeDrawId = firstDrawLayer ? firstDrawLayer.id : undefined;
+
       if (!gMap.getLayer('esri-satellite-layer')) {
         gMap.addLayer({
           id: 'esri-satellite-layer',
@@ -687,7 +691,7 @@ function initGisMap(farms, plants) {
           source: 'esri-satellite-src',
           layout: { visibility: 'none' },
           paint: { 'raster-opacity': 1 }
-        });
+        }, beforeDrawId);
       }
 
       if (!gMap.getLayer('google-satellite-layer')) {
@@ -697,18 +701,29 @@ function initGisMap(farms, plants) {
           source: 'google-satellite-src',
           layout: { visibility: 'visible' },
           paint: { 'raster-opacity': 1 }
-        });
+        }, beforeDrawId);
       }
     } catch(layerErr) {
       console.warn('Satellite source init warning:', layerErr);
     }
 
     drawFarmsAndPlantsLayers(farms, plants);
+    ensureDrawLayersOnTop(gMap);
   });
 
   setTimeout(() => {
     try { if (gMap) gMap.resize(); } catch(_) {}
   }, 300);
+}
+
+function ensureDrawLayersOnTop(map) {
+  if (!map || !map.getStyle) return;
+  try {
+    const layers = (map.getStyle()?.layers || []).filter(l => l.id && l.id.startsWith('gl-draw-'));
+    layers.forEach(l => {
+      try { map.moveLayer(l.id); } catch (_) {}
+    });
+  } catch (_) {}
 }
 
 let currentSatelliteSource = 'google';
@@ -742,6 +757,7 @@ function switchSatelliteSource(source) {
       if (googleLayer) gMap.setLayoutProperty('google-satellite-layer', 'visibility', 'none');
       toast('Đã chuyển sang Ảnh Vệ Tinh Mapbox', 'info');
     }
+    ensureDrawLayersOnTop(gMap);
   } catch (err) {
     console.warn('Error toggling satellite source:', err);
   }
@@ -1584,6 +1600,7 @@ function enableDirectSelectMode() {
   if (all && all.features && all.features.length > 0) {
     const featureId = all.features[0].id;
     if (featureId) {
+      ensureDrawLayersOnTop(gMap);
       drawControl.changeMode('direct_select', { featureId });
       toast('Đã bật chế độ chỉnh đỉnh: Hãy kéo các điểm tròn trắng trên ranh giới để đổi hình dạng!', 'info');
     }
@@ -1597,6 +1614,7 @@ function enableRedrawPolygonMode() {
   if (!drawControl) return;
   drawControl.deleteAll();
   updateAreaDisplay();
+  ensureDrawLayersOnTop(gMap);
   drawControl.changeMode('draw_polygon');
   toast('Chế độ vẽ mới: Nhấp chuột trên bản đồ để chấm các đỉnh ranh giới.', 'info');
 }
@@ -1638,6 +1656,7 @@ async function openFarmForm() {
   await loadUsersDropdown();
 
   drawControl.deleteAll();
+  ensureDrawLayersOnTop(gMap);
   drawControl.changeMode('draw_polygon');
   if (window.lucide && typeof window.lucide.createIcons === 'function') lucide.createIcons();
 }
@@ -2485,9 +2504,11 @@ async function editFarm() {
         gMap.fitBounds(bounds, { padding: 80, maxZoom: 20, duration: 600 });
       }
 
+      ensureDrawLayersOnTop(gMap);
       toast('🎯 Đang ở chế độ sửa ranh giới: Kéo các điểm tròn trắng để điều chỉnh hình dạng!', 'info');
     } else {
       drawControl.deleteAll();
+      ensureDrawLayersOnTop(gMap);
       drawControl.changeMode('draw_polygon');
       toast('Chưa có ranh giới: Hãy chấm các điểm trên bản đồ để vẽ ranh giới!', 'info');
     }

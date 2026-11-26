@@ -67,7 +67,7 @@ function securityHeaders(req, res, next) {
   res.setHeader('X-XSS-Protection', '0');
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; connect-src 'self' https: wss: ws:; frame-ancestors 'self'; base-uri 'self'; object-src 'none';"
+    "default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; connect-src 'self' https: wss: ws:; frame-ancestors 'self'; base-uri 'self'; object-src 'none';"
   );
 
   const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https' || process.env.NODE_ENV === 'production';
