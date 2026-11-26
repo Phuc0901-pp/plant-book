@@ -12,7 +12,6 @@ const {
   buildLogFilterQuery, isFullNfcUid
 } = require('./helpers');
 const { queryIsoCareReport, fetchFarmCareLogs } = require('../../services/reportQueryService');
-const { generateSignedIsoPdf, toPdfAscii } = require('../../services/signedPdfService');
 
 router.get('/', auth, async (req, res) => {
   try {
@@ -430,60 +429,6 @@ router.get('/logs/farm/:farmId(\\d+)', auth, async (req, res) => {
   } catch (err) {
     console.error('Error in GET /plants/logs/farm/:farmId:', err);
     res.status(500).json({ error: 'Lỗi tải nhật ký trang trại: ' + err.message });
-  }
-});
-
-router.post('/reports/export-pdf-signed', auth, async (req, res) => {
-  try {
-    const body = req.body && typeof req.body === 'object' ? req.body : {};
-    const report = await queryIsoCareReport(pool, req.user, body);
-    const signed = await generateSignedIsoPdf({
-      report,
-      farmName: body.farm_name,
-      pucCode: body.puc_code,
-      standardLabel: body.standard_label,
-      title: body.title
-    });
-
-    try {
-      const farmIdVal = body.farm_id && body.farm_id !== 'all' ? (parseInt(body.farm_id, 10) || null) : null;
-      const plantIdVal = body.plant_id && body.plant_id !== 'all' ? (parseInt(body.plant_id, 10) || null) : null;
-      await pool.query(
-        `INSERT INTO signed_report_certificates (
-           cert_uuid, farm_id, plant_id, standard_code, document_sha256, merkle_root,
-           signature_b64, signer_cn, signer_org, cert_serial, cert_fingerprint_sha256,
-           total_logs, issued_by
-         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
-        [
-          signed.cert_uuid,
-          farmIdVal,
-          plantIdVal,
-          body.standard_code || 'vietgap_globalgap_iso',
-          signed.document_sha256,
-          signed.merkle_root,
-          signed.signature_b64,
-          signed.signer_cn,
-          signed.signer_org,
-          signed.cert_serial,
-          signed.cert_fingerprint_sha256,
-          Array.isArray(report.rows) ? report.rows.length : 0,
-          req.user ? req.user.id : null
-        ]
-      );
-    } catch (_) {}
-
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="HoSo_KySo_ISO_${signed.cert_uuid.slice(0, 8)}.pdf"`);
-    res.setHeader('X-Report-Cert-UUID', signed.cert_uuid);
-    res.setHeader('X-Report-SHA256', signed.document_sha256);
-    res.setHeader('X-Report-Merkle-Root', signed.merkle_root);
-    res.setHeader('X-Report-Signer-CN', toPdfAscii(signed.signer_cn) || 'Tan Bao Sai Gon AgTech');
-    res.setHeader('X-Report-Cert-Serial', signed.cert_serial);
-    res.setHeader('X-Report-Cert-Fingerprint', signed.cert_fingerprint_sha256);
-    res.send(signed.pdfBuffer);
-  } catch (err) {
-    console.error('Error in POST /plants/reports/export-pdf-signed:', err);
-    res.status(500).json({ error: 'Lỗi sinh PDF ký số P12: ' + err.message });
   }
 });
 

@@ -14,7 +14,6 @@ function isBulkExportRequest(req) {
   if (urlPath === '/api/database' || urlPath.startsWith('/api/database/')) return true;
   if (urlPath.includes('/full-dataset')) return true;
   if (urlPath.includes('/reports/query')) return true;
-  if (urlPath.includes('/reports/export-pdf-signed')) return true;
   if (urlPath === '/api/users' || urlPath === '/api/users/') return true;
   return false;
 }

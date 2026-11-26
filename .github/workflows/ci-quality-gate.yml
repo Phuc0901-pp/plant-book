@@ -105,10 +105,6 @@ jobs:
       - name: Install Playwright Chromium Browser
         run: npx playwright-core install chromium --with-deps
 
-      - name: Generate Enterprise .p12 Signing Certificate
-        run: |
-          node scripts/generate-dev-p12.js ./certs/enterprise-report-signer.p12
-
       - name: Run Migrations on Real PostgreSQL 16
         run: |
           npm run migrate:up

@@ -4,70 +4,7 @@ const { describe, test, assert } = require('../test-framework');
 
 const rootDir = path.resolve(__dirname, '../../..');
 
-describe('Suite 28: Enterprise P12 Signed PDF, APM OpenMetrics, Real PostgreSQL/Playwright CI & k6 Load Gate', () => {
-  test('28.1 [ENT-01] Enterprise PKCS#12 .p12 PDF signing embeds logo.png & detects 1-byte tampering', async () => {
-    const { createEnterpriseP12Buffer } = require('../../scripts/generate-dev-p12');
-    const { generateSignedIsoPdf, verifySignedPdfBuffer, computeLogsMerkleRoot } = require('../../services/signedPdfService');
-
-    const p12 = createEnterpriseP12Buffer({
-      cn: 'Tan Bao Sai Gon Test Cert',
-      org: 'Tan Bao Sai Gon AgTech',
-      passphrase: 'EnterpriseIsoP12Pass!'
-    });
-    assert.ok(Buffer.isBuffer(p12.p12Buffer) && p12.p12Buffer.length > 500);
-
-    const rows = [
-      { id: 1, plant_id: 10, tree_code: 'SR-01', log_date: '2026-11-26', log_type: 'Phun thuốc', material_name: 'Ridomil Gold', active_ingredient: 'Metalaxyl', phi_status_label: 'An toàn PHI', operator_name: 'Kỹ thuật viên', farm_name: 'Vườn Long Khánh', puc_code: 'VN-LK-01', record_hash: 'a'.repeat(64) }
-    ];
-    const signed = await generateSignedIsoPdf({
-      report: { rows, summary: { date_from: '2026-11-01', date_to: '2026-11-30', phi_violations: 0 } },
-      farmName: 'Vườn Long Khánh',
-      pucCode: 'VN-LK-01',
-      p12Buffer: p12.p12Buffer,
-      p12Passphrase: p12.passphrase
-    });
-
-    assert.strictEqual(signed.pdfBuffer.subarray(0, 5).toString('ascii'), '%PDF-');
-    assert.strictEqual(signed.logo_embedded, true, 'Official logo.png must be embedded');
-    assert.strictEqual(signed.merkle_root, computeLogsMerkleRoot(rows));
-    assert.ok(signed.pdfBuffer.toString('latin1').includes('/ByteRange'), 'PAdES /ByteRange missing');
-
-    const ok = verifySignedPdfBuffer(signed.pdfBuffer, signed);
-    assert.strictEqual(ok.valid, true);
-    assert.strictEqual(ok.tampered, false);
-
-    const tampered = Buffer.from(signed.pdfBuffer);
-    tampered[120] = tampered[120] === 65 ? 66 : 65;
-    const bad = verifySignedPdfBuffer(tampered, signed);
-    assert.strictEqual(bad.valid, false);
-    assert.strictEqual(bad.tampered, true);
-
-    const mig017 = fs.readFileSync(path.join(rootDir, 'backend/db/migrations/017_signed_pdf_registry.sql'), 'utf8');
-    const initJs = fs.readFileSync(path.join(rootDir, 'backend/db/init.js'), 'utf8');
-    assert.ok(mig017.startsWith('-- +migrate Up'));
-    assert.ok(initJs.includes('signed_report_certificates'));
-  });
-
-  test('28.2 [ENT-02] Signed PDF export/verify endpoints & 3-portal UI buttons wired', () => {
-    const coreSrc = fs.readFileSync(path.join(rootDir, 'backend/routes/plants/core.routes.js'), 'utf8');
-    const publicSrc = fs.readFileSync(path.join(rootDir, 'backend/routes/plants/public.routes.js'), 'utf8');
-    const logsHtml = fs.readFileSync(path.join(rootDir, 'frontend/user/src/views/logs.html'), 'utf8');
-    const logsJs = fs.readFileSync(path.join(rootDir, 'frontend/user/js/modules/logs.js'), 'utf8');
-    const reportHtml = fs.readFileSync(path.join(rootDir, 'frontend/public/report.html'), 'utf8');
-    const reportJs = fs.readFileSync(path.join(rootDir, 'frontend/public/js/report.js'), 'utf8');
-    const adminDbJs = fs.readFileSync(path.join(rootDir, 'frontend/admin/js/database.js'), 'utf8');
-
-    assert.ok(coreSrc.includes("'/reports/export-pdf-signed'"));
-    assert.ok(publicSrc.includes("'/public/verify-report/:certUuid'"));
-    assert.ok(publicSrc.includes("'/public/verify-report'"));
-    assert.ok(publicSrc.includes("'/:id(\\\\d+)/export-pdf-signed'"));
-    assert.ok(logsHtml.includes('id="btn-user-export-signed-p12-pdf"'));
-    assert.ok(logsJs.includes('/api/plants/reports/export-pdf-signed'));
-    assert.ok(reportHtml.includes('id="btn-export-signed-pdf"'));
-    assert.ok(reportJs.includes('downloadPublicSignedPdf'));
-    assert.ok(adminDbJs.includes('exportDbFarmSignedPdf'));
-  });
-
+describe('Suite 28: Enterprise APM OpenMetrics, Real PostgreSQL/Playwright CI & k6 Load Gate', () => {
   test('28.3 [ENT-03] APM Telemetry computes p50/p95/p99, OpenMetrics /metrics & protects access', async () => {
     const apm = require('../../services/apmMetricsService');
     apm.resetApmMetricsForTest();
@@ -101,8 +38,8 @@ describe('Suite 28: Enterprise P12 Signed PDF, APM OpenMetrics, Real PostgreSQL/
     assert.ok(ciYml.includes('npx playwright-core install chromium --with-deps'));
     assert.ok(ciYml.includes('npm run test:e2e:pg'));
     assert.ok(ciYml.includes('npm run test:e2e:browser'));
-    assert.ok(pgE2e.includes('/api/plants/reports/export-pdf-signed'));
-    assert.ok(pwE2e.includes('#btn-user-export-signed-p12-pdf'));
+    assert.ok(pgE2e.includes('/api/plants/reports/query'));
+    assert.ok(pwE2e.includes('#user-export-logs-modal'));
   });
 
   test('28.5 [ENT-05] k6 200-VU load script, SLA gate & Prometheus scrape config verified', () => {
@@ -123,52 +60,5 @@ describe('Suite 28: Enterprise P12 Signed PDF, APM OpenMetrics, Real PostgreSQL/
     assert.strictEqual(pass.passed, true);
     assert.strictEqual(fail.passed, false);
     assert.strictEqual(fail.reasons.length, 3);
-  });
-
-  test('28.6 [ENT-06] Production auto-provisions P12 signer unless REQUIRE_EXTERNAL_P12_CERT=true, headers are ASCII-safe, and UI sends credentials', async () => {
-    const { loadEnterpriseP12Material, generateSignedIsoPdf, toPdfAscii } = require('../../services/signedPdfService');
-    const prevNodeEnv = process.env.NODE_ENV;
-    const prevReqExt = process.env.REQUIRE_EXTERNAL_P12_CERT;
-    const prevB64 = process.env.REPORT_SIGNING_P12_BASE64;
-    const prevPath = process.env.REPORT_SIGNING_P12_PATH;
-
-    try {
-      process.env.NODE_ENV = 'production';
-      delete process.env.REQUIRE_EXTERNAL_P12_CERT;
-      delete process.env.REPORT_SIGNING_P12_BASE64;
-      delete process.env.REPORT_SIGNING_P12_PATH;
-
-      const autoMat = loadEnterpriseP12Material();
-      assert.ok(Buffer.isBuffer(autoMat.p12Buffer) && autoMat.p12Buffer.length > 500);
-      assert.strictEqual(toPdfAscii(autoMat.signer_cn), 'CONG TY TNHH CONG NGHE NONG NGHIEP TAN BAO SAI GON');
-
-      const signed = await generateSignedIsoPdf({
-        report: { rows: [], summary: {} },
-        farmName: 'Vườn A',
-        pucCode: 'PUC-6096'
-      });
-      assert.strictEqual(signed.pdfBuffer.subarray(0, 5).toString('ascii'), '%PDF-');
-
-      process.env.REQUIRE_EXTERNAL_P12_CERT = 'true';
-      assert.throws(() => loadEnterpriseP12Material(), /Thieu cau hinh chung thu ky so/);
-    } finally {
-      if (prevNodeEnv === undefined) delete process.env.NODE_ENV;
-      else process.env.NODE_ENV = prevNodeEnv;
-      if (prevReqExt === undefined) delete process.env.REQUIRE_EXTERNAL_P12_CERT;
-      else process.env.REQUIRE_EXTERNAL_P12_CERT = prevReqExt;
-      if (prevB64 === undefined) delete process.env.REPORT_SIGNING_P12_BASE64;
-      else process.env.REPORT_SIGNING_P12_BASE64 = prevB64;
-      if (prevPath === undefined) delete process.env.REPORT_SIGNING_P12_PATH;
-      else process.env.REPORT_SIGNING_P12_PATH = prevPath;
-    }
-
-    const safeHeaderSlug = toPdfAscii('Cây #001 Sầu Riêng').replace(/[^A-Za-z0-9_-]/g, '_');
-    assert.strictEqual(/^[\x20-\x7E]+$/.test(safeHeaderSlug), true);
-    assert.ok(safeHeaderSlug.includes('Cay__001_Sau_Rieng'));
-
-    const adminDbJs = fs.readFileSync(path.join(rootDir, 'frontend/admin/js/database.js'), 'utf8');
-    const logsJs = fs.readFileSync(path.join(rootDir, 'frontend/user/js/modules/logs.js'), 'utf8');
-    assert.ok(adminDbJs.includes("credentials: 'same-origin'"));
-    assert.ok(logsJs.includes("credentials: 'same-origin'"));
   });
 });

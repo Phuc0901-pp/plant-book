@@ -84,8 +84,6 @@ async function run() {
       if (typeof window.openUserExportLogsModal === 'function') window.openUserExportLogsModal('csv');
     });
     await page.waitForSelector('#user-export-logs-modal', { state: 'visible', timeout: 8000 });
-    const hasSignedBtn = await page.locator('#btn-user-export-signed-p12-pdf').count();
-    assert.ok(hasSignedBtn > 0, 'Missing P12 signed PDF button in export modal');
 
     await page.keyboard.press('Escape');
     await page.waitForTimeout(150);
@@ -100,8 +98,6 @@ async function run() {
     assert.ok(adminTitle.length > 0, 'Admin portal failed to load');
 
     await page.goto(`${BASE_URL}/report.html`, { waitUntil: 'domcontentloaded', timeout: 15000 });
-    const reportSignedBtn = await page.locator('#btn-export-signed-pdf').count();
-    assert.ok(reportSignedBtn > 0, 'Public report missing P12 signed PDF button');
 
     assert.strictEqual(pageErrors.length, 0, `Uncaught browser errors: ${pageErrors.join(' | ')}`);
     console.log(JSON.stringify({ success: true, e2e: 'playwright-portals', pageErrors: 0 }));

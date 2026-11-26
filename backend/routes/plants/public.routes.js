@@ -11,7 +11,6 @@ const {
   syncPlantNfcToInventory, ensureNfcInventoryColumns, reconcileFarmNfcInventory,
   buildLogFilterQuery, isFullNfcUid, normalizeCareLogType, enrichFruitAuditAndHarvestDetails
 } = require('./helpers');
-const { generateSignedIsoPdf, verifySignedPdfBuffer, toPdfAscii } = require('../../services/signedPdfService');
 
 function scrubPublicPlantLogRow(log) {
   let safeDetails = {};
@@ -977,102 +976,6 @@ router.get('/:id(\\d+)/qr-traceability', async (req, res) => {
   } catch (err) {
     console.error('QR Traceability error:', err);
     res.status(500).json({ error: 'Lỗi tạo QR: ' + err.message });
-  }
-});
-
-router.get('/public/verify-report/:certUuid', async (req, res) => {
-  try {
-    const certUuid = String(req.params.certUuid || '').trim();
-    if (!certUuid) {
-      return res.status(400).json({ verified: false, error: 'Thiếu mã chứng thư báo cáo.' });
-    }
-    const found = await pool.query(
-      `SELECT cert_uuid, farm_id, plant_id, standard_code, document_sha256, merkle_root,
-              signer_cn, signer_org, cert_serial, cert_fingerprint_sha256, total_logs, issued_at
-       FROM signed_report_certificates
-       WHERE cert_uuid = $1
-       LIMIT 1`,
-      [certUuid]
-    );
-    if (found.rows.length === 0) {
-      return res.status(404).json({ verified: false, error: 'Không tìm thấy chứng thư PDF ký số này.' });
-    }
-    res.json({ verified: true, certificate: found.rows[0] });
-  } catch (err) {
-    console.error('Error in GET /public/verify-report:', err);
-    res.status(500).json({ verified: false, error: 'Lỗi xác thực chứng thư: ' + err.message });
-  }
-});
-
-router.post('/public/verify-report', async (req, res) => {
-  try {
-    const { cert_uuid, pdf_base64 } = req.body || {};
-    if (!pdf_base64) {
-      return res.status(400).json({ valid: false, error: 'Thiếu dữ liệu pdf_base64 để xác minh.' });
-    }
-    let expectedRecord = null;
-    if (cert_uuid) {
-      const found = await pool.query(
-        `SELECT cert_uuid, document_sha256, merkle_root, signer_cn, cert_serial, cert_fingerprint_sha256
-         FROM signed_report_certificates WHERE cert_uuid = $1 LIMIT 1`,
-        [String(cert_uuid).trim()]
-      );
-      expectedRecord = found.rows[0] || null;
-      if (!expectedRecord) {
-        return res.status(404).json({ valid: false, tampered: true, reason: 'Không tìm thấy chứng thư trên hệ thống.' });
-      }
-    }
-    const pdfBuffer = Buffer.from(String(pdf_base64), 'base64');
-    const verdict = verifySignedPdfBuffer(pdfBuffer, expectedRecord);
-    if (!verdict.valid) {
-      return res.status(422).json(verdict);
-    }
-    res.json(verdict);
-  } catch (err) {
-    console.error('Error in POST /public/verify-report:', err);
-    res.status(500).json({ valid: false, error: 'Lỗi kiểm tra chữ ký PDF: ' + err.message });
-  }
-});
-
-router.post('/:id(\\d+)/export-pdf-signed', async (req, res) => {
-  try {
-    const plantId = parseInt(req.params.id, 10);
-    const plantRes = await pool.query(
-      `SELECT p.*, f.name as farm_name, f.puc_code
-       FROM plants p
-       LEFT JOIN farms f ON f.id = p.farm_id
-       WHERE p.id = $1 AND (p.is_public IS NOT FALSE) AND (p.deleted_at IS NULL)`,
-      [plantId]
-    );
-    if (plantRes.rows.length === 0) {
-      return res.status(404).json({ error: 'Không tìm thấy cây trồng công khai.' });
-    }
-    const plant = plantRes.rows[0];
-    const { scrubbedLogs } = await fetchAndScrubPublicPlantLogs(pool, plantId);
-    const rows = scrubbedLogs.map(l => ({
-      ...l,
-      tree_code: plant.tree_code || `#${plant.id}`,
-      farm_name: plant.farm_name,
-      puc_code: plant.puc_code,
-      material_name: l.details && (l.details.supply_name || l.details.material_name || l.details.pesticide_name || ''),
-      active_ingredient: l.details && l.details.active_ingredient,
-      phi_status_label: l.is_phi_violation ? 'VI PHẠM PHI' : 'Đạt Chuẩn'
-    }));
-    const signed = await generateSignedIsoPdf({
-      report: { rows, summary: { phi_violations: rows.filter(r => r.is_phi_violation).length } },
-      farmName: plant.farm_name,
-      pucCode: plant.puc_code || 'VN-TB',
-      title: (req.body && req.body.title) || `HO SO TRUY XUAT CAY ${plant.tree_code || plant.id}`
-    });
-    const safeTreeSlug = toPdfAscii(plant.tree_code || plant.id).replace(/[^A-Za-z0-9_-]/g, '_') || String(plant.id);
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="TruyXuat_KySo_${safeTreeSlug}.pdf"`);
-    res.setHeader('X-Report-Cert-UUID', signed.cert_uuid);
-    res.setHeader('X-Report-SHA256', signed.document_sha256);
-    res.send(signed.pdfBuffer);
-  } catch (err) {
-    console.error('Error in public signed PDF export:', err);
-    res.status(500).json({ error: 'Lỗi xuất PDF ký số công khai: ' + err.message });
   }
 });
 

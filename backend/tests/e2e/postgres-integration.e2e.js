@@ -128,34 +128,6 @@ async function run() {
   assert.strictEqual(reportQuery.status, 200);
   assert.ok(reportQuery.body.rows.length >= 2);
 
-  const pdfRes = await apiReq('/api/plants/reports/export-pdf-signed', {
-    method: 'POST',
-    headers: authHdr,
-    body: JSON.stringify({ farm_id: farmId, title: 'PG Real Integration Signed PDF' })
-  });
-  assert.strictEqual(pdfRes.status, 200);
-  assert.strictEqual(pdfRes.buffer.subarray(0, 5).toString('ascii'), '%PDF-');
-  const certUuid = pdfRes.headers.get('x-report-cert-uuid');
-  assert.ok(certUuid, 'Missing X-Report-Cert-UUID');
-
-  const verifyOk = await apiReq('/api/plants/public/verify-report', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ cert_uuid: certUuid, pdf_base64: pdfRes.buffer.toString('base64') })
-  });
-  assert.strictEqual(verifyOk.status, 200);
-  assert.strictEqual(verifyOk.body.valid, true);
-
-  const tampered = Buffer.from(pdfRes.buffer);
-  tampered[90] = tampered[90] === 65 ? 66 : 65;
-  const verifyTampered = await apiReq('/api/plants/public/verify-report', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ cert_uuid: certUuid, pdf_base64: tampered.toString('base64') })
-  });
-  assert.strictEqual(verifyTampered.status, 422);
-  assert.strictEqual(verifyTampered.body.tampered, true);
-
   const metricsRes = await apiReq('/metrics', { headers: { Authorization: `Bearer ${METRICS_TOKEN}` } });
   assert.strictEqual(metricsRes.status, 200);
   assert.ok(String(metricsRes.body).includes('plantbook_http_requests_total'));
