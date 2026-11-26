@@ -12,7 +12,7 @@ const {
   buildLogFilterQuery, isFullNfcUid
 } = require('./helpers');
 const { queryIsoCareReport, fetchFarmCareLogs } = require('../../services/reportQueryService');
-const { generateSignedIsoPdf } = require('../../services/signedPdfService');
+const { generateSignedIsoPdf, toPdfAscii } = require('../../services/signedPdfService');
 
 router.get('/', auth, async (req, res) => {
   try {
@@ -477,7 +477,7 @@ router.post('/reports/export-pdf-signed', auth, async (req, res) => {
     res.setHeader('X-Report-Cert-UUID', signed.cert_uuid);
     res.setHeader('X-Report-SHA256', signed.document_sha256);
     res.setHeader('X-Report-Merkle-Root', signed.merkle_root);
-    res.setHeader('X-Report-Signer-CN', signed.signer_cn);
+    res.setHeader('X-Report-Signer-CN', toPdfAscii(signed.signer_cn) || 'Tan Bao Sai Gon AgTech');
     res.setHeader('X-Report-Cert-Serial', signed.cert_serial);
     res.setHeader('X-Report-Cert-Fingerprint', signed.cert_fingerprint_sha256);
     res.send(signed.pdfBuffer);

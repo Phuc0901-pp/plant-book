@@ -2952,6 +2952,7 @@ async function exportDbFarmSignedPdf() {
     const authTok = typeof token !== 'undefined' ? token : (localStorage.getItem('pb_token') || '');
     const resp = await fetch('/api/plants/reports/export-pdf-signed', {
       method: 'POST',
+      credentials: 'same-origin',
       headers: {
         'Content-Type': 'application/json',
         ...(authTok ? { Authorization: `Bearer ${authTok}` } : {})
@@ -2962,7 +2963,14 @@ async function exportDbFarmSignedPdf() {
         title: `HO SO XUAT KHAU TRANG TRAI #${currentDbSelectedFarmId}`
       })
     });
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    if (!resp.ok) {
+      let errMsg = `HTTP ${resp.status}`;
+      try {
+        const errJson = await resp.json();
+        if (errJson && errJson.error) errMsg = errJson.error;
+      } catch (_) {}
+      throw new Error(errMsg);
+    }
     const certUuid = resp.headers.get('X-Report-Cert-UUID') || new Date().toISOString().slice(0, 10);
     const blob = await resp.blob();
     const url = URL.createObjectURL(blob);

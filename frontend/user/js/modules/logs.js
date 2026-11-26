@@ -2003,6 +2003,7 @@ export async function executeUserExport(mode = 'csv') {
       const authTok = localStorage.getItem('pb_token') || '';
       const resp = await fetch('/api/plants/reports/export-pdf-signed', {
         method: 'POST',
+        credentials: 'same-origin',
         headers: {
           'Content-Type': 'application/json',
           ...(authTok ? { Authorization: `Bearer ${authTok}` } : {})
@@ -2024,7 +2025,14 @@ export async function executeUserExport(mode = 'csv') {
           include_finance: includeFinance
         })
       });
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      if (!resp.ok) {
+        let errMsg = `HTTP ${resp.status}`;
+        try {
+          const errJson = await resp.json();
+          if (errJson && errJson.error) errMsg = errJson.error;
+        } catch (_) {}
+        throw new Error(errMsg);
+      }
       const certUuid = resp.headers.get('X-Report-Cert-UUID') || dateSuffix;
       const pdfBlob = await resp.blob();
       const blobUrl = URL.createObjectURL(pdfBlob);

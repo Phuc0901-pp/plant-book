@@ -124,4 +124,51 @@ describe('Suite 28: Enterprise P12 Signed PDF, APM OpenMetrics, Real PostgreSQL/
     assert.strictEqual(fail.passed, false);
     assert.strictEqual(fail.reasons.length, 3);
   });
+
+  test('28.6 [ENT-06] Production auto-provisions P12 signer unless REQUIRE_EXTERNAL_P12_CERT=true, headers are ASCII-safe, and UI sends credentials', async () => {
+    const { loadEnterpriseP12Material, generateSignedIsoPdf, toPdfAscii } = require('../../services/signedPdfService');
+    const prevNodeEnv = process.env.NODE_ENV;
+    const prevReqExt = process.env.REQUIRE_EXTERNAL_P12_CERT;
+    const prevB64 = process.env.REPORT_SIGNING_P12_BASE64;
+    const prevPath = process.env.REPORT_SIGNING_P12_PATH;
+
+    try {
+      process.env.NODE_ENV = 'production';
+      delete process.env.REQUIRE_EXTERNAL_P12_CERT;
+      delete process.env.REPORT_SIGNING_P12_BASE64;
+      delete process.env.REPORT_SIGNING_P12_PATH;
+
+      const autoMat = loadEnterpriseP12Material();
+      assert.ok(Buffer.isBuffer(autoMat.p12Buffer) && autoMat.p12Buffer.length > 500);
+      assert.strictEqual(toPdfAscii(autoMat.signer_cn), 'CONG TY TNHH CONG NGHE NONG NGHIEP TAN BAO SAI GON');
+
+      const signed = await generateSignedIsoPdf({
+        report: { rows: [], summary: {} },
+        farmName: 'Vườn A',
+        pucCode: 'PUC-6096'
+      });
+      assert.strictEqual(signed.pdfBuffer.subarray(0, 5).toString('ascii'), '%PDF-');
+
+      process.env.REQUIRE_EXTERNAL_P12_CERT = 'true';
+      assert.throws(() => loadEnterpriseP12Material(), /Thieu cau hinh chung thu ky so/);
+    } finally {
+      if (prevNodeEnv === undefined) delete process.env.NODE_ENV;
+      else process.env.NODE_ENV = prevNodeEnv;
+      if (prevReqExt === undefined) delete process.env.REQUIRE_EXTERNAL_P12_CERT;
+      else process.env.REQUIRE_EXTERNAL_P12_CERT = prevReqExt;
+      if (prevB64 === undefined) delete process.env.REPORT_SIGNING_P12_BASE64;
+      else process.env.REPORT_SIGNING_P12_BASE64 = prevB64;
+      if (prevPath === undefined) delete process.env.REPORT_SIGNING_P12_PATH;
+      else process.env.REPORT_SIGNING_P12_PATH = prevPath;
+    }
+
+    const safeHeaderSlug = toPdfAscii('Cây #001 Sầu Riêng').replace(/[^A-Za-z0-9_-]/g, '_');
+    assert.strictEqual(/^[\x20-\x7E]+$/.test(safeHeaderSlug), true);
+    assert.ok(safeHeaderSlug.includes('Cay__001_Sau_Rieng'));
+
+    const adminDbJs = fs.readFileSync(path.join(rootDir, 'frontend/admin/js/database.js'), 'utf8');
+    const logsJs = fs.readFileSync(path.join(rootDir, 'frontend/user/js/modules/logs.js'), 'utf8');
+    assert.ok(adminDbJs.includes("credentials: 'same-origin'"));
+    assert.ok(logsJs.includes("credentials: 'same-origin'"));
+  });
 });

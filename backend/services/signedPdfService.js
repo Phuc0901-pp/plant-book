@@ -11,6 +11,7 @@ const { createEnterpriseP12Buffer } = require('../scripts/generate-dev-p12');
 const DEFAULT_LOGO_PATH = path.resolve(__dirname, '../../frontend/assets/logo.png');
 
 let _cachedDevP12 = null;
+let _warnedAutoP12Prod = false;
 
 function toPdfAscii(val) {
   if (val === null || val === undefined) return '';
@@ -80,12 +81,19 @@ function loadEnterpriseP12Material(override = {}) {
     return { p12Buffer, passphrase: pass || 'TanBaoAgTechISO2026!', ...meta };
   }
 
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.REQUIRE_EXTERNAL_P12_CERT === 'true') {
     throw new Error('Thieu cau hinh chung thu ky so .p12 doanh nghiep (REPORT_SIGNING_P12_BASE64 hoac REPORT_SIGNING_P12_PATH).');
   }
 
   if (!_cachedDevP12) {
-    _cachedDevP12 = createEnterpriseP12Buffer();
+    if (process.env.NODE_ENV === 'production' && !_warnedAutoP12Prod) {
+      _warnedAutoP12Prod = true;
+      console.warn('[signedPdfService] Auto-provisioning in-memory Enterprise PKCS#12 signer because REPORT_SIGNING_P12_* is not configured.');
+    }
+    _cachedDevP12 = createEnterpriseP12Buffer({
+      cn: 'CONG TY TNHH CONG NGHE NONG NGHIEP TAN BAO SAI GON',
+      org: 'Tan Bao Sai Gon AgTech ERP'
+    });
   }
   const meta = parseP12Metadata(_cachedDevP12.p12Buffer, _cachedDevP12.passphrase);
   return { p12Buffer: _cachedDevP12.p12Buffer, passphrase: _cachedDevP12.passphrase, ...meta };

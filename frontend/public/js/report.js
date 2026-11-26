@@ -1550,7 +1550,14 @@ async function downloadPublicSignedPdf() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title: document.title || `Ho So Truy Xuat ${plantData.tree_code || plantData.id}` })
     });
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    if (!resp.ok) {
+      let errMsg = `HTTP ${resp.status}`;
+      try {
+        const errJson = await resp.json();
+        if (errJson && errJson.error) errMsg = errJson.error;
+      } catch (_) {}
+      throw new Error(errMsg);
+    }
     const blob = await resp.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

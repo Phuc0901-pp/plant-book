@@ -11,7 +11,7 @@ const {
   syncPlantNfcToInventory, ensureNfcInventoryColumns, reconcileFarmNfcInventory,
   buildLogFilterQuery, isFullNfcUid, normalizeCareLogType, enrichFruitAuditAndHarvestDetails
 } = require('./helpers');
-const { generateSignedIsoPdf, verifySignedPdfBuffer } = require('../../services/signedPdfService');
+const { generateSignedIsoPdf, verifySignedPdfBuffer, toPdfAscii } = require('../../services/signedPdfService');
 
 function scrubPublicPlantLogRow(log) {
   let safeDetails = {};
@@ -1064,8 +1064,9 @@ router.post('/:id(\\d+)/export-pdf-signed', async (req, res) => {
       pucCode: plant.puc_code || 'VN-TB',
       title: (req.body && req.body.title) || `HO SO TRUY XUAT CAY ${plant.tree_code || plant.id}`
     });
+    const safeTreeSlug = toPdfAscii(plant.tree_code || plant.id).replace(/[^A-Za-z0-9_-]/g, '_') || String(plant.id);
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="TruyXuat_KySo_${plant.tree_code || plant.id}.pdf"`);
+    res.setHeader('Content-Disposition', `attachment; filename="TruyXuat_KySo_${safeTreeSlug}.pdf"`);
     res.setHeader('X-Report-Cert-UUID', signed.cert_uuid);
     res.setHeader('X-Report-SHA256', signed.document_sha256);
     res.send(signed.pdfBuffer);
