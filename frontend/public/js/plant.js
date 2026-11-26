@@ -1110,56 +1110,8 @@ function showNfcGpsToast(msg) {
   }, 6000);
 }
 
-async function autoSyncNfcGpsLocation(plant, nfcUid) {
-  if (!isFullNfcUid(nfcUid)) {
-    return;
-  }
-
-  if (!navigator.geolocation) {
-    console.warn('Thiết bị không hỗ trợ Geolocation GPS.');
-    return;
-  }
-
-  navigator.geolocation.getCurrentPosition(
-    async (pos) => {
-      try {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        const accuracy = pos.coords.accuracy;
-
-        if (isNaN(lat) || isNaN(lng)) return;
-
-        const targetId = plant.id || slugInfo.plantId || nfcUid;
-        const res = await fetch(`/api/plants/public/${encodeURIComponent(targetId)}/gps`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            latitude: lat,
-            longitude: lng,
-            nfc_uid: nfcUid,
-            accuracy: accuracy
-          })
-        });
-
-        if (res.ok) {
-          plant.latitude = lat;
-          plant.longitude = lng;
-          showNfcGpsToast(`Đã tự động cập nhật vị trí GPS (${lat.toFixed(6)}, ${lng.toFixed(6)}) cho cây trồng từ thẻ NFC!`);
-
-          if (window._publicPlantMap && window._publicPlantMarker) {
-            window._publicPlantMarker.setLngLat([lng, lat]);
-            window._publicPlantMap.flyTo({ center: [lng, lat], zoom: 18, duration: 1500 });
-          }
-        }
-      } catch (err) {
-        console.warn('Lỗi khi tự động đồng bộ GPS từ thẻ NFC:', err);
-      }
-    },
-    (err) => {
-      console.warn('Không lấy được vị trí GPS thiết bị:', err.message);
-    },
-    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-  );
+async function autoSyncNfcGpsLocation() {
+  return false;
 }
 
 function renderRevokedTagView(nfcUid, errorMsg) {
@@ -1233,7 +1185,6 @@ async function loadPlant() {
           await renderPlant(plant, false);
         }
 
-        autoSyncNfcGpsLocation(plant, nfcUid);
         return;
       }
 

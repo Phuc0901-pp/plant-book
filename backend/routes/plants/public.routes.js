@@ -625,93 +625,10 @@ router.patch('/public/:slug/health', async (req, res) => {
 });
 
 router.all('/public/:slug/gps', auth, async (req, res) => {
-  if (req.method !== 'POST' && req.method !== 'PATCH') {
-    return res.status(405).json({ error: 'Phương thức không được hỗ trợ.' });
-  }
-
-  try {
-    if (req.user.role !== 'admin' && req.user.sub_role === 'auditor_readonly') {
-      return res.status(403).json({ error: 'Tài khoản Chỉ đọc không được phép cập nhật tọa độ GPS.', code: 'READONLY_ROLE_FORBIDDEN' });
-    }
-    const { latitude, longitude, nfc_uid } = req.body;
-    const targetParam = req.params.slug ? req.params.slug.trim() : '';
-    const activeNfcUid = nfc_uid || targetParam;
-
-    if (!isFullNfcUid(activeNfcUid)) {
-      return res.status(400).json({
-        error: 'Chỉ cho phép tự động cập nhật vị trí GPS khi quét bằng thẻ NFC hợp lệ (Full NFC UID).'
-      });
-    }
-
-    let lat = parseFloat(latitude);
-    let lng = parseFloat(longitude);
-    if (isNaN(lat) || isNaN(lng)) {
-      return res.status(400).json({ error: 'Tọa độ GPS không hợp lệ.' });
-    }
-
-    if (Math.abs(lat) > 90 && Math.abs(lng) <= 90) {
-      const tmp = lat;
-      lat = lng;
-      lng = tmp;
-    }
-
-    if (Math.abs(lat) > 90 || Math.abs(lng) > 180) {
-      return res.status(400).json({ error: 'Tọa độ GPS nằm ngoài phạm vi cho phép.' });
-    }
-
-    const plantRes = await pool.query(
-      `SELECT p.id, p.tree_code, p.plant_type, p.plant_variety, p.farm_id, p.nfc_uid, p.latitude, p.longitude,
-              p.created_by, p.assigned_to_user_id, f.user_id as farm_owner_id
-       FROM plants p
-       LEFT JOIN farms f ON f.id = p.farm_id
-       WHERE (p.id::text = $1 OR p.public_slug = $1 OR UPPER(p.nfc_uid) = UPPER($1) OR UPPER(p.nfc_uid) = UPPER($2))
-         AND (p.deleted_at IS NULL)
-       LIMIT 1`,
-      [targetParam, activeNfcUid]
-    );
-
-    if (plantRes.rows.length === 0) {
-      return res.status(404).json({ error: 'Không tìm thấy hồ sơ cây trồng.' });
-    }
-
-    const currentPlant = plantRes.rows[0];
-    const access = await verifyPlantAccess(req, currentPlant.id);
-    if (!access.ok) {
-      return res.status(access.status || 403).json({ error: access.error, code: 'PLANT_ACCESS_DENIED' });
-    }
-    const cleanNfcUid = activeNfcUid || currentPlant.nfc_uid || '';
-    const publicUrl = generatePublicPlantUrl(currentPlant.farm_id, currentPlant.id, cleanNfcUid);
-
-    const updateRes = await pool.query(
-      `UPDATE plants
-       SET latitude = $1, longitude = $2, public_url = $3, updated_at = NOW()
-       WHERE id = $4
-       RETURNING id, tree_code, plant_type, plant_variety, farm_id, nfc_uid, latitude, longitude, public_url, updated_at`,
-      [lat, lng, publicUrl, currentPlant.id]
-    );
-
-    const updated = updateRes.rows[0];
-
-    if (global.broadcastWS) {
-      global.broadcastWS('plants_updated', {
-        plant_id: updated.id,
-        farm_id: updated.farm_id,
-        latitude: updated.latitude,
-        longitude: updated.longitude,
-        action: 'nfc_gps_sync'
-      });
-    }
-
-    res.json({
-      success: true,
-      message: `Đã cập nhật vị trí GPS (${lat.toFixed(6)}, ${lng.toFixed(6)}) cho cây #${updated.tree_code || updated.id}`,
-      plant: updated,
-      public_url: publicUrl
-    });
-  } catch (err) {
-    console.error('Error updating plant GPS via NFC:', err);
-    res.status(500).json({ error: 'Lỗi server khi cập nhật GPS: ' + err.message });
-  }
+  return res.status(403).json({
+    error: 'Chức năng cập nhật vị trí GPS trên trang công khai cây trồng đã bị khóa. Vui lòng cập nhật vị trí qua bản đồ GIS quản trị hoặc cổng /sub.',
+    code: 'PUBLIC_GPS_UPDATE_LOCKED'
+  });
 });
 
 router.post('/public/:slug/logs', upload.array('files', 12), async (req, res) => {
