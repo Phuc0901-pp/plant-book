@@ -24,7 +24,7 @@ router.get('/', auth, async (req, res) => {
              COALESCE(u.role, u_assigned.role, 'user') as user_role,
              COALESCE(f.user_id, u_assigned.id) as user_id
       FROM farms f
-      LEFT JOIN plants p ON p.farm_id = f.id
+      LEFT JOIN plants p ON p.farm_id = f.id AND p.deleted_at IS NULL
       LEFT JOIN users u ON u.id = f.user_id
       LEFT JOIN users u_assigned ON u_assigned.farm_id = f.id AND u_assigned.role != 'admin'
     `;
@@ -74,7 +74,7 @@ router.get('/:id', auth, async (req, res) => {
       return res.status(403).json({ error: 'Bạn không có quyền truy cập trang trại này.' });
     }
 
-    const plantsResult = await pool.query('SELECT * FROM plants WHERE farm_id = $1 ORDER BY id ASC', [farm.id]);
+    const plantsResult = await pool.query('SELECT * FROM plants WHERE farm_id = $1 AND deleted_at IS NULL ORDER BY id ASC', [farm.id]);
     res.json({ ...farm, plants: plantsResult.rows });
   } catch (err) {
     console.error('Error getting farm details:', err);

@@ -1841,6 +1841,14 @@ async function selectFarm(farmId, syncUrl = true) {
     }
     if (String(activeFarmId) !== String(farmId)) return;
 
+    farm.plants = Array.isArray(farm.plants) ? farm.plants.filter(p => p && !p.deleted_at) : [];
+    if (typeof currentFarms !== 'undefined' && Array.isArray(currentFarms)) {
+      const idx = currentFarms.findIndex(f => String(f.id) === String(farmId));
+      if (idx >= 0) {
+        currentFarms[idx].plants = farm.plants;
+      }
+    }
+
     renderFarmDetailsUI(farm);
     zoomMapToFarm(farm);
   } catch (err) {
@@ -1872,9 +1880,10 @@ function renderCurrentSidebarPlantList() {
     const activeFarmObj = currentFarms.find(f => String(f.id) === String(activeFarmId));
     if (activeFarmObj && Array.isArray(activeFarmObj.plants)) {
       rawPlants = activeFarmObj.plants;
-      window._currentSidebarFarmPlants = rawPlants;
     }
   }
+  rawPlants = (rawPlants || []).filter(p => p && !p.deleted_at);
+  window._currentSidebarFarmPlants = rawPlants;
 
   if (plantCountEl) {
     plantCountEl.textContent = rawPlants.length;
@@ -1952,6 +1961,9 @@ function renderCurrentSidebarPlantList() {
           <button type="button" class="gis-plant-action-btn" title="Chỉnh sửa hồ sơ & tọa độ cây" onclick="event.stopPropagation(); openPlantModal(${p.id})">
             <i data-lucide="edit-3" class="lucide-xs"></i>
           </button>
+          <button type="button" class="gis-plant-action-btn" title="Xóa cây này (đưa vào thùng rác)" style="color:#dc2626; border-color:#fecaca; background:#fef2f2;" onclick="event.stopPropagation(); deletePlantFromGis(${p.id}, '${esc(p.tree_code || p.id)}')">
+            <i data-lucide="trash-2" class="lucide-xs"></i>
+          </button>
         </div>
       </div>
     `;
@@ -1962,6 +1974,35 @@ function renderCurrentSidebarPlantList() {
     window.lucide.createIcons();
   }
 }
+
+async function deletePlantFromGis(plantId, label) {
+  if (!confirm(`Bạn có chắc muốn xóa cây #${label} (ID: ${plantId}) khỏi bản đồ GIS? Có thể khôi phục trong Lịch sử biến động.`)) return;
+  try {
+    await api(`/plants/${plantId}`, { method: 'DELETE' });
+    window._currentSidebarFarmPlants = (window._currentSidebarFarmPlants || []).filter(p => Number(p.id) !== Number(plantId));
+    if (typeof currentFarms !== 'undefined' && Array.isArray(currentFarms) && activeFarmId) {
+      const farmObj = currentFarms.find(f => String(f.id) === String(activeFarmId));
+      if (farmObj && Array.isArray(farmObj.plants)) {
+        farmObj.plants = farmObj.plants.filter(p => Number(p.id) !== Number(plantId));
+      }
+    }
+    if (typeof allPlants !== 'undefined' && Array.isArray(allPlants)) {
+      allPlants = allPlants.filter(p => Number(p.id) !== Number(plantId));
+    }
+    renderCurrentSidebarPlantList();
+    if (typeof drawFarmsAndPlantsLayers === 'function') {
+      drawFarmsAndPlantsLayers(currentFarms || [], window._currentSidebarFarmPlants);
+    }
+    if (typeof toast === 'function') {
+      toast(`Đã xóa cây #${label} thành công.`, 'success');
+    }
+  } catch (err) {
+    if (typeof toast === 'function') {
+      toast('Lỗi xóa cây: ' + err.message, 'error');
+    }
+  }
+}
+window.deletePlantFromGis = deletePlantFromGis;
 
 function refreshCurrentSidebarPlantListUI() {
   renderCurrentSidebarPlantList();
