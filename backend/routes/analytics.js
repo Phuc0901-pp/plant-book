@@ -218,7 +218,8 @@ async function aggregateExecutiveBiData(ctx) {
     `SELECT p.id, p.tree_code, p.public_slug, p.plant_type, p.plant_variety,
             p.plant_age, p.planting_date, p.health_status, p.phi_status,
             p.plot_code, p.location, p.farm_id, p.initial_yield,
-            p.biomass_dbh_cm, p.canopy_height_m, p.nfc_uid
+            p.biomass_dbh_cm, p.canopy_height_m, p.nfc_uid,
+            f.name as farm_name
      FROM plants p
      LEFT JOIN farms f ON p.farm_id = f.id
      WHERE p.deleted_at IS NULL
@@ -248,7 +249,6 @@ async function aggregateExecutiveBiData(ctx) {
        $1::int IS NULL
        OR su.farm_id = $1
        OR p.farm_id = $1
-       OR su.farm_id IS NULL
      )
        AND (
          $2::int IS NULL
@@ -422,6 +422,8 @@ async function aggregateExecutiveBiData(ctx) {
       : 0;
     return {
       plant_id: p.id,
+      farm_id: p.farm_id || null,
+      farm_name: p.farm_name || 'Chưa gán trang trại',
       tree_code: p.tree_code || p.public_slug || `TREE-${p.id}`,
       nfc_uid: p.nfc_uid || null,
       plant_type: p.plant_type || 'Sầu riêng',
@@ -589,7 +591,7 @@ router.get('/bi-overview', auth, async (req, res) => {
     }
 
     const data = await singleflight.do(
-      `bi_exec_${ctx.userId || 0}_${ctx.role || 'user'}_${ctx.effectiveOwnerId || 'all'}`,
+      `bi_exec_${ctx.userId || 0}_${ctx.role || 'user'}_${ctx.targetOwnerId || 'all'}_f${ctx.farmId || 'all'}_y${ctx.year || 'all'}`,
       () => aggregateExecutiveBiData(ctx)
     );
 
@@ -599,6 +601,18 @@ router.get('/bi-overview', auth, async (req, res) => {
       data_source: data.dataSource,
       usage_batches_count: data.usageBatchesCount,
       generated_at: new Date().toISOString(),
+      filter: {
+        farm_id: ctx.farmId || null,
+        year: ctx.year || null
+      },
+      selected_farm: ctx.farmId && data.farms.length === 1
+        ? {
+            id: data.farms[0].id,
+            name: data.farms[0].name,
+            area_m2: Number(data.farms[0].area) || 0,
+            puc_code: data.farms[0].puc_code || null
+          }
+        : null,
       currency_rates: CURRENCY_RATES,
       summary: {
         total_farms: data.farms.length,
@@ -651,7 +665,7 @@ router.get('/cost-breakdown', auth, async (req, res) => {
     }
 
     const data = await singleflight.do(
-      `bi_exec_${ctx.userId || 0}_${ctx.role || 'user'}_${ctx.effectiveOwnerId || 'all'}`,
+      `bi_exec_${ctx.userId || 0}_${ctx.role || 'user'}_${ctx.targetOwnerId || 'all'}_f${ctx.farmId || 'all'}_y${ctx.year || 'all'}`,
       () => aggregateExecutiveBiData(ctx)
     );
     const now = new Date();
@@ -749,16 +763,19 @@ router.get('/plot-comparison', auth, async (req, res) => {
     }
 
     const data = await singleflight.do(
-      `bi_exec_${ctx.userId || 0}_${ctx.role || 'user'}_${ctx.effectiveOwnerId || 'all'}`,
+      `bi_exec_${ctx.userId || 0}_${ctx.role || 'user'}_${ctx.targetOwnerId || 'all'}_f${ctx.farmId || 'all'}_y${ctx.year || 'all'}`,
       () => aggregateExecutiveBiData(ctx)
     );
     const plotGroups = {};
 
     data.treeForecasts.forEach(t => {
-      const plotKey = t.plot_code || 'Lô A1 - Trung tâm';
+      const plotCode = t.plot_code || 'Lô A1 - Trung tâm';
+      const plotKey = `${t.farm_id || 0}::${plotCode}`;
       if (!plotGroups[plotKey]) {
         plotGroups[plotKey] = {
-          plot_code: plotKey,
+          farm_id: t.farm_id || null,
+          farm_name: t.farm_name || 'Chưa gán trang trại',
+          plot_code: plotCode,
           tree_count: 0,
           healthy_count: 0,
           phi_safe_count: 0,
@@ -794,6 +811,8 @@ router.get('/plot-comparison', auth, async (req, res) => {
         : (roi >= 250 ? 'A+' : (roi >= 150 ? 'A' : (roi >= 80 ? 'B+' : 'B')));
 
       return {
+        farm_id: g.farm_id,
+        farm_name: g.farm_name,
         plot_code: g.plot_code,
         tree_count: g.tree_count,
         estimated_area_ha: estAreaHa,
@@ -835,7 +854,7 @@ router.get('/predictive-yield', auth, async (req, res) => {
     }
 
     const data = await singleflight.do(
-      `bi_exec_${ctx.userId || 0}_${ctx.role || 'user'}_${ctx.effectiveOwnerId || 'all'}`,
+      `bi_exec_${ctx.userId || 0}_${ctx.role || 'user'}_${ctx.targetOwnerId || 'all'}_f${ctx.farmId || 'all'}_y${ctx.year || 'all'}`,
       () => aggregateExecutiveBiData(ctx)
     );
     const minYieldKg = Number((data.predictedTotalYieldKg * 0.91).toFixed(1));

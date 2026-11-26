@@ -11,6 +11,8 @@
     breakdown: null,
     plots: null,
     predictive: null,
+    farms: [],
+    farmsLoaded: false,
     isRedacted: false,
     farmId: 'all',
     year: 'all',
@@ -222,6 +224,23 @@
 
     const tabChartsLabel = curLang === 'zh' ? '1. 成本结构与机器学习预测' : (curLang === 'en' ? '1. Cost Structure & ML Forecast' : '1. Cơ Cấu Chi Phí & Dự Báo ML');
     const tabPlotsLabel = curLang === 'zh' ? `2. 分区 ROI 矩阵 (${plots.length})` : (curLang === 'en' ? `2. Plot ROI Matrix (${plots.length})` : `2. Ma Trận ROI Theo Lô (${plots.length} lô)`);
+    const colFarmLabel = curLang === 'zh' ? '所属农场' : (curLang === 'en' ? 'Farm' : 'Trang trại');
+    const allFarmsLabel = curLang === 'zh' ? `全部农场 (${_biCache.farms.length})` : (curLang === 'en' ? `All Farms (${_biCache.farms.length})` : `Tất cả trang trại (${_biCache.farms.length})`);
+    const allYearsLabel = curLang === 'zh' ? '全部年份' : (curLang === 'en' ? 'All Years' : 'Tất cả năm');
+    const activeFarmObj = (_biCache.farmId && _biCache.farmId !== 'all')
+      ? (_biCache.farms.find(f => String(f.id) === String(_biCache.farmId)) || _biCache.overview?.selected_farm || null)
+      : null;
+    const scopeBadgeText = activeFarmObj
+      ? `📍 ${activeFarmObj.name}`
+      : (curLang === 'zh' ? '全系统汇总' : (curLang === 'en' ? 'All Farms Scope' : 'Toàn hệ thống'));
+    const curYearInt = new Date().getFullYear();
+    const yearOptionsHtml = [curYearInt, curYearInt - 1, curYearInt - 2, curYearInt - 3].map(y =>
+      `<option value="${y}" ${String(_biCache.year) === String(y) ? 'selected' : ''} style="color:#0f172a; background:#ffffff;">${y}</option>`
+    ).join('');
+    const farmOptionsHtml = (_biCache.farms || []).map(f =>
+      `<option value="${f.id}" ${String(_biCache.farmId) === String(f.id) ? 'selected' : ''} style="color:#0f172a; background:#ffffff;">${esc(f.name)} (${Number(f.plant_count || 0)} ${unitTree})</option>`
+    ).join('');
+    const emptyPlotsText = curLang === 'zh' ? '当前筛选范围内暂无分区数据。' : (curLang === 'en' ? 'No plot records match the selected filter scope.' : 'Chưa có dữ liệu lô trồng cho phạm vi lọc này.');
 
     const stackedBarSegments = pillars.map(p => {
       const pct = Math.max(0, Number(p.share_percent) || 0);
@@ -261,10 +280,14 @@
       </div>
     `).join('');
 
-    const plotRowsHtml = plots.map(pl => {
+    const plotRowsHtml = plots.length > 0 ? plots.map(pl => {
       const plRoiSign = Number(pl.roi_percent) > 0 ? '+' : '';
+      const farmCellHtml = pl.farm_id
+        ? `<button type="button" onclick="window.switchBiFarmFilter('${pl.farm_id}')" title="Lọc BI theo trang trại này" style="background:none; border:none; padding:0; font:inherit; font-weight:800; color:#047857; cursor:pointer; text-decoration:underline; text-align:left;">${esc(pl.farm_name || '—')}</button>`
+        : `<span style="font-weight:700; color:#64748b;">${esc(pl.farm_name || '—')}</span>`;
       return `
       <tr>
+        <td style="padding:8px 12px;">${farmCellHtml}</td>
         <td style="padding:8px 12px; font-weight:800; color:#0f172a;">${esc(pl.plot_code)}</td>
         <td style="padding:8px 12px; font-weight:700;">${pl.tree_count} ${unitTree} <span style="color:#64748b; font-size:11px;">(${pl.estimated_area_ha} ${unitHa})</span></td>
         <td style="padding:8px 12px; font-weight:800; color:#0f172a;">${fmtMoney(pl.cost_per_tree_vnd)}</td>
@@ -283,10 +306,13 @@
         </td>
       </tr>
     `;
-    }).join('');
+    }).join('') : `
+      <tr>
+        <td colspan="9" style="padding:18px; text-align:center; color:#64748b; font-weight:700;">${esc(emptyPlotsText)}</td>
+      </tr>
+    `;
 
     return `
-      <!-- Compact Executive Header Bar -->
       <div style="background:linear-gradient(135deg, #064e3b 0%, #0f172a 100%); color:#ffffff; padding:12px 18px; border-top-left-radius:16px; border-top-right-radius:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
           <div style="width:34px; height:34px; border-radius:10px; background:rgba(16,185,129,0.2); border:1px solid rgba(52,211,153,0.35); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
@@ -297,6 +323,9 @@
               <h3 style="margin:0; font-size:14.5px; font-weight:900; color:#ffffff; letter-spacing:-0.2px;" data-i18n="bi.panel_title">
                 ${tr('bi.panel_title')}
               </h3>
+              <span id="bi-scope-badge" style="background:rgba(245,158,11,0.22); color:#fde68a; border:1px solid rgba(251,191,36,0.45); padding:1px 8px; border-radius:20px; font-size:10px; font-weight:800;">
+                ${esc(scopeBadgeText)}
+              </span>
               <span style="background:rgba(16,185,129,0.22); color:#6ee7b7; border:1px solid rgba(52,211,153,0.4); padding:1px 8px; border-radius:20px; font-size:10px; font-weight:800;">
                 ${sourceBadgeText}
               </span>
@@ -307,9 +336,17 @@
           </div>
         </div>
 
-        <!-- Compact Controls: Sub-Tab Toggle + Currency + API Check -->
         <div style="display:flex; align-items:center; gap:7px; flex-wrap:wrap;">
-          <!-- Internal BI View Switcher (Charts vs Plot Matrix) -->
+          <select id="bi-farm-filter-select" onchange="window.switchBiFarmFilter(this.value)" aria-label="Chọn trang trại BI" style="background:rgba(15,23,42,0.75); color:#f8fafc; border:1px solid rgba(52,211,153,0.45); border-radius:8px; padding:4px 9px; font-size:11px; font-weight:800; cursor:pointer; max-width:210px;">
+            <option value="all" ${!_biCache.farmId || _biCache.farmId === 'all' ? 'selected' : ''} style="color:#0f172a; background:#ffffff;">${esc(allFarmsLabel)}</option>
+            ${farmOptionsHtml}
+          </select>
+
+          <select id="bi-year-filter-select" onchange="window.switchBiYearFilter(this.value)" aria-label="Chọn năm BI" style="background:rgba(15,23,42,0.75); color:#f8fafc; border:1px solid rgba(255,255,255,0.25); border-radius:8px; padding:4px 8px; font-size:11px; font-weight:800; cursor:pointer;">
+            <option value="all" ${!_biCache.year || _biCache.year === 'all' ? 'selected' : ''} style="color:#0f172a; background:#ffffff;">${esc(allYearsLabel)}</option>
+            ${yearOptionsHtml}
+          </select>
+
           <div style="background:rgba(15,23,42,0.55); border:1px solid rgba(255,255,255,0.18); border-radius:9px; padding:2px; display:inline-flex; gap:2px;">
             <button type="button" onclick="window.switchBiInternalPane('charts')" style="border:none; border-radius:7px; padding:4px 9px; font-size:11px; font-weight:800; cursor:pointer; background:${activePane === 'charts' ? '#10b981' : 'transparent'}; color:${activePane === 'charts' ? '#ffffff' : '#cbd5e1'};">
               ${tabChartsLabel}
@@ -465,6 +502,7 @@
             <table class="erp-enterprise-table" style="width:100%; border-collapse:collapse; font-size:12px;">
               <thead>
                 <tr style="background:#f8fafc; text-align:left; position:sticky; top:0; z-index:1;">
+                  <th style="padding:8px 12px;">${esc(colFarmLabel)}</th>
                   <th style="padding:8px 12px;" data-i18n="bi.col_plot">${tr('bi.col_plot')}</th>
                   <th style="padding:8px 12px;" data-i18n="bi.col_trees">${tr('bi.col_trees')}</th>
                   <th style="padding:8px 12px;" data-i18n="bi.col_cost_tree">${tr('bi.col_cost_tree')}</th>
@@ -507,6 +545,36 @@
     renderBiDashboardDOM();
   };
 
+  window.switchBiFarmFilter = function (farmId) {
+    loadExecutiveBiAnalytics(farmId || 'all', _biCache.year);
+  };
+
+  window.switchBiYearFilter = function (year) {
+    loadExecutiveBiAnalytics(_biCache.farmId, year || 'all');
+  };
+
+  async function ensureBiFarmsLoaded(token, forceRefresh = false) {
+    if (_biCache.farmsLoaded && !forceRefresh) return _biCache.farms;
+    try {
+      const res = await fetch('/api/farms', {
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+      });
+      if (res.ok) {
+        const list = await res.json();
+        if (Array.isArray(list)) {
+          _biCache.farms = list.map(f => ({
+            id: f.id,
+            name: f.name || `Farm #${f.id}`,
+            plant_count: Number(f.plant_count ?? f.total_plants ?? 0),
+            area: Number(f.area || 0)
+          }));
+          _biCache.farmsLoaded = true;
+        }
+      }
+    } catch (_) {}
+    return _biCache.farms;
+  }
+
   async function loadExecutiveBiAnalytics(farmId, year) {
     const hasMount = MOUNT_CONTAINER_IDS.some(id => Boolean(document.getElementById(id)));
     if (!hasMount) return;
@@ -538,7 +606,8 @@
     };
 
     try {
-      const [ovRes, brRes, plRes, prRes] = await Promise.all([
+      const [_, ovRes, brRes, plRes, prRes] = await Promise.all([
+        ensureBiFarmsLoaded(token),
         fetch(`/api/analytics/bi-overview${querySuffix}`, { headers }),
         fetch(`/api/analytics/cost-breakdown${querySuffix}`, { headers }),
         fetch(`/api/analytics/plot-comparison${querySuffix}`, { headers }),
