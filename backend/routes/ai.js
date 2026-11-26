@@ -11,15 +11,34 @@ const {
   executeAgentTools,
   synthesizeGroundedAgentReply
 } = require('../services/beMamAgentEngine');
+const {
+  encryptAgentPayload,
+  redactPiiForLlm,
+  scanAndSanitizeAgentOutput,
+  verifyAgronomySafetyReply,
+  AgentRateLimiter,
+  AgentBulkhead,
+  ModelCircuitBreaker,
+  trimHistoryToBudget,
+  buildSemanticCacheKey
+} = require('../services/aiAgentSecurity');
+const {
+  AGENT_TOOL_DECLARATIONS,
+  executeToolCallsParallel
+} = require('../services/beMamAgentTools');
+
+const agentRateLimiter = new AgentRateLimiter();
+const agentBulkhead = new AgentBulkhead({ maxConcurrent: 25 });
+const modelCircuitBreaker = new ModelCircuitBreaker({ failureThreshold: 3, cooldownMs: 60000 });
 
 function classifyQueryComplexity(message) {
-  const lower = message.toLowerCase().trim();
+  const lower = String(message || '').toLowerCase().trim();
 
   const complexKeywords = [
     'nguyên nhân', 'tại sao', 'phác đồ', 'kết hợp', 'ra hoa nghịch vụ', 'trái vụ',
     'cháy múi', 'sượng cơm', 'vừa bị', 'triệu chứng', 'phèn mặn', 'hoạt chất',
     'nồng độ', 'kế hoạch', 'tối ưu', 'phân tích', 'xuất khẩu', 'globalgap', 'lập bảng',
-    'tính toán', 'phối trộn', 'ủ phân', 'ức chế đọt', 'nứt thân xì mủ diện rộng'
+    'tính toán', 'phối trộn', 'ủ phân', 'ức chế đọt', 'nứt thân xì mủ diện rộng', 'vàng lá'
   ];
   const hasComplexKeywords = complexKeywords.some(k => lower.includes(k));
   const isLongQuery = lower.split(/\s+/).length >= 18;
@@ -31,16 +50,230 @@ function classifyQueryComplexity(message) {
   return 'standard';
 }
 
+function isFarmSpecificQuery(message, activeFarmId, activePlantId) {
+  if (activeFarmId || activePlantId) return true;
+  const lower = String(message || '').toLowerCase();
+  return /(\bvườn\s*(của\s*)?(tôi|mình|nhà|a|b|c)\b|\bcây\s*#|\bcây\s*\d+\b|\btồn\s*kho\b|\bchi\s*phí\b|\bnhật\s*ký\b|\bhôm\s*nay\b|\bthời\s*tiết\b|\btrang\s*trại\b|\bbao\s*nhiêu\s*cây\b)/i.test(lower);
+}
+
+async function loadAllowedFarmScope(poolConn, currentUser, isAdmin) {
+  const scopeCacheKey = `ai_scope_v3_${currentUser.id}_${isAdmin ? 'adm' : 'usr'}`;
+  const cached = memoryCache.get(scopeCacheKey);
+  if (cached) return cached;
+
+  const execRead = typeof poolConn.readQuery === 'function'
+    ? poolConn.readQuery.bind(poolConn)
+    : poolConn.query.bind(poolConn);
+
+  let farmsRows = [];
+  try {
+    if (isAdmin) {
+      const res = await execRead(
+        `SELECT f.id, f.name, f.area, f.latitude, f.longitude, f.total_plants
+         FROM farms f
+         WHERE COALESCE(f.is_deleted, false) = false
+         ORDER BY f.id ASC
+         LIMIT 100`
+      );
+      farmsRows = res.rows || [];
+    } else {
+      const res = await execRead(
+        `SELECT f.id, f.name, f.area, f.latitude, f.longitude, f.total_plants
+         FROM farms f
+         WHERE COALESCE(f.is_deleted, false) = false
+           AND (f.user_id = $1 OR f.created_by = $1 OR f.id = (SELECT farm_id FROM users WHERE id = $1))
+         ORDER BY f.id ASC
+         LIMIT 50`,
+        [currentUser.id]
+      );
+      farmsRows = res.rows || [];
+    }
+  } catch (err) {
+    console.warn('AI scope load warning:', err.message);
+  }
+
+  const scopeData = {
+    farms: farmsRows,
+    allowedFarmIds: farmsRows.map(f => Number(f.id)).filter(Number.isFinite)
+  };
+  memoryCache.set(scopeCacheKey, scopeData, 60);
+  return scopeData;
+}
+
+function buildSystemInstruction({ isAdmin, currentUser, scopeData, activeFarmId, activePlantId, hideFinance, ragResult, matchedQAResult }) {
+  const trainedKnowledgeText = ragResult && Array.isArray(ragResult.topArticles) && ragResult.topArticles.length > 0
+    ? `\n[TÀI LIỆU TRI THỨC ĐỘC QUYỀN TÂN BẢO]:\n` +
+      ragResult.topArticles.map((a, i) => `--- Tài liệu ${i + 1}: ${a.title} (${a.category} | BM25: ${a.matchScore}) ---\n${a.content}`).join('\n\n')
+    : '';
+
+  const farmPreview = (scopeData.farms || []).slice(0, 15).map(f =>
+    `- ID ${f.id}: ${f.name} (${f.total_plants || 0} cây)`
+  ).join('\n');
+
+  const activeHint = [
+    activeFarmId ? `active_farm_id=${activeFarmId}` : '',
+    activePlantId ? `active_plant_id=${activePlantId}` : ''
+  ].filter(Boolean).join(', ');
+
+  return `Bạn là "Bé Mầm AgTech" - Chuyên gia AI Nông nghiệp Thông minh (chuẩn ISO/IEC 42001 & ISO/IEC 27001) của hệ thống Sổ Nông Tân Bảo AgTech.
+Xưng hô: Xưng "Bé Mầm" hoặc "em", gọi người dùng là "${isAdmin ? 'Admin' : 'Bác ' + (currentUser.name || currentUser.full_name || 'nông hộ')}".
+
+[GIAO THỨC VẤN ĐÁP CHẨN ĐOÁN 3 BƯỚC BẮT BUỘC]:
+- Bước 1 (Đối chiếu thực địa trước khi phán): Luôn ưu tiên gọi các công cụ (tools) như get_farm_overview, get_plant_dossier, get_care_history, check_supply_inventory, get_farm_weather_forecast, calculate_agro_dosage, search_agronomy_kb để kiểm tra dữ liệu thật của vườn trước khi tư vấn.
+- Bước 2 (Vấn đáp chẩn đoán khi thiếu triệu chứng): Nếu người dùng mô tả triệu chứng mơ hồ hoặc có nhiều nguyên nhân khả dĩ (ví dụ: vàng lá, thối rễ, rụng trái non), phải nêu ngay bước sơ cứu an toàn tức thời, rồi HỎI NGƯỢC 2-3 câu trắc nghiệm ngắn để khoanh vùng đúng nguyên nhân trước khi chốt đơn thuốc.
+- Bước 3 (Phác đồ hành động chuẩn VietGAP): Khi đủ thông tin, trình bày rõ 3 phần: (1) Chẩn đoán & căn cứ dữ liệu vườn, (2) Phác đồ xử lý theo ngày (ưu tiên thuốc/phân sẵn có trong kho qua check_supply_inventory), (3) Cảnh báo An toàn sinh học & PHI.
+
+[NGUYÊN TẮC BẮT BUỘC - ZERO HALLUCINATION & VIETGAP]:
+1. Mọi con số (số cây, diện tích, tồn kho, ngày phun, liều lượng) CHỈ ĐƯỢC lấy từ kết quả công cụ trả về hoặc tài liệu được cung cấp. Nếu công cụ không có dữ liệu, phải nói rõ "Chưa có dữ liệu trong sổ vườn", tuyệt đối không tự bịa.
+2. Khi dùng Thuốc BVTV hóa học, BẮT BUỘC nhắc cách ly ít nhất 10 - 15 ngày trước khi dùng chế phẩm vi sinh (Trichoderma, Bacillus, men EM).
+3. Kiểm tra trạng thái phi_status của cây trước khi khuyến nghị thu hoạch.
+4. ${hideFinance ? 'Tài khoản này bị hạn chế quyền tài chính: tuyệt đối không hiển thị đơn giá hoặc chi phí.' : 'Được phép phân tích định mức và chi phí vật tư.'}
+
+[PHẠM VI VƯỜN ĐƯỢC PHÉP]:
+${farmPreview || '- Chưa có dữ liệu trang trại trong phạm vi.'}
+${activeHint ? `[NGỮ CẢNH ĐANG MỞ TRÊN MÀN HÌNH]: ${activeHint}` : ''}
+${trainedKnowledgeText}
+${matchedQAResult ? `\n[CẶP Q&A ĐÃ HUẤN LUỆN LIÊN QUAN]:\n${matchedQAResult.qa.expected_answer}\n` : ''}`;
+}
+
+async function runFallbackEngine({ message, isAdmin, currentUser, scopeData, activeFarmId, hideFinance, matchedQAResult, ragResult, extraFlags = [] }) {
+  const execRead = typeof pool.readQuery === 'function'
+    ? pool.readQuery.bind(pool)
+    : pool.query.bind(pool);
+
+  let userPlants = [];
+  let userLogs = [];
+  let userSuppliesInventory = [];
+
+  try {
+    const allowedIds = scopeData.allowedFarmIds || [];
+    const targetFarmId = activeFarmId ? parseInt(activeFarmId, 10) : null;
+    if (isAdmin || allowedIds.length > 0) {
+      const [pRes, lRes, sRes] = await Promise.all([
+        execRead(
+          `SELECT p.id, p.tree_code, p.nfc_uid, p.plot_code, p.plant_type, p.plant_variety, p.health_status, p.farm_id, f.name as farm_name
+           FROM plants p
+           LEFT JOIN farms f ON p.farm_id = f.id
+           WHERE p.deleted_at IS NULL AND COALESCE(p.is_deleted, false) = false
+             AND ($1::int IS NULL OR p.farm_id = $1)
+             AND ($2::int[] IS NULL OR p.farm_id = ANY($2::int[]))
+           LIMIT 200`,
+          [targetFarmId, isAdmin ? null : allowedIds]
+        ).catch(() => ({ rows: [] })),
+        execRead(
+          `SELECT pl.log_date, pl.log_type, pl.note, pl.details, p.tree_code, p.plant_type, f.name as farm_name
+           FROM plant_logs pl
+           JOIN plants p ON pl.plant_id = p.id
+           LEFT JOIN farms f ON p.farm_id = f.id
+           WHERE (pl.is_deleted IS NOT TRUE) AND p.deleted_at IS NULL
+             AND ($1::int IS NULL OR p.farm_id = $1)
+             AND ($2::int[] IS NULL OR p.farm_id = ANY($2::int[]))
+           ORDER BY pl.log_date DESC, pl.created_at DESC
+           LIMIT 15`,
+          [targetFarmId, isAdmin ? null : allowedIds]
+        ).catch(() => ({ rows: [] })),
+        execRead(
+          `SELECT s.id, s.name, s.category, s.stock_quantity, s.unit, s.package_price, s.unit_price, f.name as farm_name
+           FROM supplies s
+           LEFT JOIN farms f ON s.farm_id = f.id
+           WHERE ($1::int IS NULL OR s.farm_id = $1)
+             AND ($2::int[] IS NULL OR s.farm_id = ANY($2::int[]))
+           LIMIT 30`,
+          [targetFarmId, isAdmin ? null : allowedIds]
+        ).catch(() => ({ rows: [] }))
+      ]);
+      userPlants = pRes.rows || [];
+      userLogs = lRes.rows || [];
+      userSuppliesInventory = hideFinance
+        ? (sRes.rows || []).map(s => ({ ...s, package_price: 0, unit_price: 0, finance_redacted: true }))
+        : (sRes.rows || []);
+    }
+  } catch (_) {}
+
+  const normalizedFarms = (scopeData.farms || []).map(f => ({
+    id: f.id,
+    name: f.name,
+    area: f.area,
+    total: f.total_plants || 0,
+    crops: 'Đang cập nhật'
+  }));
+
+  const toolExecResult = executeAgentTools(message, {
+    isAdmin,
+    currentUser,
+    userFarms: normalizedFarms,
+    userPlants,
+    userLogs,
+    userSuppliesCost: 0,
+    userRecentSupplies: [],
+    userSuppliesInventory,
+    userIotSensors: []
+  });
+
+  const synthesized = synthesizeGroundedAgentReply({
+    rawQuery: message,
+    isAdmin,
+    userName: currentUser.name || currentUser.full_name || 'Nông hộ',
+    matchedQAResult,
+    ragResult,
+    toolExecResult
+  });
+
+  const dlpOut = scanAndSanitizeAgentOutput(synthesized.reply);
+  const safeOut = verifyAgronomySafetyReply(dlpOut.reply, message, userPlants);
+
+  if (synthesized.needsAutoLearning && pool && typeof pool.query === 'function') {
+    const redactedForDb = redactPiiForLlm(message.trim().slice(0, 500)).sanitizedText;
+    const encryptedEnvelope = encryptAgentPayload({
+      query: redactedForDb,
+      userId: currentUser.id || null,
+      ts: new Date().toISOString()
+    });
+    pool.query(
+      `INSERT INTO ai_unanswered_queries (user_id, user_query, bot_response, user_feedback, status)
+       VALUES ($1, $2, $3, 'unanswered', 'pending')`,
+      [currentUser.id || null, redactedForDb, safeOut.reply.slice(0, 1000)]
+    ).catch(() => {});
+    synthesized.agentMetadata.encryptedAuditRef = encryptedEnvelope.slice(0, 32);
+  }
+
+  return {
+    reply: safeOut.reply,
+    source: matchedQAResult ? 'trained_qa' : 'grounded_agent_engine',
+    agentMetadata: {
+      ...synthesized.agentMetadata,
+      leakedPatterns: dlpOut.leakedPatterns,
+      safetyFlags: [...safeOut.safetyFlags, ...extraFlags]
+    }
+  };
+}
+
 router.post('/chat', auth, async (req, res) => {
   try {
-    const { message, history = [] } = req.body;
-    const currentUser = req.user;
+    const { message, history = [], active_farm_id = null, active_plant_id = null } = req.body || {};
+    const currentUser = req.user || {};
 
-    if (!message || !message.trim()) {
+    if (!message || !String(message).trim()) {
       return res.status(400).json({ error: 'Nội dung tin nhắn không được để trống' });
     }
+    const cleanMessage = String(message).trim();
+    if (cleanMessage.length > 2000) {
+      return res.status(400).json({ error: 'Tin nhắn quá dài (tối đa 2000 ký tự).' });
+    }
 
-    const guardCheck = checkPromptInjection(message);
+    const isAdmin = currentUser.role === 'admin';
+    const rateTier = isAdmin ? 'admin' : (currentUser.account_tier === 'pro' ? 'pro' : 'normal');
+    const rateStatus = agentRateLimiter.check(currentUser.id || req.ip, rateTier);
+    if (!rateStatus.allowed) {
+      res.setHeader('Retry-After', String(rateStatus.retryAfterSec));
+      return res.status(429).json({
+        error: `Bạn đã vượt giới hạn hỏi AI (${rateStatus.limitType}). Vui lòng thử lại sau ${rateStatus.retryAfterSec} giây.`,
+        code: rateStatus.limitType,
+        retryAfterSec: rateStatus.retryAfterSec
+      });
+    }
+
+    const guardCheck = checkPromptInjection(cleanMessage);
     if (!guardCheck.safe) {
       return res.json({
         success: true,
@@ -51,448 +284,290 @@ router.post('/chat', auth, async (req, res) => {
       });
     }
 
-    const isAdmin = currentUser.role === 'admin';
     const hideFinance = !isAdmin && (currentUser.allow_view_finance === false || ['care_worker', 'auditor_readonly'].includes(currentUser.sub_role));
-    const cacheKey = `ai_context_${currentUser.id}_${isAdmin ? 'adm' : 'usr'}_${hideFinance ? 'red' : 'fin'}`;
+    const scopeData = await loadAllowedFarmScope(pool, currentUser, isAdmin);
 
-    let cachedContextData = memoryCache.get(cacheKey);
-    let systemContext = '';
-    let userFarms = [];
-    let userPlants = [];
-    let userLogs = [];
-    let userSuppliesCost = 0;
-    let userRecentSupplies = [];
-    let userSuppliesInventory = [];
-    let userIotSensors = [];
-
-    if (cachedContextData) {
-      systemContext = cachedContextData.systemContext;
-      userFarms = cachedContextData.userFarms || [];
-      userPlants = cachedContextData.userPlants || [];
-      userSuppliesCost = cachedContextData.userSuppliesCost || 0;
-      userRecentSupplies = cachedContextData.userRecentSupplies || [];
-      userLogs = cachedContextData.userLogs || [];
-      userSuppliesInventory = cachedContextData.userSuppliesInventory || [];
-      userIotSensors = cachedContextData.userIotSensors || [];
-    } else {
-      const safeReadQuery = (sql, params = []) =>
-        pool.readQuery(sql, params).catch((qErr) => {
-          console.warn('AI SQL sub-query warn:', qErr.message);
-          return { rows: [] };
-        });
-
-      try {
-        if (isAdmin) {
-          const [farmsRes, plantsRes, sickRes, costRes, logsRes, suppliesInvRes, iotRes] = await Promise.all([
-            safeReadQuery(`
-              SELECT f.id, f.name, f.area, f.total_plants, COALESCE(u.full_name, 'Nông hộ') as owner_name
-              FROM farms f
-              LEFT JOIN users u ON f.user_id = u.id
-              WHERE (f.is_deleted IS NOT TRUE)
-            `),
-            safeReadQuery(`
-              SELECT p.id, p.tree_code, p.nfc_uid, p.plot_code, p.planting_date, p.plant_type, p.plant_variety, p.health_status, p.farm_id, f.name as farm_name
-              FROM plants p
-              LEFT JOIN farms f ON p.farm_id = f.id
-              WHERE (f.is_deleted IS NOT TRUE) AND (p.is_deleted IS NOT TRUE) AND (p.deleted_at IS NULL)
-            `),
-            safeReadQuery("SELECT COUNT(*) as count FROM plants WHERE (is_deleted IS NOT TRUE) AND (deleted_at IS NULL) AND health_status IN ('Cần chú ý', 'Bệnh', 'Nguy cấp')"),
-            safeReadQuery("SELECT COALESCE(SUM(total_cost), 0) as total FROM supply_usages"),
-            safeReadQuery(`
-              SELECT pl.log_date, pl.log_type, pl.note, pl.details, p.tree_code, p.plant_type, f.name as farm_name
-              FROM plant_logs pl
-              JOIN plants p ON pl.plant_id = p.id
-              JOIN farms f ON p.farm_id = f.id
-              WHERE (pl.is_deleted IS NOT TRUE)
-              ORDER BY pl.log_date DESC, pl.created_at DESC
-              LIMIT 12
-            `),
-            safeReadQuery(`
-              SELECT s.id, s.name, s.category, s.stock_quantity, s.unit, s.package_price, s.unit_price, f.name as farm_name
-              FROM supplies s
-              LEFT JOIN farms f ON s.farm_id = f.id
-              ORDER BY s.created_at DESC
-              LIMIT 30
-            `),
-            safeReadQuery(`
-              SELECT fis.farm_id, f.name as farm_name, fis.air_data, fis.soil_data, fis.water_data, fis.updated_at
-              FROM farm_iot_sensors fis
-              JOIN farms f ON fis.farm_id = f.id
-              WHERE (f.is_deleted IS NOT TRUE)
-            `)
-          ]);
-
-          const farmMap = {};
-          (farmsRes.rows || []).forEach(f => {
-            farmMap[f.id] = {
-              id: f.id,
-              name: f.name,
-              owner: f.owner_name,
-              area: f.area,
-              total: f.total_plants || 0,
-              plantCount: 0,
-              crops: new Set()
-            };
-          });
-
-          userPlants = plantsRes.rows || [];
-          userPlants.forEach(p => {
-            if (p.farm_id && farmMap[p.farm_id]) {
-              farmMap[p.farm_id].plantCount++;
-              const crop = [p.plant_type, p.plant_variety].filter(Boolean).join(' - ');
-              if (crop) farmMap[p.farm_id].crops.add(crop);
-            }
-          });
-
-          userFarms = Object.values(farmMap).map(f => ({
-            name: f.name,
-            owner: f.owner,
-            area: f.area,
-            total: f.plantCount || f.total || 0,
-            crops: f.crops.size > 0 ? Array.from(f.crops).join(', ') : 'Đang cập nhật danh sách cây'
-          }));
-
-          userLogs = logsRes.rows || [];
-          userSuppliesInventory = suppliesInvRes.rows || [];
-          userIotSensors = iotRes.rows || [];
-          userSuppliesCost = Number(costRes.rows?.[0]?.total || 0);
-
-          const sickCount = sickRes.rows?.[0]?.count || 0;
-          const totalExpense = costRes.rows?.[0]?.total || 0;
-
-          const farmLines = userFarms.map(f =>
-            `- Trang trại: "${f.name}" | Chủ hộ: ${f.owner} | Diện tích: ${f.area ? f.area + ' ha' : 'N/A'} | Cây trồng: ${f.crops} (Tổng: ${f.total} cây)`
-          ).join('\n');
-
-          systemContext = `[QUYỀN HẠN: QUẢN TRỊ VIÊN TOÀN HỆ THỐNG]:
-Admin: ${currentUser.name} (${currentUser.email})
-Tổng số trang trại đang quản lý: ${userFarms.length} trang trại.
-${farmLines}
-- Cây đang ủ bệnh/cần theo dõi: ${sickCount} cây.
-- Tổng chi phí vật tư toàn hệ thống: ${Number(totalExpense).toLocaleString('vi-VN')} VNĐ.`;
-
-        } else {
-          const [farmsRes, plantsRes, logsRes, costRes, usagesRes, suppliesInvRes, iotRes] = await Promise.all([
-            safeReadQuery(`
-              SELECT f.id, f.name, f.area, f.total_plants, u.full_name as owner_name
-              FROM farms f
-              LEFT JOIN users u ON f.user_id = u.id
-              WHERE (f.is_deleted IS NOT TRUE)
-                AND (f.user_id = $1 OR f.created_by = $1 OR f.id = (SELECT farm_id FROM users WHERE id = $1))
-            `, [currentUser.id]),
-
-            safeReadQuery(`
-              SELECT p.id, p.tree_code, p.nfc_uid, p.plot_code, p.planting_date, p.plant_type, p.plant_variety, p.health_status, p.farm_id, f.name as farm_name
-              FROM plants p
-              JOIN farms f ON p.farm_id = f.id
-              WHERE (f.is_deleted IS NOT TRUE)
-                AND (p.is_deleted IS NOT TRUE)
-                AND (p.deleted_at IS NULL)
-                AND (f.user_id = $1 OR f.created_by = $1 OR f.id = (SELECT farm_id FROM users WHERE id = $1) OR p.created_by = $1)
-            `, [currentUser.id]),
-
-            safeReadQuery(`
-              SELECT pl.log_date, pl.log_type, pl.note, pl.details, p.tree_code, p.plant_type, f.name as farm_name
-              FROM plant_logs pl
-              JOIN plants p ON pl.plant_id = p.id
-              JOIN farms f ON p.farm_id = f.id
-              WHERE (pl.is_deleted IS NOT TRUE)
-                AND (f.user_id = $1 OR f.created_by = $1 OR pl.created_by = $1)
-              ORDER BY pl.log_date DESC, pl.created_at DESC
-              LIMIT 15
-            `, [currentUser.id]),
-
-            safeReadQuery(`
-              SELECT COALESCE(SUM(su.total_cost), 0) as total
-              FROM supply_usages su
-              LEFT JOIN farms f ON su.farm_id = f.id
-              WHERE su.user_id = $1 OR f.user_id = $1 OR f.created_by = $1
-            `, [currentUser.id]),
-
-            safeReadQuery(`
-              SELECT s.name, s.category, su.quantity, s.unit, su.unit_price, su.total_cost, su.usage_date, f.name as farm_name
-              FROM supply_usages su
-              JOIN supplies s ON su.supply_id = s.id
-              LEFT JOIN farms f ON su.farm_id = f.id
-              WHERE su.user_id = $1 OR f.user_id = $1 OR f.created_by = $1
-              ORDER BY su.usage_date DESC
-              LIMIT 8
-            `, [currentUser.id]),
-
-            safeReadQuery(`
-              SELECT s.id, s.name, s.category, s.stock_quantity, s.unit, s.package_price, s.unit_price, f.name as farm_name
-              FROM supplies s
-              LEFT JOIN farms f ON s.farm_id = f.id
-              WHERE s.user_id = $1 OR f.user_id = $1 OR f.created_by = $1
-              ORDER BY s.created_at DESC
-              LIMIT 30
-            `, [currentUser.id]),
-
-            safeReadQuery(`
-              SELECT fis.farm_id, f.name as farm_name, fis.air_data, fis.soil_data, fis.water_data, fis.updated_at
-              FROM farm_iot_sensors fis
-              JOIN farms f ON fis.farm_id = f.id
-              WHERE (f.is_deleted IS NOT TRUE)
-                AND (f.user_id = $1 OR f.created_by = $1 OR f.id = (SELECT farm_id FROM users WHERE id = $1))
-            `, [currentUser.id])
-          ]);
-
-          const farmMap = {};
-          (farmsRes.rows || []).forEach(f => {
-            farmMap[f.id] = {
-              id: f.id,
-              name: f.name,
-              owner: f.owner_name,
-              area: f.area,
-              total: f.total_plants || 0,
-              plantCount: 0,
-              crops: new Set()
-            };
-          });
-
-          userPlants = plantsRes.rows || [];
-          userPlants.forEach(p => {
-            if (p.farm_id && farmMap[p.farm_id]) {
-              farmMap[p.farm_id].plantCount++;
-              const crop = [p.plant_type, p.plant_variety].filter(Boolean).join(' - ');
-              if (crop) farmMap[p.farm_id].crops.add(crop);
-            }
-          });
-
-          userFarms = Object.values(farmMap).map(f => ({
-            name: f.name,
-            owner: f.owner,
-            area: f.area,
-            total: f.plantCount || f.total || 0,
-            crops: f.crops.size > 0 ? Array.from(f.crops).join(', ') : 'Đang cập nhật danh sách cây'
-          }));
-
-          userLogs = logsRes.rows || [];
-          userSuppliesCost = hideFinance ? 0 : Number(costRes.rows?.[0]?.total || 0);
-          userRecentSupplies = hideFinance
-            ? (usagesRes.rows || []).map(s => ({ ...s, total_cost: 0, finance_redacted: true }))
-            : (usagesRes.rows || []);
-          userSuppliesInventory = hideFinance
-            ? (suppliesInvRes.rows || []).map(s => ({ ...s, package_price: 0, unit_price: 0, finance_redacted: true }))
-            : (suppliesInvRes.rows || []);
-          userIotSensors = iotRes.rows || [];
-
-          const farmLines = userFarms.map(f =>
-            `- Trang trại của Bác: "${f.name}" | Diện tích: ${f.area ? f.area + ' ha' : 'Chưa nhập'} | Cây trồng: ${f.crops} (Tổng: ${f.total} cây)`
-          ).join('\n');
-
-          const logLines = userLogs.map(l =>
-            `- Ngày ${new Date(l.log_date).toLocaleDateString('vi-VN')}: [${l.log_type}] trên cây ${l.tree_code || l.plant_type} (${l.farm_name}) - Ghi chú: ${l.note || 'Bình thường'}`
-          ).join('\n');
-
-          const supplyLines = userRecentSupplies.map(s =>
-            hideFinance
-              ? `- ${s.name} (${s.category}): ${s.quantity} ${s.unit} (${s.farm_name})`
-              : `- ${s.name} (${s.category}): ${s.quantity} ${s.unit} - Thành tiền: ${Number(s.total_cost).toLocaleString('vi-VN')} VNĐ (${s.farm_name})`
-          ).join('\n');
-
-          const financeSummaryLine = hideFinance
-            ? '- Chi phí vật tư: [Đã ẩn theo phân quyền tài khoản nhân sự].'
-            : `- Tổng chi phí vật tư đã chi: ${userSuppliesCost.toLocaleString('vi-VN')} VNĐ.`;
-
-          systemContext = `[THÔNG TIN TÀI KHOẢN ĐANG ĐĂNG NHẬP]:
-- Chủ tài khoản Nông hộ: ${currentUser.name} (${currentUser.email})
-- Bác đang sở hữu/quản lý: ${userFarms.length} trang trại:
-${farmLines || '- Bác chưa tạo trang trại nào (Tài khoản mới).'}
-
-[NHẬT KÝ CANH TÁC & CHĂM SÓC GẦN ĐÂY]:
-${logLines || '- Chưa có nhật ký chăm sóc nào gần đây.'}
-
-[VẬT TƯ & CHI PHÍ TIÊU HAO ĐÃ DÙNG]:
-${financeSummaryLine}
-${supplyLines || '- Chưa ghi nhận tiêu hao vật tư gần đây.'}`;
-        }
-
-        memoryCache.set(cacheKey, {
-          systemContext,
-          userFarms,
-          userPlants,
-          userSuppliesCost,
-          userRecentSupplies,
-          userLogs,
-          userSuppliesInventory,
-          userIotSensors
-        }, 45);
-
-      } catch (dbErr) {
-        console.warn('Lỗi đọc database cho scoped AI context:', dbErr.message);
-        systemContext = `[THÔNG TIN]: Đang hỗ trợ tài khoản ${currentUser.name}.`;
-      }
-    }
-
-    let trainedKnowledgeText = '';
+    let kbBundle = { qaRows: [], articleRows: [] };
     let matchedQAResult = null;
     let ragResult = { topArticles: [], matchedSynonyms: [], maxScore: 0 };
-    let toolExecResult = { triggeredTools: [], toolSections: [], suggestedActions: [] };
 
     try {
-      const kbBundle = await loadKnowledgeBaseCached(pool);
-      matchedQAResult = matchTrainingQA(message, kbBundle.qaRows);
-      ragResult = rankKnowledgeArticles(message, kbBundle.articleRows);
-      toolExecResult = executeAgentTools(message, {
-        isAdmin,
-        currentUser,
-        userFarms,
-        userPlants,
-        userLogs,
-        userSuppliesCost,
-        userRecentSupplies,
-        userSuppliesInventory,
-        userIotSensors
-      });
+      kbBundle = await loadKnowledgeBaseCached(pool);
+      matchedQAResult = matchTrainingQA(cleanMessage, kbBundle.qaRows);
+      ragResult = rankKnowledgeArticles(cleanMessage, kbBundle.articleRows);
+    } catch (ragErr) {
+      console.warn('Lỗi tra cứu RAG KB:', ragErr.message);
+    }
 
-      if (matchedQAResult && matchedQAResult.score >= 0.85 && toolExecResult.triggeredTools.length === 0) {
+    const personalOrScoped = isFarmSpecificQuery(cleanMessage, active_farm_id, active_plant_id);
+    const cacheKeyL0 = !personalOrScoped
+      ? buildSemanticCacheKey(cleanMessage, isAdmin ? 'adm' : (hideFinance ? 'red' : 'usr'))
+      : null;
+
+    if (cacheKeyL0) {
+      const cachedL0 = memoryCache.get(cacheKeyL0);
+      if (cachedL0 && cachedL0.reply) {
         return res.json({
           success: true,
-          reply: matchedQAResult.qa.expected_answer,
-          source: 'trained_qa',
-          model: 'trained-qa-instant',
-          modelUsed: 'trained-qa-instant',
+          reply: cachedL0.reply,
+          model: cachedL0.model,
+          source: 'semantic_l0_cache',
           agentMetadata: {
-            confidenceScore: matchedQAResult.score,
-            matchedQAId: matchedQAResult.qa.id,
-            toolsTriggered: []
+            ...(cachedL0.agentMetadata || {}),
+            cacheHit: true
           }
         });
       }
-
-      if (ragResult.topArticles.length > 0) {
-        trainedKnowledgeText = `\n[TÀI LIỆU TRI THỨC ĐỘC QUYỀN TÂN BẢO ĐÃ HUẤN LUYỆN CHO BÉ MẦM]:\n` +
-          ragResult.topArticles.map((a, i) => `--- Tài liệu ${i + 1}: ${a.title} (${a.category} | Điểm BM25: ${a.matchScore}) ---\n${a.content}`).join('\n\n');
-      }
-    } catch (ragErr) {
-      console.warn('Lỗi tra cứu RAG & Agent Tools:', ragErr.message);
     }
 
-    const agentToolsContextText = toolExecResult.toolSections.length > 0
-      ? `\n[KẾT QUẢ THỰC THI CÔNG CỤ AGENT TRÊN DỮ LIỆU THẬT CỦA VƯỜN]:\n${toolExecResult.toolSections.join('\n\n')}\n`
-      : '';
+    if (matchedQAResult && matchedQAResult.score >= 0.85 && !personalOrScoped) {
+      const qaSafe = verifyAgronomySafetyReply(matchedQAResult.qa.expected_answer, cleanMessage, []);
+      return res.json({
+        success: true,
+        reply: qaSafe.reply,
+        source: 'trained_qa',
+        model: 'trained-qa-instant',
+        modelUsed: 'trained-qa-instant',
+        agentMetadata: {
+          confidenceScore: matchedQAResult.score,
+          matchedQAId: matchedQAResult.qa.id,
+          toolsTriggered: [],
+          safetyFlags: qaSafe.safetyFlags,
+          cacheHit: false
+        }
+      });
+    }
 
-    const systemPrompt = `Bạn là "Bé Mầm AgTech" - AI Agent chuyên gia nông nghiệp thông minh (chuẩn ISO/IEC 42001) của hệ thống Sổ Nông Tân Bảo AgTech.
-Xưng hô: Xưng là "Bé Mầm" hoặc "em", gọi người dùng là "${isAdmin ? 'Admin' : 'Bác ' + (currentUser.name || 'nông hộ')}".
+    const redactionResult = redactPiiForLlm(cleanMessage);
+    const redactedUserMsg = redactionResult.sanitizedText;
+    const trimmedHistory = trimHistoryToBudget(history, 10, 4000);
+    const systemInstructionText = buildSystemInstruction({
+      isAdmin,
+      currentUser,
+      scopeData,
+      activeFarmId: active_farm_id,
+      activePlantId: active_plant_id,
+      hideFinance,
+      ragResult,
+      matchedQAResult
+    });
 
-📘 [BỘ KIẾN THỨC CẨM NANG HỆ THỐNG SỔ NÔNG TÂN BẢO]:
-- Bước 1: Tạo Trang Trại Mới: Vào menu "Trang trại" -> Bấm "+ Khởi tạo Trang trại mới (GPS)" -> Nhập tên vườn, diện tích và lấy vị trí GPS vệ tinh.
-- Bước 2: Thêm Cây & Định danh NFC (/sub): Bấm "+ Thêm cây" hoặc vào cổng /sub để gán thẻ NFC NTAG213.
-- Bước 3: Ghi Nhật Ký Canh Tác: Chọn 1 trong 7 thao tác Chibi ISO (Tưới nước, Bón phân, Phun thuốc, Thuê nhân công, Kiểm toán quả [Đậu quả / Quả non / Quả chín], Bệnh cây, Thu hoạch).
-- Bước 4: Quản Lý Vật Tư & Xuất Báo Cáo VietGAP: Tự động khấu trừ tồn kho, hạch toán chi phí và niêm phong chuỗi băm SHA-256.
-
-🌿 [NGUYÊN TẮC AN TOÀN SINH HỌC & VIETGAP BẮT BUỘC]:
-- Khi sử dụng Thuốc BVTV (hóa học) BẮT BUỘC phải cách 10 - 15 ngày sau mới được dùng Chế phẩm vi sinh (Trichoderma, Bacillus, men EM) để tránh diệt chết vi sinh vật có lợi.
-${agentToolsContextText}
-${trainedKnowledgeText}
-${matchedQAResult ? `\n[CẶP Q&A ĐÃ HUẤN LUYỆN LIÊN QUAN]:\n${matchedQAResult.qa.expected_answer}\n` : ''}
-
-⚠️ NGUYÊN TẮC TRẢ LỜI CỦA AGENT:
-1. Trả lời đầy đủ, mạch lạc, bám sát 100% số liệu từ [KẾT QUẢ THỰC THI CÔNG CỤ AGENT] và [TÀI LIỆU TRI THỨC].
-2. Trình bày bằng markdown rõ ràng (tiêu đề, gạch đầu dòng, in đậm con số và hoạt chất).
-
-${systemContext}`;
-
-    const queryComplexity = classifyQueryComplexity(message);
+    const queryComplexity = classifyQueryComplexity(cleanMessage);
     const modelCandidates = queryComplexity === 'complex'
-      ? ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash', 'gemini-2.5-flash-lite']
-      : ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.0-flash'];
+      ? ['gemini-2.5-pro', 'gemini-2.5-flash']
+      : ['gemini-2.5-flash', 'gemini-2.5-pro'];
 
     const rawKeys = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '';
     const apiKeys = rawKeys.split(/[,;\s]+/).map(k => k.trim()).filter(Boolean);
 
     if (apiKeys.length > 0) {
-      const contents = [];
-      if (Array.isArray(history) && history.length > 0) {
-        for (const h of history.slice(-4)) {
-          contents.push({
-            role: h.role === 'user' ? 'user' : 'model',
-            parts: [{ text: h.text }]
-          });
-        }
+      if (!agentBulkhead.acquire()) {
+        const degraded = await runFallbackEngine({
+          message: cleanMessage,
+          isAdmin,
+          currentUser,
+          scopeData,
+          activeFarmId: active_farm_id,
+          hideFinance,
+          matchedQAResult,
+          ragResult,
+          extraFlags: ['BULKHEAD_DEGRADED']
+        });
+        return res.json({
+          success: true,
+          reply: degraded.reply,
+          model: 'be_mam_hybrid_agent_v2',
+          source: degraded.source,
+          agentMetadata: {
+            ...degraded.agentMetadata,
+            bulkheadDegraded: true,
+            redactionCount: redactionResult.redactionCount
+          }
+        });
       }
 
-      contents.push({
-        role: 'user',
-        parts: [{ text: `${systemPrompt}\n\nCâu hỏi của ${currentUser.name}: ${message}` }]
-      });
+      try {
+        const baseContents = trimmedHistory.map(h => ({
+          role: h.role,
+          parts: [{ text: redactPiiForLlm(h.text).sanitizedText }]
+        }));
+        baseContents.push({
+          role: 'user',
+          parts: [{ text: redactedUserMsg }]
+        });
 
-      for (const apiKey of apiKeys) {
-        for (const modelName of modelCandidates) {
-          try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const toolCtx = {
+          pool,
+          isAdmin,
+          currentUser,
+          allowedFarmIds: scopeData.allowedFarmIds,
+          activeFarmId: active_farm_id,
+          hideFinance,
+          kbBundle
+        };
 
-            const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              signal: controller.signal,
-              body: JSON.stringify({
-                contents,
-                generationConfig: {
-                  temperature: queryComplexity === 'complex' ? 0.25 : 0.15,
-                  maxOutputTokens: 2500
+        const MAX_REACT_ROUNDS = 3;
+
+        for (const apiKey of apiKeys) {
+          for (const modelName of modelCandidates) {
+            if (!modelCircuitBreaker.canAttempt(modelName)) {
+              continue;
+            }
+
+            const loopContents = baseContents.map(turn => ({ role: turn.role, parts: [...turn.parts] }));
+            const triggeredTools = [];
+            const collectedToolContexts = [];
+            let reactRounds = 0;
+
+            for (let round = 0; round < MAX_REACT_ROUNDS; round++) {
+              reactRounds += 1;
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 20000);
+              let geminiRes = null;
+              try {
+                geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  signal: controller.signal,
+                  body: JSON.stringify({
+                    systemInstruction: { parts: [{ text: systemInstructionText }] },
+                    contents: loopContents,
+                    tools: [{ functionDeclarations: AGENT_TOOL_DECLARATIONS }],
+                    generationConfig: {
+                      temperature: queryComplexity === 'complex' ? 0.25 : 0.15,
+                      maxOutputTokens: 2500
+                    }
+                  })
+                });
+              } catch (_) {
+                modelCircuitBreaker.recordFailure(modelName);
+                break;
+              } finally {
+                clearTimeout(timeoutId);
+              }
+
+              if (!geminiRes || !geminiRes.ok) {
+                if (!geminiRes || geminiRes.status === 429 || geminiRes.status >= 500) {
+                  modelCircuitBreaker.recordFailure(modelName);
                 }
-              })
-            });
+                break;
+              }
 
-            clearTimeout(timeoutId);
-
-            if (geminiRes.ok) {
               const data = await geminiRes.json();
-              const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
-              if (reply && reply.trim()) {
-                return res.json({
+              const parts = data.candidates?.[0]?.content?.parts || [];
+              const functionCallParts = parts.filter(p => p && p.functionCall);
+
+              if (functionCallParts.length > 0 && round < MAX_REACT_ROUNDS - 1) {
+                const calls = functionCallParts.map(p => ({
+                  name: p.functionCall.name,
+                  args: p.functionCall.args || {}
+                }));
+                const execResults = await executeToolCallsParallel(calls, toolCtx);
+                execResults.forEach(r => {
+                  if (!triggeredTools.includes(r.name)) triggeredTools.push(r.name);
+                  collectedToolContexts.push(r.response);
+                });
+
+                loopContents.push({ role: 'model', parts });
+                loopContents.push({
+                  role: 'user',
+                  parts: execResults.map(r => ({
+                    functionResponse: {
+                      name: r.name,
+                      response: { result: r.response }
+                    }
+                  }))
+                });
+                continue;
+              }
+
+              const rawReply = parts
+                .filter(p => p && typeof p.text === 'string')
+                .map(p => p.text)
+                .join('\n')
+                .trim();
+
+              if (rawReply) {
+                modelCircuitBreaker.recordSuccess(modelName);
+                const dlpOut = scanAndSanitizeAgentOutput(rawReply);
+                const safeOut = verifyAgronomySafetyReply(dlpOut.reply, redactedUserMsg, collectedToolContexts);
+
+                const responsePayload = {
                   success: true,
-                  reply: reply.trim(),
+                  reply: safeOut.reply,
                   model: `${modelName} (${queryComplexity})`,
                   source: 'gemini_ai_agent',
                   agentMetadata: {
-                    toolsTriggered: toolExecResult.triggeredTools,
-                    matchedArticles: ragResult.topArticles.map(a => a.title),
-                    suggestedActions: toolExecResult.suggestedActions
+                    toolsTriggered: triggeredTools,
+                    matchedArticles: (ragResult.topArticles || []).map(a => a.title),
+                    redactionCount: redactionResult.redactionCount,
+                    leakedPatterns: dlpOut.leakedPatterns,
+                    safetyFlags: safeOut.safetyFlags,
+                    reactRounds,
+                    cacheHit: false
                   }
-                });
+                };
+
+                const isOnlyGlobalTools = triggeredTools.every(t => t === 'search_agronomy_kb');
+                if (cacheKeyL0 && isOnlyGlobalTools) {
+                  memoryCache.set(cacheKeyL0, {
+                    reply: responsePayload.reply,
+                    model: responsePayload.model,
+                    agentMetadata: responsePayload.agentMetadata
+                  }, 300);
+                }
+
+                return res.json(responsePayload);
               }
-            } else {
-              console.warn(`[AI Agent Router] Model ${modelName} trả về HTTP ${geminiRes.status} -> Chuyển model kế tiếp...`);
+              break;
             }
-          } catch (_) {
           }
         }
+      } finally {
+        agentBulkhead.release();
       }
     }
 
-    const synthesized = synthesizeGroundedAgentReply({
-      rawQuery: message,
+    const fallbackResult = await runFallbackEngine({
+      message: cleanMessage,
       isAdmin,
-      userName: currentUser.name || 'Nông hộ',
+      currentUser,
+      scopeData,
+      activeFarmId: active_farm_id,
+      hideFinance,
       matchedQAResult,
-      ragResult,
-      toolExecResult
+      ragResult
     });
 
-    if (synthesized.needsAutoLearning && pool && typeof pool.query === 'function') {
-      pool.query(
-        `INSERT INTO ai_unanswered_queries (user_id, user_query, bot_response, user_feedback, status)
-         VALUES ($1, $2, $3, 'unanswered', 'pending')`,
-        [currentUser.id || null, message.trim().slice(0, 500), synthesized.reply.slice(0, 1000)]
-      ).catch(() => {});
+    if (cacheKeyL0) {
+      memoryCache.set(cacheKeyL0, {
+        reply: fallbackResult.reply,
+        model: 'be_mam_hybrid_agent_v2',
+        agentMetadata: fallbackResult.agentMetadata
+      }, 300);
     }
 
     return res.json({
       success: true,
-      reply: synthesized.reply,
+      reply: fallbackResult.reply,
       model: 'be_mam_hybrid_agent_v2',
-      source: matchedQAResult ? 'trained_qa' : 'grounded_agent_engine',
-      agentMetadata: synthesized.agentMetadata
+      source: fallbackResult.source,
+      agentMetadata: {
+        ...fallbackResult.agentMetadata,
+        redactionCount: redactionResult.redactionCount,
+        cacheHit: false
+      }
     });
-
   } catch (err) {
     console.error('Lỗi API Chat Bé Mầm Agent:', err);
     res.status(500).json({ error: 'Lỗi máy chủ AI: ' + err.message });
   }
 });
+
+router._agentInternals = {
+  agentRateLimiter,
+  agentBulkhead,
+  modelCircuitBreaker
+};
 
 module.exports = router;
