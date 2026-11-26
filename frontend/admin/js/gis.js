@@ -129,6 +129,10 @@ function sanitizeCoordinates(rawCoords) {
 function removeContourLinesFromMap(map) {
   if (!map) return;
   try {
+    if (typeof map._cleanupContourListeners === 'function') {
+      map._cleanupContourListeners();
+      map._cleanupContourListeners = null;
+    }
     const layers = ['dense-1m-contour-lines', 'dense-1m-contour-labels', 'dense-1m-contour-labels-major'];
     layers.forEach(l => {
       if (map.getLayer && map.getLayer(l)) map.removeLayer(l);

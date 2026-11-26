@@ -16,7 +16,7 @@ router.get('/', auth, async (req, res) => {
     }
 
     let query = `
-      SELECT f.*, GREATEST(COUNT(p.id)::int, COALESCE(f.total_plants, 0)) as plant_count,
+      SELECT f.*, CASE WHEN COUNT(DISTINCT p.id) > 0 THEN COUNT(DISTINCT p.id)::int ELSE COALESCE(f.total_plants, 0) END as plant_count,
              COALESCE(u.full_name, u_assigned.full_name) as user_name,
              COALESCE(u.email, u_assigned.email) as user_email,
              COALESCE(u.phone, u_assigned.phone) as user_phone,
@@ -75,7 +75,7 @@ router.get('/:id', auth, async (req, res) => {
     }
 
     const plantsResult = await pool.query('SELECT * FROM plants WHERE farm_id = $1 AND deleted_at IS NULL ORDER BY id ASC', [farm.id]);
-    res.json({ ...farm, plants: plantsResult.rows });
+    res.json({ ...farm, plants: plantsResult.rows, plant_count: plantsResult.rows.length });
   } catch (err) {
     console.error('Error getting farm details:', err);
     res.status(500).json({ error: 'Lỗi server khi tải chi tiết trang trại.' });

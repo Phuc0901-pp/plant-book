@@ -569,6 +569,20 @@ export function addContourLinesToMap(map, options = {}) {
   const defaultVisible = options.defaultVisible !== false;
   const showControl = options.showControl !== false;
 
+  if (typeof map._cleanupContourListeners === 'function') {
+    map._cleanupContourListeners();
+    map._cleanupContourListeners = null;
+  }
+  if (map._pendingContourInit) {
+    try { map.off('load', map._pendingContourInit); } catch (_) {}
+    map._pendingContourInit = null;
+  }
+
+  if (!showControl || typeof map._contoursVisible !== 'boolean') {
+    map._contoursVisible = defaultVisible;
+  }
+  const isCurrentlyVisible = () => (showControl ? map._contoursVisible !== false : defaultVisible);
+
   const initContours = () => {
     try {
       if (!map.getSource('mapbox-dem')) {
@@ -578,8 +592,8 @@ export function addContourLinesToMap(map, options = {}) {
           tileSize: 512,
           maxzoom: 14
         });
-        map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
       }
+      map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.0 });
 
       const SPECTRUM_COLORS = [
         '#000080', '#0000cd', '#0000ff', '#0066ff', '#0099ff',
@@ -588,19 +602,21 @@ export function addContourLinesToMap(map, options = {}) {
         '#ff9900', '#ff6600', '#ff3300', '#ff0000', '#cc0000', '#800000'
       ];
 
-      const getDynamicColorForEle = (ele, minEle, maxEle) => {
-        if (maxEle <= minEle) return SPECTRUM_COLORS[0];
-        const t = Math.max(0, Math.min(1, (ele - minEle) / (maxEle - minEle)));
-        const idx = Math.min(SPECTRUM_COLORS.length - 1, Math.floor(t * SPECTRUM_COLORS.length));
-        return SPECTRUM_COLORS[idx];
-      };
-
       const buildDynamicColorRamp = (minEle, maxEle) => {
+        if (maxEle <= minEle || isNaN(minEle) || isNaN(maxEle)) {
+          return SPECTRUM_COLORS[Math.floor(SPECTRUM_COLORS.length / 2)];
+        }
         const rampStops = [];
         const count = SPECTRUM_COLORS.length;
+        let lastVal = -Infinity;
         for (let i = 0; i < count; i++) {
-          const val = minEle + (i / (count - 1)) * (maxEle - minEle);
-          rampStops.push(Math.round(val * 10) / 10, SPECTRUM_COLORS[i]);
+          let val = minEle + (i / (count - 1)) * (maxEle - minEle);
+          val = Math.round(val * 10) / 10;
+          if (val <= lastVal) {
+            val = Math.round((lastVal + 0.1) * 10) / 10;
+          }
+          lastVal = val;
+          rampStops.push(val, SPECTRUM_COLORS[i]);
         }
         return ['interpolate', ['linear'], ['get', 'ele'], ...rampStops];
       };
@@ -612,8 +628,16 @@ export function addContourLinesToMap(map, options = {}) {
         if (options.farmCoords && Array.isArray(options.farmCoords) && options.farmCoords.length > 0) {
           options.farmCoords.forEach(pt => {
             if (Array.isArray(pt) && pt.length >= 2) {
-              lngs.push(pt[0]);
-              lats.push(pt[1]);
+              let v1 = parseFloat(pt[0]);
+              let v2 = parseFloat(pt[1]);
+              if (!isNaN(v1) && !isNaN(v2)) {
+                let lng = v1 > 50 ? v1 : v2;
+                let lat = v2 < 50 ? v2 : v1;
+                if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+                  lngs.push(lng);
+                  lats.push(lat);
+                }
+              }
             }
           });
         }
@@ -624,7 +648,18 @@ export function addContourLinesToMap(map, options = {}) {
               ? JSON.parse(window.plantData.farm.coordinates)
               : window.plantData.farm.coordinates;
             coords.flat(2).forEach(pt => {
-              if (pt && pt.length >= 2) { lngs.push(pt[0]); lats.push(pt[1]); }
+              if (pt && pt.length >= 2) {
+                let v1 = parseFloat(pt[0]);
+                let v2 = parseFloat(pt[1]);
+                if (!isNaN(v1) && !isNaN(v2)) {
+                  let lng = v1 > 50 ? v1 : v2;
+                  let lat = v2 < 50 ? v2 : v1;
+                  if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+                    lngs.push(lng);
+                    lats.push(lat);
+                  }
+                }
+              }
             });
           } catch (_) {}
         }
@@ -644,8 +679,16 @@ export function addContourLinesToMap(map, options = {}) {
                   const coords = geom.type === 'Polygon' ? geom.coordinates.flat() : geom.coordinates.flat(2);
                   coords.forEach(pt => {
                     if (pt && pt.length >= 2) {
-                      lngs.push(pt[0]);
-                      lats.push(pt[1]);
+                      let v1 = parseFloat(pt[0]);
+                      let v2 = parseFloat(pt[1]);
+                      if (!isNaN(v1) && !isNaN(v2)) {
+                        let lng = v1 > 50 ? v1 : v2;
+                        let lat = v2 < 50 ? v2 : v1;
+                        if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+                          lngs.push(lng);
+                          lats.push(lat);
+                        }
+                      }
                     }
                   });
                 }
@@ -666,8 +709,8 @@ export function addContourLinesToMap(map, options = {}) {
           return {
             west: minLng - marginLng,
             east: maxLng + marginLng,
-            south: minLat - marginLat,
-            north: maxLat + marginLat
+            south: Math.max(-89.9, minLat - marginLat),
+            north: Math.min(89.9, maxLat + marginLat)
           };
         }
 
@@ -684,6 +727,35 @@ export function addContourLinesToMap(map, options = {}) {
         }
 
         return null;
+      };
+
+      const fillMissingGridCells = (rawGrid, fallbackEle) => {
+        const ny = rawGrid.length;
+        const nx = rawGrid[0].length;
+        const filled = Array.from({ length: ny }, (_, r) =>
+          rawGrid[r].map(v => (v !== null && Number.isFinite(v) ? v : null))
+        );
+
+        for (let r = 0; r < ny; r++) {
+          for (let c = 0; c < nx; c++) {
+            if (filled[r][c] === null) {
+              let sum = 0;
+              let count = 0;
+              for (let dr = -2; dr <= 2; dr++) {
+                for (let dc = -2; dc <= 2; dc++) {
+                  const nr = r + dr;
+                  const nc = c + dc;
+                  if (nr >= 0 && nr < ny && nc >= 0 && nc < nx && rawGrid[nr][nc] !== null) {
+                    sum += rawGrid[nr][nc];
+                    count++;
+                  }
+                }
+              }
+              filled[r][c] = count > 0 ? sum / count : fallbackEle;
+            }
+          }
+        }
+        return filled;
       };
 
       const smoothGrid = (rawGrid, passes = 2) => {
@@ -717,6 +789,113 @@ export function addContourLinesToMap(map, options = {}) {
         return current;
       };
 
+      const stitchAndSmoothSegments = (segments) => {
+        if (!segments || segments.length === 0) return [];
+        const ptKey = (pt) => pt[0].toFixed(7) + ',' + pt[1].toFixed(7);
+        const adj = new Map();
+
+        segments.forEach((seg, idx) => {
+          const kA = ptKey(seg[0]);
+          const kB = ptKey(seg[1]);
+          if (kA === kB) return;
+          if (!adj.has(kA)) adj.set(kA, []);
+          if (!adj.has(kB)) adj.set(kB, []);
+          adj.get(kA).push({ idx, pt: seg[1], key: kB });
+          adj.get(kB).push({ idx, pt: seg[0], key: kA });
+        });
+
+        const used = new Uint8Array(segments.length);
+        const polylines = [];
+
+        for (let i = 0; i < segments.length; i++) {
+          if (used[i]) continue;
+          const k0 = ptKey(segments[i][0]);
+          const k1 = ptKey(segments[i][1]);
+          if (k0 === k1) {
+            used[i] = 1;
+            continue;
+          }
+          used[i] = 1;
+
+          const fwd = [segments[i][1]];
+          let currKey = k1;
+          while (currKey !== k0) {
+            const edges = adj.get(currKey) || [];
+            let nextEdge = null;
+            for (let j = 0; j < edges.length; j++) {
+              if (!used[edges[j].idx]) {
+                nextEdge = edges[j];
+                break;
+              }
+            }
+            if (!nextEdge) break;
+            used[nextEdge.idx] = 1;
+            fwd.push(nextEdge.pt);
+            currKey = nextEdge.key;
+          }
+
+          const bwd = [segments[i][0]];
+          let backKey = k0;
+          if (currKey !== k0) {
+            while (true) {
+              const edges = adj.get(backKey) || [];
+              let prevEdge = null;
+              for (let j = 0; j < edges.length; j++) {
+                if (!used[edges[j].idx]) {
+                  prevEdge = edges[j];
+                  break;
+                }
+              }
+              if (!prevEdge) break;
+              used[prevEdge.idx] = 1;
+              bwd.push(prevEdge.pt);
+              backKey = prevEdge.key;
+            }
+          }
+
+          const rawPoly = bwd.reverse().concat(fwd);
+          if (rawPoly.length < 3) continue;
+
+          const isClosed = ptKey(rawPoly[0]) === ptKey(rawPoly[rawPoly.length - 1]) && rawPoly.length >= 4;
+          let smoothed = isClosed ? rawPoly.slice(0, -1) : rawPoly.slice();
+
+          for (let pass = 0; pass < 2; pass++) {
+            const nextPts = [];
+            if (isClosed) {
+              const n = smoothed.length;
+              for (let p = 0; p < n; p++) {
+                const a = smoothed[p];
+                const b = smoothed[(p + 1) % n];
+                nextPts.push([0.75 * a[0] + 0.25 * b[0], 0.75 * a[1] + 0.25 * b[1]]);
+                nextPts.push([0.25 * a[0] + 0.75 * b[0], 0.25 * a[1] + 0.75 * b[1]]);
+              }
+            } else {
+              nextPts.push(smoothed[0]);
+              for (let p = 0; p < smoothed.length - 1; p++) {
+                const a = smoothed[p];
+                const b = smoothed[p + 1];
+                nextPts.push([0.75 * a[0] + 0.25 * b[0], 0.75 * a[1] + 0.25 * b[1]]);
+                nextPts.push([0.25 * a[0] + 0.75 * b[0], 0.25 * a[1] + 0.75 * b[1]]);
+              }
+              nextPts.push(smoothed[smoothed.length - 1]);
+            }
+            smoothed = nextPts;
+          }
+
+          if (isClosed && smoothed.length > 0) {
+            smoothed.push(smoothed[0]);
+          }
+          if (smoothed.length >= 2) {
+            polylines.push(smoothed);
+          }
+        }
+
+        return polylines;
+      };
+
+      let lastRenderedKey = '';
+      let hasValidRender = false;
+
       const updateDense1mContours = () => {
         try {
           const bbox = getFarmBoundingBox();
@@ -726,8 +905,6 @@ export function addContourLinesToMap(map, options = {}) {
             }
             return;
           }
-
-          const interval = 1.0;
 
           const currentZoom = map.getZoom();
           if (currentZoom < 13 && map.getSource('dense-1m-contours')) return;
@@ -741,31 +918,47 @@ export function addContourLinesToMap(map, options = {}) {
           const rawGrid = [];
           let minEle = Infinity;
           let maxEle = -Infinity;
-          let hasTerrainData = false;
+          let validSamples = 0;
 
           for (let r = 0; r < ny; r++) {
             const lat = south + r * dy;
             const row = [];
             for (let c = 0; c < nx; c++) {
               const lng = west + c * dx;
-              const ele = map.queryTerrainElevation([lng, lat]);
-              if (ele !== null && ele !== undefined) {
+              const ele = map.queryTerrainElevation([lng, lat], { exaggerated: false });
+              if (ele !== null && ele !== undefined && Number.isFinite(ele)) {
                 row.push(ele);
                 if (ele < minEle) minEle = ele;
                 if (ele > maxEle) maxEle = ele;
-                hasTerrainData = true;
+                validSamples++;
               } else {
-                row.push(0);
+                row.push(null);
               }
             }
             rawGrid.push(row);
           }
 
-          if (!hasTerrainData || minEle === Infinity || maxEle === -Infinity) return;
+          if (validSamples < (nx * ny) * 0.85 || minEle === Infinity || maxEle === -Infinity) return;
 
-          const grid = smoothGrid(rawGrid, 3);
+          const eleRange = maxEle - minEle;
+          if (eleRange < 0.5) {
+            if (map.getSource('dense-1m-contours')) {
+              map.getSource('dense-1m-contours').setData({ type: 'FeatureCollection', features: [] });
+            }
+            updateLegendWidget(minEle, maxEle, 1.0);
+            hasValidRender = true;
+            return;
+          }
 
-          const eleOffset = 0;
+          const interval = eleRange > 60 ? 5.0 : (eleRange > 25 ? 2.0 : 1.0);
+          const renderKey = `${west.toFixed(5)},${south.toFixed(5)},${east.toFixed(5)},${north.toFixed(5)}|${interval}|${minEle.toFixed(1)}|${maxEle.toFixed(1)}`;
+          if (renderKey === lastRenderedKey && map.getSource('dense-1m-contours')) {
+            return;
+          }
+
+          const filledGrid = fillMissingGridCells(rawGrid, minEle);
+          const grid = smoothGrid(filledGrid, 3);
+
           const displayMin = Math.round(minEle);
           const displayMax = Math.round(maxEle);
 
@@ -781,7 +974,7 @@ export function addContourLinesToMap(map, options = {}) {
 
           for (let threshold = startLevel; threshold <= endLevel + 1e-5; threshold += interval) {
             const roundedThreshold = Math.round(threshold * 10) / 10;
-            const displayEle = Math.round((roundedThreshold - eleOffset) * 10) / 10;
+            const displayEle = Math.round(roundedThreshold * 10) / 10;
             const segments = [];
 
             for (let r = 0; r < ny - 1; r++) {
@@ -827,13 +1020,14 @@ export function addContourLinesToMap(map, options = {}) {
               }
             }
 
-            if (segments.length > 0) {
+            const smoothedLines = stitchAndSmoothSegments(segments);
+            if (smoothedLines.length > 0) {
               features.push({
                 type: 'Feature',
                 properties: { ele: displayEle, rawEle: roundedThreshold },
                 geometry: {
                   type: 'MultiLineString',
-                  coordinates: segments
+                  coordinates: smoothedLines
                 }
               });
             }
@@ -841,14 +1035,17 @@ export function addContourLinesToMap(map, options = {}) {
 
           const geoData = { type: 'FeatureCollection', features };
           const dynamicRamp = buildDynamicColorRamp(displayMin, displayMax);
+          const visVal = isCurrentlyVisible() ? 'visible' : 'none';
 
           if (map.getSource('dense-1m-contours')) {
             map.getSource('dense-1m-contours').setData(geoData);
             if (map.getLayer('dense-1m-contour-lines')) {
               map.setPaintProperty('dense-1m-contour-lines', 'line-color', dynamicRamp);
+              map.setLayoutProperty('dense-1m-contour-lines', 'visibility', visVal);
             }
             if (map.getLayer('dense-1m-contour-labels')) {
               map.setPaintProperty('dense-1m-contour-labels', 'text-color', dynamicRamp);
+              map.setLayoutProperty('dense-1m-contour-labels', 'visibility', visVal);
             }
           } else {
             map.addSource('dense-1m-contours', {
@@ -856,46 +1053,52 @@ export function addContourLinesToMap(map, options = {}) {
               data: geoData
             });
 
-            const isMajor = ['==', ['%', ['to-number', ['get', 'ele']], 5], 0];
+            const isMajor = ['==', ['%', ['round', ['to-number', ['get', 'ele']]], 5], 0];
+            const beforeDrawId = ((map.getStyle && map.getStyle()?.layers) || []).find(l => l.id.startsWith('gl-draw-'))?.id;
+            const addLayerBelowDraw = (layerDef) => {
+              if (beforeDrawId) map.addLayer(layerDef, beforeDrawId);
+              else map.addLayer(layerDef);
+            };
 
-            map.addLayer({
+            addLayerBelowDraw({
               id: 'dense-1m-contour-lines',
               type: 'line',
               source: 'dense-1m-contours',
               layout: {
                 'line-join': 'round',
                 'line-cap': 'round',
-                'visibility': defaultVisible ? 'visible' : 'none'
+                'visibility': visVal
               },
               paint: {
                 'line-color': dynamicRamp,
                 'line-width': [
                   'interpolate', ['exponential', 1.5], ['zoom'],
-                  12, ['case', isMajor, 3.5, 1.5],
-                  15, ['case', isMajor, 5.0, 2.0],
-                  18, ['case', isMajor, 7.0, 2.5]
+                  12, ['case', isMajor, 2.0, 1.0],
+                  15, ['case', isMajor, 2.6, 1.2],
+                  18, ['case', isMajor, 3.2, 1.5]
                 ],
-                'line-opacity': ['case', isMajor, 0.95, 0.8]
+                'line-opacity': ['case', isMajor, 0.82, 0.58]
               }
             });
 
-            map.addLayer({
+            addLayerBelowDraw({
               id: 'dense-1m-contour-labels',
               type: 'symbol',
               source: 'dense-1m-contours',
               layout: {
                 'symbol-placement': 'line',
+                'symbol-spacing': 240,
                 'text-field': ['concat', ['to-string', ['get', 'ele']], ' m'],
                 'text-size': [
                   'interpolate', ['linear'], ['zoom'],
                   12, ['case', isMajor, 10, 8.5],
-                  16, ['case', isMajor, 13, 10.5]
+                  16, ['case', isMajor, 12.5, 10.5]
                 ],
                 'text-font': ['DIN Offc Pro Bold', 'Arial Unicode MS Bold'],
                 'text-allow-overlap': false,
                 'text-ignore-placement': false,
                 'text-max-angle': 35,
-                'visibility': defaultVisible ? 'visible' : 'none'
+                'visibility': visVal
               },
               paint: {
                 'text-color': dynamicRamp,
@@ -905,7 +1108,9 @@ export function addContourLinesToMap(map, options = {}) {
             });
           }
 
-          updateLegendWidget(minEle, maxEle, interval);
+          lastRenderedKey = renderKey;
+          hasValidRender = true;
+          updateLegendWidget(displayMin, displayMax, interval);
         } catch (e) {
           console.warn('Lỗi sinh đường đồng mức nông trại:', e);
         }
@@ -968,10 +1173,28 @@ export function addContourLinesToMap(map, options = {}) {
         contourTimer = setTimeout(updateDense1mContours, 300);
       };
 
-      map.on('moveend', debouncedUpdate);
-      map.on('idle', debouncedUpdate);
-      setTimeout(updateDense1mContours, 600);
-      setTimeout(updateDense1mContours, 1500);
+      const hasFixedFarmCoords = Array.isArray(options.farmCoords) && options.farmCoords.length > 0;
+      const onMoveEnd = () => {
+        if (!hasFixedFarmCoords || !hasValidRender) debouncedUpdate();
+      };
+      const onSourceData = (e) => {
+        if (e && e.sourceId === 'mapbox-dem' && e.isSourceLoaded && !hasValidRender) {
+          debouncedUpdate();
+        }
+      };
+
+      map.on('moveend', onMoveEnd);
+      map.on('sourcedata', onSourceData);
+      const t1 = setTimeout(updateDense1mContours, 600);
+      const t2 = setTimeout(updateDense1mContours, 1500);
+
+      map._cleanupContourListeners = () => {
+        clearTimeout(contourTimer);
+        clearTimeout(t1);
+        clearTimeout(t2);
+        map.off('moveend', onMoveEnd);
+        map.off('sourcedata', onSourceData);
+      };
 
       if (showControl && !map._contourControlAdded) {
         map._contourControlAdded = true;
@@ -985,8 +1208,9 @@ export function addContourLinesToMap(map, options = {}) {
             const btnContour = document.createElement('button');
             btnContour.className = 'mapboxgl-ctrl-icon mapbox-ctrl-contour-btn';
             btnContour.type = 'button';
-            btnContour.title = 'Bật/Tắt đường đồng mức 1m nông trại (Contour Lines)';
+            btnContour.title = 'Bật/Tắt đường đồng mức nông trại (Contour Lines)';
             btnContour.setAttribute('aria-label', 'Toggle Contour Lines');
+            const initialVis = m._contoursVisible !== false;
             btnContour.style.cssText = `
               display: flex;
               align-items: center;
@@ -995,26 +1219,29 @@ export function addContourLinesToMap(map, options = {}) {
               height: 29px;
               font-size: 13px;
               font-weight: bold;
-              background: ${defaultVisible ? 'rgba(245, 158, 11, 0.25)' : 'transparent'};
-              color: ${defaultVisible ? '#f59e0b' : '#555'};
+              background: ${initialVis ? 'rgba(245, 158, 11, 0.25)' : 'transparent'};
+              color: ${initialVis ? '#f59e0b' : '#555'};
               border: none;
               cursor: pointer;
             `;
             btnContour.innerHTML = '⛰️';
 
-            let isVisible = defaultVisible;
-
             btnContour.onclick = () => {
-              isVisible = !isVisible;
-              const visVal = isVisible ? 'visible' : 'none';
+              const nextVis = !(m._contoursVisible !== false);
+              m._contoursVisible = nextVis;
+              const visVal = nextVis ? 'visible' : 'none';
               if (m.getLayer('dense-1m-contour-lines')) m.setLayoutProperty('dense-1m-contour-lines', 'visibility', visVal);
               if (m.getLayer('dense-1m-contour-labels')) m.setLayoutProperty('dense-1m-contour-labels', 'visibility', visVal);
 
-              btnContour.style.background = isVisible ? 'rgba(245, 158, 11, 0.25)' : 'transparent';
-              btnContour.style.color = isVisible ? '#f59e0b' : '#555';
+              btnContour.style.background = nextVis ? 'rgba(245, 158, 11, 0.25)' : 'transparent';
+              btnContour.style.color = nextVis ? '#f59e0b' : '#555';
 
               const legendEl = m.getContainer().querySelector('.elevation-legend-widget-container');
-              if (legendEl) legendEl.style.display = isVisible ? 'block' : 'none';
+              if (legendEl) legendEl.style.display = nextVis ? 'block' : 'none';
+
+              if (nextVis && (!m.getSource('dense-1m-contours') || !hasValidRender)) {
+                updateDense1mContours();
+              }
             };
 
             const btnExportA4 = document.createElement('button');
@@ -1066,7 +1293,7 @@ export function addContourLinesToMap(map, options = {}) {
             bottom: 24px;
             right: 10px;
             z-index: 8;
-            display: ${defaultVisible ? 'block' : 'none'};
+            display: ${isCurrentlyVisible() ? 'block' : 'none'};
             pointer-events: auto;
           `;
           mapContainer.appendChild(legendContainer);
@@ -1080,6 +1307,7 @@ export function addContourLinesToMap(map, options = {}) {
   if (map.isStyleLoaded()) {
     initContours();
   } else {
+    map._pendingContourInit = initContours;
     map.once('load', initContours);
   }
 }

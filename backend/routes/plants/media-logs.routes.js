@@ -27,6 +27,13 @@ router.delete('/:id', auth, admin, async (req, res) => {
       [plantId]
     );
 
+    if (oldPlant.farm_id) {
+      await pool.query(
+        `UPDATE farms SET total_plants = (SELECT COUNT(*)::int FROM plants WHERE farm_id = $1 AND deleted_at IS NULL) WHERE id = $1`,
+        [oldPlant.farm_id]
+      ).catch(() => {});
+    }
+
     await pool.query(
       `UPDATE nfc_tags_inventory SET status = 'unassigned', plant_id = NULL, tagged_at = NULL, updated_at = NOW() WHERE plant_id = $1`,
       [plantId]
@@ -90,6 +97,13 @@ router.post('/:id/restore', auth, admin, async (req, res) => {
       `UPDATE plants SET deleted_at = NULL, updated_at = NOW() WHERE id = $1 RETURNING *`,
       [plantId]
     );
+
+    if (oldPlant.farm_id) {
+      await pool.query(
+        `UPDATE farms SET total_plants = (SELECT COUNT(*)::int FROM plants WHERE farm_id = $1 AND deleted_at IS NULL) WHERE id = $1`,
+        [oldPlant.farm_id]
+      ).catch(() => {});
+    }
 
     if (oldPlant.nfc_uid) {
       await syncPlantNfcToInventory(pool, {
