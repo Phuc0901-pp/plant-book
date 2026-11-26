@@ -34,6 +34,7 @@ require('./suites/28_enterprise_e2e_pdf_apm_k6.test');
 require('./suites/29_iso27001_zero_trust_mfa_dlp.test');
 require('./suites/30_multichannel_notification_hub.test');
 require('./suites/31_enterprise_ai_agent_v3.test');
+require('./suites/32_cache_busting_area_audit_autorefresh.test');
 
 async function main() {
   try {

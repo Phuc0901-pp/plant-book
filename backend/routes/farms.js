@@ -6,6 +6,7 @@ const admin = require('../middleware/admin');
 const { getCache, setCache, delCache, delCacheByPattern } = require('../config/redis');
 const { normalizeGpsPayload, validateGeoJsonPolygon } = require('../utils/geoIsoValidator');
 const { computeCanonicalPlantLogHash } = require('./plants/helpers');
+const { normalizeAreaToSquareMeters, auditAndNormalizeFarmArea } = require('../services/unitConversionService');
 
 router.get('/', auth, async (req, res) => {
   try {
@@ -983,7 +984,11 @@ router.post('/self-init', auth, async (req, res) => {
 
     const lat = latitude ? parseFloat(latitude) : null;
     const lng = longitude ? parseFloat(longitude) : null;
-    const farmArea = area && parseFloat(area) ? parseFloat(area) : null;
+    const rawAreaNum = parseFloat(area);
+    const areaUnit = req.body.area_unit || (Number.isFinite(rawAreaNum) && rawAreaNum > 0 && rawAreaNum <= 50 ? 'ha' : 'm2');
+    const farmArea = Number.isFinite(rawAreaNum) && rawAreaNum > 0
+      ? Math.round(normalizeAreaToSquareMeters(rawAreaNum, areaUnit))
+      : null;
     const countVal = parseInt(total_plants || plant_count) || 0;
 
     const polygonCoords = (lat && lng) ? [[lat, lng]] : [];
@@ -1760,6 +1765,61 @@ router.post('/:id/restore', auth, async (req, res) => {
   } catch (err) {
     console.error('Error restoring farm:', err);
     res.status(500).json({ error: 'Lỗi server khi khôi phục trang trại: ' + err.message });
+  }
+});
+
+router.post('/audit-normalize-areas', auth, admin, async (req, res) => {
+  try {
+    const dryRun = !(req.body && req.body.dry_run === false);
+    const farmsRes = await pool.query(`
+      SELECT f.id, f.name, f.area, f.polygon_coordinates,
+             COUNT(DISTINCT p.id)::int as plant_count
+      FROM farms f
+      LEFT JOIN plants p ON p.farm_id = f.id AND p.deleted_at IS NULL
+      WHERE COALESCE(f.is_deleted, false) = false
+      GROUP BY f.id
+      ORDER BY f.id ASC
+    `);
+
+    const items = [];
+    let anomaliesFound = 0;
+    let repairedCount = 0;
+
+    for (const farm of farmsRes.rows || []) {
+      const audit = auditAndNormalizeFarmArea(farm, farm.plant_count);
+      if (audit.anomaly) {
+        anomaliesFound += 1;
+        if (!dryRun && audit.normalizedM2 > 0) {
+          await pool.query(
+            `UPDATE farms SET area = $1, updated_at = NOW() WHERE id = $2`,
+            [audit.normalizedM2, farm.id]
+          );
+          repairedCount += 1;
+        }
+      }
+      items.push({
+        farm_id: farm.id,
+        name: farm.name,
+        plant_count: farm.plant_count,
+        ...audit
+      });
+    }
+
+    if (!dryRun && repairedCount > 0) {
+      await delCacheByPattern('farms_');
+    }
+
+    res.json({
+      success: true,
+      dry_run: dryRun,
+      total_farms: items.length,
+      anomalies_found: anomaliesFound,
+      repaired_count: repairedCount,
+      items
+    });
+  } catch (err) {
+    console.error('Error auditing farm areas:', err);
+    res.status(500).json({ error: 'Lỗi kiểm tra chuẩn hóa diện tích trang trại: ' + err.message });
   }
 });
 

@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const FRONTEND_DIR = path.join(__dirname, '../../frontend');
 const CONFIG_PATH = path.join(__dirname, '../../config/app.config.json');
@@ -46,6 +47,57 @@ function applyPlaceholders(content, config) {
     .replace(/\{\{SW_CACHE_NAME\}\}/g, swCache);
 }
 
+function resolveLocalFrontendAsset(urlPath, frontendDir = FRONTEND_DIR) {
+  if (!urlPath || typeof urlPath !== 'string') return null;
+  if (/^(?:https?:)?\/\//i.test(urlPath) || urlPath.startsWith('data:')) return null;
+  const cleanRel = urlPath.split('?')[0].split('#')[0].replace(/^\/+/, '');
+  if (!cleanRel) return null;
+
+  const directCandidate = path.resolve(frontendDir, cleanRel);
+  if (directCandidate.startsWith(path.resolve(frontendDir)) && fs.existsSync(directCandidate) && fs.statSync(directCandidate).isFile()) {
+    return directCandidate;
+  }
+
+  const publicDir = path.resolve(frontendDir, 'public');
+  const publicCandidate = path.resolve(publicDir, cleanRel);
+  if (publicCandidate.startsWith(publicDir) && fs.existsSync(publicCandidate) && fs.statSync(publicCandidate).isFile()) {
+    return publicCandidate;
+  }
+
+  return null;
+}
+
+function computeAssetHash8(filePath, hashCache = null) {
+  if (hashCache && hashCache.has(filePath)) return hashCache.get(filePath);
+  const digest = crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex').slice(0, 8);
+  if (hashCache) hashCache.set(filePath, digest);
+  return digest;
+}
+
+function injectContentHashes(html, config, frontendDir = FRONTEND_DIR, hashCache = new Map()) {
+  const cfg = config || loadAppConfig();
+  const versionTag = cfg.app?.versionTag || ('v' + (cfg.app?.version || '1.3.5'));
+  let out = String(html || '');
+
+  out = out.replace(/(<script\b[^>]*\bsrc=")([^"]+\.js(?:\?[^"]*)?)(")/gi, (full, pre, rawUrl, post) => {
+    const absPath = resolveLocalFrontendAsset(rawUrl, frontendDir);
+    if (!absPath) return full;
+    const basePath = rawUrl.split('?')[0];
+    const hash8 = computeAssetHash8(absPath, hashCache);
+    return `${pre}${basePath}?v=${versionTag}-${hash8}${post}`;
+  });
+
+  out = out.replace(/(<link\b[^>]*\bhref=")([^"]+\.css(?:\?[^"]*)?)(")/gi, (full, pre, rawUrl, post) => {
+    const absPath = resolveLocalFrontendAsset(rawUrl, frontendDir);
+    if (!absPath) return full;
+    const basePath = rawUrl.split('?')[0];
+    const hash8 = computeAssetHash8(absPath, hashCache);
+    return `${pre}${basePath}?v=${versionTag}-${hash8}${post}`;
+  });
+
+  return out;
+}
+
 function resolveIncludes(filePath, seen = new Set()) {
   if (seen.has(filePath)) {
     console.warn(`[build-html] Circular include detected: ${filePath}`);
@@ -79,7 +131,7 @@ function normalizeHtmlOutput(html) {
     .trim() + '\n';
 }
 
-function buildAdminHtml(config) {
+function buildAdminHtml(config, hashCache = new Map()) {
   const templatePath = path.join(FRONTEND_DIR, 'admin/src/index.template.html');
   const outputPath = path.join(FRONTEND_DIR, 'admin/index.html');
 
@@ -91,13 +143,14 @@ function buildAdminHtml(config) {
   const startTime = Date.now();
   let assembled = resolveIncludes(templatePath);
   assembled = applyPlaceholders(assembled, config);
+  assembled = injectContentHashes(assembled, config, FRONTEND_DIR, hashCache);
   assembled = normalizeHtmlOutput(assembled);
   fs.writeFileSync(outputPath, assembled, 'utf8');
   const elapsed = Date.now() - startTime;
   console.log(`[build-html] Built admin/index.html (${assembled.length} bytes, ${assembled.split('\n').length} lines) in ${elapsed}ms`);
 }
 
-function buildUserHtml(config) {
+function buildUserHtml(config, hashCache = new Map()) {
   const templatePath = path.join(FRONTEND_DIR, 'user/src/index.template.html');
   const outputPath = path.join(FRONTEND_DIR, 'user/index.html');
 
@@ -109,19 +162,35 @@ function buildUserHtml(config) {
   const startTime = Date.now();
   let assembled = resolveIncludes(templatePath);
   assembled = applyPlaceholders(assembled, config);
+  assembled = injectContentHashes(assembled, config, FRONTEND_DIR, hashCache);
   assembled = normalizeHtmlOutput(assembled);
   fs.writeFileSync(outputPath, assembled, 'utf8');
   const elapsed = Date.now() - startTime;
   console.log(`[build-html] Built user/index.html (${assembled.length} bytes, ${assembled.split('\n').length} lines) in ${elapsed}ms`);
 }
 
+function hashPublicHtmlFiles(config, hashCache = new Map()) {
+  const publicFiles = ['plant.html', 'report.html', 'sub.html', 'map.html'];
+  publicFiles.forEach(fileName => {
+    const filePath = path.join(FRONTEND_DIR, 'public', fileName);
+    if (!fs.existsSync(filePath)) return;
+    const prev = fs.readFileSync(filePath, 'utf8');
+    const hashed = injectContentHashes(prev, config, FRONTEND_DIR, hashCache);
+    if (hashed !== prev) {
+      fs.writeFileSync(filePath, hashed, 'utf8');
+    }
+  });
+}
+
 function buildAll() {
   console.log('[build-html] Compiling modular HTML components with SSOT config...');
   const config = loadAppConfig();
-  buildAdminHtml(config);
-  buildUserHtml(config);
+  const hashCache = new Map();
+  buildAdminHtml(config, hashCache);
+  buildUserHtml(config, hashCache);
+  hashPublicHtmlFiles(config, hashCache);
   console.log('[build-html] All HTML portals assembled successfully.');
-  return { admin: true, user: true };
+  return { admin: true, user: true, public: true };
 }
 
 if (require.main === module) {
@@ -132,7 +201,11 @@ module.exports = {
   buildAll,
   buildAdminHtml,
   buildUserHtml,
+  hashPublicHtmlFiles,
   resolveIncludes,
   loadAppConfig,
-  applyPlaceholders
+  applyPlaceholders,
+  resolveLocalFrontendAsset,
+  computeAssetHash8,
+  injectContentHashes
 };

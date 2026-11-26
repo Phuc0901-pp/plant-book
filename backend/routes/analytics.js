@@ -5,6 +5,7 @@ const path = require('path');
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
 const { singleflight } = require('../services/singleflight');
+const { auditAndNormalizeFarmArea } = require('../services/unitConversionService');
 
 const CURRENCY_RATES = {
   VND: 1,
@@ -204,7 +205,7 @@ async function aggregateExecutiveBiData(ctx) {
   const { targetOwnerId, farmId, year } = ctx;
 
   const farmsRes = await pool.query(
-    `SELECT id, name, area, puc_code, vietgap_cert_number, user_id
+    `SELECT id, name, area, polygon_coordinates, puc_code, vietgap_cert_number, user_id
      FROM farms
      WHERE COALESCE(is_deleted, false) = false
        AND ($1::int IS NULL OR id = $1)
@@ -293,7 +294,28 @@ async function aggregateExecutiveBiData(ctx) {
   const logs = logsRes.rows;
 
   const totalTrees = plants.length;
-  const totalAreaM2 = farms.reduce((acc, f) => acc + (parseFloat(f.area) || 0), 0);
+  const treesPerFarm = new Map();
+  plants.forEach(p => {
+    if (p.farm_id) {
+      const fid = Number(p.farm_id);
+      treesPerFarm.set(fid, (treesPerFarm.get(fid) || 0) + 1);
+    }
+  });
+
+  const areaAuditWarnings = [];
+  const totalAreaM2 = farms.reduce((acc, f) => {
+    const audit = auditAndNormalizeFarmArea(f, treesPerFarm.get(Number(f.id)) || 0);
+    if (audit.anomaly) {
+      areaAuditWarnings.push({
+        farm_id: f.id,
+        farm_name: f.name,
+        raw_area: audit.rawArea,
+        normalized_m2: audit.normalizedM2,
+        status: audit.status
+      });
+    }
+    return acc + audit.normalizedM2;
+  }, 0);
   const totalAreaHa = totalAreaM2 > 0 ? Number((totalAreaM2 / 10000).toFixed(4)) : 0;
 
   const pillarsVnd = {
@@ -554,6 +576,7 @@ async function aggregateExecutiveBiData(ctx) {
     totalTrees,
     totalAreaM2,
     totalAreaHa,
+    areaAuditWarnings,
     totalInvestmentVnd,
     costPerTreeVnd,
     costPerHectareVnd,
@@ -609,10 +632,11 @@ router.get('/bi-overview', auth, async (req, res) => {
         ? {
             id: data.farms[0].id,
             name: data.farms[0].name,
-            area_m2: Number(data.farms[0].area) || 0,
+            area_m2: Math.round(data.totalAreaM2) || Number(data.farms[0].area) || 0,
             puc_code: data.farms[0].puc_code || null
           }
         : null,
+      area_audit_warnings: data.areaAuditWarnings || [],
       currency_rates: CURRENCY_RATES,
       summary: {
         total_farms: data.farms.length,
