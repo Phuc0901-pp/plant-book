@@ -664,10 +664,10 @@ function _renderLogPage() {
     return;
   }
 
-  const rbac = getCurrentUserRbac();
+  const rbac = typeof getCurrentUserRbac === 'function' ? getCurrentUserRbac() : { isFinanceRedacted: false };
   const isFinanceRedacted = rbac.isFinanceRedacted;
-  const canDelete = rbac.isFarmOwner || rbac.isManager;
-  const canEdit = !rbac.isAuditor;
+  const canDelete = rbac.isOwner || rbac.isManager;
+  const canEdit = !rbac.isReadonlyAuditor;
 
   const totalLogs = _currentFilteredLogs.length;
   const totalPages = Math.ceil(totalLogs / _logPageSize) || 1;
@@ -990,12 +990,12 @@ function _logRow(l) {
 }
 
 export function applyLogsRoleArchitecture() {
-  const rbac = getCurrentUserRbac();
+  const rbac = typeof getCurrentUserRbac === 'function' ? getCurrentUserRbac() : { isFinanceRedacted: false };
   const btnSelectiveDelete = document.getElementById('btn-open-selective-log-delete');
   const btnBatchSelect = document.getElementById('btn-toggle-batch-log-mode');
   const bannerEl = document.getElementById('logs-role-scope-banner');
 
-  const canManage = rbac.isFarmOwner || rbac.isManager;
+  const canManage = rbac.isOwner || rbac.isManager;
   if (btnSelectiveDelete) btnSelectiveDelete.style.display = canManage ? 'inline-flex' : 'none';
   if (btnBatchSelect) btnBatchSelect.style.display = canManage ? 'inline-flex' : 'none';
 
@@ -1020,7 +1020,7 @@ window.applyLogsRoleArchitecture = applyLogsRoleArchitecture;
 export function filterUserLogs() {
   applyLogsRoleArchitecture();
 
-  const rbac = getCurrentUserRbac();
+  const rbac = typeof getCurrentUserRbac === 'function' ? getCurrentUserRbac() : { isFinanceRedacted: false };
   const query       = (document.getElementById('user-log-search')?.value || '').trim().toLowerCase();
   const farmId      = document.getElementById('user-log-filter-farm')?.value || 'all';
   const filterType  = document.getElementById('user-log-filter-type')?.value || 'all';
@@ -1634,6 +1634,13 @@ window.closeUserExportLogsModal = closeUserExportLogsModal;
 export function onModalExportFarmChange() {
   const farmSel = document.getElementById('modal-export-farm');
   const plantSel = document.getElementById('modal-export-plant');
+  const plotSel = document.getElementById('modal-export-plot-id');
+  const typeSel = document.getElementById('modal-export-plant-type');
+  const financeWrap = document.getElementById('modal-export-finance-wrap');
+  const rbac = typeof getCurrentUserRbac === 'function' ? getCurrentUserRbac() : { isFinanceRedacted: false };
+  if (financeWrap) {
+    financeWrap.style.display = rbac.isFinanceRedacted ? 'none' : 'flex';
+  }
   if (!plantSel) return;
 
   const farmId = farmSel ? farmSel.value : 'all';
@@ -1651,8 +1658,53 @@ export function onModalExportFarmChange() {
 
   plantSel.innerHTML = `<option value="all">Tất cả cây trồng</option>`
     + plants.map(p => `<option value="${p.id}">Cây #${esc(p.tree_code || p.id)} (${esc(p.plant_type || '')})</option>`).join('');
+
+  if (plotSel) {
+    const plotMap = new Map();
+    plants.forEach(p => {
+      if (p.plot_id) {
+        plotMap.set(String(p.plot_id), p.plot_name || p.plot_code || `Lô #${p.plot_id}`);
+      }
+    });
+    plotSel.innerHTML = `<option value="all">Tất cả lô trồng</option>`
+      + Array.from(plotMap.entries()).map(([id, label]) => `<option value="${esc(id)}">${esc(label)}</option>`).join('');
+  }
+
+  if (typeSel) {
+    const types = Array.from(new Set(plants.map(p => (p.plant_type || '').trim()).filter(Boolean)));
+    typeSel.innerHTML = `<option value="all">Tất cả chủng loại</option>`
+      + types.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+  }
 }
 window.onModalExportFarmChange = onModalExportFarmChange;
+
+export function applyUserExportPeriodPreset(preset) {
+  const fromEl = document.getElementById('modal-export-date-from');
+  const toEl = document.getElementById('modal-export-date-to');
+  if (!fromEl || !toEl) return;
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  const pad = n => String(n).padStart(2, '0');
+  if (preset === 'month') {
+    const last = new Date(y, m + 1, 0).getDate();
+    fromEl.value = `${y}-${pad(m + 1)}-01`;
+    toEl.value = `${y}-${pad(m + 1)}-${pad(last)}`;
+  } else if (preset === 'quarter') {
+    const qStart = Math.floor(m / 3) * 3;
+    const qEnd = qStart + 2;
+    const last = new Date(y, qEnd + 1, 0).getDate();
+    fromEl.value = `${y}-${pad(qStart + 1)}-01`;
+    toEl.value = `${y}-${pad(qEnd + 1)}-${pad(last)}`;
+  } else if (preset === 'year') {
+    fromEl.value = `${y}-01-01`;
+    toEl.value = `${y}-12-31`;
+  }
+  if (typeof window.updateUserExportMatchSummary === 'function') {
+    window.updateUserExportMatchSummary();
+  }
+}
+window.applyUserExportPeriodPreset = applyUserExportPeriodPreset;
 
 export function toggleAllUserExportCats(select) {
   const checkboxes = document.querySelectorAll('input[name="user_export_cat"]');
@@ -1743,28 +1795,36 @@ export function exportLogsToCsv(logs, filename = 'NhatKyCanhTac.csv', meta = {})
   };
 
   const stdLabel = meta.standardLabel || 'VietGAP (TCVN 11892-1:2017) · GlobalG.A.P. (IFA v6.0) · ISO 22005:2007';
+  const rbac = typeof getCurrentUserRbac === 'function' ? getCurrentUserRbac() : { isFinanceRedacted: false };
+  const showFinance = !rbac.isFinanceRedacted && meta.includeFinance !== false;
 
   const headers = [
     "STT",
     "Tiêu Chuẩn Hồ Sơ",
     "Ngày Canh Tác",
-    "Mã Cây / Lô",
+    "Mã PUC / Lô Trồng",
+    "Mã Cây",
     "Loại Cây",
     "Giống Cây",
     "Trang Trại",
     "Hoạt Động Canh Tác",
-    "Chi Tiết Kỹ Thuật (Vật tư, Thuốc, Kiểm toán quả)",
-    "Thiết Bị & Mã Lô",
-    "Đơn Giá (VNĐ)",
-    "Thành Tiền (VNĐ)",
+    "Chi Tiết Kỹ Thuật (Vật tư, Hoạt chất, PHI, Kiểm toán quả)",
+    "Trạng Thái Tuân Thủ PHI",
+    "Thiết Bị & Mã Lô Thu Hoạch",
+    ...(showFinance ? ["Đơn Giá (VNĐ)", "Thành Tiền (VNĐ)"] : []),
     "Người Thực Hiện",
+    "Chữ Ký SHA-256",
     "Ghi Chú Bổ Sung",
     "Hình Ảnh / Video Bằng Chứng"
   ].map(tr);
 
   function escapeCsvCell(val) {
     if (val === null || val === undefined) return '""';
-    const str = String(val).replace(/"/g, '""');
+    let raw = String(val);
+    if (/^[=+\-@\t\r]/.test(raw)) {
+      raw = "'" + raw;
+    }
+    const str = raw.replace(/"/g, '""');
     return `"${str}"`;
   }
 
@@ -1779,9 +1839,14 @@ export function exportLogsToCsv(logs, filename = 'NhatKyCanhTac.csv', meta = {})
 
     const d = log.details || {};
     const unitPrice = d.unit_price || d.package_price || '';
-    const totalCost = d.total_cost || d.cost || '';
+    const totalCost = d.total_cost || d.cost || log.cost || '';
     const equipBatch = [log.equipment_used, log.batch_code].filter(Boolean).join(' · ');
     const operatorStr = log.operator_name || log.creator_name || d.operator_name || 'Kỹ thuật viên trang trại';
+    const pucPlotStr = [log.puc_code || log.farm_puc_code, log.plot_code || log.plot_name].filter(Boolean).join(' / ');
+    const isPhiViol = Boolean(log.is_phi_violation || d.is_phi_violation);
+    const phiUntil = d.phi_until_date || log.phi_until_date || null;
+    const logYmd = toLocalYmd(log.log_date || log.created_at);
+    const phiStatus = isPhiViol ? 'VI PHẠM PHI' : (phiUntil && logYmd && logYmd <= String(phiUntil).slice(0, 10) ? 'Đang cách ly PHI' : 'Đạt chuẩn PHI');
 
     const dateStr = log.log_date ? new Date(log.log_date).toLocaleDateString('vi-VN') : '';
 
@@ -1789,16 +1854,18 @@ export function exportLogsToCsv(logs, filename = 'NhatKyCanhTac.csv', meta = {})
       index + 1,
       stdLabel,
       dateStr,
+      pucPlotStr,
       log.tree_code || log.plant_id || 'Toàn vườn',
       tr(log.plant_type || ''),
       log.plant_variety || '',
       log.farm_name || '',
       tr(log.log_type || ''),
       detailsStr,
+      phiStatus,
       equipBatch,
-      unitPrice,
-      totalCost,
+      ...(showFinance ? [unitPrice, totalCost] : []),
       operatorStr,
+      log.record_hash || '',
       log.note || '',
       mediaUrls
     ];
@@ -1827,6 +1894,12 @@ window.exportUserFilteredLogsCsv = exportUserFilteredLogsCsv;
 export async function executeUserExport(mode = 'csv') {
   const farmId = document.getElementById('modal-export-farm')?.value || 'all';
   const plantId = document.getElementById('modal-export-plant')?.value || 'all';
+  const plotId = document.getElementById('modal-export-plot-id')?.value || 'all';
+  const plantTypeFilter = document.getElementById('modal-export-plant-type')?.value || 'all';
+  const treeCodeFrom = (document.getElementById('modal-export-tree-from')?.value || '').trim();
+  const treeCodeTo = (document.getElementById('modal-export-tree-to')?.value || '').trim();
+  const includeFinanceEl = document.getElementById('modal-export-include-finance');
+  const includeFinance = includeFinanceEl ? includeFinanceEl.checked : true;
   const fromDate = document.getElementById('modal-export-date-from')?.value || '';
   const toDate = document.getElementById('modal-export-date-to')?.value || '';
   const stdCode = document.getElementById('modal-export-standard')?.value || 'vietgap_globalgap_iso';
@@ -1847,12 +1920,29 @@ export async function executeUserExport(mode = 'csv') {
     return;
   }
 
+  const preOpenedWin = (mode === 'print' || mode === 'save_pdf') ? window.open('', '_blank') : null;
+
   let allLogs = enrichLogsWithFruitAuditChain([..._logsCache]);
   try {
-    const freshRes = await api('/plants/logs/recent?days=all');
-    if (Array.isArray(freshRes) && freshRes.length > 0) {
-      mergeLogsIntoCache(freshRes);
-      allLogs = [..._logsCache];
+    const qParts = [];
+    if (farmId !== 'all') qParts.push(`farm_id=${encodeURIComponent(farmId)}`);
+    if (plantId !== 'all') qParts.push(`plant_id=${encodeURIComponent(plantId)}`);
+    if (plotId !== 'all') qParts.push(`plot_id=${encodeURIComponent(plotId)}`);
+    if (plantTypeFilter !== 'all') qParts.push(`plant_type=${encodeURIComponent(plantTypeFilter)}`);
+    if (treeCodeFrom) qParts.push(`tree_code_from=${encodeURIComponent(treeCodeFrom)}`);
+    if (treeCodeTo) qParts.push(`tree_code_to=${encodeURIComponent(treeCodeTo)}`);
+    if (fromDate) qParts.push(`date_from=${encodeURIComponent(fromDate)}`);
+    if (toDate) qParts.push(`date_to=${encodeURIComponent(toDate)}`);
+    qParts.push(`include_finance=${includeFinance ? 'true' : 'false'}`);
+    const reportRes = await api(`/plants/reports/query?${qParts.join('&')}`).catch(() => null);
+    if (reportRes && Array.isArray(reportRes.rows)) {
+      allLogs = enrichLogsWithFruitAuditChain(reportRes.rows);
+    } else {
+      const freshRes = await api('/plants/logs/recent?days=all');
+      if (Array.isArray(freshRes) && freshRes.length > 0) {
+        mergeLogsIntoCache(freshRes);
+        allLogs = [..._logsCache];
+      }
     }
   } catch (err) {
     console.warn('Fallback to local logs cache:', err);
@@ -1864,6 +1954,12 @@ export async function executeUserExport(mode = 'csv') {
   }
   if (plantId !== 'all') {
     filtered = filtered.filter(l => String(l.plant_id) === String(plantId));
+  }
+  if (plotId !== 'all') {
+    filtered = filtered.filter(l => String(l.plot_id) === String(plotId));
+  }
+  if (plantTypeFilter !== 'all') {
+    filtered = filtered.filter(l => String(l.plant_type || '').toLowerCase() === String(plantTypeFilter).toLowerCase());
   }
   if (fromDate) {
     filtered = filtered.filter(l => {
@@ -1884,6 +1980,7 @@ export async function executeUserExport(mode = 'csv') {
   filtered.sort((a, b) => new Date(a.log_date) - new Date(b.log_date));
 
   if (filtered.length === 0) {
+    if (preOpenedWin && !preOpenedWin.closed) preOpenedWin.close();
     alert('Không tìm thấy nhật ký canh tác nào khớp với các tiêu chí lọc đã chọn.');
     return;
   }
@@ -1900,18 +1997,21 @@ export async function executeUserExport(mode = 'csv') {
   const dateSuffix = toLocalYmd(new Date());
 
   if (mode === 'csv') {
-    exportLogsToCsv(filtered, `So_Nhat_Ky_VietGAP_GlobalGAP_${cleanFarmName}_${dateSuffix}.csv`, { standardLabel });
+    exportLogsToCsv(filtered, `So_Nhat_Ky_VietGAP_GlobalGAP_${cleanFarmName}_${dateSuffix}.csv`, { standardLabel, includeFinance });
   } else {
     const metaPayload = {
       title: customTitle,
       farmId: farmId,
       plantId: plantId,
+      plotId: plotId,
+      plantType: plantTypeFilter,
       farmName: farmName === 'Tất cả trang trại' ? 'Toàn bộ trang trại' : farmName,
       fromDate: fromDate,
       toDate: toDate,
       totalLogs: filtered.length,
       standardCode: stdCode,
       standardLabel,
+      includeFinance,
       categories: checkedCats,
       categoriesLabel: checkedCats.map(c => c === 'Nhân công' ? 'Thuê nhân công' : c).join(', ')
     };
@@ -1933,7 +2033,7 @@ export async function executeUserExport(mode = 'csv') {
       metaPayload.savedReportId = saved?.id || null;
       metaPayload.autoPrint = true;
     }
-    openPrintableVietGapReport(filtered, metaPayload);
+    openPrintableVietGapReport(filtered, { ...metaPayload, preOpenedWin });
   }
 }
 window.executeUserExport = executeUserExport;
@@ -1970,7 +2070,10 @@ function buildPrintableVietGapReportHtml(logs, meta = {}) {
           ${log.note ? `<div style="font-size:11.5px; color:#64748b; margin-top:2px;"><em>Ghi chú:</em> ${esc(log.note)}</div>` : ''}
         </td>
         <td style="text-align:center;">${esc(operatorName)}</td>
-        <td style="text-align:center; color:#15803d; font-weight:700;">Đạt Chuẩn</td>
+        <td style="text-align:center; font-weight:700; color:${(log.is_phi_violation || (log.details && log.details.is_phi_violation)) ? '#dc2626' : '#15803d'};">
+          ${(log.is_phi_violation || (log.details && log.details.is_phi_violation)) ? 'VI PHẠM PHI' : 'Đạt Chuẩn'}
+          ${log.record_hash ? `<div style="font-size:9px; color:#64748b; font-family:monospace;">#${esc(String(log.record_hash).slice(0, 10))}</div>` : ''}
+        </td>
       </tr>
     `;
   });
@@ -2249,7 +2352,9 @@ function buildPrintableVietGapReportHtml(logs, meta = {}) {
 }
 
 export function openPrintableVietGapReport(logs, meta = {}) {
-  const printWindow = window.open('', '_blank');
+  const printWindow = (meta && meta.preOpenedWin && !meta.preOpenedWin.closed)
+    ? meta.preOpenedWin
+    : window.open('', '_blank');
   if (!printWindow) {
     alert('Trình duyệt đang chặn cửa sổ pop-up. Vui lòng cho phép mở pop-up để xem bản in báo cáo.');
     return;

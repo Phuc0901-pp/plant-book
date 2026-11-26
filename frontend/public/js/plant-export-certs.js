@@ -495,7 +495,7 @@ function openCertificateModal(certType) {
       <div class="cert-footer-row">
         <div style="font-size:11px; color:#64748b; line-height:1.5;">
           <div><strong>CHỨNG THỰC BẢO BẢO TOÀN VẸN SỐ</strong></div>
-          <div style="font-family:var(--font-mono); font-size:10px; color:#059669; margin-top:2px;">SHA256: ${esc(p.nfc_uid || pucCode)}-VERIFIED-SECURE</div>
+          <div style="font-family:var(--font-mono); font-size:10px; color:#059669; margin-top:2px;">SHA256: ${esc((p.logs && p.logs[0] && p.logs[0].record_hash) ? String(p.logs[0].record_hash).slice(0, 24) + '...' : (p.nfc_uid || pucCode) + '-SEALED')}</div>
           <div style="margin-top:4px;">Tra cứu trực tuyến tại: <a href="/" target="_blank" style="color:#0284c7; text-decoration:underline;">plant-book.tanbaocorp-agritech.vn</a></div>
         </div>
 

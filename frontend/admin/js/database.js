@@ -448,6 +448,9 @@ async function selectTreeForDetail(plantId) {
             </div>
 
             <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+              <button onclick="exportDbFarmReportCsv()" class="btn" style="background:#ecfdf5; color:#065f46; border:1px solid #86efac; border-radius:8px; font-weight:700; font-size:12px; padding:8px 14px; cursor:pointer;">
+                <i data-lucide="file-spreadsheet" class="lucide-sm"></i> Xuất CSV ISO
+              </button>
               <button onclick="openPlantModalForActiveDbFarm()" class="btn" style="background:#ffffff; color:#064e3b; border:none; border-radius:8px; font-weight:700; font-size:12px; padding:8px 14px; cursor:pointer;">
                 <i data-lucide="plus" class="lucide-sm"></i> Thêm cây mới
               </button>
@@ -2886,6 +2889,57 @@ window.viewTableRecords = viewTableRecords;
 window.adminDeleteRecord = adminDeleteRecord;
 window.adminEditRecord = adminEditRecord;
 window.adminAddRecord = adminAddRecord;
+async function exportDbFarmReportCsv() {
+  if (!currentDbSelectedFarmId) {
+    toast('Vui lòng chọn trang trại trước khi xuất báo cáo.', 'warning');
+    return;
+  }
+  try {
+    const res = await api(`/plants/logs/farm/${currentDbSelectedFarmId}`);
+    const rows = Array.isArray(res && res.logs) ? res.logs : (currentDbPlantLogsCache || []);
+    if (!rows.length) {
+      toast('Không có nhật ký nào để xuất.', 'warning');
+      return;
+    }
+    const escCsv = (val) => {
+      if (val === null || val === undefined) return '""';
+      let raw = String(val);
+      if (/^[=+\-@\t\r]/.test(raw)) raw = "'" + raw;
+      return `"${raw.replace(/"/g, '""')}"`;
+    };
+    const headers = ['STT', 'Ngày', 'Mã PUC', 'Mã Lô', 'Mã Cây', 'Hạng Mục', 'Vật Tư / Hoạt Chất', 'Trạng Thái PHI', 'Người Thực Hiện', 'SHA-256', 'Ghi Chú'];
+    const csvLines = [headers.map(escCsv).join(',')];
+    rows.forEach((r, idx) => {
+      csvLines.push([
+        idx + 1,
+        r.log_date ? String(r.log_date).slice(0, 10) : '',
+        r.puc_code || '',
+        r.plot_code || r.plot_name || '',
+        r.tree_code || r.plant_id || '',
+        r.log_type || '',
+        r.active_ingredient ? `${r.material_name || ''} (${r.active_ingredient})` : (r.material_name || ''),
+        r.phi_status_label || (r.is_phi_violation ? 'VI PHẠM PHI' : 'An toàn PHI'),
+        r.operator_name || '',
+        r.record_hash || '',
+        r.note || ''
+      ].map(escCsv).join(','));
+    });
+    const blob = new Blob(['\uFEFF' + csvLines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `BaoCao_ISO_Farm_${currentDbSelectedFarmId}_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast('Đã xuất báo cáo ISO chuẩn VietGAP thành công!', 'success');
+  } catch (err) {
+    toast('Lỗi xuất báo cáo ISO: ' + err.message, 'error');
+  }
+}
+window.exportDbFarmReportCsv = exportDbFarmReportCsv;
+
 window.openAdminDbCheckView = openAdminDbCheckView;
 window.loadVersionManagerData = loadVersionManagerData;
 window.handlePushVersionToDB = handlePushVersionToDB;

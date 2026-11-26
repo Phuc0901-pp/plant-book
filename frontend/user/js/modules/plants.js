@@ -110,8 +110,9 @@ export function getDeviceGPSPosition() {
   if (lngEl) lngEl.value = 'Đang lấy GPS...';
 
   if (!navigator.geolocation) {
-    if (latEl) latEl.value = '11.8333';
-    if (lngEl) lngEl.value = '106.9167';
+    if (latEl) latEl.value = '';
+    if (lngEl) lngEl.value = '';
+    if (window.toast) window.toast('Trình duyệt không hỗ trợ GPS. Vui lòng nhập tọa độ thực tế.', 'warning');
     return;
   }
 
@@ -124,8 +125,9 @@ export function getDeviceGPSPosition() {
     },
     (err) => {
       console.warn('Geolocation error:', err);
-      if (latEl) latEl.value = '11.8333';
-      if (lngEl) lngEl.value = '106.9167';
+      if (latEl) latEl.value = '';
+      if (lngEl) lngEl.value = '';
+      if (window.toast) window.toast('Không lấy được GPS thực tế. Vui lòng bật định vị hoặc nhập thủ công.', 'warning');
     },
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
   );
@@ -908,8 +910,9 @@ export function getEditDeviceGPSPosition() {
   if (lngEl) lngEl.value = 'Đang lấy GPS...';
 
   if (!navigator.geolocation) {
-    if (latEl) latEl.value = '11.8333';
-    if (lngEl) lngEl.value = '106.9167';
+    if (latEl) latEl.value = '';
+    if (lngEl) lngEl.value = '';
+    if (window.toast) window.toast('Trình duyệt không hỗ trợ GPS. Vui lòng nhập tọa độ thực tế.', 'warning');
     return;
   }
 
@@ -920,8 +923,9 @@ export function getEditDeviceGPSPosition() {
     },
     (err) => {
       console.warn('Geolocation error:', err);
-      if (latEl) latEl.value = '11.8333';
-      if (lngEl) lngEl.value = '106.9167';
+      if (latEl) latEl.value = '';
+      if (lngEl) lngEl.value = '';
+      if (window.toast) window.toast('Không lấy được GPS thực tế. Vui lòng bật định vị hoặc nhập thủ công.', 'warning');
     },
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
   );
@@ -1525,10 +1529,11 @@ export function refreshFieldGps() {
   if (accEl) accEl.textContent = 'Đang tính...';
 
   if (!navigator.geolocation) {
-    if (latEl) latEl.textContent = '11.8333';
-    if (lngEl) lngEl.textContent = '106.9167';
-    if (accEl) accEl.textContent = '±10 m (Fallback)';
-    _userFieldCurrentGps = { lat: 11.8333, lng: 106.9167, accuracy: 10 };
+    if (latEl) latEl.textContent = 'Chưa có GPS';
+    if (lngEl) lngEl.textContent = 'Chưa có GPS';
+    if (accEl) accEl.textContent = 'Không hỗ trợ GPS';
+    _userFieldCurrentGps = { lat: null, lng: null, accuracy: null };
+    if (window.toast) window.toast('Thiết bị không hỗ trợ GPS thực tế.', 'warning');
     return;
   }
 
@@ -1544,10 +1549,11 @@ export function refreshFieldGps() {
     },
     (err) => {
       console.warn('Field GPS error:', err);
-      if (latEl) latEl.textContent = '11.8333';
-      if (lngEl) lngEl.textContent = '106.9167';
-      if (accEl) accEl.textContent = '±15 m (Ước lượng)';
-      _userFieldCurrentGps = { lat: 11.8333, lng: 106.9167, accuracy: 15 };
+      if (latEl) latEl.textContent = 'Chưa có GPS';
+      if (lngEl) lngEl.textContent = 'Chưa có GPS';
+      if (accEl) accEl.textContent = 'Chưa chốt được vệ tinh';
+      _userFieldCurrentGps = { lat: null, lng: null, accuracy: null };
+      if (window.toast) window.toast('Không lấy được GPS thực tế. Hãy kiểm tra quyền định vị.', 'warning');
     },
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
   );
@@ -1601,10 +1607,13 @@ export async function submitFieldTagManual() {
 }
 window.submitFieldTagManual = submitFieldTagManual;
 
+let _isSubmittingUserFieldTag = false;
 async function executeUserFieldTagAssign(plant, uid, ndefInstance) {
+  if (_isSubmittingUserFieldTag) return;
+  _isSubmittingUserFieldTag = true;
   try {
-    const lat = _userFieldCurrentGps.lat || 11.8333;
-    const lng = _userFieldCurrentGps.lng || 106.9167;
+    const lat = _userFieldCurrentGps.lat ?? plant.latitude ?? null;
+    const lng = _userFieldCurrentGps.lng ?? plant.longitude ?? null;
 
     const res = await api(`/plants/farms/${_userFieldTagFarmId}/tag-nfc-gps`, {
       method: 'POST',
@@ -1648,6 +1657,8 @@ async function executeUserFieldTagAssign(plant, uid, ndefInstance) {
   } catch (err) {
     playUserDuplicateBeep();
     if (window.toast) window.toast('Lỗi gán thẻ: ' + err.message, 'error');
+  } finally {
+    _isSubmittingUserFieldTag = false;
   }
 }
 

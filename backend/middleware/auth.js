@@ -2,6 +2,24 @@ const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
 require('dotenv').config();
 
+const ACTIVE_PING_TTL_MS = 60000;
+const MAX_ACTIVE_PING_ENTRIES = 10000;
+const _lastActivePingMap = new Map();
+
+function shouldPingUserActive(userId) {
+  const now = Date.now();
+  const prev = _lastActivePingMap.get(userId);
+  if (prev && (now - prev) < ACTIVE_PING_TTL_MS) {
+    return false;
+  }
+  if (_lastActivePingMap.size >= MAX_ACTIVE_PING_ENTRIES) {
+    const oldestKey = _lastActivePingMap.keys().next().value;
+    if (oldestKey !== undefined) _lastActivePingMap.delete(oldestKey);
+  }
+  _lastActivePingMap.set(userId, now);
+  return true;
+}
+
 async function authMiddleware(req, res, next) {
   const authHeader = req.headers['authorization'];
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -46,10 +64,12 @@ async function authMiddleware(req, res, next) {
       allow_view_finance: isRestrictedFinanceRole ? (u.allow_view_finance === true) : (u.allow_view_finance !== false)
     };
 
-    pool.query(
-      'UPDATE users SET last_active_at = NOW(), is_online = true WHERE id = $1',
-      [u.id]
-    ).catch(err => console.error('Error updating active status:', err));
+    if (shouldPingUserActive(u.id)) {
+      pool.query(
+        'UPDATE users SET last_active_at = NOW(), is_online = true WHERE id = $1',
+        [u.id]
+      ).catch(err => console.error('Error updating active status:', err));
+    }
 
     next();
   } catch (err) {

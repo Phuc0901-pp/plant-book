@@ -2590,10 +2590,11 @@ function refreshFieldGps() {
   if (accEl) accEl.textContent = 'Đang tính...';
 
   if (!navigator.geolocation) {
-    if (latEl) latEl.textContent = '11.8333';
-    if (lngEl) lngEl.textContent = '106.9167';
-    if (accEl) accEl.textContent = '±10 m (Fallback)';
-    _fieldCurrentGps = { lat: 11.8333, lng: 106.9167, accuracy: 10 };
+    if (latEl) latEl.textContent = 'Chưa có GPS';
+    if (lngEl) lngEl.textContent = 'Chưa có GPS';
+    if (accEl) accEl.textContent = 'Không hỗ trợ GPS';
+    _fieldCurrentGps = { lat: null, lng: null, accuracy: null };
+    toast('Thiết bị không hỗ trợ GPS thực tế.', 'warning');
     return;
   }
 
@@ -2609,10 +2610,11 @@ function refreshFieldGps() {
     },
     (err) => {
       console.warn('Field GPS error:', err);
-      if (latEl) latEl.textContent = '11.8333';
-      if (lngEl) lngEl.textContent = '106.9167';
-      if (accEl) accEl.textContent = '±15 m (Ước lượng)';
-      _fieldCurrentGps = { lat: 11.8333, lng: 106.9167, accuracy: 15 };
+      if (latEl) latEl.textContent = 'Chưa có GPS';
+      if (lngEl) lngEl.textContent = 'Chưa có GPS';
+      if (accEl) accEl.textContent = 'Chưa chốt được vệ tinh';
+      _fieldCurrentGps = { lat: null, lng: null, accuracy: null };
+      toast('Không lấy được GPS thực tế. Hãy kiểm tra quyền định vị.', 'warning');
     },
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
   );
@@ -2666,10 +2668,13 @@ async function submitFieldTagManual() {
 }
 window.submitFieldTagManual = submitFieldTagManual;
 
+let _isSubmittingAdminFieldTag = false;
 async function executeFieldTagAssign(plant, uid, ndefInstance) {
+  if (_isSubmittingAdminFieldTag) return;
+  _isSubmittingAdminFieldTag = true;
   try {
-    const lat = _fieldCurrentGps.lat || 11.8333;
-    const lng = _fieldCurrentGps.lng || 106.9167;
+    const lat = _fieldCurrentGps.lat ?? plant.latitude ?? null;
+    const lng = _fieldCurrentGps.lng ?? plant.longitude ?? null;
 
     const res = await api(`/plants/farms/${_fieldTagFarmId}/tag-nfc-gps`, {
       method: 'POST',
@@ -2715,6 +2720,8 @@ async function executeFieldTagAssign(plant, uid, ndefInstance) {
   } catch (err) {
     playAdminDuplicateBeep();
     toast('Lỗi gán thẻ: ' + err.message, 'error');
+  } finally {
+    _isSubmittingAdminFieldTag = false;
   }
 }
 

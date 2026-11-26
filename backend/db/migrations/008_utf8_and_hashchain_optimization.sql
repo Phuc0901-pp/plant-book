@@ -8,5 +8,5 @@ CREATE INDEX IF NOT EXISTS idx_plant_logs_plant_hashchain
   WHERE is_deleted IS NOT TRUE AND record_hash IS NOT NULL;
 
 INSERT INTO system_configs (key, value)
-VALUES ('legacy_data_normalization_v135', 'done')
-ON CONFLICT (key) DO UPDATE SET value = 'done', updated_at = NOW();
+VALUES ('legacy_data_normalization_v135', '"done"'::jsonb)
+ON CONFLICT (key) DO UPDATE SET value = '"done"'::jsonb, updated_at = NOW();

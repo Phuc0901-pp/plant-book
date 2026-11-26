@@ -87,6 +87,26 @@ export async function triggerOfflineSync(isManual = false) {
   let successCount = 0;
   let failCount = 0;
 
+  const PERMANENT_REJECT_CODES = new Set([
+    'PHI_VIOLATION_BLOCKED',
+    'SUPPLY_EXPIRED',
+    'READONLY_ROLE_FORBIDDEN',
+    'PLANT_ACCESS_DENIED',
+    'FARM_ACCESS_DENIED',
+    'INVALID_GPS_ISO19115',
+    'INVALID_NFC_UID',
+    'INVALID_PLANT_ID',
+    'INVALID_MUTATION_TYPE',
+    'PLANT_NOT_FOUND',
+    'FORBIDDEN'
+  ]);
+
+  const isPermanentError = (err) => {
+    if (!err) return false;
+    if (err.code && PERMANENT_REJECT_CODES.has(err.code)) return true;
+    return err.status === 400 || err.status === 403 || err.status === 404 || err.status === 409;
+  };
+
   let batchSucceeded = false;
   try {
     const batchRes = await api('/plants/offline-batch-sync', {
@@ -97,27 +117,99 @@ export async function triggerOfflineSync(isManual = false) {
       })
     });
     if (batchRes && batchRes.success) {
-      for (const item of pendingLogs) {
-        await deleteOfflineCareLog(item.client_uuid);
-        successCount++;
-      }
-      for (const mut of pendingMutations) {
-        await deleteOfflineFieldMutation(mut.client_uuid);
-        successCount++;
+      if (Array.isArray(batchRes.synced_uuids) || Array.isArray(batchRes.rejected_items)) {
+        const syncedSet = new Set(Array.isArray(batchRes.synced_uuids) ? batchRes.synced_uuids : []);
+        const rejectedMap = new Map();
+        for (const r of (batchRes.rejected_items || [])) {
+          if (!r || !r.client_uuid) continue;
+          if (!rejectedMap.has(r.client_uuid)) rejectedMap.set(r.client_uuid, []);
+          rejectedMap.get(r.client_uuid).push(r);
+        }
+
+        for (const item of pendingLogs) {
+          if (syncedSet.has(item.client_uuid)) {
+            await deleteOfflineCareLog(item.client_uuid);
+            successCount++;
+          } else if (rejectedMap.has(item.client_uuid)) {
+            const rejs = rejectedMap.get(item.client_uuid);
+            const permRejectedPids = new Set(
+              rejs.filter(r => PERMANENT_REJECT_CODES.has(r.code)).map(r => Number(r.plant_id))
+            );
+            const firstPerm = rejs.find(r => PERMANENT_REJECT_CODES.has(r.code));
+            if (firstPerm) {
+              toast(firstPerm.error || 'Bản ghi ngoại tuyến bị từ chối theo quy chuẩn VietGAP/RBAC.', 'error');
+            }
+            if (Array.isArray(item.plant_ids) && item.plant_ids.length > 1) {
+              const remainingPids = item.plant_ids.filter(pid => !permRejectedPids.has(Number(pid)));
+              if (remainingPids.length === 0) {
+                await deleteOfflineCareLog(item.client_uuid);
+              } else if (remainingPids.length < item.plant_ids.length && typeof saveOfflineCareLog === 'function') {
+                await saveOfflineCareLog({ ...item, plant_ids: remainingPids });
+                failCount++;
+              } else {
+                failCount++;
+              }
+            } else if (rejs.every(r => PERMANENT_REJECT_CODES.has(r.code))) {
+              await deleteOfflineCareLog(item.client_uuid);
+            } else {
+              failCount++;
+            }
+          } else {
+            failCount++;
+          }
+        }
+
+        for (const mut of pendingMutations) {
+          if (syncedSet.has(mut.client_uuid)) {
+            await deleteOfflineFieldMutation(mut.client_uuid);
+            successCount++;
+          } else if (rejectedMap.has(mut.client_uuid)) {
+            const rejs = rejectedMap.get(mut.client_uuid);
+            const firstPerm = rejs.find(r => PERMANENT_REJECT_CODES.has(r.code));
+            if (firstPerm) {
+              toast(firstPerm.error || 'Thao tác thực địa bị từ chối.', 'error');
+            }
+            if (rejs.every(r => PERMANENT_REJECT_CODES.has(r.code))) {
+              await deleteOfflineFieldMutation(mut.client_uuid);
+            } else {
+              failCount++;
+            }
+          } else {
+            failCount++;
+          }
+        }
+      } else {
+        for (const item of pendingLogs) {
+          await deleteOfflineCareLog(item.client_uuid);
+          successCount++;
+        }
+        for (const mut of pendingMutations) {
+          await deleteOfflineFieldMutation(mut.client_uuid);
+          successCount++;
+        }
       }
       batchSucceeded = true;
     }
   } catch (batchErr) {
-    console.warn('[OfflineSync] Batch sync fallback to individual item sync:', batchErr.message);
+    if (batchErr && batchErr.code === 'READONLY_ROLE_FORBIDDEN') {
+      toast(batchErr.message || 'Tài khoản Chỉ đọc không được phép đồng bộ ngoại tuyến.', 'error');
+      for (const item of pendingLogs) await deleteOfflineCareLog(item.client_uuid);
+      for (const mut of pendingMutations) await deleteOfflineFieldMutation(mut.client_uuid);
+      batchSucceeded = true;
+    } else {
+      console.warn('[OfflineSync] Batch sync fallback to individual item sync:', batchErr.message);
+    }
   }
 
   if (!batchSucceeded) {
     for (const item of pendingLogs) {
       try {
         if (Array.isArray(item.plant_ids) && item.plant_ids.length > 0) {
+          const remainingPids = [];
           for (const pid of item.plant_ids) {
             const singlePayload = {
               plant_id: pid,
+              client_uuid: item.plant_ids.length > 1 ? `${item.client_uuid}::${pid}` : item.client_uuid,
               log_date: item.log_date,
               log_type: item.log_type,
               note: item.note ? `${item.note} (Đồng bộ từ thiết bị ngoại tuyến)` : '(Đồng bộ từ ngoại tuyến)',
@@ -127,14 +219,32 @@ export async function triggerOfflineSync(isManual = false) {
               equipment_used: item.equipment_used,
               created_at: item.created_at_offline ? new Date(item.created_at_offline).toISOString() : new Date().toISOString()
             };
-            await api(`/plants/${pid}/logs`, {
-              method: 'POST',
-              body: JSON.stringify(singlePayload)
-            });
+            try {
+              await api(`/plants/${pid}/logs`, {
+                method: 'POST',
+                body: JSON.stringify(singlePayload)
+              });
+            } catch (pidErr) {
+              if (isPermanentError(pidErr)) {
+                toast(pidErr.message || `Cây #${pid} bị từ chối đồng bộ.`, 'error');
+              } else {
+                remainingPids.push(pid);
+              }
+            }
+          }
+          if (remainingPids.length === 0) {
+            await deleteOfflineCareLog(item.client_uuid);
+            successCount++;
+          } else {
+            if (remainingPids.length < item.plant_ids.length && typeof saveOfflineCareLog === 'function') {
+              await saveOfflineCareLog({ ...item, plant_ids: remainingPids });
+            }
+            failCount++;
           }
         } else if (item.plant_id) {
           const singlePayload = {
             plant_id: item.plant_id,
+            client_uuid: item.client_uuid,
             log_date: item.log_date,
             log_type: item.log_type,
             note: item.note,
@@ -148,13 +258,17 @@ export async function triggerOfflineSync(isManual = false) {
             method: 'POST',
             body: JSON.stringify(singlePayload)
           });
+          await deleteOfflineCareLog(item.client_uuid);
+          successCount++;
         }
-
-        await deleteOfflineCareLog(item.client_uuid);
-        successCount++;
       } catch (err) {
-        console.error('Error syncing offline log:', item.client_uuid, err.message);
-        failCount++;
+        if (isPermanentError(err)) {
+          toast(err.message || 'Bản ghi ngoại tuyến bị từ chối.', 'error');
+          await deleteOfflineCareLog(item.client_uuid);
+        } else {
+          console.error('Error syncing offline log:', item.client_uuid, err.message);
+          failCount++;
+        }
       }
     }
 
@@ -163,24 +277,35 @@ export async function triggerOfflineSync(isManual = false) {
         if (mut.mutation_type === 'gps_update' && mut.plant_id) {
           await api(`/plants/${mut.plant_id}/gps`, {
             method: 'PUT',
-            body: JSON.stringify({ latitude: mut.latitude, longitude: mut.longitude })
+            body: JSON.stringify({ latitude: mut.latitude, longitude: mut.longitude, location: mut.location })
           });
         } else if (mut.mutation_type === 'nfc_assign' && mut.plant_id) {
-          await api(`/plants/${mut.plant_id}/nfc-assign`, {
-            method: 'POST',
+          await api(`/plants/${mut.plant_id}/nfc`, {
+            method: 'PUT',
             body: JSON.stringify({ nfc_uid: mut.nfc_uid, latitude: mut.latitude, longitude: mut.longitude })
           });
         } else if (mut.mutation_type === 'location_update' && mut.plant_id) {
-          await api(`/plants/${mut.plant_id}/location`, {
+          await api(`/plants/${mut.plant_id}/gps`, {
             method: 'PUT',
-            body: JSON.stringify({ location: mut.location, plot_code: mut.plot_code, row_number: mut.row_number })
+            body: JSON.stringify({
+              latitude: mut.latitude,
+              longitude: mut.longitude,
+              location: mut.location,
+              plot_code: mut.plot_code,
+              row_number: mut.row_number
+            })
           });
         }
         await deleteOfflineFieldMutation(mut.client_uuid);
         successCount++;
       } catch (mutErr) {
-        console.error('Error syncing offline field mutation:', mut.client_uuid, mutErr.message);
-        failCount++;
+        if (isPermanentError(mutErr)) {
+          toast(mutErr.message || 'Thao tác thực địa bị từ chối.', 'error');
+          await deleteOfflineFieldMutation(mut.client_uuid);
+        } else {
+          console.error('Error syncing offline field mutation:', mut.client_uuid, mutErr.message);
+          failCount++;
+        }
       }
     }
   }

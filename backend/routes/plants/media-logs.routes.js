@@ -368,7 +368,7 @@ router.post('/batch-care-logs', auth, async (req, res) => {
 
         if (!resolvedSupplyId && supplyName) {
           const foundSup = await db.query(
-            `SELECT id, name, unit, unit_price, category, stock_quantity, farm_id, user_id, expiry_date
+            `SELECT id, name, unit, unit_price, category, stock_quantity, farm_id, user_id, expiry_date, phi_days, active_ingredient
              FROM supplies
              WHERE (user_id = $1 OR user_id = $2 OR ($3::int IS NOT NULL AND farm_id = $3))
                AND (name ILIKE $4 OR $4 ILIKE '%' || name || '%')
@@ -381,7 +381,7 @@ router.post('/batch-care-logs', auth, async (req, res) => {
           }
         } else if (resolvedSupplyId) {
           const foundSup = await db.query(
-            `SELECT id, name, unit, unit_price, category, stock_quantity, farm_id, user_id, expiry_date
+            `SELECT id, name, unit, unit_price, category, stock_quantity, farm_id, user_id, expiry_date, phi_days, active_ingredient
              FROM supplies
              WHERE id = $1
                AND ($2 = 'admin' OR user_id = $3 OR user_id = $4 OR ($5::int IS NOT NULL AND farm_id = $5))
@@ -390,6 +390,15 @@ router.post('/batch-care-logs', auth, async (req, res) => {
           );
           if (foundSup.rows.length > 0) {
             resolvedSupply = foundSup.rows[0];
+          }
+        }
+
+        if (resolvedSupply) {
+          if (!baseDetails.active_ingredient && resolvedSupply.active_ingredient) {
+            baseDetails.active_ingredient = resolvedSupply.active_ingredient;
+          }
+          if (effectiveLogType === 'Phun thuốc' && !baseDetails.phi_days && Number(resolvedSupply.phi_days) > 0) {
+            baseDetails.phi_days = Number(resolvedSupply.phi_days);
           }
         }
 
@@ -645,11 +654,16 @@ router.post(['/:id/logs', '/:id/care-log'], auth, async (req, res) => {
 
       if (phiDays <= 0 && pesticideName) {
         const supplyLookup = await pool.query(
-          `SELECT phi_days FROM supplies WHERE category = 'Phun thuốc' AND (name ILIKE $1 OR $2 ILIKE '%' || name || '%') AND phi_days > 0 LIMIT 1`,
+          `SELECT phi_days, active_ingredient FROM supplies WHERE category = 'Phun thuốc' AND (name ILIKE $1 OR $2 ILIKE '%' || name || '%') AND (phi_days > 0 OR active_ingredient IS NOT NULL) LIMIT 1`,
           [pesticideName.trim(), pesticideName.trim()]
         );
         if (supplyLookup.rows.length > 0) {
-          phiDays = supplyLookup.rows[0].phi_days;
+          if (!phiDays && supplyLookup.rows[0].phi_days > 0) {
+            phiDays = supplyLookup.rows[0].phi_days;
+          }
+          if (!parsedDetails.active_ingredient && supplyLookup.rows[0].active_ingredient) {
+            parsedDetails.active_ingredient = supplyLookup.rows[0].active_ingredient;
+          }
         }
       }
 
@@ -1199,127 +1213,595 @@ router.delete(['/:plantId/logs/:logId', '/logs/:logId'], auth, async (req, res) 
 });
 
 router.post('/offline-batch-sync', auth, async (req, res) => {
+  if (req.user.role !== 'admin' && req.user.sub_role === 'auditor_readonly') {
+    return res.status(403).json({
+      error: 'Tài khoản Chỉ đọc (Auditor) không được phép đồng bộ ngoại tuyến.',
+      code: 'READONLY_ROLE_FORBIDDEN'
+    });
+  }
+
+  let client = null;
+  let usingTxn = false;
+  let db = pool;
+
   try {
+    if (typeof pool.connect === 'function') {
+      client = await pool.connect();
+      if (client && typeof client.query === 'function') {
+        await client.query('BEGIN');
+        usingTxn = true;
+        db = client;
+      }
+    }
+
     const careLogs = Array.isArray(req.body?.care_logs) ? req.body.care_logs : [];
     const fieldMutations = Array.isArray(req.body?.field_mutations) ? req.body.field_mutations : [];
 
+    let spCounter = 0;
+    const runInSavepoint = async (fn) => {
+      if (!usingTxn) return await fn();
+      const spName = `sp_offline_${++spCounter}`;
+      await client.query(`SAVEPOINT ${spName}`);
+      try {
+        const out = await fn();
+        await client.query(`RELEASE SAVEPOINT ${spName}`);
+        return out;
+      } catch (spErr) {
+        await client.query(`ROLLBACK TO SAVEPOINT ${spName}`).catch(() => {});
+        throw spErr;
+      }
+    };
+
+    const syncedUuids = [];
+    const rejectedItems = [];
+    const affectedPlantIds = new Set();
     let syncedLogs = 0;
     let syncedMutations = 0;
+    const nowIso = new Date().toISOString();
 
     for (const item of careLogs) {
+      const baseClientUuid = item.client_uuid
+        ? String(item.client_uuid).trim()
+        : (item.id ? String(item.id).trim() : null);
+
       const targetIds = Array.isArray(item.plant_ids) && item.plant_ids.length > 0
         ? item.plant_ids
         : (item.plant_id ? [item.plant_id] : []);
 
+      if (targetIds.length === 0) {
+        rejectedItems.push({
+          client_uuid: baseClientUuid,
+          plant_id: null,
+          code: 'INVALID_PLANT_ID',
+          error: 'Thiếu mã cây trồng để đồng bộ nhật ký.'
+        });
+        continue;
+      }
+
+      let itemHasRejection = false;
+      const isMultiTarget = targetIds.length > 1;
+
       for (const rawPid of targetIds) {
         const pid = parseInt(rawPid, 10);
-        if (isNaN(pid)) continue;
-        const access = await verifyPlantAccess(req, pid);
-        if (!access.ok) continue;
-
-        const logDate = item.log_date || new Date().toISOString().slice(0, 10);
-        const logType = item.log_type || item.action || 'Chăm sóc';
-        const rawNote = item.note || item.description || '';
-        const noteText = rawNote.trim() ? `${rawNote} (Đồng bộ ngoại tuyến)` : '(Đồng bộ ngoại tuyến)';
-        const mediaJson = JSON.stringify(Array.isArray(item.media_urls) ? item.media_urls : []);
-        const resolvedOp = resolveRealtimeOperatorName(req.user, item.operator_name);
-        const syncDetails = {
-          ...(item.details && typeof item.details === 'object' ? item.details : {}),
-          performed_at: (item.details && item.details.performed_at) || new Date().toISOString(),
-          performed_by_user_id: req.user.id,
-          performed_by_name: resolvedOp
-        };
-        const detailsJson = JSON.stringify(syncDetails);
-
-        const insRes = await pool.query(
-          `INSERT INTO plant_logs (plant_id, created_by, log_date, log_type, note, media_urls, details, operator_name, equipment_used)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-           RETURNING *`,
-          [
-            pid,
-            req.user.id,
-            logDate,
-            logType,
-            noteText,
-            mediaJson,
-            detailsJson,
-            resolvedOp,
-            item.equipment_used || null
-          ]
-        );
-        if (insRes.rows[0]) {
-          await sealPlantLogHashChain(pool, insRes.rows[0]);
-          await pool.query(
-            `UPDATE plants SET updated_at = NOW() WHERE id = $1`,
-            [pid]
-          );
-          syncedLogs++;
+        if (isNaN(pid) || pid <= 0) {
+          rejectedItems.push({
+            client_uuid: baseClientUuid,
+            plant_id: rawPid,
+            code: 'INVALID_PLANT_ID',
+            error: 'Mã cây trồng không hợp lệ.'
+          });
+          itemHasRejection = true;
+          continue;
         }
+
+        const rowClientUuid = baseClientUuid
+          ? (isMultiTarget ? `${baseClientUuid}::${pid}` : baseClientUuid)
+          : null;
+
+        let outcome;
+        try {
+          outcome = await runInSavepoint(async () => {
+            const access = await authorizePlantAccess(db, req.user, pid, true);
+            if (!access.ok) {
+              return {
+                rejected: {
+                  client_uuid: baseClientUuid,
+                  plant_id: pid,
+                  code: access.code || 'PLANT_ACCESS_DENIED',
+                  error: access.error || 'Không có quyền thao tác trên cây này.'
+                }
+              };
+            }
+
+            if (rowClientUuid) {
+              const dupRes = await db.query(
+                `SELECT id FROM plant_logs WHERE client_uuid = $1 AND (is_deleted IS NOT TRUE) LIMIT 1`,
+                [rowClientUuid]
+              );
+              if (dupRes.rows.length > 0) {
+                return { duplicate: true };
+              }
+            }
+
+            const plantRes = await db.query(
+              `SELECT p.*, f.user_id as farm_owner_id, f.puc_code as farm_puc_code
+               FROM plants p
+               LEFT JOIN farms f ON f.id = p.farm_id
+               WHERE p.id = $1
+               LIMIT 1`,
+              [pid]
+            );
+            const plantRow = plantRes.rows[0] || access.plant || { id: pid };
+            const farmOwnerId = plantRow.farm_owner_id || req.user.parent_user_id || req.user.id;
+            const farmPuc = plantRow.farm_puc_code || plantRow.puc_code || 'VN-TB';
+            const treeCode = plantRow.tree_code || `#${pid}`;
+
+            const rawDetails = item.details && typeof item.details === 'object' ? { ...item.details } : {};
+            const rawLogType = item.log_type || item.action || 'Chăm sóc';
+            const effectiveLogType = normalizeCareLogType(rawLogType, rawDetails);
+            const effectiveDate = String(item.log_date || nowIso).slice(0, 10);
+            const rawNote = item.note || item.description || '';
+            const noteText = String(rawNote).trim()
+              ? (String(rawNote).includes('(Đồng bộ ngoại tuyến)') ? String(rawNote) : `${rawNote} (Đồng bộ ngoại tuyến)`)
+              : '(Đồng bộ ngoại tuyến)';
+            const mediaJson = JSON.stringify(Array.isArray(item.media_urls) ? item.media_urls : []);
+            const resolvedOp = resolveRealtimeOperatorName(req.user, item.operator_name);
+
+            const plantDetails = {
+              ...rawDetails,
+              performed_at: rawDetails.performed_at || item.created_at_offline || nowIso,
+              performed_by_user_id: req.user.id,
+              performed_by_name: resolvedOp,
+              performed_by_sub_role: req.user.sub_role || 'farm_owner'
+            };
+
+            let resolvedSupply = null;
+            let resolvedSupplyId = parseInt(item.supply_id || plantDetails.supply_id, 10) || null;
+            let resolvedUsageQty = 0;
+            let resolvedUnitPrice = 0;
+            let itemCost = parseFloat(item.estimated_cost ?? plantDetails.total_cost ?? plantDetails.cost ?? 0) || 0;
+            const rawAmount = parseFloat(item.used_amount ?? plantDetails.amount ?? plantDetails.usage_quantity ?? 0) || 0;
+            const rawUnit = plantDetails.unit || item.unit || '';
+
+            const supplyName = plantDetails.supply_name || plantDetails.material_name || plantDetails.fertilizer_name || plantDetails.pesticide_name || plantDetails.name || '';
+
+            if (resolvedSupplyId || supplyName) {
+              if (resolvedSupplyId) {
+                const foundSup = await db.query(
+                  `SELECT id, name, unit, unit_price, category, stock_quantity, farm_id, user_id, expiry_date, phi_days, active_ingredient
+                   FROM supplies
+                   WHERE id = $1
+                     AND ($2 = 'admin' OR user_id = $3 OR user_id = $4 OR ($5::int IS NOT NULL AND farm_id = $5))
+                   LIMIT 1`,
+                  [resolvedSupplyId, req.user.role, req.user.id, farmOwnerId, plantRow.farm_id || null]
+                );
+                if (foundSup.rows.length > 0) resolvedSupply = foundSup.rows[0];
+              } else if (supplyName) {
+                const foundSup = await db.query(
+                  `SELECT id, name, unit, unit_price, category, stock_quantity, farm_id, user_id, expiry_date, phi_days, active_ingredient
+                   FROM supplies
+                   WHERE (user_id = $1 OR user_id = $2 OR ($3::int IS NOT NULL AND farm_id = $3))
+                     AND LOWER(name) = LOWER(TRIM($4))
+                   LIMIT 1`,
+                  [req.user.id, farmOwnerId, plantRow.farm_id || null, supplyName]
+                );
+                if (foundSup.rows.length > 0) {
+                  resolvedSupply = foundSup.rows[0];
+                  resolvedSupplyId = resolvedSupply.id;
+                }
+              }
+            }
+
+            if (resolvedSupply) {
+              if (!plantDetails.active_ingredient && resolvedSupply.active_ingredient) {
+                plantDetails.active_ingredient = resolvedSupply.active_ingredient;
+              }
+              if (effectiveLogType === 'Phun thuốc' && !plantDetails.phi_days && Number(resolvedSupply.phi_days) > 0) {
+                plantDetails.phi_days = Number(resolvedSupply.phi_days);
+              }
+            }
+
+            if (resolvedSupply && isResolvedSupplyExpired(resolvedSupply)) {
+              return {
+                rejected: {
+                  client_uuid: baseClientUuid,
+                  plant_id: pid,
+                  code: 'SUPPLY_EXPIRED',
+                  error: `Vật tư "${resolvedSupply.name}" đã hết hạn sử dụng (${resolvedSupply.expiry_date}). Không thể xuất dùng theo chuẩn VietGAP / GlobalG.A.P.`
+                }
+              };
+            }
+
+            if (resolvedSupply && (rawAmount > 0 || (effectiveLogType === 'Nhân công' && itemCost > 0))) {
+              if (effectiveLogType === 'Nhân công') {
+                resolvedUsageQty = parseFloat(plantDetails.quantity || plantDetails.worker_count || rawAmount || 1) || 1;
+                resolvedUnitPrice = parseFloat(plantDetails.cost_per_worker || plantDetails.unit_price || resolvedSupply.unit_price) || 0;
+                itemCost = itemCost > 0 ? itemCost : (resolvedUsageQty * resolvedUnitPrice);
+              } else {
+                const supUnit = (resolvedSupply.unit || 'kg').toLowerCase().trim();
+                resolvedUsageQty = convertLogAmountToBaseSupplyQty(rawAmount, rawUnit, supUnit, effectiveLogType);
+                resolvedUnitPrice = parseFloat(resolvedSupply.unit_price) || 0;
+                itemCost = itemCost > 0 ? itemCost : (resolvedUsageQty * resolvedUnitPrice);
+              }
+              plantDetails.supply_id = resolvedSupply.id;
+              plantDetails.supply_name = plantDetails.supply_name || resolvedSupply.name;
+              plantDetails.material_name = plantDetails.material_name || resolvedSupply.name;
+              plantDetails.unit_price = resolvedUnitPrice;
+              plantDetails.total_cost = itemCost;
+              plantDetails.usage_quantity = resolvedUsageQty;
+            }
+
+            try {
+              await enrichFruitAuditAndHarvestDetails(db, {
+                plantId: pid,
+                logDate: effectiveDate,
+                logType: effectiveLogType,
+                details: plantDetails
+              });
+            } catch (_) {}
+
+            let generatedBatchCode = null;
+            let isPhiViolation = false;
+
+            if (effectiveLogType === 'Phun thuốc') {
+              const phiDays = parseInt(item.phi_days || plantDetails.phi_days, 10) || 0;
+              const pesticideName = plantDetails.name || plantDetails.pesticide_name || rawNote || 'Thuốc BVTV';
+              if (phiDays > 0) {
+                plantDetails.phi_days = phiDays;
+                const sprayDateObj = new Date(effectiveDate);
+                if (!isNaN(sprayDateObj.getTime())) {
+                  sprayDateObj.setDate(sprayDateObj.getDate() + phiDays);
+                  const phiUntilDateStr = sprayDateObj.toISOString().slice(0, 10);
+                  plantDetails.phi_until_date = phiUntilDateStr;
+                  await db.query(
+                    `UPDATE plants
+                     SET phi_until_date = $1, phi_status = 'quarantine', last_pesticide_date = $2, last_pesticide_name = $3, updated_at = NOW()
+                     WHERE id = $4`,
+                    [phiUntilDateStr, effectiveDate, pesticideName, pid]
+                  );
+                }
+              }
+            }
+
+            if (effectiveLogType === 'Thu hoạch') {
+              const dateClean = effectiveDate.replace(/-/g, '');
+              const codeClean = String(treeCode || 'TB').replace(/[^a-zA-Z0-9]/g, '');
+              generatedBatchCode = `${farmPuc}-${dateClean}-${codeClean}`;
+              plantDetails.batch_code = generatedBatchCode;
+              plantDetails.puc_code = farmPuc;
+
+              if (plantRow.phi_until_date) {
+                const harvestTime = new Date(effectiveDate).getTime();
+                const phiUntilTime = new Date(plantRow.phi_until_date).getTime();
+                if (!isNaN(harvestTime) && !isNaN(phiUntilTime) && harvestTime <= phiUntilTime) {
+                  const adminOverride = req.user.role === 'admin' && (
+                    req.body.force_phi_override === true ||
+                    item.force_phi_override === true ||
+                    plantDetails.force_phi_override === true
+                  );
+                  if (!adminOverride) {
+                    return {
+                      rejected: {
+                        client_uuid: baseClientUuid,
+                        plant_id: pid,
+                        code: 'PHI_VIOLATION_BLOCKED',
+                        error: `CHẶN THU HOẠCH (VIETGAP / GLOBALG.A.P. PHI GATE): Cây ${treeCode} đang trong thời gian cách ly thuốc BVTV đến hết ngày ${plantRow.phi_until_date}.`
+                      }
+                    };
+                  }
+                  isPhiViolation = true;
+                  plantDetails.is_phi_violation = true;
+                  plantDetails.phi_override_by_admin = req.user.id;
+                }
+              }
+            }
+
+            const insRes = await db.query(
+              `INSERT INTO plant_logs (plant_id, created_by, log_date, log_type, note, media_urls, details, operator_name, equipment_used)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+               RETURNING *`,
+              [
+                pid,
+                req.user.id,
+                effectiveDate,
+                effectiveLogType,
+                noteText,
+                mediaJson,
+                JSON.stringify(plantDetails),
+                resolvedOp,
+                item.equipment_used || plantDetails.equipment_used || null
+              ]
+            );
+
+            const inserted = insRes.rows[0];
+            if (inserted && inserted.id) {
+              await db.query(
+                `UPDATE plant_logs
+                 SET client_uuid = COALESCE($1, client_uuid),
+                     batch_code = COALESCE($2, batch_code),
+                     puc_code = COALESCE($3, puc_code),
+                     is_phi_violation = $4,
+                     cost = COALESCE($5, cost)
+                 WHERE id = $6`,
+                [
+                  rowClientUuid,
+                  generatedBatchCode,
+                  farmPuc,
+                  isPhiViolation,
+                  itemCost > 0 ? itemCost : null,
+                  inserted.id
+                ]
+              );
+              inserted.client_uuid = rowClientUuid;
+              inserted.batch_code = generatedBatchCode || inserted.batch_code;
+              inserted.puc_code = farmPuc || inserted.puc_code;
+              inserted.is_phi_violation = isPhiViolation;
+              await sealPlantLogHashChain(db, inserted);
+            }
+
+            if (resolvedSupply && resolvedUsageQty > 0) {
+              await db.query(
+                `INSERT INTO supply_usages (user_id, supply_id, farm_id, plant_id, usage_date, quantity, unit_price, total_cost, note)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+                [
+                  req.user.id,
+                  resolvedSupply.id,
+                  plantRow.farm_id || null,
+                  pid,
+                  effectiveDate,
+                  resolvedUsageQty,
+                  resolvedUnitPrice,
+                  itemCost,
+                  `Đồng bộ ngoại tuyến [${effectiveLogType}] cho cây ${treeCode} bởi ${resolvedOp}`
+                ]
+              );
+              if (resolvedSupply.category !== 'Tiền nước' && resolvedSupply.category !== 'Nhân công' && resolvedSupply.stock_quantity > 0) {
+                await db.query(
+                  `UPDATE supplies SET stock_quantity = GREATEST(0, stock_quantity - $1), updated_at = NOW() WHERE id = $2`,
+                  [resolvedUsageQty, resolvedSupply.id]
+                );
+              }
+            }
+
+            if (effectiveLogType === 'Bệnh cây') {
+              await db.query(`UPDATE plants SET health_status = 'Bệnh', updated_at = NOW() WHERE id = $1`, [pid]);
+            } else {
+              await db.query(`UPDATE plants SET updated_at = NOW() WHERE id = $1`, [pid]);
+            }
+
+            return { synced: true };
+          });
+        } catch (spErr) {
+          if (spErr && spErr.code === '23505' && rowClientUuid) {
+            outcome = { duplicate: true };
+          } else {
+            throw spErr;
+          }
+        }
+
+        if (outcome && outcome.rejected) {
+          rejectedItems.push(outcome.rejected);
+          itemHasRejection = true;
+        } else if (outcome && outcome.synced) {
+          syncedLogs++;
+          affectedPlantIds.add(pid);
+        }
+      }
+
+      if (!itemHasRejection && baseClientUuid) {
+        syncedUuids.push(baseClientUuid);
       }
     }
 
     for (const mut of fieldMutations) {
+      const mutUuid = mut.client_uuid
+        ? String(mut.client_uuid).trim()
+        : (mut.id ? String(mut.id).trim() : null);
+
       const pid = parseInt(mut.plant_id, 10);
-      if (isNaN(pid)) continue;
-      const access = await verifyPlantAccess(req, pid);
-      if (!access.ok) continue;
-
-      const lat = mut.latitude !== undefined && mut.latitude !== null ? parseFloat(mut.latitude) : null;
-      const lng = mut.longitude !== undefined && mut.longitude !== null ? parseFloat(mut.longitude) : null;
-
-      if (mut.mutation_type === 'gps_update' && lat !== null && lng !== null && !isNaN(lat) && !isNaN(lng)) {
-        await pool.query(
-          `UPDATE plants SET latitude = $1, longitude = $2, updated_at = NOW() WHERE id = $3`,
-          [lat, lng, pid]
-        );
-        syncedMutations++;
-      } else if (mut.mutation_type === 'location_update') {
-        await pool.query(
-          `UPDATE plants SET location = COALESCE($1, location), latitude = COALESCE($2, latitude), longitude = COALESCE($3, longitude), updated_at = NOW() WHERE id = $4`,
-          [mut.location || null, !isNaN(lat) ? lat : null, !isNaN(lng) ? lng : null, pid]
-        );
-        syncedMutations++;
-      } else if (mut.mutation_type === 'nfc_assign') {
-        const cleanUid = mut.nfc_uid ? formatStandardNfcUid(mut.nfc_uid) : null;
-        const upPlantRes = await pool.query(
-          `UPDATE plants SET nfc_uid = $1, latitude = COALESCE($2, latitude), longitude = COALESCE($3, longitude), updated_at = NOW() WHERE id = $4 RETURNING id, farm_id, latitude, longitude`,
-          [cleanUid, !isNaN(lat) ? lat : null, !isNaN(lng) ? lng : null, pid]
-        );
-        if (cleanUid && upPlantRes.rows[0]) {
-          await syncPlantNfcToInventory(pool, {
-            nfcUid: cleanUid,
-            farmId: upPlantRes.rows[0].farm_id,
-            plantId: pid,
-            userId: req.user.id,
-            lat: upPlantRes.rows[0].latitude,
-            lng: upPlantRes.rows[0].longitude
-          }).catch(() => {});
-        }
-        syncedMutations++;
+      if (isNaN(pid) || pid <= 0) {
+        rejectedItems.push({
+          client_uuid: mutUuid,
+          plant_id: mut.plant_id ?? null,
+          code: 'INVALID_PLANT_ID',
+          error: 'Mã cây trồng không hợp lệ.'
+        });
+        continue;
       }
+
+      const outcome = await runInSavepoint(async () => {
+        const access = await authorizePlantAccess(db, req.user, pid, true);
+        if (!access.ok) {
+          return {
+            rejected: {
+              client_uuid: mutUuid,
+              plant_id: pid,
+              code: access.code || 'PLANT_ACCESS_DENIED',
+              error: access.error || 'Không có quyền cập nhật cây này.'
+            }
+          };
+        }
+
+        const mType = mut.mutation_type
+          || (mut.nfc_uid ? 'nfc_assign' : null)
+          || (mut.health_status !== undefined && mut.health_status !== null ? 'health_update' : null)
+          || ((mut.latitude !== undefined && mut.latitude !== null) || (mut.longitude !== undefined && mut.longitude !== null) ? 'gps_update' : null)
+          || (mut.location !== undefined ? 'location_update' : null);
+
+        const gpsNorm = normalizeGpsPayload(mut);
+        if (!gpsNorm.valid) {
+          return {
+            rejected: {
+              client_uuid: mutUuid,
+              plant_id: pid,
+              code: 'INVALID_GPS_ISO19115',
+              error: gpsNorm.error
+            }
+          };
+        }
+
+        if (mType === 'gps_update') {
+          if (!gpsNorm.hasCoordinates) {
+            return {
+              rejected: {
+                client_uuid: mutUuid,
+                plant_id: pid,
+                code: 'INVALID_GPS_ISO19115',
+                error: 'Thiếu cặp tọa độ GPS WGS 84 hợp lệ.'
+              }
+            };
+          }
+          await db.query(
+            `UPDATE plants
+             SET latitude = $1, longitude = $2,
+                 gps_accuracy = COALESCE($3, gps_accuracy),
+                 gps_altitude = COALESCE($4, gps_altitude),
+                 gps_captured_at = COALESCE($5::timestamptz, gps_captured_at),
+                 gps_srid = COALESCE($6, gps_srid),
+                 updated_at = NOW()
+             WHERE id = $7`,
+            [
+              gpsNorm.data.latitude,
+              gpsNorm.data.longitude,
+              gpsNorm.data.gps_accuracy,
+              gpsNorm.data.gps_altitude,
+              gpsNorm.data.gps_captured_at,
+              gpsNorm.data.gps_srid,
+              pid
+            ]
+          );
+          return { synced: true };
+        }
+
+        if (mType === 'location_update') {
+          await db.query(
+            `UPDATE plants
+             SET location = COALESCE($1, location),
+                 latitude = COALESCE($2, latitude),
+                 longitude = COALESCE($3, longitude),
+                 updated_at = NOW()
+             WHERE id = $4`,
+            [
+              mut.location || null,
+              gpsNorm.hasCoordinates ? gpsNorm.data.latitude : null,
+              gpsNorm.hasCoordinates ? gpsNorm.data.longitude : null,
+              pid
+            ]
+          );
+          return { synced: true };
+        }
+
+        if (mType === 'nfc_assign') {
+          const cleanUid = mut.nfc_uid ? formatStandardNfcUid(mut.nfc_uid) : null;
+          if (!cleanUid) {
+            return {
+              rejected: {
+                client_uuid: mutUuid,
+                plant_id: pid,
+                code: 'INVALID_NFC_UID',
+                error: 'Mã NFC UID không hợp lệ.'
+              }
+            };
+          }
+          const upPlantRes = await db.query(
+            `UPDATE plants
+             SET nfc_uid = $1,
+                 latitude = COALESCE($2, latitude),
+                 longitude = COALESCE($3, longitude),
+                 updated_at = NOW()
+             WHERE id = $4
+             RETURNING id, farm_id, latitude, longitude`,
+            [
+              cleanUid,
+              gpsNorm.hasCoordinates ? gpsNorm.data.latitude : null,
+              gpsNorm.hasCoordinates ? gpsNorm.data.longitude : null,
+              pid
+            ]
+          );
+          if (upPlantRes.rows[0]) {
+            await syncPlantNfcToInventory(db, {
+              nfcUid: cleanUid,
+              farmId: upPlantRes.rows[0].farm_id,
+              plantId: pid,
+              userId: req.user.id,
+              lat: upPlantRes.rows[0].latitude,
+              lng: upPlantRes.rows[0].longitude
+            }).catch(() => {});
+          }
+          return { synced: true };
+        }
+
+        if (mType === 'health_update') {
+          await db.query(
+            `UPDATE plants SET health_status = $1, updated_at = NOW() WHERE id = $2`,
+            [String(mut.health_status).trim(), pid]
+          );
+          return { synced: true };
+        }
+
+        return {
+          rejected: {
+            client_uuid: mutUuid,
+            plant_id: pid,
+            code: 'INVALID_MUTATION_TYPE',
+            error: 'Loại thao tác thực địa không được hỗ trợ.'
+          }
+        };
+      });
+
+      if (outcome && outcome.rejected) {
+        rejectedItems.push(outcome.rejected);
+      } else if (outcome && outcome.synced) {
+        syncedMutations++;
+        affectedPlantIds.add(pid);
+        if (mutUuid) syncedUuids.push(mutUuid);
+      }
+    }
+
+    if (usingTxn) {
+      await client.query('COMMIT');
+    }
+
+    if (syncedLogs > 0 || syncedMutations > 0) {
+      await invalidateAndBroadcast('plants_updated', {
+        plant_ids: Array.from(affectedPlantIds),
+        user_id: req.user.id,
+        action: 'offline_batch_sync'
+      }, ['plants_', 'supplies_']).catch(() => {});
     }
 
     await queueService.publish('care_log.batch_synced', {
       user_id: req.user.id,
       synced_logs: syncedLogs,
       synced_mutations: syncedMutations
-    });
+    }).catch(() => {});
 
     if (syncedMutations > 0) {
       await queueService.publish('gis.spatial_index_refresh', {
         user_id: req.user.id
-      });
+      }).catch(() => {});
     }
 
     res.json({
       success: true,
       synced_logs: syncedLogs,
       synced_mutations: syncedMutations,
-      message: `Đã đồng bộ hàng loạt ${syncedLogs} nhật ký và ${syncedMutations} thao tác thực địa thành công!`
+      synced_uuids: Array.from(new Set(syncedUuids)),
+      rejected_items: rejectedItems,
+      message: rejectedItems.length > 0
+        ? `Đã đồng bộ ${syncedLogs} nhật ký và ${syncedMutations} thao tác (${rejectedItems.length} mục bị từ chối theo quy chuẩn VietGAP/RBAC).`
+        : `Đã đồng bộ hàng loạt ${syncedLogs} nhật ký và ${syncedMutations} thao tác thực địa thành công!`
     });
   } catch (err) {
+    if (usingTxn && client) {
+      await client.query('ROLLBACK').catch(() => {});
+    }
     console.error('Error in offline-batch-sync:', err);
     res.status(500).json({ error: 'Lỗi đồng bộ hàng loạt: ' + err.message });
+  } finally {
+    if (client && typeof client.release === 'function') {
+      client.release();
+    }
   }
 });
 

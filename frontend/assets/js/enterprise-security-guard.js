@@ -3,10 +3,10 @@
 
   const SECURITY_CONFIG = {
     enabled: true,
-    blockContextMenu: true,
-    blockShortcuts: true,
-    blockTextDrag: true,
-    antiDebugging: true,
+    blockContextMenu: false,
+    blockShortcuts: false,
+    blockTextDrag: false,
+    antiDebugging: false,
     sanitizeConsole: false
   };
 

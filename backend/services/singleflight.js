@@ -12,9 +12,7 @@ class SingleflightGroup {
       try {
         return await fn();
       } finally {
-        setImmediate(() => {
-          this.calls.delete(key);
-        });
+        this.calls.delete(key);
       }
     })();
 

@@ -334,8 +334,11 @@ class CacheService {
 
     await _setLastClientChainHash(recordHash);
 
+    final String clientUuid =
+        'mob_${DateTime.now().microsecondsSinceEpoch}_${plantId}_${queue.length}';
     queue.add(<String, dynamic>{
       'id': 'offline_${DateTime.now().millisecondsSinceEpoch}',
+      'client_uuid': clientUuid,
       'plantId': plantId,
       'plant_id': plantId,
       'treeCode': treeCode ?? 'Cây #$plantId',
@@ -433,8 +436,11 @@ class CacheService {
     );
     await _setLastClientChainHash(envelope['client_record_hash']!);
 
+    final String mutUuid =
+        'mob_mut_${DateTime.now().microsecondsSinceEpoch}_${plantId}_${queue.length}';
     queue.add(<String, dynamic>{
       'id': 'mutation_${DateTime.now().millisecondsSinceEpoch}',
+      'client_uuid': mutUuid,
       ...mutationPayload,
       'timestamp': DateTime.now().toIso8601String(),
       'record_hash': envelope['client_record_hash'],

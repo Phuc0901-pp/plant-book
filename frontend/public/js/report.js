@@ -362,7 +362,11 @@
 
       function escapeCsvCell(val) {
         if (val === null || val === undefined) return '""';
-        const str = String(val).replace(/"/g, '""');
+        let raw = String(val);
+        if (/^[=+\-@\t\r]/.test(raw)) {
+          raw = "'" + raw;
+        }
+        const str = raw.replace(/"/g, '""');
         return `"${str}"`;
       }
 
@@ -768,7 +772,17 @@
           const equipParts = [];
           if (l.equipment_used) equipParts.push(`<div>Thiết bị: <strong>${esc(l.equipment_used)}</strong></div>`);
           if (l.batch_code) equipParts.push(`<div class="font-mono">Lô: <strong>${esc(l.batch_code)}</strong></div>`);
-          equipParts.push('<span class="compliance-pill">Đạt Chuẩn</span>');
+          const logDetails = (l && typeof l.details === 'object' && l.details) ? l.details : {};
+          const isPhiViol = Boolean(l.is_phi_violation || logDetails.is_phi_violation);
+          const phiUntil = logDetails.phi_until_date || plantData.phi_until_date || null;
+          const logYmd = l.log_date ? String(l.log_date).slice(0, 10) : '';
+          if (isPhiViol) {
+            equipParts.push('<span class="compliance-pill" style="background:#fef2f2;color:#dc2626;border-color:#fca5a5;">Vi Phạm PHI</span>');
+          } else if (phiUntil && logYmd && logYmd <= String(phiUntil).slice(0, 10)) {
+            equipParts.push('<span class="compliance-pill" style="background:#fffbeb;color:#d97706;border-color:#fcd34d;">Đang Cách Ly PHI</span>');
+          } else {
+            equipParts.push('<span class="compliance-pill">Đạt Chuẩn</span>');
+          }
 
           tableHtml += `
             <tr>

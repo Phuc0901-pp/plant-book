@@ -29,6 +29,7 @@ require('./suites/23_modular_architecture_and_schema_parity.test');
 require('./suites/24_be_mam_agent_iso42001.test');
 require('./suites/25_security_hardening_iso27001.test');
 require('./suites/26_enterprise_erp_crypto_perf_iso.test');
+require('./suites/27_iso_report_routing_offline_perf.test');
 
 async function main() {
   try {

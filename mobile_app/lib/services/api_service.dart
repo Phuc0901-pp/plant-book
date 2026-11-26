@@ -207,6 +207,10 @@ class ApiService {
         final date = item['log_date'] ?? (item['timestamp']?.toString().split('T')[0]) ?? DateTime.now().toIso8601String().split('T')[0];
 
         return <String, dynamic>{
+          'client_uuid': (item['client_uuid'] ??
+                  item['id'] ??
+                  'mob_${item['plantId'] ?? item['plant_id']}_${date}')
+              .toString(),
           'plant_id': item['plantId'] ?? item['plant_id'],
           'log_type': logType,
           'action': logType,
@@ -222,13 +226,55 @@ class ApiService {
         };
       }).toList();
 
+      final List<Map<String, dynamic>> batchMutations = pendingMutations.map((m) {
+        final String mutationType = (m['mutation_type'] ??
+                (m['nfc_uid'] != null
+                    ? 'nfc_assign'
+                    : (m['health_status'] != null
+                        ? 'health_update'
+                        : ((m['latitude'] != null && m['longitude'] != null)
+                            ? 'gps_update'
+                            : 'location_update'))))
+            .toString();
+        return <String, dynamic>{
+          'client_uuid': (m['client_uuid'] ?? m['id'] ?? 'mob_mut_${m['plant_id']}').toString(),
+          'mutation_type': mutationType,
+          'plant_id': m['plant_id'],
+          if (m['health_status'] != null) 'health_status': m['health_status'],
+          if (m['latitude'] != null) 'latitude': m['latitude'],
+          if (m['longitude'] != null) 'longitude': m['longitude'],
+          if (m['nfc_uid'] != null) 'nfc_uid': m['nfc_uid'],
+          if (m['location'] != null) 'location': m['location'],
+        };
+      }).toList();
+
       final batchRes = await syncOfflineBatch(
         careLogs: batchCareLogs,
-        fieldMutations: pendingMutations,
+        fieldMutations: batchMutations,
       );
       if (batchRes != null && batchRes['success'] == true) {
-        await CacheService().clearPendingLogs();
-        await CacheService().clearPendingFieldMutations();
+        final syncedSet = <String>{
+          for (final u in (batchRes['synced_uuids'] as List? ?? [])) u.toString()
+        };
+        if (batchRes['synced_uuids'] is List) {
+          final keepLogs = <Map<String, dynamic>>[];
+          for (int i = 0; i < pendingLogs.length; i++) {
+            if (!syncedSet.contains(batchCareLogs[i]['client_uuid'].toString())) {
+              keepLogs.add(pendingLogs[i]);
+            }
+          }
+          final keepMuts = <Map<String, dynamic>>[];
+          for (int i = 0; i < pendingMutations.length; i++) {
+            if (!syncedSet.contains(batchMutations[i]['client_uuid'].toString())) {
+              keepMuts.add(pendingMutations[i]);
+            }
+          }
+          await CacheService().replacePendingLogs(keepLogs);
+          await CacheService().replacePendingFieldMutations(keepMuts);
+        } else {
+          await CacheService().clearPendingLogs();
+          await CacheService().clearPendingFieldMutations();
+        }
         print('Offline batch sync succeeded: synced ${batchCareLogs.length} logs!');
         return;
       }

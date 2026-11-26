@@ -66,6 +66,10 @@ function scrubPublicPlantLogRow(log) {
     puc_code: log.puc_code || (safeDetails && safeDetails.puc_code) || null,
     media_url: log.media_url,
     media_urls: parsedMediaUrls,
+    record_hash: log.record_hash || null,
+    prev_log_hash: log.prev_log_hash || null,
+    is_locked: Boolean(log.is_locked || log.record_hash),
+    is_phi_violation: Boolean(log.is_phi_violation || (safeDetails && safeDetails.is_phi_violation)),
     created_at: log.created_at
   };
 }
@@ -889,9 +893,13 @@ router.get('/:id(\\d+)/export-vietgap', async (req, res) => {
   try {
     const plantId = parseInt(req.params.id);
     const plantRes = await pool.query(
-      `SELECT p.*, f.name as farm_name, COALESCE(f.address, '') as farm_address, u.full_name as owner_name
+      `SELECT p.*, f.name as farm_name, COALESCE(f.address, '') as farm_address,
+              f.puc_code, f.vietgap_cert_number, f.vietgap_cert_org,
+              fp.plot_code, fp.plot_name,
+              u.full_name as owner_name
        FROM plants p
        LEFT JOIN farms f ON f.id = p.farm_id
+       LEFT JOIN farm_plots fp ON fp.id = p.plot_id
        LEFT JOIN users u ON u.id = f.user_id
        WHERE p.id = $1 AND (p.is_public IS NOT FALSE) AND (p.deleted_at IS NULL)`, [plantId]
     );
@@ -919,6 +927,13 @@ router.get('/:id(\\d+)/export-vietgap', async (req, res) => {
         plant_variety: plant.plant_variety,
         farm_name: plant.farm_name,
         farm_address: plant.farm_address,
+        puc_code: plant.puc_code || null,
+        vietgap_cert_number: plant.vietgap_cert_number || null,
+        vietgap_cert_org: plant.vietgap_cert_org || null,
+        plot_code: plant.plot_code || null,
+        plot_name: plant.plot_name || null,
+        phi_status: plant.phi_status || null,
+        phi_until_date: plant.phi_until_date || null,
         owner_name: plant.owner_name,
         nfc_uid: plant.nfc_uid,
         public_url: generatePublicPlantUrl(plant.farm_id, plant.id, plant.nfc_uid)

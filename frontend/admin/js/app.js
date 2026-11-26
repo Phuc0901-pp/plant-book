@@ -35,6 +35,47 @@ var allPlants = [];
 var allRecentLogs = [];
 var currentDashboardFilter = 'all';
 
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  const openModals = Array.from(document.querySelectorAll('.modal-overlay')).filter(
+    el => el.style.display && el.style.display !== 'none'
+  );
+  if (openModals.length > 0) {
+    const topModal = openModals[openModals.length - 1];
+    topModal.style.display = 'none';
+  }
+});
+
+let _adminRefreshInFlight = null;
+async function tryAdminRefreshJwtToken() {
+  if (!token) return false;
+  if (_adminRefreshInFlight) return _adminRefreshInFlight;
+  _adminRefreshInFlight = (async () => {
+    try {
+      const r = await fetch(`${API}/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!r.ok) return false;
+      const d = await r.json().catch(() => ({}));
+      if (d && d.token) {
+        token = d.token;
+        localStorage.setItem('pb_token', d.token);
+        return true;
+      }
+      return false;
+    } catch (_) {
+      return false;
+    } finally {
+      _adminRefreshInFlight = null;
+    }
+  })();
+  return _adminRefreshInFlight;
+}
+
 async function api(path, opts = {}) {
   const res = await fetch(API + path, {
     ...opts,
@@ -44,6 +85,12 @@ async function api(path, opts = {}) {
       ...(opts.headers || {})
     }
   });
+  if (res.status === 401 && !opts._retriedAfterRefresh && !path.includes('/auth/login') && !path.includes('/auth/refresh') && token) {
+    const refreshed = await tryAdminRefreshJwtToken();
+    if (refreshed) {
+      return api(path, { ...opts, _retriedAfterRefresh: true });
+    }
+  }
 let data;
   const contentType = res.headers.get('content-type') || '';
   if (contentType.includes('application/json')) {

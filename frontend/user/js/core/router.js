@@ -21,7 +21,7 @@ window.encodeId = encodeId;
 window.decodeId = decodeId;
 
 function generateIsoPublicId(role, numId) {
-  const prefix = role === 'user' || !role ? 'usr' : 'adm';
+  const prefix = role === 'admin' ? 'adm' : 'usr';
   const id = parseInt(numId) || 0;
   const val = Math.abs(((id * 1664525 + 1013904223) ^ 0x5B9A4C21) % 90000000) + 10000000;
   return `${prefix}-${val}`;
@@ -220,6 +220,7 @@ export function handleRouteFromHash() {
   }
 }
 
+window.handleRouteFromHash = handleRouteFromHash;
 window.addEventListener('hashchange', handleRouteFromHash);
 window.addEventListener('popstate', handleRouteFromHash);
 window.addEventListener('DOMContentLoaded', () => {

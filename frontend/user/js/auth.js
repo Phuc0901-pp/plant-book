@@ -205,7 +205,11 @@ function showApp() {
   if (settingNameEl)  settingNameEl.textContent  = user?.full_name || user?.name || '—';
   if (settingEmailEl) settingEmailEl.textContent = user?.phone || user?.email || '—';
 
-  showPage('home');
+  if (typeof window.handleRouteFromHash === 'function') {
+    window.handleRouteFromHash();
+  } else {
+    showPage('home');
+  }
   connectWebSocket();
   if (typeof window.renderMascot === 'function') {
     window.renderMascot();

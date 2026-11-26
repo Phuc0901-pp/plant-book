@@ -361,11 +361,6 @@ app.get(['/adm-*', '/adm-*/*', '/admin', '/admin/*'], (req, res, next) => {
   res.sendFile(path.join(__dirname, '../frontend/admin/index.html'));
 });
 
-app.get(['/usr-*', '/usr-*/*', '/user', '/user/*'], (req, res, next) => {
-  if (req.path.includes('.')) return next();
-  res.sendFile(path.join(__dirname, '../frontend/user/index.html'));
-});
-
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/admin/index.html'));
 });

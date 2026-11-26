@@ -138,11 +138,19 @@ export async function api(path, opts = {}, retries = 2) {
 
   const contentType = res.headers.get('content-type') || '';
   if (!contentType.includes('application/json')) {
-    const text = await res.text();
-    throw new Error(res.ok ? 'Phản hồi không phải dạng JSON' : `Lỗi máy chủ (${res.status})`);
+    await res.text();
+    const nonJsonErr = new Error(res.ok ? 'Phản hồi không phải dạng JSON' : `Lỗi máy chủ (${res.status})`);
+    nonJsonErr.status = res.status;
+    throw nonJsonErr;
   }
 
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  if (!res.ok) {
+    const apiErr = new Error(data.error || `HTTP ${res.status}`);
+    apiErr.status = res.status;
+    apiErr.code = data.code || null;
+    apiErr.data = data;
+    throw apiErr;
+  }
   return data;
 }

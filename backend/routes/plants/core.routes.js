@@ -11,6 +11,7 @@ const {
   syncPlantNfcToInventory, ensureNfcInventoryColumns, reconcileFarmNfcInventory,
   buildLogFilterQuery, isFullNfcUid
 } = require('./helpers');
+const { queryIsoCareReport, fetchFarmCareLogs } = require('../../services/reportQueryService');
 
 router.get('/', auth, async (req, res) => {
   try {
@@ -408,6 +409,29 @@ router.get('/media/all', auth, async (req, res) => {
   }
 });
 
+router.get('/reports/query', auth, async (req, res) => {
+  try {
+    const report = await queryIsoCareReport(pool, req.user, req.query);
+    res.json({ success: true, ...report });
+  } catch (err) {
+    console.error('Error in GET /plants/reports/query:', err);
+    res.status(500).json({ error: 'Lỗi truy vấn báo cáo ISO: ' + err.message });
+  }
+});
+
+router.get('/logs/farm/:farmId(\\d+)', auth, async (req, res) => {
+  try {
+    const result = await fetchFarmCareLogs(pool, req.user, req.params.farmId, req.query);
+    if (!result.ok) {
+      return res.status(result.status || 403).json({ error: result.error, code: result.code });
+    }
+    res.json({ success: true, logs: result.logs, total_count: result.total_count, summary: result.summary });
+  } catch (err) {
+    console.error('Error in GET /plants/logs/farm/:farmId:', err);
+    res.status(500).json({ error: 'Lỗi tải nhật ký trang trại: ' + err.message });
+  }
+});
+
 router.get('/:id(\\d+)', auth, async (req, res) => {
   try {
     const plant = await pool.query(
@@ -800,6 +824,7 @@ router.post('/batch-range', auth, async (req, res) => {
 
     await client.query('BEGIN');
     const insertedIds = [];
+    const resolvedPlots = new Set();
 
     for (const tree of treesToInsert) {
       const slug = `${farm_id || 0}_${tree.code}`;
@@ -821,18 +846,22 @@ router.post('/batch-range', auth, async (req, res) => {
       }
 
       if (farm_id && plotCode) {
-        try {
-          const existingPlot = await pool.query(
-            'SELECT id FROM farm_plots WHERE farm_id = $1 AND UPPER(plot_code) = UPPER($2) LIMIT 1',
-            [farm_id, plotCode]
-          );
-          if (existingPlot.rows.length === 0) {
-            await pool.query(
-              'INSERT INTO farm_plots (farm_id, plot_code, plot_name) VALUES ($1, $2, $3)',
-              [farm_id, plotCode, `Lô ${plotCode}`]
+        const plotKey = `${farm_id}:${plotCode.toUpperCase()}`;
+        if (!resolvedPlots.has(plotKey)) {
+          resolvedPlots.add(plotKey);
+          try {
+            const existingPlot = await client.query(
+              'SELECT id FROM farm_plots WHERE farm_id = $1 AND UPPER(plot_code) = UPPER($2) LIMIT 1',
+              [farm_id, plotCode]
             );
-          }
-        } catch (_) {}
+            if (existingPlot.rows.length === 0) {
+              await client.query(
+                'INSERT INTO farm_plots (farm_id, plot_code, plot_name) VALUES ($1, $2, $3)',
+                [farm_id, plotCode, `Lô ${plotCode}`]
+              );
+            }
+          } catch (_) {}
+        }
       }
 
       const itemData = {

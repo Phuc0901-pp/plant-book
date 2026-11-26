@@ -501,9 +501,20 @@ try {
   document.body.classList.remove('field-mode');
 } catch (_) {}
 
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  const openModals = Array.from(document.querySelectorAll('.modal-overlay')).filter(
+    el => el.style.display && el.style.display !== 'none'
+  );
+  if (openModals.length > 0) {
+    const topModal = openModals[openModals.length - 1];
+    topModal.style.display = 'none';
+  }
+});
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/user/sw.js')
+    navigator.serviceWorker.register('/user/sw.js', { scope: '/user/' })
       .then((reg) => {
         console.log('✅ ServiceWorker registered successfully:', reg.scope);
         if (typeof reg.update === 'function') {

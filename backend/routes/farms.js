@@ -311,8 +311,11 @@ function timingSafeCompareStr(a, b) {
     const updatedAfterRaw = req.query.updated_after ? new Date(String(req.query.updated_after)) : null;
     const hasValidUpdatedAfter = updatedAfterRaw && !isNaN(updatedAfterRaw.getTime());
     const effectiveSubRole = String((authUser && authUser.sub_role) || 'owner').toLowerCase();
-    const isRestrictedCareWorker = !authorizedViaApiKey && authUser && authUser.role !== 'admin' && (
-      effectiveSubRole === 'care_worker' || effectiveSubRole === 'auditor_readonly' || authUser.allow_view_finance === false
+    const requestedCareWorkerMode = String(req.query.role || '').toLowerCase() === 'care_worker';
+    const isRestrictedCareWorker = requestedCareWorkerMode || (
+      !authorizedViaApiKey && authUser && authUser.role !== 'admin' && (
+        effectiveSubRole === 'care_worker' || effectiveSubRole === 'auditor_readonly' || authUser.allow_view_finance === false
+      )
     );
 
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -345,7 +348,7 @@ function timingSafeCompareStr(a, b) {
         FROM plant_media pm
         JOIN plants p ON pm.plant_id = p.id
         WHERE p.farm_id = $1
-        ORDER BY pm.created_at DESC
+        ORDER BY pm.uploaded_at DESC
       `, [farmId]).catch(() => ({ rows: [] })),
       pool.query(`
         SELECT s.*,
@@ -386,7 +389,8 @@ function timingSafeCompareStr(a, b) {
     const nfcByPlant = {};
     const enrichedNfcTags = nfcRes.rows.map(tag => {
       const issueLvl = parseInt(tag.issue_level, 10) || 1;
-      const chuid = tag.chuid_hash || nfcSecurity.generatePivChuidHash(tag.uid, farmId, tag.plant_id || 0, issueLvl);
+      const tagUid = tag.nfc_uid || tag.uid || '';
+      const chuid = tag.chuid_hash || (tagUid ? nfcSecurity.generatePivChuidHash(tagUid, tag.plant_id || 0, issueLvl) : null);
       const enriched = {
         ...tag,
         issue_level: issueLvl,
@@ -460,7 +464,7 @@ function timingSafeCompareStr(a, b) {
         media_type: m.media_type || (String(m.file_url || m.url || '').match(/\.(mp4|mov|webm)$/i) ? 'video' : 'image'),
         url: m.file_url || m.url || m.image_url,
         caption: m.caption || m.description || null,
-        created_at: m.created_at
+        created_at: m.uploaded_at || m.created_at || null
       });
     });
 
@@ -499,10 +503,11 @@ function timingSafeCompareStr(a, b) {
         log_type: log.log_type,
         log_date: log.log_date,
         batch_code: log.batch_code || null,
+        equipment_used: log.equipment_used || null,
         description: log.description || log.note || details.note || '',
         cost_vnd: isRestrictedCareWorker ? null : (parseFloat(log.cost) || parseFloat(details.total_cost) || 0),
-        phi_days: log.phi_days || details.phi_days || null,
-        quarantine_until: log.quarantine_until || null,
+        phi_days: (log.phi_days !== undefined && log.phi_days !== null) ? log.phi_days : (details.phi_days !== undefined ? details.phi_days : null),
+        quarantine_until: details.phi_until_date || log.quarantine_until || null,
         technical_details: safeDetails,
         media_attachments: logMedia,
         iso27001_audit: {
@@ -657,7 +662,7 @@ function timingSafeCompareStr(a, b) {
       const entityClass = p.entity_class || 'plant';
       const plantGlobalDid = p.global_did || `did:agtech:vn:farm-${farmId}:${entityClass}-${p.id}`;
       const nfcTagObj = nfcByPlant[p.id] || null;
-      const rawUid = p.nfc_uid || p.nfc_tag_id || (nfcTagObj ? nfcTagObj.uid : null);
+      const rawUid = p.nfc_uid || p.nfc_tag_id || (nfcTagObj ? (nfcTagObj.nfc_uid || nfcTagObj.uid) : null);
       const issueLevel = nfcTagObj ? nfcTagObj.issue_level : 1;
 
       let ageYears = 5;
@@ -711,7 +716,7 @@ function timingSafeCompareStr(a, b) {
           card_type: nfcTagObj ? nfcTagObj.card_type : 'NTAG213_CRYPTO',
           issue_level: issueLevel,
           trace_flag: nfcTagObj ? nfcTagObj.trace_flag : false,
-          chuid_hash: nfcTagObj ? nfcTagObj.chuid_hash : nfcSecurity.generatePivChuidHash(rawUid, farmId, p.id, issueLevel)
+          chuid_hash: nfcTagObj ? nfcTagObj.chuid_hash : nfcSecurity.generatePivChuidHash(rawUid, p.id, issueLevel)
         } : null,
         taxonomy: {
           plant_type: p.plant_type,

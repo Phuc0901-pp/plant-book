@@ -13,7 +13,7 @@ async function initDB() {
         email VARCHAR(255) UNIQUE NOT NULL,
         password_hash VARCHAR(255) NOT NULL,
         full_name VARCHAR(255),
-        role VARCHAR(50) DEFAULT 'admin',
+        role VARCHAR(50) DEFAULT 'farmer',
         created_at TIMESTAMPTZ DEFAULT NOW(),
         updated_at TIMESTAMPTZ DEFAULT NOW()
       )
@@ -629,6 +629,14 @@ async function initDB() {
         recorded_at TIMESTAMPTZ DEFAULT NOW()
       );
       CREATE INDEX IF NOT EXISTS idx_iot_readings_farm_recorded ON iot_readings(farm_id, recorded_at DESC);
+      ALTER TABLE plant_logs ADD COLUMN IF NOT EXISTS cost NUMERIC(14,2) DEFAULT 0;
+      ALTER TABLE plant_logs ADD COLUMN IF NOT EXISTS client_uuid VARCHAR(100);
+      ALTER TABLE plant_logs ADD COLUMN IF NOT EXISTS prev_log_hash VARCHAR(64);
+      ALTER TABLE plant_logs ADD COLUMN IF NOT EXISTS record_hash VARCHAR(64);
+      ALTER TABLE plant_logs ADD COLUMN IF NOT EXISTS is_locked BOOLEAN DEFAULT true;
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_plant_logs_client_uuid_uniq ON plant_logs(client_uuid) WHERE client_uuid IS NOT NULL;
+      CREATE INDEX IF NOT EXISTS idx_plants_farm_plot_type ON plants(farm_id, plot_code, plant_type) WHERE deleted_at IS NULL;
+      CREATE INDEX IF NOT EXISTS idx_plant_logs_date_type ON plant_logs(log_date DESC, log_type) WHERE is_deleted IS NOT TRUE;
     `);
 
     const defaultConfigs = [
@@ -665,21 +673,13 @@ async function initDB() {
         FALSE,
         TRUE
       )
-      ON CONFLICT (version_tag) DO UPDATE SET
-        apk_url = EXCLUDED.apk_url,
-        version_number = EXCLUDED.version_number,
-        build_number = EXCLUDED.build_number,
-        release_notes = EXCLUDED.release_notes,
-        is_active = TRUE,
-        updated_at = NOW();
+      ON CONFLICT (version_tag) DO NOTHING;
     `);
 
     await client.query(`
       INSERT INTO system_configs (key, value, updated_at)
       VALUES ('app_version', '{"version": "1.3.5", "versionTag": "v1.3.5", "buildNumber": 19, "releaseDate": "2026-10-16"}'::jsonb, NOW())
-      ON CONFLICT (key) DO UPDATE SET
-        value = EXCLUDED.value,
-        updated_at = NOW();
+      ON CONFLICT (key) DO NOTHING;
     `);
 
     const adminEmail = process.env.ADMIN_EMAIL || 'admin@tanbaocorp.vn';
@@ -772,8 +772,8 @@ async function initDB() {
         `);
         await client.query(`
           INSERT INTO system_configs (key, value)
-          VALUES ('legacy_data_normalization_v135', 'done')
-          ON CONFLICT (key) DO UPDATE SET value = 'done', updated_at = NOW();
+          VALUES ('legacy_data_normalization_v135', '"done"'::jsonb)
+          ON CONFLICT (key) DO UPDATE SET value = '"done"'::jsonb, updated_at = NOW();
         `);
         console.log('✅ Đã chạy 1 lần chuẩn hóa toàn bộ dữ liệu lịch sử & UTF-8 trong CSDL (Migration v1.3.5).');
       } catch (utfErr) {
@@ -881,12 +881,14 @@ async function initDB() {
     client.release();
   }
 
-  try {
-    const { seedDurianRi6LK } = require('../scripts/seed_durian_ri6_lk');
-    await seedDurianRi6LK();
-    console.log('✅ Dữ liệu mẫu Cây Sầu Riêng Ri6 20 năm tuổi (Trang trại Long Khánh) đã được cập nhật vào CSDL');
-  } catch (seedErr) {
-    console.warn('⚠️ Cảnh báo khởi tạo dữ liệu mẫu sầu riêng:', seedErr.message);
+  if (process.env.ENABLE_DEMO_SEED === 'true') {
+    try {
+      const { seedDurianRi6LK } = require('../scripts/seed_durian_ri6_lk');
+      await seedDurianRi6LK();
+      console.log('✅ Dữ liệu mẫu Cây Sầu Riêng Ri6 20 năm tuổi (Trang trại Long Khánh) đã được cập nhật vào CSDL');
+    } catch (seedErr) {
+      console.warn('⚠️ Cảnh báo khởi tạo dữ liệu mẫu sầu riêng:', seedErr.message);
+    }
   }
 }
 

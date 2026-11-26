@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
+const { singleflight } = require('../services/singleflight');
 
 const CURRENCY_RATES = {
   VND: 1,
@@ -587,7 +588,10 @@ router.get('/bi-overview', auth, async (req, res) => {
       });
     }
 
-    const data = await aggregateExecutiveBiData(ctx);
+    const data = await singleflight.do(
+      `bi_exec_${ctx.userId || 0}_${ctx.role || 'user'}_${ctx.effectiveOwnerId || 'all'}`,
+      () => aggregateExecutiveBiData(ctx)
+    );
 
     res.json({
       status: 'success',
@@ -646,7 +650,10 @@ router.get('/cost-breakdown', auth, async (req, res) => {
       });
     }
 
-    const data = await aggregateExecutiveBiData(ctx);
+    const data = await singleflight.do(
+      `bi_exec_${ctx.userId || 0}_${ctx.role || 'user'}_${ctx.effectiveOwnerId || 'all'}`,
+      () => aggregateExecutiveBiData(ctx)
+    );
     const now = new Date();
     const monthBuckets = new Map();
     for (let idx = 0; idx < 6; idx++) {
@@ -741,7 +748,10 @@ router.get('/plot-comparison', auth, async (req, res) => {
       });
     }
 
-    const data = await aggregateExecutiveBiData(ctx);
+    const data = await singleflight.do(
+      `bi_exec_${ctx.userId || 0}_${ctx.role || 'user'}_${ctx.effectiveOwnerId || 'all'}`,
+      () => aggregateExecutiveBiData(ctx)
+    );
     const plotGroups = {};
 
     data.treeForecasts.forEach(t => {
@@ -824,7 +834,10 @@ router.get('/predictive-yield', auth, async (req, res) => {
       });
     }
 
-    const data = await aggregateExecutiveBiData(ctx);
+    const data = await singleflight.do(
+      `bi_exec_${ctx.userId || 0}_${ctx.role || 'user'}_${ctx.effectiveOwnerId || 'all'}`,
+      () => aggregateExecutiveBiData(ctx)
+    );
     const minYieldKg = Number((data.predictedTotalYieldKg * 0.91).toFixed(1));
     const maxYieldKg = Number((data.predictedTotalYieldKg * 1.09).toFixed(1));
 
