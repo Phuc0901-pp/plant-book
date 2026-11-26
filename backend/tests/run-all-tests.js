@@ -31,6 +31,7 @@ require('./suites/25_security_hardening_iso27001.test');
 require('./suites/26_enterprise_erp_crypto_perf_iso.test');
 require('./suites/27_iso_report_routing_offline_perf.test');
 require('./suites/28_enterprise_e2e_pdf_apm_k6.test');
+require('./suites/29_iso27001_zero_trust_mfa_dlp.test');
 
 async function main() {
   try {

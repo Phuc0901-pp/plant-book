@@ -1,11 +1,13 @@
 (function (global) {
   'use strict';
 
+  const isLocalDev = typeof global.location !== 'undefined' && /^(localhost|127\.0\.0\.1|\[::1\])$/i.test(global.location.hostname || '');
+
   const SECURITY_CONFIG = {
     enabled: true,
-    blockContextMenu: false,
-    blockShortcuts: false,
-    blockTextDrag: false,
+    blockContextMenu: !isLocalDev,
+    blockShortcuts: !isLocalDev,
+    blockTextDrag: !isLocalDev,
     antiDebugging: false,
     sanitizeConsole: false
   };
@@ -237,6 +239,8 @@
     version: '3.6.0',
     app: 'Sổ Nông Nhàn',
     owner: 'Công ty TNHH Công nghệ nông nghiệp Tân bảo Sài Gòn',
+    isLocalDev: isLocalDev,
+    config: SECURITY_CONFIG,
     triggerTrap: triggerInstantDebuggerTrap,
     printBanner: printSecurityBanner
   };

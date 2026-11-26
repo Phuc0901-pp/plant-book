@@ -105,6 +105,8 @@ try {
 const { securityHeaders, buildCorsOptions } = require('./middleware/securityHeaders');
 const authMiddleware = require('./middleware/auth');
 const adminMiddleware = require('./middleware/admin');
+const adminIpGuard = require('./middleware/adminIpGuard');
+const dlpAntiExfiltration = require('./middleware/dlpAntiExfiltration');
 const { apmRequestMiddleware, getApmSummary, renderPrometheusMetrics, metricsAuthGuard } = require('./services/apmMetricsService');
 app.disable('x-powered-by');
 app.use(securityHeaders);
@@ -267,19 +269,19 @@ app.get('/api', (req, res) => {
 app.use('/api/version', require('./routes/version'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/schemas', require('./routes/schemas'));
-app.use('/api/plants', require('./routes/plants'));
+app.use('/api/plants', dlpAntiExfiltration, require('./routes/plants'));
 app.use('/api/nfc', require('./routes/plants'));
 app.use('/api/gis', require('./routes/gis'));
 app.use('/api/config', require('./routes/config'));
-app.use('/api/farms', require('./routes/farms'));
-app.use('/api/users', require('./routes/users'));
+app.use('/api/farms', dlpAntiExfiltration, require('./routes/farms'));
+app.use('/api/users', dlpAntiExfiltration, require('./routes/users'));
 app.use('/api/devices', require('./routes/devices'));
 app.use('/api/supplies', require('./routes/supplies'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/costs', require('./routes/costs'));
 app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/history', require('./routes/history'));
-app.use('/api/database', require('./routes/database'));
+app.use('/api/database', authMiddleware, adminMiddleware, adminIpGuard, dlpAntiExfiltration, require('./routes/database'));
 app.use('/api/ai/training', require('./routes/ai_training'));
 app.use('/api/ai', require('./routes/ai'));
 app.use('/api/diagnostics', require('./routes/diagnostics'));
@@ -287,8 +289,23 @@ app.get('/metrics', metricsAuthGuard(authMiddleware, adminMiddleware), (req, res
   res.setHeader('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');
   res.send(renderPrometheusMetrics(pool, activeWss));
 });
-app.get('/api/admin/apm/summary', authMiddleware, adminMiddleware, (req, res) => {
+app.get('/api/admin/apm/summary', authMiddleware, adminMiddleware, adminIpGuard, (req, res) => {
   res.json(getApmSummary(pool, activeWss));
+});
+app.get('/api/admin/security-incidents', authMiddleware, adminMiddleware, adminIpGuard, async (req, res) => {
+  try {
+    const limit = Math.min(200, Math.max(1, parseInt(req.query.limit || '50', 10) || 50));
+    const r = await pool.query(
+      `SELECT id, event_type, severity, user_id, ip_address, route_path, details, created_at
+       FROM security_incidents
+       ORDER BY id DESC
+       LIMIT $1`,
+      [limit]
+    );
+    res.json({ success: true, count: r.rows.length, incidents: r.rows });
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi tải nhật ký sự cố bảo mật: ' + err.message });
+  }
 });
 app.use('/api', require('./middleware/errorHandler'));
 

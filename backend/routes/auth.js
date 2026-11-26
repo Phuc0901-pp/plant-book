@@ -10,6 +10,12 @@ const { uploadFile, deleteFile } = require('../config/supabase');
 const { v4: uuidv4 } = require('uuid');
 const { delCacheByPattern } = require('../config/redis');
 const { encodeUserId, decodeUserId } = require('../utils/cryptoId');
+const {
+  generateBase32Secret,
+  verifyTotpCode,
+  buildOtpAuthUri,
+  encryptTotpSecret
+} = require('../services/totpMfaService');
 require('dotenv').config();
 
 function generateIsoPublicId(role, numId) {
@@ -50,6 +56,7 @@ router.post('/login', async (req, res) => {
     const MAX_FAILED_LOGIN_ATTEMPTS = 5;
     const LOCKOUT_MINUTES = 15;
     const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+    const ADMIN_JWT_EXPIRES_IN = process.env.ADMIN_JWT_EXPIRES_IN || '30m';
 
     if (user.locked_until && new Date(user.locked_until).getTime() > Date.now()) {
       const retryAfterSec = Math.max(1, Math.ceil((new Date(user.locked_until).getTime() - Date.now()) / 1000));
@@ -90,6 +97,38 @@ router.post('/login', async (req, res) => {
     const allowViewFinance = isRestrictedFinance ? (user.allow_view_finance === true) : (user.allow_view_finance !== false);
     const tokenVersion = Number(user.token_version || 1);
 
+    if (user.mfa_enabled === true && user.totp_secret_enc) {
+      const providedOtp = req.body.totp_code ? String(req.body.totp_code).trim() : '';
+      if (!providedOtp) {
+        const mfaChallengeToken = jwt.sign(
+          { id: user.id, purpose: 'mfa_challenge', tv: tokenVersion },
+          process.env.JWT_SECRET,
+          { expiresIn: '5m' }
+        );
+        return res.status(200).json({
+          success: false,
+          mfa_required: true,
+          code: 'MFA_TOTP_REQUIRED',
+          mfa_challenge_token: mfaChallengeToken,
+          message: 'Vui lòng nhập mã xác thực 2 lớp (TOTP 6 số) từ ứng dụng Authenticator.'
+        });
+      }
+      if (!verifyTotpCode(user.totp_secret_enc, providedOtp)) {
+        try {
+          await pool.query(
+            `INSERT INTO security_incidents (event_type, severity, user_id, ip_address, route_path, details)
+             VALUES ('INVALID_MFA_LOGIN', 'high', $1, $2, '/api/auth/login', $3)`,
+            [user.id, req.ip || null, JSON.stringify({ email: user.email })]
+          );
+        } catch (_) {}
+        return res.status(401).json({
+          error: 'Mã xác thực 2 lớp (OTP) không chính xác hoặc đã hết hạn.',
+          code: 'INVALID_MFA_CODE'
+        });
+      }
+    }
+
+    const effectiveExpiresIn = user.role === 'admin' ? ADMIN_JWT_EXPIRES_IN : JWT_EXPIRES_IN;
     const token = jwt.sign(
       {
         id: user.id,
@@ -103,7 +142,7 @@ router.post('/login', async (req, res) => {
         tv: tokenVersion
       },
       process.env.JWT_SECRET,
-      { expiresIn: JWT_EXPIRES_IN }
+      { expiresIn: effectiveExpiresIn }
     );
 
     await pool.query(
@@ -142,8 +181,20 @@ router.post('/login', async (req, res) => {
     const primaryFarmId = user.farm_id || (ownedFarmIds.length > 0 ? ownedFarmIds[0] : null);
     const encUserId = encodeUserId(user.id);
 
+    if (user.role === 'admin' && typeof res.cookie === 'function') {
+      const isSecure = !!(req.secure || req.headers['x-forwarded-proto'] === 'https' || process.env.NODE_ENV === 'production');
+      res.cookie('pb_admin_session', token, {
+        httpOnly: true,
+        sameSite: 'strict',
+        secure: isSecure,
+        path: '/',
+        maxAge: 30 * 60 * 1000
+      });
+    }
+
     res.json({
       token,
+      expires_in: effectiveExpiresIn,
       encrypted_user_id: encUserId,
       user: {
         id: user.id,
@@ -853,6 +904,7 @@ router.delete('/reset-requests', require('../middleware/auth'), async (req, res)
 router.post('/refresh', require('../middleware/auth'), async (req, res) => {
   try {
     const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+    const ADMIN_JWT_EXPIRES_IN = process.env.ADMIN_JWT_EXPIRES_IN || '30m';
     const userRes = await pool.query(
       'SELECT id, email, role, sub_role, parent_user_id, farm_id, account_tier, tier_expires_at, COALESCE(token_version, 1) as token_version FROM users WHERE id = $1 LIMIT 1',
       [req.user.id]
@@ -861,6 +913,7 @@ router.post('/refresh', require('../middleware/auth'), async (req, res) => {
       return res.status(401).json({ error: 'Tài khoản không tồn tại.' });
     }
     const u = userRes.rows[0];
+    const effectiveExpiresIn = u.role === 'admin' ? ADMIN_JWT_EXPIRES_IN : JWT_EXPIRES_IN;
     const token = jwt.sign(
       {
         id: u.id,
@@ -874,11 +927,123 @@ router.post('/refresh', require('../middleware/auth'), async (req, res) => {
         tv: Number(u.token_version || 1)
       },
       process.env.JWT_SECRET,
-      { expiresIn: JWT_EXPIRES_IN }
+      { expiresIn: effectiveExpiresIn }
     );
-    res.json({ success: true, token, expires_in: JWT_EXPIRES_IN, token_version: Number(u.token_version || 1) });
+    if (u.role === 'admin' && typeof res.cookie === 'function') {
+      const isSecure = !!(req.secure || req.headers['x-forwarded-proto'] === 'https' || process.env.NODE_ENV === 'production');
+      res.cookie('pb_admin_session', token, {
+        httpOnly: true,
+        sameSite: 'strict',
+        secure: isSecure,
+        path: '/',
+        maxAge: 30 * 60 * 1000
+      });
+    }
+    res.json({ success: true, token, expires_in: effectiveExpiresIn, token_version: Number(u.token_version || 1) });
   } catch (err) {
     res.status(500).json({ error: 'Lỗi server khi làm mới phiên đăng nhập.' });
+  }
+});
+
+router.post('/mfa/setup', require('../middleware/auth'), async (req, res) => {
+  try {
+    const secretBase32 = generateBase32Secret(20);
+    const encrypted = encryptTotpSecret(secretBase32);
+    await pool.query(
+      'UPDATE users SET totp_secret_enc = $1 WHERE id = $2',
+      [encrypted, req.user.id]
+    );
+    const otpauthUri = buildOtpAuthUri({
+      accountName: req.user.email || `user-${req.user.id}`,
+      issuer: 'TanBaoAgTech',
+      secretBase32
+    });
+    res.json({
+      success: true,
+      secret_base32: secretBase32,
+      otpauth_uri: otpauthUri
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi thiết lập 2FA TOTP: ' + err.message });
+  }
+});
+
+router.post('/mfa/verify-enable', require('../middleware/auth'), async (req, res) => {
+  try {
+    const totpCode = req.body && req.body.totp_code ? String(req.body.totp_code).trim() : '';
+    const uRes = await pool.query('SELECT id, totp_secret_enc FROM users WHERE id = $1 LIMIT 1', [req.user.id]);
+    const u = uRes.rows[0];
+    if (!u || !u.totp_secret_enc) {
+      return res.status(400).json({ error: 'Chưa khởi tạo khóa 2FA. Hãy gọi /mfa/setup trước.' });
+    }
+    if (!verifyTotpCode(u.totp_secret_enc, totpCode)) {
+      return res.status(401).json({ error: 'Mã OTP xác nhận không đúng.', code: 'INVALID_MFA_CODE' });
+    }
+    await pool.query('UPDATE users SET mfa_enabled = true WHERE id = $1', [req.user.id]);
+    res.json({ success: true, mfa_enabled: true, message: 'Đã kích hoạt xác thực 2 lớp (2FA TOTP) chuẩn ISO 27001.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi kích hoạt 2FA TOTP: ' + err.message });
+  }
+});
+
+router.post('/mfa/disable', require('../middleware/auth'), async (req, res) => {
+  try {
+    const { password, totp_code } = req.body || {};
+    const uRes = await pool.query('SELECT id, password_hash, totp_secret_enc, mfa_enabled FROM users WHERE id = $1 LIMIT 1', [req.user.id]);
+    const u = uRes.rows[0];
+    if (!u) return res.status(404).json({ error: 'Không tìm thấy tài khoản.' });
+    const passOk = password ? await bcrypt.compare(String(password), u.password_hash) : false;
+    if (!passOk) return res.status(401).json({ error: 'Mật khẩu xác nhận không đúng.' });
+    if (u.mfa_enabled && u.totp_secret_enc && !verifyTotpCode(u.totp_secret_enc, totp_code)) {
+      return res.status(401).json({ error: 'Mã OTP không chính xác.', code: 'INVALID_MFA_CODE' });
+    }
+    await pool.query('UPDATE users SET mfa_enabled = false, totp_secret_enc = NULL WHERE id = $1', [req.user.id]);
+    res.json({ success: true, mfa_enabled: false });
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi tắt 2FA TOTP: ' + err.message });
+  }
+});
+
+router.post('/revoke-all-sessions', require('../middleware/auth'), async (req, res) => {
+  try {
+    const scope = String(req.body && req.body.scope ? req.body.scope : 'self');
+    const targetUserId = req.body && req.body.target_user_id ? parseInt(req.body.target_user_id, 10) : null;
+    let revokedCount = 0;
+
+    if (req.user.role === 'admin' && scope === 'all_admins') {
+      const r = await pool.query(
+        `UPDATE users SET token_version = COALESCE(token_version, 1) + 1 WHERE role = 'admin' RETURNING id`
+      );
+      revokedCount = r.rows.length;
+    } else if (req.user.role === 'admin' && targetUserId) {
+      const r = await pool.query(
+        `UPDATE users SET token_version = COALESCE(token_version, 1) + 1 WHERE id = $1 RETURNING id`,
+        [targetUserId]
+      );
+      revokedCount = r.rows.length;
+    } else {
+      const r = await pool.query(
+        `UPDATE users SET token_version = COALESCE(token_version, 1) + 1 WHERE id = $1 RETURNING id`,
+        [req.user.id]
+      );
+      revokedCount = r.rows.length;
+    }
+
+    try {
+      await pool.query(
+        `INSERT INTO security_incidents (event_type, severity, user_id, ip_address, route_path, details)
+         VALUES ('SESSION_KILL_SWITCH', 'critical', $1, $2, '/api/auth/revoke-all-sessions', $3)`,
+        [req.user.id, req.ip || null, JSON.stringify({ scope, targetUserId, revokedCount })]
+      );
+    } catch (_) {}
+
+    res.json({
+      success: true,
+      revoked_accounts: revokedCount,
+      message: 'Đã thu hồi toàn bộ phiên JWT đang hoạt động.'
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi thu hồi phiên đăng nhập: ' + err.message });
   }
 });
 
