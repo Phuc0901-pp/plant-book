@@ -5,6 +5,12 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      k6_target_url:
+        description: 'Target URL for k6 load smoke test'
+        required: false
+        default: 'http://127.0.0.1:3000'
 
 jobs:
   iso-qc-qa:
@@ -41,3 +47,110 @@ jobs:
 
       - name: Run All ISO Test Suites (26+ Suites)
         run: npm run test:iso
+
+  postgres-and-playwright-e2e:
+    name: Real PostgreSQL 16 + Playwright Chromium E2E
+    runs-on: ubuntu-latest
+    needs: iso-qc-qa
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci_postgres_password
+          POSTGRES_DB: plantbook_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      NODE_ENV: test
+      PORT: 3000
+      DATABASE_URL: postgresql://postgres:ci_postgres_password@127.0.0.1:5432/plantbook_ci
+      REDIS_URL: redis://127.0.0.1:6379
+      JWT_SECRET: ci_iso_jwt_secret_2026_minimum_32_chars
+      FIELD_ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      NFC_HMAC_SECRET: ci_nfc_hmac_secret_2026_enterprise
+      APM_METRICS_TOKEN: ci_metrics_token_iso
+      ENABLE_DEMO_SEED: 'false'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium Browser
+        run: npx playwright-core install chromium --with-deps
+
+      - name: Generate Enterprise .p12 Signing Certificate
+        run: |
+          node scripts/generate-dev-p12.js ./certs/enterprise-report-signer.p12
+
+      - name: Run Migrations on Real PostgreSQL 16
+        run: |
+          npm run migrate:up
+          npm run migrate:up
+
+      - name: Start Backend Server and Wait for Health
+        run: |
+          node --dns-result-order=ipv4first server.js > /tmp/server.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3000/api/health; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/server.log
+          exit 1
+
+      - name: Run PostgreSQL Integration E2E
+        run: npm run test:e2e:pg
+
+      - name: Run Playwright Browser E2E
+        run: npm run test:e2e:browser
+
+      - name: Upload Playwright Failure Screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-e2e-artifacts
+          path: backend/tests/reports/playwright-e2e-failure.png
+          if-no-files-found: ignore
+
+  k6-load-smoke:
+    name: k6 Load Test & SLA Gate
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    needs: postgres-and-playwright-e2e
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install k6
+        uses: grafana/setup-k6-action@v1
+
+      - name: Validate k6 Load Script & SLA Gate
+        run: |
+          k6 inspect backend/tests/load/k6-iso-load-test.js
+          node --check backend/tests/load/k6-summary-gate.js

@@ -1998,6 +1998,47 @@ export async function executeUserExport(mode = 'csv') {
 
   if (mode === 'csv') {
     exportLogsToCsv(filtered, `So_Nhat_Ky_VietGAP_GlobalGAP_${cleanFarmName}_${dateSuffix}.csv`, { standardLabel, includeFinance });
+  } else if (mode === 'signed_pdf') {
+    try {
+      const authTok = localStorage.getItem('pb_token') || '';
+      const resp = await fetch('/api/plants/reports/export-pdf-signed', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authTok ? { Authorization: `Bearer ${authTok}` } : {})
+        },
+        body: JSON.stringify({
+          title: customTitle,
+          farm_id: farmId,
+          plant_id: plantId,
+          plot_id: plotId,
+          plant_type: plantTypeFilter,
+          tree_code_from: treeCodeFrom,
+          tree_code_to: treeCodeTo,
+          date_from: fromDate,
+          date_to: toDate,
+          log_types: checkedCats,
+          standard_code: stdCode,
+          standard_label: standardLabel,
+          farm_name: farmName,
+          include_finance: includeFinance
+        })
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const certUuid = resp.headers.get('X-Report-Cert-UUID') || dateSuffix;
+      const pdfBlob = await resp.blob();
+      const blobUrl = URL.createObjectURL(pdfBlob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `HoSo_KySo_P12_${cleanFarmName}_${String(certUuid).slice(0, 8)}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+      toast(`Đã tải PDF ký số doanh nghiệp (.p12) thành công! Mã chứng thư: ${String(certUuid).slice(0, 12)}`, 'success');
+    } catch (pdfErr) {
+      toast('Lỗi tải PDF ký số: ' + pdfErr.message, 'error');
+    }
   } else {
     const metaPayload = {
       title: customTitle,

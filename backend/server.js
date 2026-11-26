@@ -103,10 +103,14 @@ try {
 }
 
 const { securityHeaders, buildCorsOptions } = require('./middleware/securityHeaders');
+const authMiddleware = require('./middleware/auth');
+const adminMiddleware = require('./middleware/admin');
+const { apmRequestMiddleware, getApmSummary, renderPrometheusMetrics, metricsAuthGuard } = require('./services/apmMetricsService');
 app.disable('x-powered-by');
 app.use(securityHeaders);
 app.use(compression());
 app.use(cors(buildCorsOptions()));
+app.use(apmRequestMiddleware);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -279,6 +283,13 @@ app.use('/api/database', require('./routes/database'));
 app.use('/api/ai/training', require('./routes/ai_training'));
 app.use('/api/ai', require('./routes/ai'));
 app.use('/api/diagnostics', require('./routes/diagnostics'));
+app.get('/metrics', metricsAuthGuard(authMiddleware, adminMiddleware), (req, res) => {
+  res.setHeader('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');
+  res.send(renderPrometheusMetrics(pool, activeWss));
+});
+app.get('/api/admin/apm/summary', authMiddleware, adminMiddleware, (req, res) => {
+  res.json(getApmSummary(pool, activeWss));
+});
 app.use('/api', require('./middleware/errorHandler'));
 
 app.get([

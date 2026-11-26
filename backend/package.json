@@ -13,9 +13,15 @@
     "bump:version": "node ../scripts/sync-config.js",
     "test": "node tests/run-all-tests.js",
     "test:iso": "node tests/run-iso-qc-qa.js",
-    "test:e2e": "node tests/e2e/sub-gateway.e2e.js"
+    "test:e2e": "node tests/e2e/sub-gateway.e2e.js",
+    "test:e2e:pg": "node tests/e2e/postgres-integration.e2e.js",
+    "test:e2e:browser": "node tests/e2e/playwright-portals.e2e.js",
+    "generate:p12": "node scripts/generate-dev-p12.js"
   },
   "dependencies": {
+    "@signpdf/placeholder-pdf-lib": "^4.0.0",
+    "@signpdf/signer-p12": "^4.0.0",
+    "@signpdf/signpdf": "^4.0.0",
     "@supabase/supabase-js": "^2.49.1",
     "bcryptjs": "^2.4.3",
     "compression": "^1.8.1",
@@ -27,7 +33,9 @@
     "ioredis": "^6.0.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
+    "node-forge": "^1.4.4",
     "nodemailer": "^9.0.3",
+    "pdf-lib": "^1.17.1",
     "pg": "^8.13.3",
     "uuid": "^9.0.1",
     "ws": "^8.21.0"

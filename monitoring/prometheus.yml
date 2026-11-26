@@ -1,0 +1,16 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'plantbook-agri-erp'
+    metrics_path: '/metrics'
+    scheme: 'https'
+    authorization:
+      type: Bearer
+      credentials_file: /etc/prometheus/apm_metrics_token
+    static_configs:
+      - targets: ['plant-book.onrender.com']
+        labels:
+          service: 'plantbook-backend'
+          standard: 'iso-25010-apm'

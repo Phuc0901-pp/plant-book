@@ -451,6 +451,9 @@ async function selectTreeForDetail(plantId) {
               <button onclick="exportDbFarmReportCsv()" class="btn" style="background:#ecfdf5; color:#065f46; border:1px solid #86efac; border-radius:8px; font-weight:700; font-size:12px; padding:8px 14px; cursor:pointer;">
                 <i data-lucide="file-spreadsheet" class="lucide-sm"></i> Xuất CSV ISO
               </button>
+              <button onclick="exportDbFarmSignedPdf()" class="btn" style="background:#f0f9ff; color:#0369a1; border:1px solid #7dd3fc; border-radius:8px; font-weight:700; font-size:12px; padding:8px 14px; cursor:pointer;">
+                <i data-lucide="shield-check" class="lucide-sm"></i> Tải PDF Ký Số (.p12)
+              </button>
               <button onclick="openPlantModalForActiveDbFarm()" class="btn" style="background:#ffffff; color:#064e3b; border:none; border-radius:8px; font-weight:700; font-size:12px; padding:8px 14px; cursor:pointer;">
                 <i data-lucide="plus" class="lucide-sm"></i> Thêm cây mới
               </button>
@@ -2939,6 +2942,43 @@ async function exportDbFarmReportCsv() {
   }
 }
 window.exportDbFarmReportCsv = exportDbFarmReportCsv;
+
+async function exportDbFarmSignedPdf() {
+  if (!currentDbSelectedFarmId) {
+    toast('Vui lòng chọn trang trại trước khi tải PDF ký số.', 'warning');
+    return;
+  }
+  try {
+    const authTok = typeof token !== 'undefined' ? token : (localStorage.getItem('pb_token') || '');
+    const resp = await fetch('/api/plants/reports/export-pdf-signed', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(authTok ? { Authorization: `Bearer ${authTok}` } : {})
+      },
+      body: JSON.stringify({
+        farm_id: currentDbSelectedFarmId,
+        standard_code: 'vietgap_globalgap_iso',
+        title: `HO SO XUAT KHAU TRANG TRAI #${currentDbSelectedFarmId}`
+      })
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const certUuid = resp.headers.get('X-Report-Cert-UUID') || new Date().toISOString().slice(0, 10);
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Admin_HoSo_KySo_${currentDbSelectedFarmId}_${String(certUuid).slice(0, 8)}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast(`Đã xuất PDF ký số .p12 thành công (${String(certUuid).slice(0, 12)})!`, 'success');
+  } catch (err) {
+    toast('Lỗi xuất PDF ký số Admin: ' + err.message, 'error');
+  }
+}
+window.exportDbFarmSignedPdf = exportDbFarmSignedPdf;
 
 window.openAdminDbCheckView = openAdminDbCheckView;
 window.loadVersionManagerData = loadVersionManagerData;

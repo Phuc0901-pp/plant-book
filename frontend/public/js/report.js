@@ -1538,3 +1538,30 @@ async function savePublicReportAndPrintPdf() {
   }, 150);
 }
 window.savePublicReportAndPrintPdf = savePublicReportAndPrintPdf;
+
+async function downloadPublicSignedPdf() {
+  try {
+    if (!plantData || !plantData.id) {
+      alert('Dữ liệu báo cáo chưa sẵn sàng.');
+      return;
+    }
+    const resp = await fetch(`/api/plants/${plantData.id}/export-pdf-signed`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: document.title || `Ho So Truy Xuat ${plantData.tree_code || plantData.id}` })
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `TruyXuat_KySo_${plantData.tree_code || plantData.id}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    alert('Lỗi tải PDF ký số: ' + err.message);
+  }
+}
+window.downloadPublicSignedPdf = downloadPublicSignedPdf;
