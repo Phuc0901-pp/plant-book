@@ -93,7 +93,7 @@
     color: var(--ux-ink);
     box-shadow: 0 0 0 1px var(--ux-line), 4px 0 24px -14px var(--ux-shadow-strong);
     transition: width .6s cubic-bezier(.3, 1.3, .45, 1), min-width .6s cubic-bezier(.3, 1.3, .45, 1);
-    z-index: 30;
+    z-index: 150;
   }
 
   aside.sidebar.ux.u417.u417-sb.is-rail {
@@ -321,19 +321,19 @@
 
 .u417-tg {
   position: absolute;
-  right: -13px;
-  top: 22px;
-  z-index: 40;
+  right: -14px;
+  top: 15px;
+  z-index: 160;
   display: grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border: 0;
   border-radius: 50%;
   cursor: pointer;
   background: var(--ux-tg-bg);
   color: var(--ux-tg-ink);
-  box-shadow: 0 0 0 1px var(--ux-line-2), 0 3px 8px -2px var(--ux-shadow-strong);
+  box-shadow: 0 0 0 1px var(--ux-line-2), 0 4px 10px -2px var(--ux-shadow-strong);
   transition: transform .5s cubic-bezier(.3, 1.6, .5, 1), color .2s, background-color .2s;
 }
 

@@ -24,13 +24,13 @@
     var nearTop = cy < vh * 0.35;
 
     if (nearTop) {
-      if (nearRight) return [92, 122, 152, 182];
-      if (nearLeft) return [-2, 28, 58, 88];
-      return [22.5, 67.5, 112.5, 157.5];
+      if (nearRight) return [78, 114, 150, 186];
+      if (nearLeft) return [-6, 30, 66, 102];
+      return [18, 66, 114, 162];
     }
-    if (nearRight) return [-178, -148, -118, -88];
-    if (nearLeft) return [-92, -62, -32, -2];
-    return [-157.5, -112.5, -67.5, -22.5];
+    if (nearRight) return [-186, -150, -114, -78];
+    if (nearLeft) return [-102, -66, -30, 6];
+    return [-162, -114, -66, -18];
   }
 
   function mount(containerEl, config) {
@@ -64,8 +64,8 @@
     root.innerHTML =
       '<svg class="u460-defs" aria-hidden="true" focusable="false">' +
         '<filter class="u460-f" id="' + uid + 'g" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">' +
-          '<feGaussianBlur in="SourceGraphic" stdDeviation="9" result="b"/>' +
-          '<feColorMatrix in="b" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 24 -11" result="g"/>' +
+          '<feGaussianBlur in="SourceGraphic" stdDeviation="7" result="b"/>' +
+          '<feColorMatrix in="b" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -10" result="g"/>' +
           '<feComposite in="SourceGraphic" in2="g" operator="atop"/>' +
         '</filter>' +
       '</svg>' +
@@ -106,7 +106,7 @@
 
     function updateCoords() {
       var vw = window.innerWidth || 1024;
-      var R = vw <= 480 ? 84 : 94;
+      var R = vw <= 480 ? 96 : 112;
       var angles = computeAngles(containerEl);
       acts.forEach(function (actEl, i) {
         var deg = angles[i] !== undefined ? angles[i] : (-157.5 + i * 45);

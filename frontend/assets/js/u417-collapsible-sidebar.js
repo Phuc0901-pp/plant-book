@@ -39,8 +39,13 @@
     function getActiveItem() {
       var items = getItems();
       for (var i = 0; i < items.length; i++) {
-        if (items[i].classList.contains('active') || items[i].getAttribute('aria-current') === 'page') {
+        if (items[i].classList.contains('active')) {
           return items[i];
+        }
+      }
+      for (var j = 0; j < items.length; j++) {
+        if (items[j].getAttribute('aria-current') === 'page') {
+          return items[j];
         }
       }
       return items[0] || null;
