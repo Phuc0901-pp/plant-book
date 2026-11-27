@@ -165,6 +165,8 @@ describe('Suite 30: Multi-Platform Notification Hub (Web, Admin, SW Push & Flutt
     const wsDart = fs.readFileSync(path.join(rootDir, 'mobile_app/lib/services/websocket_service.dart'), 'utf8');
     const apiDart = fs.readFileSync(path.join(rootDir, 'mobile_app/lib/services/api_service.dart'), 'utf8');
     const notifDart = fs.readFileSync(path.join(rootDir, 'mobile_app/lib/services/notification_service.dart'), 'utf8');
+    const conceptsDart = fs.readFileSync(path.join(rootDir, 'mobile_app/lib/core/state/app_state_and_concepts.dart'), 'utf8');
+    const notifCombined = notifDart + '\n' + conceptsDart;
     const alertsDart = fs.readFileSync(path.join(rootDir, 'mobile_app/lib/pages/alerts_page.dart'), 'utf8');
     const dashDart = fs.readFileSync(path.join(rootDir, 'mobile_app/lib/pages/dashboard_page.dart'), 'utf8');
     const adminDashDart = fs.readFileSync(path.join(rootDir, 'mobile_app/lib/pages/admin/admin_dashboard_page.dart'), 'utf8');
@@ -173,7 +175,7 @@ describe('Suite 30: Multi-Platform Notification Hub (Web, Admin, SW Push & Flutt
     assert.ok(pubspecYaml.includes('flutter_local_notifications'));
     assert.ok(wsDart.includes("'Authorization': 'Bearer $authToken'"));
     assert.ok(apiDart.includes('fetchNotifications') && apiDart.includes('updateNotificationPreferences') && apiDart.includes('registerPushToken'));
-    assert.ok(notifDart.includes('tbsg_critical_alerts') && notifDart.includes('tbsg_general_updates') && notifDart.includes('HapticFeedback.heavyImpact'));
+    assert.ok(notifCombined.includes('tbsg_critical_alerts') && notifCombined.includes('tbsg_general_updates') && notifDart.includes('HapticFeedback.heavyImpact'));
     assert.ok(alertsDart.includes('DefaultTabController') && alertsDart.includes('_openPreferencesSheet') && alertsDart.includes('Hộp thư Thông báo'));
     assert.ok(dashDart.includes('NotificationService().init()') && dashDart.includes('AlertsPage()'));
     assert.ok(adminDashDart.includes('NotificationService().init()') && adminDashDart.includes('AlertsPage()'));

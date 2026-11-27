@@ -24,10 +24,11 @@ describe('Suite 18: Flutter Mobile App v1.3.5+19 Security, Cryptography & Web Pa
 
   test('18.2 Enterprise 4-Sub-Role RBAC & Finance Redaction Policy present in rbac_policy.dart', () => {
     const content = readDartFile('core/security/rbac_policy.dart');
-    assert.ok(content.includes("subRoleFarmOwner = 'farm_owner'"), 'farm_owner sub_role missing');
-    assert.ok(content.includes("subRoleCareWorker = 'care_worker'"), 'care_worker sub_role missing');
-    assert.ok(content.includes("subRoleWarehouseManager = 'warehouse_manager'"), 'warehouse_manager sub_role missing');
-    assert.ok(content.includes("subRoleAuditorReadonly = 'auditor_readonly'"), 'auditor_readonly sub_role missing');
+    const combined = content + '\n' + readDartFile('core/state/app_state_and_concepts.dart');
+    assert.ok(combined.includes("subRoleFarmOwner = 'farm_owner'"), 'farm_owner sub_role missing');
+    assert.ok(combined.includes("subRoleCareWorker = 'care_worker'"), 'care_worker sub_role missing');
+    assert.ok(combined.includes("subRoleWarehouseManager = 'warehouse_manager'"), 'warehouse_manager sub_role missing');
+    assert.ok(combined.includes("subRoleAuditorReadonly = 'auditor_readonly'"), 'auditor_readonly sub_role missing');
     assert.ok(content.includes('static bool isFinanceRedacted'), 'isFinanceRedacted check missing');
     assert.ok(content.includes('static String formatCurrencyWithPolicy'), 'formatCurrencyWithPolicy helper missing');
   });

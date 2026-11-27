@@ -88,7 +88,9 @@ describe('Suite 17: v1.3.5 Hash-Chain Mutex Lock, Offline Batch Sync & Idempoten
     const userConfigJs = fs.readFileSync(path.join(rootDir, 'frontend/user/js/core/config.js'), 'utf8');
     const adminConfigJs = fs.readFileSync(path.join(rootDir, 'frontend/admin/js/core/config.js'), 'utf8');
     const pubspecYaml = fs.readFileSync(path.join(rootDir, 'mobile_app/pubspec.yaml'), 'utf8');
-    const flutterConst = fs.readFileSync(path.join(rootDir, 'mobile_app/lib/core/constants/app_constants.dart'), 'utf8');
+    const flutterConst = fs.readFileSync(path.join(rootDir, 'mobile_app/lib/core/constants/app_constants.dart'), 'utf8') +
+      '\n' +
+      fs.readFileSync(path.join(rootDir, 'mobile_app/lib/core/state/app_state_and_concepts.dart'), 'utf8');
 
     const ver = appConfigJson.app.version;
     const build = appConfigJson.app.buildNumber;

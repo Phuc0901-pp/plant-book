@@ -745,24 +745,6 @@ class ApiService {
     return '';
   }
 
-  Future<List<Map<String, dynamic>>> fetchNotifications() async {
-    try {
-      final headers = await _getHeaders();
-      final response = await http.get(Uri.parse('$baseUrl/notifications'), headers: headers).timeout(const Duration(seconds: 5));
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data is Map && data['notifications'] is List) {
-          return List<Map<String, dynamic>>.from(data['notifications'] as List);
-        } else if (data is List) {
-          return List<Map<String, dynamic>>.from(data);
-        }
-      }
-      return [];
-    } catch (e) {
-      return [];
-    }
-  }
-
   Future<List<Supply>> fetchSupplies({String? category, String? search}) async {
     try {
       final headers = await _getHeaders();
