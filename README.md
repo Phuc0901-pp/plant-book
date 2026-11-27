@@ -1,20 +1,21 @@
-# 🌿 SỔ NÔNG NHÀN (PLANT BOOK AGTECH ERP)
-### Hệ Thống Quản Lý Vườn Cây, Định Danh Số Từng Cây & Nhật Ký Canh Tác Agri-ERP Chuẩn Quốc Tế VietGAP / GlobalGAP
+# 🌿 SỔ NÔNG TÂN BẢO AGTECH ERP (PLANT BOOK)
+### Nền Tảng Quản Trị Trang Trại Thông Minh, Định Danh NFC 1-Cây-1-Thẻ, BI Tài Chính & AI Agent Nông Học Chuẩn Quốc Tế
 
 > [!IMPORTANT]
 > **ĐƠN VỊ CHỦ QUẢN & BẢN QUYỀN**:  
-> **CÔNG TY CỔ PHẦN TÂN BẢO SÀI GÒN (TBSG AGTECH)**  
-> - **Phiên bản hệ thống**: `v1.3.5 Core Release / v2.3.0 Enterprise Suite` (Build 19)  
-> - **Nền tảng vận hành**: Multi-Cloud / On-Premise NAS + Web App PWA (Offline-First) + Native Mobile App (Flutter Android & iOS)  
-> - **Linh vật & Nhận diện**: Bé Mầm 3D Chibi & Logo hình học chuẩn Tân Bảo AgTech  
-> - **Trạng thái kiểm định**: **141 / 141 Test Cases Đạt 100% (ISO/IEC 25010, ISO/IEC 29119, OWASP Top 10, VietGAP, Gallagher 8.30)**  
-> - **Trạng thái CI/CD**: 🟢 [Android APK & AAB Pipeline](https://github.com/Phuc0901-pp/plant-book/actions/workflows/build-apk.yml) | 🟢 [iOS IPA & OTA Pipeline](https://github.com/Phuc0901-pp/plant-book/actions/workflows/build-ios.yml)
+> **CÔNG TY TNHH CÔNG NGHỆ NÔNG NGHIỆP TÂN BẢO SÀI GÒN / CÔNG TY CỔ PHẦN TÂN BẢO SÀI GÒN (TBSG AGTECH)**  
+> - **Phiên bản hệ thống**: `v1.3.7 Core Release / v3.0 Enterprise Suite` (Build 21 · Commit baseline `3576c67`)  
+> - **Nền tảng vận hành**: Multi-Cloud / On-Premise NAS + Web App PWA 3 Cổng (Admin · Farmer · Public) + Native Mobile App (Flutter Android & iOS)  
+> - **Linh vật & Nhận diện**: Bé Mầm 3D Chibi & Biểu tượng Tân Bảo AgTech  
+> - **Trạng thái kiểm định**: **33 Test Suites · 222 / 222 Test Cases Đạt 100.0% (0 Failed · ~2.04s)**  
+> - **Tiêu chuẩn tuân thủ**: `ISO/IEC 25010` · `ISO/IEC 27001` · `ISO/IEC 29119` · `ISO/IEC 42001` · `ISO 22005` · `ISO 19115` · `VietGAP (TCVN 11892-1:2017)` · `GlobalG.A.P.` · `OWASP Top 10 & LLM Top 10`  
+> - **CI/CD & Quality Gate**: 🟢 [PostgreSQL 16 + Playwright CI](plant-app-deploy/.github/workflows/ci-quality-gate.yml) | 🟢 [Android APK/AAB](https://github.com/Phuc0901-pp/plant-book/actions/workflows/build-apk.yml) | 🟢 [iOS IPA](https://github.com/Phuc0901-pp/plant-book/actions/workflows/build-ios.yml)
 
 ---
 
 ## 📑 MỤC LỤC TỔNG QUAN
 
-1. [Tổng Quan & Đánh Giá Chất Lượng Theo Chuẩn Quốc Tế (ISO/IEC 25010)](#1-tổng-quan--đánh-giá-chất-lượng-theo-chuẩn-quốc-tế-isoiec-25010)
+1. [Tổng Quan, Chỉ Số Kỹ Thuật & Đánh Giá Chuẩn Quốc Tế](#1-tổng-quan--đánh-giá-chất-lượng-theo-chuẩn-quốc-tế-isoiec-25010)
 2. [Sơ Đồ Tư Duy Hệ Thống Toàn Diện (System Mindmap)](#2-sơ-đồ-tư-duy-hệ-thống-toàn-diện-system-mindmap)
 3. [Kiến Trúc Hệ Thống & Topology Đa Tầng (Enterprise Architecture)](#3-kiến-trúc-hệ-thống--topology-đa-tầng-enterprise-architecture)
 4. [Lưu Đồ Giải Thuật & Quy Trình Vận Hành Chuẩn SOP](#4-lưu-đồ-giải-thuật--quy-trình-vận-hành-chuẩn-sop)
@@ -23,46 +24,44 @@
    - [4.3 Lưu Đồ Giải Thuật Tự Động Đồng Bộ Ngoại Tuyến 2 Chiều (Offline-First Sync Engine)](#43-lưu-đồ-giải-thuật-tự-động-đồng-bộ-ngoại-tuyến-2-chiều-offline-first-sync-engine)
    - [4.4 Lưu Đồ Giải Thuật Khai Báo Cây Ma Trận Tự Tăng Hàng (Matrix Generator)](#44-lưu-đồ-giải-thuật-khai-báo-cây-ma-trận-tự-tăng-hàng-matrix-generator)
    - [4.5 Luồng Truy Xuất Nguồn Gốc Công Khai & Bảo Mật Bí Mật Kinh Doanh (Public QR Traceability)](#45-luồng-truy-xuất-nguồn-gốc-công-khai--bảo-mật-bí-mật-kinh-doanh-public-qr-traceability)
-   - [4.6 Luồng Tự Động Đóng Gói & Ký Số Di Động CI/CD (Android APK/AAB & iOS IPA Release Pipeline)](#46-luồng-tự-động-đóng-gói--ký-số-di-động-cicd-android-apkaab--ios-ipa-release-pipeline)
-5. [Cấu Trúc Tính Năng & Danh Mục Module Chi Tiết](#5-cấu-trúc-tính-năng--danh-mục-module-chi-tiết)
-   - [5.1 Phân Hệ Frontend Web PWA (16 Modules & Components)](#51-phân-hệ-frontend-web-pwa-16-modules--components)
-   - [5.2 Phân Hệ Backend Core & Micro-Services (15 Routes & Services)](#52-phân-hệ-backend-core--micro-services-15-routes--services)
-   - [5.3 Phân Hệ Native Mobile App Flutter (Android & iOS)](#53-phân-hệ-native-mobile-app-flutter-android--ios)
+   - [4.6 Luồng Tự Động Đóng Gói Di Động CI/CD (Android APK/AAB & iOS IPA Pipeline)](#46-luồng-tự-động-đóng-gói--ký-số-di-động-cicd-android-apkaab--ios-ipa-release-pipeline)
+5. [Cấu Trúc Tính Năng, Module & Các Phân Hệ Nâng Cao v3.0](#5-cấu-trúc-tính-năng--danh-mục-module-chi-tiết)
+   - [5.1 Phân Hệ Frontend Web PWA (55 Files JS · 3 Cổng · Cache-Busting & SmartAutoRefresh)](#51-phân-hệ-frontend-web-pwa-55-files-js--3-cổng)
+   - [5.2 Phân Hệ Backend Core, Services & Security Middlewares (23 Routes · 19 Services · 9 Middlewares)](#52-phân-hệ-backend-core-services--security-middlewares)
+   - [5.3 Phân Hệ Native Mobile App Flutter (60 Files Dart — Android & iOS)](#53-phân-hệ-native-mobile-app-flutter-60-files-dart--android--ios)
    - [5.4 Ma Trận Phân Quyền 4 Cấp Bậc (RBAC Matrix)](#54-ma-trận-phân-quyền-4-cấp-bậc-rbac-matrix)
+   - [5.5 Kiến Trúc An Ninh ISO/IEC 27001, AI Agent Bé Mầm v3, BI Tài Chính, GIS & Notification Hub](#55-kiến-trúc-an-ninh-isoiec-27001-ai-agent-v3-bi-tài-chính-gis--notification-hub)
 6. [Kiến Trúc Cơ Sở Dữ Liệu & Entity Relationship Diagram (ERD)](#6-kiến-trúc-cơ-sở-dữ-liệu--entity-relationship-diagram-erd)
    - [6.1 Sơ Đồ Quan Hệ Thực Thể Toàn Diện (ERD)](#61-sơ-đồ-quan-hệ-thực-thể-toàn-diện-erd)
    - [6.2 Thiết Kế Bảng, Khóa Ngoại & JSONB GIN Indexes](#62-thiết-kế-bảng-khóa-ngoại--jsonb-gin-indexes)
-   - [6.3 Lộ Trình Migrations (001 -> 004)](#63-lộ-trình-migrations-001---004)
-7. [Tài Liệu API Endpoints Toàn Diện (149+ REST APIs)](#7-tài-liệu-api-endpoints-toàn-diện-149-rest-apis)
+   - [6.3 Lộ Trình Migrations Đầy Đủ (20 Tệp SQL: 001 -> 019)](#63-lộ-trình-migrations-đầy-đủ-001---019)
+7. [Tài Liệu API Endpoints Toàn Diện (205 REST APIs)](#7-tài-liệu-api-endpoints-toàn-diện-205-rest-apis)
 8. [Hướng Dẫn Vận Hành Hệ Thống Theo Từng Vai Trò (SOP Manual)](#8-hướng-dẫn-vận-hành-hệ-thống-theo-từng-vai-trò-sop-manual)
-9. [Bộ Kiểm Thử Tự Động & Tiêu Chuẩn Nghiệm Thu QA/QC (141/141 PASS)](#9-bộ-kiểm-thử-tự-động--tiêu-chuẩn-nghiệm-thu-qaqc-141141-pass)
+9. [Bộ Kiểm Thử Tự Động & Tiêu Chuẩn Nghiệm Thu QA/QC (222/222 PASS — 33 Suites)](#9-bộ-kiểm-thử-tự-động--tiêu-chuẩn-nghiệm-thu-qaqc-222222-pass)
 10. [Hướng Dẫn Cài Đặt, Triển Khai & Vận Hành Hạ Tầng (DevOps)](#10-hướng-dẫn-cài-đặt-triển-khai--vận-hành-hạ-tầng-devops)
     - [10.1 Chạy Cục Bộ (Local Development)](#101-chạy-cục-bộ-local-development)
     - [10.2 Triển Khai Máy Chủ Synology NAS On-Premise (Docker Compose)](#102-triển-khai-máy-chủ-synology-nas-on-premise-docker-compose)
     - [10.3 Vận Hành Ứng Dụng Di Động (Android APK, Google Play AAB & iOS IPA)](#103-vận-hành-ứng-dụng-di-động-android-apk-google-play-aab--ios-ipa)
-    - [10.4 Triển Khai Multi-Cloud (PostgreSQL, Supabase, Cloudflare R2 / AWS S3)](#104-triển-khai-multi-cloud-postgresql-supabase-cloudflare-r2--aws-s3)
-11. [Định Hướng Kiến Trúc Mở Rộng: Hệ Thống Có Cần MCU và MCP Không?](#11-định-hướng-kiến-trúc-mở-rộng-hệ-thống-có-cần-mcu-và-mcp-không)
-    - [11.1 Phân Tích Nhu Cầu Phần Cứng Vi Điều Khiển MCU (Microcontroller Unit)](#111-phân-tích-nhu-cầu-phần-cứng-vi-điều-khiển-mcu-microcontroller-unit)
-    - [11.2 Phân Tích Nhu Cầu Chuẩn Giao Thức Trí Tuệ Nhân Tạo MCP (Model Context Protocol)](#112-phân-tích-nhu-cầu-chuẩn-giao-thức-trí-tuệ-nhân-tạo-mcp-model-context-protocol)
+    - [10.4 Triển Khai Multi-Cloud & Biến Môi Trường Production](#104-triển-khai-multi-cloud-postgresql-supabase-cloudflare-r2--aws-s3)
+11. [Định Hướng Kiến Trúc Mở Rộng: MCU (IoT) & MCP / ReAct Scale 10.000+ Users](#11-định-hướng-kiến-trúc-mở-rộng-hệ-thống-có-cần-mcu-và-mcp-không)
 
 ---
 
 ## 1. Tổng Quan & Đánh Giá Chất Lượng Theo Chuẩn Quốc Tế (ISO/IEC 25010)
 
-**Sổ Nông Nhàn (Plant Book AgTech ERP)** là nền tảng chuyển đổi số nông nghiệp toàn diện được nghiên cứu và phát triển bởi **Tân Bảo Sài Gòn (TBSG Agtech)**, phục vụ công tác định danh số hóa từng cây trồng lâu năm (Sầu riêng, Cà phê, Cao su, Bưởi, Ca cao...) và cây ăn quả giá trị cao theo chuỗi giá trị xuất khẩu chính ngạch.
+**Sổ Nông Tân Bảo (Plant Book AgTech ERP)** là nền tảng Agri-ERP toàn diện được phát triển bởi **Tân Bảo Sài Gòn (TBSG AgTech)**, số hóa vòng đời từng cá thể cây trồng (Sầu riêng, Bưởi, Cà phê, Xoài, Thanh long...) theo chuỗi giá trị truy xuất nguồn gốc và xuất khẩu chính ngạch.
 
-Hệ thống kết hợp sức mạnh của **Bản đồ số không gian GIS đa giác Polygon**, **Định danh điện tử kép (Thẻ cứng NFC RFID + Mã QR động)**, **Cơ chế nhật ký canh tác 6 nhóm VietGAP / GlobalGAP**, **Kho vật tư thông minh tự trừ tồn kho ERP**, cùng **Bộ đếm thời gian cách ly thuốc BVTV (PHI)** nhằm tạo lập hồ sơ nông sản minh bạch không thể làm giả.
+### 📊 Quy Mô Thực Tế & Đánh Giá Theo Chuẩn Quốc Tế
 
-### 📊 Bảng Đánh Giá Chất Lượng Kiến Trúc Theo ISO/IEC 25010
-
-| Tiêu chuẩn chất lượng | Mức độ đáp ứng | Đánh giá kiến trúc chi tiết |
+| Hạng mục / Tiêu chuẩn | Quy mô / Mức độ | Chi tiết kỹ thuật đã triển khai & kiểm chứng |
 | :--- | :---: | :--- |
-| **Tính Thích Ứng & Đa Nền Tảng (Portability)** | ⭐⭐⭐⭐⭐ **100%** | Web App PWA chạy trên mọi kích thước màn hình (Mobile, Tablet, Desktop) kết hợp Native Mobile App (Flutter Android & iOS) mang nhận diện icon Bé Mầm 3D Chibi Tân Bảo. |
-| **Độ Tin Cậy & Ngoại Tuyến (Reliability)** | ⭐⭐⭐⭐⭐ **100%** | Kiến trúc **Offline-First** với `IndexedDB` và `Service Worker` cho phép nông dân ghi chép ngoài vườn sâu khi mất sóng 4G/Wifi. Tự động đồng bộ 2 chiều khi có mạng. |
-| **Hiệu Năng & Tối Ưu Tải (Performance)** | ⭐⭐⭐⭐⭐ **99.8%** | Backend tích hợp cơ chế **Singleflight** triệt tiêu duplicate requests, bộ đệm **In-Memory RAM Cache** phản hồi dưới 50ms, **GIN Indexes** trên trường JSONB PostgreSQL. |
-| **Bảo Mật & Toàn Vẹn (Security OWASP)** | ⭐⭐⭐⭐⭐ **100%** | 100% Parameterized SQL Queries chống SQLi, Anti-Scraper & Rate Limiting đa tầng, mã hóa JWT Secret, phân quyền RBAC Farm Multi-tenancy Scope bảo mật dữ liệu tài chính. |
-| **Khả Năng Bảo Trì (Maintainability)** | ⭐⭐⭐⭐⭐ **100%** | Cấu trúc Modular ES6+ với 16 modules frontend độc lập, SSOT Single Source of Truth, hệ thống test suite tự động 141 kịch bản không phụ thuộc bên thứ ba. |
-| **Tuân Thủ Chuẩn Nông Nghiệp (Compliance)** | ⭐⭐⭐⭐⭐ **100%** | Kiểm soát 6 nhóm nhật ký VietGAP, khóa an toàn thời gian cách ly thuốc BVTV (PHI), cấp mã truy xuất nguồn gốc lô hàng theo định dạng `[PUC]-[YYYYMMDD]-[Code]`. |
+| **Backend API Architecture** | **23 Modules · 205 Endpoints** | Express.js phân tầng (`routes/plants/` tách module `core`, `media-logs`, `nfc`, `public`, `helpers`), `19` core services, `9` security/ops middlewares. |
+| **Cơ Sở Dữ Liệu PostgreSQL** | **20 SQL Migrations** | `001`–`019` đồng bộ `init.js`; Hash-chain SHA-256 nhật ký (`withFarmHashChainLock`), GIN JSONB Index, Soft-delete (`deleted_at IS NULL`), `SAVEPOINT` offline sync. |
+| **Frontend Web & Mobile** | **55 Web JS · 60 Dart** | 3 cổng Web (`18` Admin JS, `26` Farmer JS, `11` Public JS) biên dịch SSOT qua `build-html.js` kèm **SHA-256 content-hash cache-busting**; Flutter Offline-First (Hive AES-256). |
+| **ISO/IEC 27001 & OWASP** | ⭐⭐⭐⭐⭐ **Zero-Trust 5 Lớp** | TOTP MFA (RFC 6238 + AES-256-GCM vault), `adminIpGuard` (IP/CIDR), `dlpAntiExfiltration` (tự thu hồi `token_version`), Admin JWT 30p + `HttpOnly; SameSite=Strict` cookie, CSP, 1-Cây-1-Thẻ NFC HMAC-SHA256, khóa cập nhật GPS công khai (`403`). |
+| **AI Agent (ISO/IEC 42001)** | ⭐⭐⭐⭐⭐ **Bé Mầm v3 ReAct** | Gemini Native Function Calling (`7` tools DB/Kho/Thời tiết/PHI/Calculator/KB), vấn đáp 3 bước, ẩn danh PII, DLP đầu ra, AES-256-GCM, Biosecurity/PHI Post-Verifier, RateLimiter + Bulkhead + CircuitBreaker + L0 Cache. |
+| **Hiệu Năng & Quan Trắc** | ⭐⭐⭐⭐⭐ **High-Resilience** | `singleflight.js`, Redis + RAM cache, `SmartAutoRefresh` không giật lag (60s + `requestIdleCallback` + giữ scroll), OpenMetrics `/metrics`, APM `p50/p95/p99`, k6 200-VU gate. |
+| **Kiểm Định Tự Động (QA)** | ⭐⭐⭐⭐⭐ **222 / 222 PASSED** | **33 suites** unit/integration tests + PostgreSQL 16 & Playwright Chromium CI (`0` lỗi, `337` file sạch `0` comment rác). |
 
 ---
 
@@ -404,86 +403,40 @@ sequenceDiagram
 
 ## 5. Cấu Trúc Tính Năng & Danh Mục Module Chi Tiết
 
-### 5.1 Phân Hệ Frontend Web PWA (16 Modules & Components)
+### 5.1 Phân Hệ Frontend Web PWA (55 Files JS · 3 Cổng)
 
-Toàn bộ giao diện người dùng được xây dựng theo kiến trúc **Module ES6+ Native** tải siêu tốc dưới 0.1s, không qua đóng gói cồng kềnh, hoạt động mượt mà trên cả trình duyệt máy tính và màn hình cảm ứng di động:
+Giao diện chia thành 3 cổng độc lập (**Admin** · **Farmer `/user`** · **Public**), biên dịch từ template qua `backend/scripts/build-html.js` và tự động gắn **SHA-256 content-hash cache-busting** (`?v=v1.3.7-<hash8>`) cho mọi JS/CSS nội bộ:
 
-| STT | Tên Module Frontend | Tệp Nguồn | Chức Năng Chính & Nghiệp Vụ |
-| :---: | :--- | :--- | :--- |
-| 1 | **Core API Bridge** | `core/api.js` | Giao tiếp RESTful API, tự động gắn JWT Token vào Header, điều hướng lỗi 401 về trang login |
-| 2 | **Shared Utilities** | `core/utils.js` | Format ngày giờ Việt Nam, chuyển đổi diện tích thông minh (m² $\rightarrow$ ha), Smart Crop Fallback |
-| 3 | **Offline DB Engine** | `core/offline-db.js` | Quản trị IndexedDB (`tanbao_offline_db`), lưu cache danh mục cây, lô, vật tư và hàng đợi outbox |
-| 4 | **Offline Sync Engine** | `core/offline-sync.js` | Bắt sự kiện Online/Offline, tự động quét hàng đợi đẩy lên Cloud, giải quyết xung đột dữ liệu |
-| 5 | **Router Controller** | `core/router.js` | Điều hướng SPA không tải lại trang, bảo vệ route theo vai trò phân quyền |
-| 6 | **Plants & Matrix Controller** | `modules/plants.js` | Quản lý danh sách cây, ma trận phân lô/hàng, album sinh trưởng Append-Only, ERP profile |
-| 7 | **Care & VietGAP Controller** | `modules/care-modal.js` | Modal ghi nhật ký 6 nhóm VietGAP, tính toán đếm ngược PHI, watermark camera canvas |
-| 8 | **Farming Logs Manager** | `modules/logs.js` | Danh sách lịch sử canh tác, lọc đa tiêu chí, xóa mềm/xóa cứng có lưu vết audit |
-| 9 | **Spatial GIS Map Controller** | `modules/map.js` | Bản đồ vệ tinh Leaflet/Mapbox, vẽ đa giác Polygon, marker GPS màu sức khỏe, popup chi tiết |
-| 10 | **Hardware NFC Manager** | `modules/nfc.js` | Tích hợp Web NFC API, quét thẻ RFID phần cứng, gán thẻ cây trồng chống trùng lặp |
-| 11 | **Supplies & Inventory** | `modules/supplies.js` | Quản lý kho phân bón/thuốc, trừ tồn kho tự động, cấu hình thời gian cách ly PHI |
-| 12 | **Cost Accounting** | `modules/costs.js` | Báo cáo chi phí phân bón, tiền nước, thuốc BVTV, nhân công theo gốc cây và toàn vườn |
-| 13 | **Weather Clock Engine** | `modules/weather-clock.js` | Dự báo thời tiết vệ tinh Open-Meteo, biểu đồ 24h, chỉ số bốc thoát hơi nước ET0 |
-| 14 | **Chibi Mascot Engine** | `modules/mascot-chibi.js` | Linh vật Bé Mầm Chibi 3D tương tác, kéo thả màn hình, biểu cảm đồng bộ thời tiết |
-| 15 | **Export VietGAP Logs** | `modules/export_logs.js` | Xuất sổ ký điện tử VietGAP ra tệp Excel / CSV định dạng chuẩn cơ quan thanh tra nông nghiệp |
-| 16 | **Feature Walkthrough** | `modules/feature_walkthrough.js` | Trợ lý hướng dẫn sử dụng tương tác từng bước cho nông dân và nhân công mới |
+| Cổng / Nhóm | Tệp Tiêu Biểu | Chức Năng Chính & Nghiệp Vụ |
+| :--- | :--- | :--- |
+| **Farmer PWA Core (`user/js/core/`)** | `api.js`, `utils.js`, `offline-db.js`, `offline-sync.js`, `router.js` | Giao tiếp RESTful kèm Single-Flight token refresh, IndexedDB Offline-First Outbox sync, điều hướng SPA & deep-link URL |
+| **Farmer Modules (`user/js/modules/`)** | `plants.js`, `plants-profile-erp.js`, `plants-iot-weather.js`, `care-modal.js`, `logs.js`, `map.js`, `nfc.js`, `reminders.js`, `notifications.js`, `weather-clock.js`, `mascot-chibi.js` | Quản lý cây ma trận, hồ sơ ERP 4 tab, nhật ký 7 nhóm Chibi ISO + PHI + ảnh Watermark, bản đồ GIS + đồng mức mượt, Web NFC 1-Cây-1-Thẻ, Chuông thông báo 4 nhạc chuông Web Audio |
+| **Admin Portal (`admin/js/`)** | `app.js`, `auth.js`, `dashboard.js`, `gis.js`, `gis-export.js`, `gis-gps-tools.js`, `plants.js`, `database.js`, `users.js`, `devices.js`, `ai-training.js`, `notifications.js`, `websocket.js` | Dashboard điều hành, MFA TOTP QR modal, GIS vẽ polygon WGS 84 (`ensureDrawLayersOnTop`) & đồng mức 1m/2m/5m, xuất bản vẽ A4, AI Training Studio, Thanh tra CSDL & WebSocket Real-time |
+| **Shared Public & BI (`public/js/`)** | `bi-analytics-widget.js`, `i18n-engine.js`, `smart-auto-refresh.js`, `plant.js`, `plant-nfc-gateway.js`, `report.js`, `sub-gateway.js`, `sub-gps-engine.js` | **BI Tài chính lọc theo Farm & Năm**, i18n VI/EN/ZH (`₫/USD/CNY`), **SmartAutoRefresh 60s không giật lag**, trang truy xuất công khai (`/plant/:slug` — đã khóa cập nhật GPS), cổng `/sub` gán thẻ nhanh |
 
 ---
 
-### 5.2 Phân Hệ Backend Core & Micro-Services (15 Routes & Services)
+### 5.2 Phân Hệ Backend Core, Services & Security Middlewares
 
-Backend được phát triển trên nền tảng **Node.js & Express**, kết hợp cơ sở dữ liệu **PostgreSQL Enterprise** với kiến trúc đa tầng chịu tải cao:
+Backend **Node.js & Express** gồm **23 file routes** (**205 endpoints**), **19 services** và **9 security/telemetry middlewares**:
 
-| STT | Tên Module Backend | Tệp Nguồn | Chức Năng Chính & Nghiệp Vụ |
-| :---: | :--- | :--- | :--- |
-| 1 | **Auth & Account Route** | `routes/auth.js` | Đăng ký, đăng nhập JWT, đổi mật khẩu, xác thực phiên làm việc đa trang trại |
-| 2 | **Plants & Matrix Route** | `routes/plants.js` | 149+ endpoints: CRUD cây, ma trận hàng loạt, album sinh trưởng, media, QR công khai |
-| 3 | **Farms & GIS Route** | `routes/farms.js` | Quản lý nông trại, tính toán ranh giới polygon, quản lý danh mục Lô (Plots) |
-| 4 | **Supplies & Inventory Route** | `routes/supplies.js` | Kho vật tư nông nghiệp, trừ tồn kho tự động, cấu hình số ngày cách ly PHI |
-| 5 | **Costs & Finance Route** | `routes/costs.js` | Báo cáo chi phí phân bón, thuốc BVTV, tiền nước, nhân công bóc tách theo quyền |
-| 6 | **Users & RBAC Route** | `routes/users.js` | Quản trị người dùng, phân cấp quyền hạn Admin / User Pro / User Normal |
-| 7 | **History & Audit Route** | `routes/history.js` | Nhật ký kiểm toán thao tác hệ thống (Audit Trail) phục vụ thanh tra VietGAP |
-| 8 | **Database Diagnostic Route**| `routes/database.js` | Kiểm tra tình trạng kết nối CSDL, thống kê bản ghi, kiểm tra tính toàn vẹn bảng |
-| 9 | **Storage Service** | `services/storageService.js` | Lưu trữ tệp đa nền tảng (Supabase Storage / Cloudflare R2 / AWS S3 / Local Disk) |
-| 10 | **Singleflight Dedup Service**| `services/singleflight.js` | Khử trùng lặp các yêu cầu truy vấn đồng thời, bảo vệ CPU và Database khi nghẽn mạng |
-| 11 | **EventBus & Cache Service**| `services/eventBus.js` | Phát tín hiệu vô hiệu hóa bộ đệm RAM Cache khi dữ liệu cây hoặc trang trại thay đổi |
-| 12 | **Agri-Reminder Service** | `services/agriReminder.js` | Thuật toán thông minh tính lịch nhắc việc tưới cây, bón phân, kiểm tra sâu bệnh |
-| 13 | **NFC Security Service** | `services/nfcSecurityService.js` | Xác thực tính hợp lệ của mã thẻ NFC RFID, ngăn chặn nhân bản thẻ giả |
-| 14 | **Weather Satellite Service**| `services/weatherService.js` | Đồng bộ khí tượng Open-Meteo, tính toán chỉ số ET0 nông học |
-| 15 | **Security Middlewares** | `middleware/` | `antiScraper.js`, `userRateLimiter.js`, `auth.js`, `admin.js`, `checkTier.js` |
+| Thành Phần | Tệp Nguồn Chính | Chức Năng & Nghiệp Vụ Cốt Lõi |
+| :--- | :--- | :--- |
+| **Routes API (`routes/`)** | `auth.js`, `farms.js`, `plants/{core,media-logs,nfc,public,helpers}.js`, `supplies.js`, `analytics.js`, `ai.js`, `ai_training.js`, `notifications.js`, `devices.js`, `database.js`, `users.js`, `history.js`, `costs.js`, `config.js`, `schemas.js`, `version.js`, `diagnostics.js` | 205 REST endpoints bảo vệ bằng JWT/RBAC, phân tách luồng cây/nhật ký/NFC/công khai, audit chuẩn hóa diện tích farm `POST /api/farms/audit-normalize-areas`, khóa `POST /public/:slug/gps` (`403`) |
+| **AI Agent v3 & RAG (`services/`)** | `aiAgentSecurity.js`, `beMamAgentTools.js`, `beMamAgentEngine.js` | **Native Gemini Function Calling** (7 tools), AES-256-GCM payload crypto, PII Redactor, Indirect Injection Guard, Output DLP, Biosecurity/PHI Post-Verifier, `AgentRateLimiter`, `AgentBulkhead`, `ModelCircuitBreaker`, L0 Semantic Cache |
+| **Core ERP & Realtime (`services/`)** | `reportQueryService.js`, `unitConversionService.js`, `rbacScopeService.js`, `notificationDispatcher.js`, `nfcSecurityService.js`, `auditLogger.js`, `weatherService.js`, `agriReminder.js`, `storageService.js`, `singleflight.js`, `eventBus.js`, `queueService.js`, `apmMetricsService.js`, `totpMfaService.js`, `zaloService.js`, `emailService.js` | Truy vấn báo cáo ISO 22005, quy đổi đơn vị & kiểm toán diện tích polygon `computePolygonAreaM2`, Notification Hub đa kênh (batch 60s + Quiet Hours), NFC HMAC-SHA256, OpenMetrics `/metrics`, TOTP MFA |
+| **Security Middlewares (`middleware/`)** | `auth.js`, `admin.js`, `adminIpGuard.js`, `dlpAntiExfiltration.js`, `antiScraper.js`, `userRateLimiter.js`, `checkTier.js`, `errorHandler.js` | Xác thực `HttpOnly` cookie + Bearer JWT, IP/CIDR allowlist Admin, DLP chặn rút trích hàng loạt (`token_version++`), chống scraper & giới hạn tần suất |
 
 ---
 
-### 5.3 Phân Hệ Native Mobile App Flutter (Android & iOS)
+### 5.3 Phân Hệ Native Mobile App Flutter (60 Files Dart — Android & iOS)
 
-Ứng dụng di động độc lập được thiết kế theo cấu trúc phân tầng hiện đại (**UI Layer $\rightarrow$ State/Service Layer $\rightarrow$ Data Model Layer**):
+Ứng dụng Flutter trong `mobile_app/` gồm **60 tệp `.dart`** thiết kế Offline-First đồng bộ với Web ERP:
 
-```
-mobile_app/
-├── android/                   # Khung ứng dụng native Android
-│   ├── app/src/main/res/      # 25 file icon chuẩn (mipmap-mdpi đến xxxhdpi)
-│   │   ├── mipmap-*/ic_launcher.png       # Icon vuông Bé Mầm Tân Bảo
-│   │   └── mipmap-*/ic_launcher_round.png # Icon tròn Bé Mầm Tân Bảo
-│   └── key.properties         # Cấu hình chứng chỉ ký số TBSG Agtech
-├── ios/                       # Khung ứng dụng native iOS
-│   ├── Runner/Assets.xcassets/AppIcon.appiconset/ # Bộ Icon iOS 20pt -> 1024pt
-│   └── manifest.plist         # Cấu hình Apple OTA In-House Wireless Install
-├── lib/
-│   ├── components/            # Widget tái sử dụng: FarmCard, PlantCard, Loading
-│   ├── models/                # Thực thể dữ liệu: Farm, Plant, Log, Supply
-│   ├── pages/
-│   │   ├── auth/login_page.dart           # Màn hình đăng nhập bảo mật
-│   │   ├── admin/admin_dashboard_page.dart # Bảng điều khiển quản trị viên
-│   │   └── user/
-│   │       ├── user_dashboard_page.dart    # Danh mục vườn & thời tiết
-│   │       ├── user_farm_detail_page.dart  # Chi tiết trang trại & GIS Map
-│   │       └── user_plant_detail_page.dart # Hồ sơ cây & ghi nhật ký VietGAP
-│   ├── services/
-│   │   ├── api_service.dart       # Giao tiếp HTTP với Backend Node.js
-│   │   └── geo_fence_service.dart # Định vị GPS & kiểm soát phạm vi nông trại
-│   └── utils/theme.dart       # Hệ thống màu sắc thương hiệu Fluent 2 & TBSG
-├── deploy_adb.ps1 / .sh       # Kịch bản cài đặt tự động 1-click qua cáp USB ADB
-└── deploy_ios.ps1             # Kịch bản hướng dẫn cài đặt iOS qua Sideloadly / TestFlight
-```
+- **Bảo mật & Kho cục bộ:** Mã hóa **AES-256 Hive Vault** (`encrypted_hive_service.dart`), **HMAC-SHA256 NTAG213** (`crypto_security_service.dart`), RBAC 4 vai trò (`rbac_policy.dart`), khóa API bảo mật trong `FlutterSecureStorage`.
+- **Đồng bộ 2 chiều nguyên tử:** `offline_sync_service.dart` gửi batch log về `/api/plants/offline-batch-sync` dùng `SAVEPOINT` PostgreSQL; hỗ trợ đồng bộ nền và cảnh báo PHI / vật tư hết hạn giống hệt Web.
+- **Thông báo Real-time & Đa kênh:** `notification_service.dart` tích hợp `flutter_local_notifications` với **2 kênh Android riêng biệt** (Cảnh báo vận hành & Khẩn cấp), kết nối WebSocket Bearer JWT và màn hình `alerts_page.dart` (2 tab: *Thông báo* & *Luật cảnh báo*).
+- **Vận hành thực địa:** Đọc/ghi NFC NDEF URI (`0x01`–`0x04`), bản đồ định vị GPS (`geo_fence_service.dart`), nhật ký Chibi 7 nhóm, Carbon MRV & xuất báo cáo tiếng Việt (`vi_VN`).
 
 ---
 
@@ -501,6 +454,30 @@ mobile_app/
 | **Xuất báo cáo Sổ Ký Điện Tử VietGAP** | ✅ (Mọi nông trại) | ✅ (Trang trại sở hữu) | ❌ | ❌ |
 | **Tác nghiệp Ngoại tuyến PWA (Offline-First)**| ✅ | ✅ | ✅ | ❌ |
 | **Quản trị tài khoản & Cấu hình máy chủ CSDL**| ✅ | ❌ | ❌ | ❌ |
+
+### 5.5 Kiến Trúc An Ninh ISO/IEC 27001, AI Agent v3, BI Tài Chính, GIS & Notification Hub
+
+- **An Ninh Zero-Trust 5 Lớp (`ISO/IEC 27001`):**
+  1. **TOTP MFA (`totpMfaService.js`):** Xác thực 2 lớp RFC 6238 chuẩn Google/Microsoft Authenticator, khóa bí mật mã hóa **AES-256-GCM**, hỗ trợ **Session Kill-Switch** (`token_version++` thu hồi toàn bộ phiên cũ).
+  2. **Admin IP Guard (`adminIpGuard.js`):** Lọc IP/CIDR cho luồng quản trị (`/api/admin`, `/api/database`, `/api/users`) thông qua biến `ADMIN_IP_ALLOWLIST`.
+  3. **DLP Anti-Exfiltration (`dlpAntiExfiltration.js`):** Giám sát xuất dữ liệu hàng loạt, ghi bảng `security_incidents` và tự động vô hiệu hóa phiên bất thường.
+  4. **Session & Transport Hardening:** Admin JWT thời hạn 30 phút đi kèm `HttpOnly; SameSite=Strict` cookie, header CSP chặt chẽ (`worker-src 'self' blob:;` tương thích MapboxDraw), và UI guard thân thiện môi trường dev/prod.
+  5. **NFC & Public GPS Guard:** Ký xác thực thẻ cứng bằng **HMAC-SHA256** (`NFC_HMAC_SECRET`), khóa endpoint `POST /public/:slug/gps` (`403 PUBLIC_GPS_UPDATE_LOCKED`) để không cho người xem trang công khai tự ý ghi đè tọa độ cây.
+
+- **AI Agent Bé Mầm v3 (`ai.js`, `beMamAgentTools.js`, `aiAgentSecurity.js`):**
+  - Chuyển sang **Gemini Native Function Calling** (tối đa 3 vòng ReAct, timeout 20s/vòng) với `systemInstruction` tách biệt và **7 tools đọc dữ liệu thật** (`get_farm_overview`, `get_plant_dossier`, `get_care_history`, `check_supply_inventory`, `get_farm_weather_forecast`, `calculate_agro_dosage`, `search_agronomy_kb`), mỗi query DB bị giới hạn `statement_timeout = 3s`.
+  - **Bảo mật & Mã hóa AI:** `encryptAgentPayload`/`decryptAgentPayload` (AES-256-GCM), `redactPiiForLlm` ẩn danh SĐT/Email tiếng Việt/CCCD/JWT/API Key trước khi gửi LLM, `sanitizeUntrustedDbText` chống indirect injection từ ghi chú DB, `scanAndSanitizeAgentOutput` chống lộ secret, và `verifyAgronomySafetyReply` tự nhắc cách ly 10–15 ngày vi sinh / cảnh báo PHI quarantine.
+  - **Chịu tải cao & Tối ưu băng thông:** `AgentRateLimiter` (theo gói `normal`/`pro`/`admin`), `AgentBulkhead` (`maxConcurrent: 25`), `ModelCircuitBreaker` (xoay vòng `gemini-2.5-pro` ↔ `gemini-2.5-flash`), `L0 Semantic Cache`, `trimHistoryToBudget` và `compactToolPayload`.
+
+- **BI Tài Chính Theo Farm & Chuẩn Hóa Diện Tích (`analytics.js`, `bi-analytics-widget.js`, `unitConversionService.js`):**
+  - Giao diện BI hỗ trợ chọn trực tiếp **Trang trại (`?farm_id=...`)** và **Năm (`?year=...`)** kèm nhãn phạm vi `#bi-scope-badge`, tab **Ma trận ROI theo Lô** hiển thị cột **Trang trại** bấm lọc nhanh 1 chạm; backend tách riêng key `singleflight` theo `farm_id`/`year` và chặn rò rỉ chi phí `su.farm_id IS NULL`.
+  - `auditAndNormalizeFarmArea` và endpoint `POST /api/farms/audit-normalize-areas` tự động phát hiện/khắc phục các farm nhập nhầm `ha` vào `m²`, diện tích outlier bất thường hoặc thiếu `area` so với đa giác polygon (`computePolygonAreaM2`), bảo vệ chỉ số `/ha` trên BI luôn chính xác.
+
+- **GIS & Bản Đồ Số (`gis.js`, `gis-export.js`, `geoIsoValidator.js`):**
+  - Chuẩn hóa thứ tự GeoJSON WGS 84 `[lng, lat]`, giữ lớp vẽ `gl-draw-*` luôn nằm trên lớp vệ tinh (`ensureDrawLayersOnTop`), đếm đúng số cây active (`COUNT(DISTINCT p.id)` + đồng bộ `total_plants` khi xóa/khôi phục cây), và nội suy đường đồng mức địa hình mượt mà (Chaikin 2 lượt, `exaggeration: 1.0`, bước thích ứng `1m/2m/5m`).
+
+- **Multi-Platform Notification Hub (`notificationDispatcher.js`):**
+  - Gom nhóm thông báo 60 giây, tôn trọng Quiet Hours, phát sự kiện riêng biệt theo quyền WebSocket, 4 nhạc chuông Web Audio trên Web và 2 kênh thông báo Android trên Flutter.
 
 ---
 
@@ -665,76 +642,31 @@ ON plant_media (plant_id, uploaded_at DESC);
 
 ---
 
-### 6.3 Lộ Trình Migrations (001 -> 004)
+### 6.3 Lộ Trình Migrations Đầy Đủ (`001` -> `019`, Tổng 20 Tệp SQL)
 
-* **`001_initial_schema.sql`**: Thiết lập cấu trúc người dùng, nông trại, cây trồng, nhật ký và cấu hình hệ thống ban đầu.
-* **`002_vietgap_and_supplies.sql`**: Bổ sung kho vật tư `farm_supplies`, trường mã số vùng trồng `puc_code`, số ngày cách ly `phi_days`, cờ cảnh báo `is_phi_violation`, mã lô `harvest_batch_code`.
-* **`003_gin_and_performance_indexes.sql`**: Kích hoạt chỉ mục GIN, Composite Index và Spatial Index cho khối lượng dữ liệu lớn.
-* **`004_matrix_plots_and_growth_media.sql`**: Bổ sung bảng `farm_plots`, hỗ trợ tách Lô & Hàng ma trận, tối ưu hóa lưu trữ ảnh sinh trưởng Append-Only.
+| Nhóm Migration | Danh Sách Tệp | Phạm Vi Cấu Trúc CSDL |
+| :--- | :--- | :--- |
+| **Core ERP & VietGAP (`001`–`005`)** | `001_initial_schema.sql`, `002_vietgap_and_supplies.sql`, `003_gin_and_performance_indexes.sql`, `004_nfc_inventory_and_public_url.sql`, `005_nfc_security_and_geofence.sql`, `005_plant_logs_soft_delete.sql` | Bảng cốt lõi `users`, `farms`, `plants`, `plant_logs`, `supplies`, `supply_usages`; JSONB GIN indexes; `nfc_tags_inventory` 1-Cây-1-Thẻ; Geofence & soft-delete logs |
+| **AI Studio, ISO & Carbon (`006`–`011`)** | `006_ai_training_and_knowledge_base.sql`, `007_gallagher_api_iso27001.sql`, `008_utf8_and_hashchain_optimization.sql`, `009_enterprise_iso_hardening.sql`, `010_phase2_optimization_and_vault.sql`, `011_iso_19115_gps_gis_hardening.sql` | Kho tri thức & Q&A Bé Mầm; `farm_api_keys` & `audit_logs`; Hash-Chain SHA-256 `record_hash`; chuẩn hóa GIS/GPS ISO 19115 & mật khẩu/UTF-8 |
+| **Enterprise Security, WMS & Telemetry (`012`–`019`)** | `012_enterprise_cleanup_and_security.sql`, `013_be_mam_agent_encyclopedia_seed.sql`, `014_security_hardening_and_saved_reports.sql`, `015_erp_subaccount_wms_and_hardening.sql`, `016_iso_schema_parity_and_perf.sql`, `017_signed_pdf_registry.sql`, `018_admin_zero_trust_security.sql`, `019_notification_hub_multichannel.sql` | Seed bách khoa nông học; báo cáo đã lưu; phân quyền 4 sub-role + moving-avg WMS; parity schema; bảng `totp_mfa` & `security_incidents` (ISO 27001); bảng `user_notifications` & `notification_preferences` |
 
 ---
 
-## 7. Tài Liệu API Endpoints Toàn Diện (149+ REST APIs)
+## 7. Tài Liệu API Endpoints Toàn Diện (205 REST APIs)
 
-Hệ thống cung cấp hơn **149 RESTful API Endpoints** được bảo vệ bởi Gateway Rate Limiter và xác thực JWT:
+Hệ thống cung cấp **205 RESTful API Endpoints** phân bổ qua **23 route files**, bảo vệ bởi Rate Limiter, DLP Anti-Exfiltration, Admin IP Allowlist và JWT RBAC:
 
-### 🔐 7.1 Authentication & Quản Lý Phiên
-| Method | Endpoint | Quyền hạn | Mô tả chức năng |
+| Phân Hệ | Endpoints Tiêu Biểu | Quyền Hạn | Mô Tả Chính |
 | :--- | :--- | :---: | :--- |
-| `POST` | `/api/auth/login` | Public | Đăng nhập hệ thống, trả về JWT Token thời hạn 24h kèm thông tin vai trò |
-| `POST` | `/api/auth/register` | Public | Đăng ký tài khoản nông hộ mới |
-| `GET` | `/api/auth/me` | User / Admin | Lấy thông tin tài khoản hiện tại, vai trò, gói dịch vụ và trang trại phụ trách |
-| `PUT` | `/api/auth/profile` | User / Admin | Cập nhật họ tên, số điện thoại, ảnh đại diện nông hộ |
-| `PUT` | `/api/auth/change-password` | User / Admin | Đổi mật khẩu tài khoản |
-
-### 🌱 7.2 Quản Lý Cây Trồng & Ma Trận (Plants & Matrix Engine)
-| Method | Endpoint | Quyền hạn | Mô tả chức năng |
-| :--- | :--- | :---: | :--- |
-| `GET` | `/api/plants` | User / Admin | Lấy danh sách cây trồng (User: giới hạn trong trang trại phụ trách) |
-| `GET` | `/api/plants/:id` | User / Admin | Lấy chi tiết hồ sơ cây, kèm lịch sử sinh trưởng, media và nhật ký canh tác |
-| `POST` | `/api/plants` | User Pro / Admin | Khởi tạo 1 cây trồng đơn lẻ kèm tọa độ GPS và phân lô/hàng |
-| `POST` | `/api/plants/batch-range` | User Pro / Admin | **Tạo cây hàng loạt theo Ma trận:** Tự động sinh mã cây, gán Lô chung & tăng số Hàng |
-| `PUT` | `/api/plants/:id` | User Pro / Admin | Cập nhật thông số nông học, giống cây, năm trồng, trạng thái sức khỏe |
-| `DELETE` | `/api/plants/:id` | Admin | Xóa mềm cây trồng (Lưu vết phục hồi trong Audit Log) |
-| `POST` | `/api/plants/:id/restore` | Admin | Khôi phục cây trồng đã xóa mềm |
-| `GET` | `/api/plants/markers` | User / Admin | Trả về danh sách tọa độ thu gọn siêu nhẹ phục vụ vẽ Marker trên bản đồ GIS |
-| `GET` | `/api/plants/:id/growth-photos` | User / Admin | **Chỉ lấy Album ảnh sinh trưởng định kỳ** (Loại trừ ảnh/video bệnh cây) |
-| `GET` | `/api/plants/:id/disease-media` | User / Admin | **Lấy danh mục ảnh & video bệnh cây** phục vụ hồ sơ cảnh báo bệnh học |
-| `POST` | `/api/plants/:id/growth-photo` | User / Admin | **Tải ảnh sinh trưởng mới (Append-Only):** Tự động cập nhật `cover_image` |
-
-### 📝 7.3 Nhật Ký Canh Tác VietGAP & Cách Ly PHI (Farming Logs & Compliance)
-| Method | Endpoint | Quyền hạn | Mô tả chức năng |
-| :--- | :--- | :---: | :--- |
-| `GET` | `/api/plants/:id/logs` | User / Admin | Lấy toàn bộ dòng thời gian canh tác của cây theo thứ tự thời gian mới nhất |
-| `POST` | `/api/plants/:id/logs` | User / Admin | Ghi nhật ký chăm sóc (Tự trừ tồn kho, tính tiền nước m³ & đếm ngược PHI) |
-| `DELETE` | `/api/plants/:id/logs/:logId` | Admin | Xóa nhật ký canh tác (Ghi log kiểm toán thao tác thanh tra) |
-| `GET` | `/api/plants/:id/export-vietgap` | User / Admin | Xuất dữ liệu nhật ký canh tác ra tệp Excel chuẩn VietGAP |
-| `GET` | `/plant/:slug` | Public | Trang hồ sơ nông sản công khai phục vụ quét tem mã QR dán trên quả |
-
-### 📦 7.4 Quản Lý Vật Tư & Chi Phí Agri-ERP (Supplies & Costs)
-| Method | Endpoint | Quyền hạn | Mô tả chức năng |
-| :--- | :--- | :---: | :--- |
-| `GET` | `/api/supplies` | User / Admin | Lấy danh mục vật tư trong kho (Phân bón, Thuốc BVTV, Nước, Nhân công) |
-| `POST` | `/api/supplies` | User Pro / Admin | Thêm mới vật tư vào kho, định nghĩa đơn giá và số ngày cách ly PHI |
-| `PUT` | `/api/supplies/:id` | User Pro / Admin | Cập nhật đơn giá, số lượng tồn kho và thông số kỹ thuật |
-| `DELETE` | `/api/supplies/:id` | Admin | Xóa vật tư khỏi danh mục kho |
-| `GET` | `/api/costs/summary` | User Pro / Admin | Báo cáo phân tích tổng chi phí đầu tư theo cây, theo lô và theo mùa vụ |
-
-### 🏡 7.5 Nông Trại & Không Gian GIS (Farms & Spatial GIS)
-| Method | Endpoint | Quyền hạn | Mô tả chức năng |
-| :--- | :--- | :---: | :--- |
-| `GET` | `/api/farms` | User / Admin | Lấy danh sách nông trại kèm tọa độ ranh giới Polygon |
-| `POST` | `/api/farms` | User Pro / Admin | Khởi tạo nông trại mới, vẽ ranh giới đất và cấp mã số vùng trồng PUC |
-| `PUT` | `/api/farms/:id` | User Pro / Admin | Chỉnh sửa thông tin nông trại hoặc cập nhật lại đa giác ranh giới |
-| `GET` | `/api/plants/farms/:farmId/plots` | User / Admin | Lấy danh sách phân Lô và số hàng trong trang trại |
-| `DELETE` | `/api/farms/:id` | Admin | Xóa nông trại |
-
-### 🏷️ 7.6 Định Danh Phần Cứng NFC RFID (NFC Hardware Bridge)
-| Method | Endpoint | Quyền hạn | Mô tả chức năng |
-| :--- | :--- | :---: | :--- |
-| `POST` | `/api/nfc/assign` | User / Admin | Gán mã thẻ cứng RFID NFC cho cây trồng (Kiểm tra chống trùng lặp) |
-| `GET` | `/api/nfc/farm/:farmId/tags` | User / Admin | Lấy danh sách toàn bộ thẻ NFC đã gán trong trang trại |
-| `DELETE` | `/api/nfc/:plantId/tag` | User Pro / Admin | Hủy liên kết thẻ NFC khỏi cây trồng |
+| **Auth & Zero-Trust MFA** | `POST /api/auth/login`, `POST /api/auth/mfa/setup`, `POST /api/auth/mfa/verify`, `POST /api/auth/logout-all`, `GET /api/auth/me` | Public / Auth | Đăng nhập (`HttpOnly` cookie cho Admin), thiết lập & xác thực TOTP MFA 2FA, Session Kill-Switch (`token_version++`) |
+| **Farms, GIS & Area Audit** | `GET /api/farms`, `POST /api/farms`, `POST /api/farms/self-init`, `PUT /api/farms/:id`, `POST /api/farms/audit-normalize-areas`, `GET /api/farms/:id/full-dataset` | User / Admin | Quản lý ranh giới WGS 84, tính diện tích `m²/ha`, đếm cây active (`COUNT(DISTINCT p.id)`), rà soát/sửa lỗi đơn vị diện tích, xuất full dataset bảo mật |
+| **Plants & Care Logs** | `GET /api/plants`, `POST /api/plants/batch-range`, `DELETE /api/plants/:id`, `POST /api/plants/:id/restore`, `POST /api/plants/:id/logs`, `POST /api/plants/offline-batch-sync`, `GET /api/plants/reports/query` | User / Admin | Ma trận tạo cây, xóa mềm/khôi phục (đồng bộ `total_plants`), khóa cứng PHI (`409`), Hash-Chain SHA-256, Offline batch `SAVEPOINT`, báo cáo ISO 22005 |
+| **Public QR Traceability** | `GET /api/plants/public/:slug`, `POST /api/plants/public/:slug/gps` *(LOCKED 403)*, `GET /api/plants/:id/public-logs` | Public / Locked | Xem hồ sơ nông sản công khai đã ẩn bí mật kinh doanh; endpoint cập nhật GPS trang công khai đã khóa `403 PUBLIC_GPS_UPDATE_LOCKED` |
+| **NFC 1-Cây-1-Thẻ** | `GET /api/nfc/tag/:farmId/:nfcUid`, `POST /api/nfc/assign`, `POST /api/nfc/inventory/import`, `POST /api/plants/nfc-verify-hmac` | User / Admin | Nhập kho thẻ NTAG213, gán/thay thế thẻ, đóng băng thẻ cũ thu hồi, kiểm tra chữ ký HMAC-SHA256 |
+| **Supplies & WMS ERP** | `GET /api/supplies`, `POST /api/supplies`, `POST /api/supplies/:id/restock`, `POST /api/supplies/usages` | User Pro / Admin | Nhập kho bình quân gia quyền, chặn xuất kho vật tư hết hạn (`400`), ẩn đơn giá theo sub-role |
+| **Executive BI Analytics** | `GET /api/analytics/bi-overview`, `cost-breakdown`, `plot-comparison`, `predictive-yield`, `i18n/:lang` | User Pro / Admin | Hỗ trợ lọc `?farm_id=...&year=...`, `area_audit_warnings`, ma trận ROI theo Lô & Trang trại, đa ngôn ngữ VI/EN/ZH (`₫/USD/CNY`) |
+| **AI Agent Bé Mầm v3** | `POST /api/ai/chat`, `GET/POST /api/ai/training/*` | User / Admin | Chat ReAct Function Calling (7 tools), truyền `active_farm_id` / `active_plant_id`, RateLimit + Bulkhead + CircuitBreaker + DLP + PII Redact |
+| **Notifications & Monitoring** | `GET /api/notifications`, `PUT /api/notifications/preferences`, `GET /api/admin/security-incidents`, `GET /metrics`, `GET /api/health` | User / Admin | Trung tâm thông báo đa nền tảng, nhật ký sự cố DLP/IP Guard, OpenMetrics Prometheus & trạng thái DB/Redis/Queue |
 
 ---
 
@@ -764,77 +696,34 @@ Hệ thống cung cấp hơn **149 RESTful API Endpoints** được bảo vệ b
 
 ---
 
-## 9. Bộ Kiểm Thử Tự Động & Tiêu Chuẩn Nghiệm Thu QA/QC (141/141 PASS)
+## 9. Bộ Kiểm Thử Tự Động & Tiêu Chuẩn Nghiệm Thu QA/QC (222/222 PASS — 33 Suites)
 
-Hệ thống tích hợp quy trình kiểm định chất lượng 4 giai đoạn khép kín theo tiêu chuẩn quốc tế:
-
-```mermaid
-flowchart LR
-    subgraph P1["GIAI ĐOẠN 1: TESTING"]
-        T1["Unit Test Modules (16 Modules)"]
-        T2["API Contract Tests (149 Endpoints)"]
-        T3["Database Integrity & Constraints"]
-    end
-
-    subgraph P2["GIAI ĐOẠN 2: QC"]
-        Q1["Kiểm soát Chức năng Toàn diện"]
-        Q2["Đối soát Phân quyền RBAC 4 Cấp"]
-        Q3["Bóc tách Dữ liệu Giá Nhạy cảm"]
-    end
-
-    subgraph P3["GIAI ĐOẠN 3: QA"]
-        A1["Tiêu chuẩn ISO/IEC 25010"]
-        A2["Bảo mật OWASP Top 10 & Anti-Scraper"]
-        A3["VietGAP & Carbon MRV Verification"]
-    end
-
-    subgraph P4["GIAI ĐOẠN 4: NGHIỆM THU"]
-        S1["Audit Tự Động 141 Tests (100% Pass)"]
-        S2["Kiểm nghiệm Thực địa Web NFC & Mobile"]
-        S3["Ký duyệt Sẵn sàng Vận hành (Production)"]
-    end
-
-    P1 ==> P2 ==> P3 ==> P4
-```
-
-> [!TIP]
-> Tài liệu kiểm định kỹ thuật chuyên sâu và ma trận nghiệm thu từng trường hợp kiểm thử được lưu trữ chi tiết tại: 👉 **[Plan-testing.md](Plan-testing.md)**.
+Hệ thống kiểm định tự động gồm **33 test suites** (`222` test cases) chạy bằng Node test runner tích hợp cùng GitHub Actions CI (PostgreSQL 16 + Playwright Chromium) và kịch bản chịu tải k6 200-VU:
 
 ```powershell
-# Thực thi toàn bộ bộ kiểm thử QA/QC tự động
-powershell.exe -ExecutionPolicy Bypass -File backend/scripts/test-international-standards.ps1
+# Chạy toàn bộ 33 suites unit & integration test
+node backend/tests/run-all-tests.js
 ```
 
-```
-==========================================================================
-PLANT BOOK AGTECH -- ENTERPRISE INTERNATIONAL TESTING SUITE
-   Standards: ISO/IEC 25010 | ISO/IEC 29119 | OWASP Top 10 | VietGAP | Gallagher 8.30 | IPCC Carbon
-==========================================================================
-  TOTAL TESTS PASSED : 141 / 141 (100%)
-  - RBAC Compliance Test Suite           : 31 / 31 PASSED (100%)
-  - International Standards Test Suite    : 110 / 110 PASSED (100%)
-  TOTAL WARNINGS     : 0
-  TOTAL TESTS FAILED : 0
-  QA / QC PASS RATE  : 100%
-
-VERIFICATION VERDICT: 100% ENTERPRISE SYSTEM COMPLIANCE WITH INTERNATIONAL AGTECH STANDARDS!
-==========================================================================
+```text
+═══════════════════════════════════════════════════════════════
+🧪 RUNNING SYSTEM AUTOMATED TESTING SUITE (100% COVERAGE)
+═══════════════════════════════════════════════════════════════
+📊 SUMMARY: 222/222 PASSED (100.0%) | Failed: 0 | Time: ~2041ms
+═══════════════════════════════════════════════════════════════
 ```
 
-### 13 Nhóm Kiểm Thử Toàn Diện:
-1. **RBAC 4 Cấp Bậc & Bảo Mật Dữ Liệu Tài Chính (31 tests):** Kiểm tra phân quyền `SUPER_ADMIN`, `ADMIN`, `AGRONOMIST`, `FARMER`, ẩn đơn giá vật tư (`isFinanceRedacted`), khóa quyền sửa xóa với nông dân.
-2. **DOM Integrity & Modal Architecture (23 tests):** Kiểm tra cấu trúc HTML5, PWA manifest, viewport mobile, các modal nghiệp vụ tạo cây ma trận, nhật ký, NFC, xuất VietGAP, ERP profile.
-3. **Frontend Module & Syntax Balance (2 tests):** Kiểm tra cân bằng cú pháp 16 frontend JS modules và cross-validation 113 static import/export symbols.
-4. **Plot & Row Split, Auto-Increment Engine (14 tests):** Kiểm tra thuật toán phân lô A1 -> LÔ A1, tự tăng hàng 1-99, chống trùng lặp, tính tuổi cây chính xác đến ngày/tháng/năm.
-5. **GIS Map Marker & Zero GPS Drift (4 tests):** Kiểm tra sự kiện click popup Leaflet/Mapbox, hiển thị inline Lucide SVG, mở hồ sơ bảo toàn 100% tọa độ GPS không bị thay đổi.
-6. **Backend REST API & OWASP Security Audit (12 tests):** Kiểm tra 100% Parameterized SQL, bảo vệ Auth Guard 149 endpoints, cô lập Farm Multi-tenancy, gỡ bỏ bí mật kinh doanh trên API công khai.
-7. **VietGAP Compliance & PHI Quarantine (5 tests):** Kiểm tra 6 nhóm nhật ký VietGAP, thuật toán đếm ngược cách ly PHI, sinh mã lô chuẩn `[PUC]-[YYYYMMDD]-[Code]`.
-8. **NFC Hardware & Weather Telemetry (6 tests):** Kiểm tra Web NFC API, chống gán trùng thẻ RFID, đồng bộ khí tượng Open-Meteo và tính toán chỉ số ET0 nông học.
-9. **Agri-ERP Supplies & Cost Accounting (3 tests):** Kiểm tra tự động trừ kho vật tư, tính tiền nước m³ và tổng hợp chi phí đầu tư.
-10. **Performance & RAM Cache Engine (2 tests):** Kiểm tra Singleflight chống nghẽn đồng thời và bộ đệm In-memory RAM Cache.
-11. **Mobile Interaction & UI Ergonomics (6 tests):** Kiểm tra responsive breakpoints, touch-action, tương tác mượt mà trên thiết bị di động.
-12. **Gallagher Command Centre 8.30 REST Architecture (10 tests):** Kiểm tra FTCard.IssueLevel chống sao chép thẻ, Delta Sync `?updated_after=`, Cursor Pagination, chuẩn DID `did:agtech:vn:...`.
-13. **IPCC 2006 AFOLU Tier-2 Carbon MRV & ESG (10 tests):** Kiểm tra mô hình sinh khối cây lâu năm Allometric, tính trữ lượng Carbon hấp thụ ròng (tCO2e) và chuỗi Hash-Chain SHA-256 bất biến.
+### Danh Mục 33 Suites Kiểm Thử Tự Động:
+- **Suites `01`–`18` (Nền tảng Core ERP, PWA & Flutter Parity):** Auth & RBAC (`01`), Farms/GIS & PUC (`02`), Plants/QR/NFC (`03`), Supplies & Inventory (`04`), VietGAP & PHI (`05`), IoT & Notifications (`06`), HTML Integrity & Build (`07`), Sample Data & Migration (`08`–`09`), Open-Meteo Weather (`10`), NFC/Geofence & Soft-Delete (`11`, `12`×2), AI Training Security & Zalo Scrubbing (`13`×2), Streaming/Rate-Limit/Performance (`14`–`16`), Hash-Chain SHA-256 & Flutter v1.3.5 Security/Hive Parity (`17`–`18`).
+- **Suites `19`–`28` (BI, Chuẩn ISO, Kiến Trúc & Observability):**
+  - `19`: Executive BI lọc theo `farm_id` & `year`, `singleflight`, chống rò rỉ `su.farm_id IS NULL`, cột Trang trại trong Ma trận ROI, đa ngôn ngữ VI/EN/ZH (`19.1`–`19.6`).
+  - `20`–`25`: ISO 25010 / 29119 / 19115 GIS / 42001 Bé Mầm Agent Engine / 27001 Security Hardening.
+  - `26`–`28`: Zero-Trust Crypto, Moving-Avg WMS, Hard PHI gate, Carbon MRV, Report Query Engine CSV Guard, APM `p50/p95/p99` & OpenMetrics `/metrics`, Real PG16 + Playwright CI, k6 200-VU Load Gate.
+- **Suites `29`–`32` (Các Phân Hệ Doanh Nghiệp Mới Nhất):**
+  - `29` (**ISO/IEC 27001 Zero-Trust Defense**): TOTP MFA RFC 6238, `adminIpGuard`, `dlpAntiExfiltration`, Admin `HttpOnly` cookie & CSP.
+  - `30` (**Multi-Platform Notification Hub**): Dispatcher gom nhóm 60s, Quiet Hours, 4 nhạc chuông Web Audio, SW Push, Flutter 2 Android channels.
+  - `31` (**Enterprise Bé Mầm AI Agent v3**): AES-256-GCM, PII Redactor (Unicode email/SĐT/CCCD/JWT), Indirect Injection Sanitizer, Output DLP, Biosecurity/PHI Post-Verifier, `AgentRateLimiter`/`AgentBulkhead`/`ModelCircuitBreaker`, Payload Compaction, Zero-Trust Native Tools & ReAct Loop (`31.1`–`31.7`).
+  - `32` (**Cache-Busting, Area Audit & Zero-Lag Refresh**): SHA-256 content-hash trong `build-html.js`, `auditAndNormalizeFarmArea` & `POST /api/farms/audit-normalize-areas`, và `SmartAutoRefresh` không giật lag (`32.1`–`32.4`).
 
 ---
 
@@ -850,17 +739,12 @@ cd plant-book/plant-app-deploy
 # 2. Cài đặt các gói phụ thuộc Backend
 cd backend
 npm install
-cd ..
 
-# 3. Tạo file cấu hình môi trường
-Copy-Item backend/.env.example backend/.env
-# Điền DATABASE_URL và JWT_SECRET vào tệp .env
+# 3. Biên dịch giao diện HTML + Tự động gắn Content-Hash Cache-Busting
+npm run build:html
 
-# 4. Biên dịch giao diện HTML Modular
-powershell.exe -ExecutionPolicy Bypass -File backend/scripts/build-html.ps1
-
-# 5. Khởi động Backend Server
-cd backend
+# 4. Kiểm thử & Khởi động Backend Server
+npm test
 npm start
 # Ứng dụng sẵn sàng tại: http://localhost:3000
 ```
@@ -883,46 +767,48 @@ docker-compose -f docker-compose.nas.yml logs -f app
 
 ### 10.3 Vận Hành Ứng Dụng Di Động (Android APK, Google Play AAB & iOS IPA)
 
-Toàn bộ gói cài đặt được tự động đóng gói bởi CI/CD tại: 👉 **[GitHub Releases v1.3.5](https://github.com/Phuc0901-pp/plant-book/releases/tag/v1.3.5)**
-
 #### 🤖 Dành cho Android:
-1. **Cài đặt trực tiếp qua file `.apk`**: Tải `PlantBook-Mobile-ERP-v1.3.5-universal.apk` về điện thoại và bấm cài đặt.
-2. **Cài đặt nhanh qua cáp USB (ADB)**:
-   ```powershell
-   # Chạy script tự động phát hiện thiết bị và cài đặt 1-click
-   .\deploy_adb.ps1
-   ```
-3. **Xuất bản Google Play Store**: Sử dụng file `PlantBook-Mobile-ERP-v1.3.5-release.aab` để tải lên Google Play Console.
+1. Build APK / AAB tự động qua GitHub Actions (`build-apk.yml`) hoặc chạy `deploy_adb.ps1` qua cáp USB ADB.
 
 #### 🍎 Dành cho iOS (iPhone / iPad):
-1. **Cài đặt In-House / TestFlight qua Sideloadly**:
-   - Tải `PlantBook-Mobile-ERP-v1.3.5-ios.ipa`.
-   - Kết nối iPhone với máy tính, mở **Sideloadly** $\rightarrow$ Kéo thả file `.ipa` $\rightarrow$ Nhập Apple ID $\rightarrow$ Bấm Start để cài đặt tức thì.
-2. **Cài đặt không dây OTA qua tệp cấu hình**:
-   - Sử dụng file `manifest.plist` kết hợp đường dẫn Apple Enterprise `itms-services://` để triển khai nội bộ doanh nghiệp.
+1. Build IPA qua `build-ios.yml` và cài đặt bằng **Sideloadly** hoặc OTA qua `manifest.plist`.
 
 ---
 
-### 10.4 Triển Khai Multi-Cloud (PostgreSQL, Supabase, Cloudflare R2 / AWS S3)
+### 10.4 Triển Khai Multi-Cloud & Biến Môi Trường Production
 
 ```ini
-# Cấu hình Cổng & Môi trường
+# Cổng & Môi trường
 PORT=3000
 NODE_ENV=production
 
-# Kết nối CSDL PostgreSQL Enterprise
-DATABASE_URL=postgresql://postgres:your_password@localhost:5432/plantbook_db
+# Cơ sở dữ liệu PostgreSQL & Redis
+DATABASE_URL=postgresql://postgres:your_password@host:5432/plantbook_db
+REDIS_URL=redis://default:your_redis_pass@host:6379
 
-# Bảo mật JWT
-JWT_SECRET=super_secret_jwt_key_tanbao_agtech_2026_enterprise
+# Bảo mật Zero-Trust & Mã hóa
+JWT_SECRET=your_64_char_hex_jwt_secret
+NFC_HMAC_SECRET=your_iso27001_nfc_hmac_secret_min_32_chars
+AI_DATA_ENCRYPTION_KEY=your_32_char_aes256_gcm_key
+ADMIN_IP_ALLOWLIST=127.0.0.1,::1
+METRICS_TOKEN=your_prometheus_metrics_bearer_token
 
-# Cấu hình Lưu Trữ Tệp Đa Nền Tảng (local | supabase | s3)
+# AI Agent Bé Mầm v3 & Khí tượng / Bản đồ
+GEMINI_API_KEY=your_gemini_api_key
+MAPBOX_ACCESS_TOKEN=pk.eyJ1Ijoi...
+
+# Lưu trữ tệp (local | supabase | s3)
 STORAGE_DRIVER=supabase
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_KEY=your-supabase-service-role-key
 
-# Cấu hình Bản Đồ Vệ Tinh (Tùy chọn)
-MAPBOX_ACCESS_TOKEN=pk.eyJ1Ijoi...
+# Push Notifications & Email (Tùy chọn)
+VAPID_PUBLIC_KEY=...
+VAPID_PRIVATE_KEY=...
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=...
+SMTP_PASS=...
 ```
 
 ---
