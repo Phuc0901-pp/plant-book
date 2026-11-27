@@ -359,7 +359,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Tư vấn bón phân', findRichText: true), findsOneWidget);
-      expect(find.textContaining('Hướng dẫn', findRichText: true), findsOneWidget);
+      expect(find.text('Hướng dẫn', findRichText: true), findsOneWidget);
+      expect(find.textContaining('NPK 20-20-15', findRichText: true), findsOneWidget);
       expect(find.textContaining('**'), findsNothing);
     });
 

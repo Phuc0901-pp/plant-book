@@ -80,119 +80,17 @@ class _LoginPageState extends State<LoginPage> {
     String password,
     String promptMessage,
   ) async {
-    final otpController = TextEditingController();
-    String? inlineError;
-    bool isVerifying = false;
-
+    FocusScope.of(context).unfocus();
     final Map<String, dynamic>? verifiedResult =
         await showDialog<Map<String, dynamic>>(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          title: const Row(
-            children: [
-              Icon(Icons.security_rounded, color: AppTheme.green, size: 24),
-              SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Xác thực 2 lớp (TOTP MFA)',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                promptMessage,
-                style: const TextStyle(fontSize: 13, color: AppTheme.textMuted),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                key: const Key('mfa_otp_input'),
-                controller: otpController,
-                keyboardType: TextInputType.number,
-                maxLength: 6,
-                autofocus: true,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 6,
-                ),
-                decoration: const InputDecoration(
-                  labelText: 'Mã OTP 6 số',
-                  hintText: '000000',
-                  counterText: '',
-                ),
-              ),
-              if (inlineError != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  inlineError!,
-                  style: const TextStyle(color: AppTheme.red, fontSize: 12),
-                ),
-              ],
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: isVerifying ? null : () => Navigator.pop(ctx),
-              child: const Text('Hủy'),
-            ),
-            ElevatedButton(
-              key: const Key('mfa_otp_submit'),
-              onPressed: isVerifying
-                  ? null
-                  : () async {
-                      final code = otpController.text.trim();
-                      if (code.length < 6) {
-                        setDialogState(() {
-                          inlineError = 'Vui lòng nhập đủ 6 chữ số OTP.';
-                        });
-                        return;
-                      }
-                      setDialogState(() {
-                        isVerifying = true;
-                        inlineError = null;
-                      });
-                      final mfaRes = await ApiService().login(
-                        email,
-                        password,
-                        totpCode: code,
-                      );
-                      if (!ctx.mounted) return;
-                      if (mfaRes['success'] == true) {
-                        Navigator.pop(ctx, mfaRes);
-                      } else {
-                        setDialogState(() {
-                          isVerifying = false;
-                          inlineError = mfaRes['message']?.toString() ??
-                              'Mã OTP không chính xác.';
-                        });
-                      }
-                    },
-              child: isVerifying
-                  ? const SizedBox(
-                      height: 18,
-                      width: 18,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : const Text('Xác nhận'),
-            ),
-          ],
-        ),
+      builder: (_) => _MfaOtpDialog(
+        email: email,
+        password: password,
+        promptMessage: promptMessage,
       ),
     );
-    otpController.dispose();
-
     if (!mounted || verifiedResult == null) return;
     await _navigateAfterLogin(verifiedResult);
   }
@@ -684,6 +582,143 @@ class _LoginPageState extends State<LoginPage> {
     showDialog(
       context: context,
       builder: (context) => const _FarmerRegisterWizardDialog(),
+    );
+  }
+}
+
+class _MfaOtpDialog extends StatefulWidget {
+  final String email;
+  final String password;
+  final String promptMessage;
+
+  const _MfaOtpDialog({
+    required this.email,
+    required this.password,
+    required this.promptMessage,
+  });
+
+  @override
+  State<_MfaOtpDialog> createState() => _MfaOtpDialogState();
+}
+
+class _MfaOtpDialogState extends State<_MfaOtpDialog> {
+  final TextEditingController _otpController = TextEditingController();
+  String? _inlineError;
+  bool _isVerifying = false;
+
+  @override
+  void dispose() {
+    _otpController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitOtp() async {
+    final code = _otpController.text.trim();
+    if (code.length < 6) {
+      setState(() {
+        _inlineError = 'Vui lòng nhập đủ 6 chữ số OTP.';
+      });
+      return;
+    }
+    setState(() {
+      _isVerifying = true;
+      _inlineError = null;
+    });
+    final mfaRes = await ApiService().login(
+      widget.email,
+      widget.password,
+      totpCode: code,
+    );
+    if (!mounted) return;
+    if (mfaRes['success'] == true) {
+      Navigator.pop(context, mfaRes);
+    } else {
+      setState(() {
+        _isVerifying = false;
+        _inlineError =
+            mfaRes['message']?.toString() ?? 'Mã OTP không chính xác.';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      title: const Row(
+        children: [
+          Icon(Icons.security_rounded, color: AppTheme.green, size: 24),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Xác thực 2 lớp (TOTP MFA)',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              widget.promptMessage,
+              style: const TextStyle(fontSize: 13, color: AppTheme.textMuted),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              key: const Key('mfa_otp_input'),
+              controller: _otpController,
+              keyboardType: TextInputType.number,
+              maxLength: 6,
+              autofocus: false,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 6,
+              ),
+              decoration: const InputDecoration(
+                labelText: 'Mã OTP 6 số',
+                hintText: '000000',
+                counterText: '',
+              ),
+            ),
+            if (_inlineError != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                _inlineError!,
+                style: const TextStyle(color: AppTheme.red, fontSize: 12),
+              ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isVerifying ? null : () => Navigator.pop(context),
+          child: const Text('Hủy'),
+        ),
+        ElevatedButton(
+          key: const Key('mfa_otp_submit'),
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size(110, 44),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+          ),
+          onPressed: _isVerifying ? null : _submitOtp,
+          child: _isVerifying
+              ? const SizedBox(
+                  height: 18,
+                  width: 18,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+              : const Text('Xác nhận'),
+        ),
+      ],
     );
   }
 }
