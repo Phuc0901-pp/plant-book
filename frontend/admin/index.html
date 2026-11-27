@@ -91,6 +91,8 @@ window.onerror = function(message, source, lineno, colno, error) {
 <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
   <link rel="stylesheet" href="/admin/css/admin-layout.css?v=v1.3.7-bf7f109d">
+  <link rel="stylesheet" href="/assets/css/u417-collapsible-sidebar.css?v=v1.3.7-195a2834">
+  <link rel="stylesheet" href="/assets/css/u460-mascot-goo-menu.css?v=v1.3.7-18024658">
   <link rel="stylesheet" href="/admin/css/admin-components.css?v=v1.3.7-00343bf6">
   <link rel="stylesheet" href="/admin/css/admin-dashboard.css?v=v1.3.7-1af2dabe">
   <link rel="stylesheet" href="/admin/css/admin-gis.css?v=v1.3.7-b2c4b8cc">
@@ -629,47 +631,48 @@ window.onerror = function(message, source, lineno, colno, error) {
 <div id="app" style="display:none;flex-direction:row">
   <div class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
 
-  ﻿  <aside class="sidebar">
+  ﻿  <aside class="sidebar ux u417 u417-sb" aria-label="Thanh điều hướng quản trị">
     <div class="sidebar-header">
       <div class="brand">
         <div class="sidebar-logo-wrap">
           <img src="/assets/logo.png" alt="TANBAO AgTech" class="sidebar-logo">
         </div>
-        <span class="brand-subtitle">Hệ thống quản lý cây trồng</span>
+        <span class="brand-subtitle u417-lb">Hệ thống quản lý cây trồng</span>
       </div>
     </div>
     <div class="sidebar-user">
       <div class="user-name" id="sb-user-name">—</div>
       <div class="user-email" id="sb-user-email">—</div>
     </div>
-    <nav>
-      <div class="nav-section">Tổng quan &amp; Vận hành</div>
-      <div class="nav-item active" onclick="showPage('dashboard')">
-        <i data-lucide="pie-chart" class="lucide-sm"></i> Tổng quan
+    <nav class="u417-nav">
+      <div class="u417-pl" aria-hidden="true"></div>
+      <div class="nav-section u417-lb">Tổng quan &amp; Vận hành</div>
+      <div class="nav-item u417-it active" onclick="showPage('dashboard')" aria-current="page">
+        <i data-lucide="pie-chart" class="lucide-sm"></i> <span class="u417-lb">Tổng quan</span>
       </div>
-      <div class="nav-section">Quản trị Nông nghiệp &amp; CSDL</div>
-      <div class="nav-item" onclick="showPage('database')">
-        <i data-lucide="database" class="lucide-sm"></i> Cơ sở dữ liệu
+      <div class="nav-section u417-lb">Quản trị Nông nghiệp &amp; CSDL</div>
+      <div class="nav-item u417-it" onclick="showPage('database')">
+        <i data-lucide="database" class="lucide-sm"></i> <span class="u417-lb">Cơ sở dữ liệu</span>
       </div>
-      <div class="nav-item" onclick="showPage('ai-training')">
-        <i data-lucide="cpu" class="lucide-sm" style="color:#10b981;"></i> Huấn luyện trí tuệ nhân tạo
+      <div class="nav-item u417-it" onclick="showPage('ai-training')">
+        <i data-lucide="cpu" class="lucide-sm" style="color:#10b981;"></i> <span class="u417-lb">Huấn luyện trí tuệ nhân tạo</span>
       </div>
-      <div class="nav-section">Hệ thống &amp; Nhân sự</div>
-      <div class="nav-item" onclick="showPage('users')">
-        <i data-lucide="users" class="lucide-sm"></i> Người dùng
+      <div class="nav-section u417-lb">Hệ thống &amp; Nhân sự</div>
+      <div class="nav-item u417-it" onclick="showPage('users')">
+        <i data-lucide="users" class="lucide-sm"></i> <span class="u417-lb">Người dùng</span>
       </div>
     </nav>
 
     <div class="sidebar-footer">
-      <button class="btn-logout" onclick="logout()">
-        <i data-lucide="log-out" class="lucide-sm"></i> Đăng xuất
+      <button class="btn-logout" onclick="logout()" title="Đăng xuất">
+        <i data-lucide="log-out" class="lucide-sm"></i> <span class="u417-lb">Đăng xuất</span>
       </button>
-      <div style="text-align:center; margin-top:12px; font-size:11px; color:var(--text-muted); font-weight:600;">
+      <div class="u417-footer-meta" style="text-align:center; margin-top:12px; font-size:11px; color:var(--text-muted); font-weight:600;">
         <span style="background:rgba(34,197,94,0.12); color:#16a34a; padding:2px 8px; border-radius:100px; border:1px solid rgba(34,197,94,0.25);">v1.3.7</span> Tân Bảo AgTech Admin
       </div>
-
     </div>
 
+    <button class="u417-tg" type="button" aria-expanded="true" aria-label="Thu gọn thanh bên"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M7.5 2.5 4 6l3.5 3.5"/></svg></button>
   </aside>
 
   <main class="main">
@@ -4759,7 +4762,7 @@ window.onerror = function(message, source, lineno, colno, error) {
   <script src="/js/i18n-engine.js?v=v1.3.7-768f525a"></script>
   <script src="/js/bi-analytics-widget.js?v=v1.3.7-0db22091"></script>
   <script src="/admin/js/countup.js?v=v1.3.7-c92b3b59"></script>
-  <script src="/admin/js/mascot-chibi.js?v=v1.3.7-6ae8dce0"></script>
+  <script src="/admin/js/mascot-chibi.js?v=v1.3.7-05f17368"></script>
   <script src="/admin/js/app.js?v=v1.3.7-36b1c7d3"></script>
   <script src="/admin/js/auth.js?v=v1.3.7-2b56bce2"></script>
   <script src="/admin/js/dashboard.js?v=v1.3.7-c2f5dded"></script>
@@ -4775,6 +4778,8 @@ window.onerror = function(message, source, lineno, colno, error) {
   <script src="/admin/js/ai-training.js?v=v1.3.7-88945441"></script>
   <script src="/admin/js/notifications.js?v=v1.3.7-130fb4a3"></script>
   <script src="/admin/js/websocket.js?v=v1.3.7-a280431d"></script>
+  <script src="/assets/js/u417-collapsible-sidebar.js?v=v1.3.7-90e5d958"></script>
+  <script src="/assets/js/u460-mascot-goo-menu.js?v=v1.3.7-65a3d6da"></script>
   <script src="/js/smart-auto-refresh.js?v=v1.3.7-2805a82a"></script>
   <script>
 if (typeof window.refreshIcons === 'function') {

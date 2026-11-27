@@ -137,6 +137,7 @@ function attachAdminMascotDraggable(container, storageKey) {
   function onPointerDown(e) {
     if (
       e.target.closest('#admin-ai-chat-box') ||
+      e.target.closest('.u460') ||
       e.target.closest('input') ||
       e.target.closest('button') ||
       e.target.closest('textarea')
@@ -368,6 +369,21 @@ function initAdminChibiMascot() {
   renderAdminMascot();
 }
 
+function onAdminMascotClick(e) {
+  if (e) e.stopPropagation();
+  if (window.__adminMascotJustDragged) return;
+  if (_isChatOpen) {
+    toggleAdminAiChat(e);
+    return;
+  }
+  const container = document.getElementById('admin-chibi-mascot-widget');
+  if (container && container.__u460Controller) {
+    container.__u460Controller.toggle();
+    return;
+  }
+  toggleAdminAiChat(e);
+}
+
 function toggleAdminAiChat(e) {
   if (e) e.stopPropagation();
   if (window.__adminMascotJustDragged) return;
@@ -582,13 +598,51 @@ function renderAdminMascot() {
     `;
   } else {
     innerHTML = `
-      <div onclick="toggleAdminAiChat(event)" class="admin-clean-avatar" title="Nhấn vào để chat hoặc KÉO THẢ di chuyển Bé Mầm!" style="animation: mascot-float-bounce 2.5s infinite ease-in-out;">
+      <div onclick="onAdminMascotClick(event)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();onAdminMascotClick(event);}" tabindex="0" role="button" class="admin-clean-avatar" title="Nhấn vào để mở menu Bé Mầm hoặc KÉO THẢ di chuyển!" style="animation: mascot-float-bounce 2.5s infinite ease-in-out;">
         ${_renderCleanAnimeMascotSVG()}
       </div>
     `;
   }
 
+  if (container.__u460Controller) {
+    container.__u460Controller.destroy();
+  }
+
   container.innerHTML = innerHTML;
+
+  if (!_isChatOpen && window.U460MascotMenu) {
+    window.U460MascotMenu.mount(container, {
+      triggerSelector: '.admin-clean-avatar',
+      actions: [
+        {
+          icon: 'chat',
+          label: 'Hỏi đáp Bé Mầm AI',
+          onClick: () => toggleAdminAiChat()
+        },
+        {
+          icon: 'dashboard',
+          label: 'Tổng quan hệ thống',
+          onClick: () => {
+            if (typeof window.showPage === 'function') window.showPage('dashboard');
+          }
+        },
+        {
+          icon: 'database',
+          label: 'Cơ sở dữ liệu',
+          onClick: () => {
+            if (typeof window.showPage === 'function') window.showPage('database');
+          }
+        },
+        {
+          icon: 'ai',
+          label: 'Huấn luyện AI',
+          onClick: () => {
+            if (typeof window.showPage === 'function') window.showPage('ai-training');
+          }
+        }
+      ]
+    });
+  }
 
   if (_isChatOpen) {
     const chatEl = document.getElementById('admin-ai-chat-box');
@@ -644,7 +698,7 @@ async function handleAdminAiSubmit(e) {
 }
 
 window.renderAdminMascot = renderAdminMascot;
-window.onAdminMascotClick = toggleAdminAiChat;
+window.onAdminMascotClick = onAdminMascotClick;
 window.toggleAdminAiChat = toggleAdminAiChat;
 window.initAdminChibiMascot = initAdminChibiMascot;
 window.sendAdminPrompt = sendAdminPrompt;

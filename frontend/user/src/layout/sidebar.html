@@ -1,10 +1,10 @@
-﻿  <aside class="sidebar">
+﻿  <aside class="sidebar ux u417 u417-sb" aria-label="Thanh điều hướng nông hộ">
     <div class="sidebar-header">
       <div class="brand">
         <div class="sidebar-logo-wrap">
           <img src="/assets/logo.png" alt="TANBAO AgTech" class="sidebar-logo">
         </div>
-        <span class="brand-subtitle">Hệ thống quản lý cây trồng</span>
+        <span class="brand-subtitle u417-lb">Hệ thống quản lý cây trồng</span>
       </div>
     </div>
 
@@ -12,40 +12,39 @@
       <div class="user-name" id="sb-user-name">—</div>
       <div class="user-email" id="sb-user-email">—</div>
       <div class="sb-role-pill" id="sb-role-pill"><i data-lucide="user" class="lucide-sm" style="font-size:9px"></i> Nông hộ NORMAL</div>
-
     </div>
 
-    <nav>
-      <div class="nav-section">Chức năng</div>
-      <div class="nav-item active" data-page="home" onclick="showPage('home')">
-        <i data-lucide="home" class="lucide-sm"></i> Trang chủ
+    <nav class="u417-nav">
+      <div class="u417-pl" aria-hidden="true"></div>
+      <div class="nav-section u417-lb">Chức năng</div>
+      <div class="nav-item u417-it active" data-page="home" onclick="showPage('home')" aria-current="page">
+        <i data-lucide="home" class="lucide-sm"></i> <span class="u417-lb">Trang chủ</span>
       </div>
-      <div class="nav-item" data-page="myplants" onclick="showPage('myplants')">
-        <i data-lucide="map" class="lucide-sm"></i> Trang trại
+      <div class="nav-item u417-it" data-page="myplants" onclick="showPage('myplants')">
+        <i data-lucide="map" class="lucide-sm"></i> <span class="u417-lb">Trang trại</span>
       </div>
-      <div class="nav-item" data-page="supplies" onclick="showPage('supplies')">
-        <i data-lucide="package" class="lucide-sm"></i> Vật tư
+      <div class="nav-item u417-it" data-page="supplies" onclick="showPage('supplies')">
+        <i data-lucide="package" class="lucide-sm"></i> <span class="u417-lb">Vật tư</span>
       </div>
-      <div class="nav-item" data-page="logs" onclick="showPage('logs')">
-        <i data-lucide="history" class="lucide-sm"></i> Lịch sử
+      <div class="nav-item u417-it" data-page="logs" onclick="showPage('logs')">
+        <i data-lucide="history" class="lucide-sm"></i> <span class="u417-lb">Lịch sử</span>
       </div>
-      <div class="nav-item" data-page="wiki" onclick="showPage('wiki')">
-        <i data-lucide="graduation-cap" class="lucide-sm"></i> Tính năng nâng cao &amp; HDSD
+      <div class="nav-item u417-it" data-page="wiki" onclick="showPage('wiki')">
+        <i data-lucide="graduation-cap" class="lucide-sm"></i> <span class="u417-lb">Tính năng nâng cao &amp; HDSD</span>
       </div>
-      <div class="nav-item" data-page="settings" onclick="showPage('settings')">
-        <i data-lucide="settings" class="lucide-sm"></i> Cài đặt
+      <div class="nav-item u417-it" data-page="settings" onclick="showPage('settings')">
+        <i data-lucide="settings" class="lucide-sm"></i> <span class="u417-lb">Cài đặt</span>
       </div>
-
     </nav>
 
     <div class="sidebar-footer">
-      <button class="btn-logout" onclick="logout()">
-        <i data-lucide="log-out" class="lucide-sm"></i> Đăng xuất
+      <button class="btn-logout" onclick="logout()" title="Đăng xuất">
+        <i data-lucide="log-out" class="lucide-sm"></i> <span class="u417-lb">Đăng xuất</span>
       </button>
-      <div style="text-align:center; margin-top:12px; font-size:11px; color:rgba(255,255,255,0.7); font-weight:600;">
+      <div class="u417-footer-meta" style="text-align:center; margin-top:12px; font-size:11px; color:rgba(255,255,255,0.7); font-weight:600;">
         <span style="background:rgba(255,255,255,0.15); color:#ffffff; padding:2px 6px; border-radius:6px; font-size:10px; font-weight:800; margin-right:4px;">{{APP_VERSION}}</span> {{APP_COPYRIGHT}}
       </div>
-
     </div>
 
+    <button class="u417-tg" type="button" aria-expanded="true" aria-label="Thu gọn thanh bên"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M7.5 2.5 4 6l3.5 3.5"/></svg></button>
   </aside>

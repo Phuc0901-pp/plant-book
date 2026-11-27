@@ -139,6 +139,7 @@ function attachMascotDraggable(container, storageKey) {
     if (
       e.target.closest('#user-ai-chat-box') ||
       e.target.closest('#mascot-action-menu-box') ||
+      e.target.closest('.u460') ||
       e.target.closest('input') ||
       e.target.closest('button') ||
       e.target.closest('textarea')
@@ -402,6 +403,11 @@ export function onMascotClick(e) {
   if (e) e.stopPropagation();
   if (window.__userMascotJustDragged) return;
   if (_isUserChatOpen) return;
+  const container = document.getElementById('chibi-mascot-widget');
+  if (container && container.__u460Controller) {
+    container.__u460Controller.toggle();
+    return;
+  }
   _isActionMenuOpen = !_isActionMenuOpen;
   renderMascot();
 }
@@ -728,13 +734,49 @@ export function renderMascot() {
     `;
   } else {
     innerHTML = `
-      <div onclick="onMascotClick(event)" class="chibi-hugging-avatar" title="Bấm vào để mở menu hoặc KÉO THẢ di chuyển Bé Mầm!" style="animation: mascot-hugging-pulse 2.5s infinite ease-in-out;">
+      <div onclick="onMascotClick(event)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();onMascotClick(event);}" tabindex="0" role="button" class="chibi-hugging-avatar" title="Bấm vào để mở menu hoặc KÉO THẢ di chuyển Bé Mầm!" style="animation: mascot-hugging-pulse 2.5s infinite ease-in-out;">
         ${_renderChibiHuggingPlusSVG()}
       </div>
     `;
   }
 
+  if (container.__u460Controller) {
+    container.__u460Controller.destroy();
+  }
+
   container.innerHTML = innerHTML;
+
+  if (!_isUserChatOpen && !_isActionMenuOpen && window.U460MascotMenu) {
+    window.U460MascotMenu.mount(container, {
+      triggerSelector: '.chibi-hugging-avatar',
+      actions: [
+        {
+          icon: 'log',
+          label: 'Ghi nhật ký chăm sóc',
+          onClick: () => selectAction('log')
+        },
+        {
+          icon: 'chat',
+          label: 'Hỏi đáp Bé Mầm AI',
+          onClick: () => selectAction('chat')
+        },
+        {
+          icon: 'farm',
+          label: 'Trang trại & Cây trồng',
+          onClick: () => {
+            if (typeof window.showPage === 'function') window.showPage('myplants');
+          }
+        },
+        {
+          icon: 'supply',
+          label: 'Kho vật tư',
+          onClick: () => {
+            if (typeof window.showPage === 'function') window.showPage('supplies');
+          }
+        }
+      ]
+    });
+  }
 
   if (_isActionMenuOpen) {
     const menuEl = document.getElementById('mascot-action-menu-box');
