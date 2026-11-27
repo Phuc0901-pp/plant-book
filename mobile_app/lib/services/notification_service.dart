@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import '../core/state/app_state_and_concepts.dart';
 import 'api_service.dart';
 import 'websocket_service.dart';
 
@@ -11,8 +12,8 @@ class NotificationService {
   factory NotificationService() => _instance;
   NotificationService._internal();
 
-  static const String criticalChannelId = 'tbsg_critical_alerts';
-  static const String generalChannelId = 'tbsg_general_updates';
+  static const String criticalChannelId = AppConcepts.criticalChannelId;
+  static const String generalChannelId = AppConcepts.generalChannelId;
 
   final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
   final ApiService _apiService = ApiService();
@@ -85,16 +86,22 @@ class NotificationService {
     ]);
   }
 
-  bool _isWithinQuietHours() {
-    if (_preferences['quiet_hours_enabled'] != true) return false;
-    final now = DateTime.now();
+  static bool isWithinQuietHoursFor(
+    Map<String, dynamic> prefs,
+    DateTime now,
+  ) {
+    if (prefs['quiet_hours_enabled'] != true) return false;
     final nowM = now.hour * 60 + now.minute;
-    final startParts = (_preferences['quiet_start']?.toString() ?? '22:00').split(':');
-    final endParts = (_preferences['quiet_end']?.toString() ?? '06:00').split(':');
-    final sM = (int.tryParse(startParts[0]) ?? 22) * 60 + (startParts.length > 1 ? (int.tryParse(startParts[1]) ?? 0) : 0);
-    final eM = (int.tryParse(endParts[0]) ?? 6) * 60 + (endParts.length > 1 ? (int.tryParse(endParts[1]) ?? 0) : 0);
+    final startParts = (prefs['quiet_start']?.toString() ?? '22:00').split(':');
+    final endParts = (prefs['quiet_end']?.toString() ?? '06:00').split(':');
+    final sM = (int.tryParse(startParts[0]) ?? 22) * 60 +
+        (startParts.length > 1 ? (int.tryParse(startParts[1]) ?? 0) : 0);
+    final eM = (int.tryParse(endParts[0]) ?? 6) * 60 +
+        (endParts.length > 1 ? (int.tryParse(endParts[1]) ?? 0) : 0);
     return sM < eM ? (nowM >= sM && nowM < eM) : (nowM >= sM || nowM < eM);
   }
+
+  bool _isWithinQuietHours() => isWithinQuietHoursFor(_preferences, DateTime.now());
 
   Future<void> _handleWsMessage(Map<String, dynamic> msg) async {
     if (msg['event'] != 'new_notification') return;
@@ -114,12 +121,13 @@ class NotificationService {
     }
     notifications.value = updated;
     unreadCount.value = updated.where((n) => n['is_read'] != true).length;
+    AppStateStore().setNotifications(updated, unreadCount: unreadCount.value);
 
     final severity = (notifMap['severity'] ?? notifMap['type'] ?? 'info').toString().toLowerCase();
     final soundProfile = (rawData['sound_profile'] ?? notifMap['sound_profile'] ?? 'chime').toString().toLowerCase();
-    if (severity == 'audit_silent' || soundProfile == 'silent') return;
+    if (severity == AppConcepts.severityAuditSilent || soundProfile == AppConcepts.soundSilent) return;
 
-    final bool isDanger = severity == 'danger' || soundProfile == 'siren';
+    final bool isDanger = severity == AppConcepts.severityDanger || soundProfile == AppConcepts.soundSiren;
     if (isDanger) {
       HapticFeedback.heavyImpact();
     } else if (_preferences['sound_enabled'] != true || _isWithinQuietHours()) {
@@ -169,6 +177,7 @@ class NotificationService {
       final list = rawList.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
       notifications.value = list;
       unreadCount.value = (res['unread_count'] as int?) ?? list.where((n) => n['is_read'] != true).length;
+      AppStateStore().setNotifications(list, unreadCount: unreadCount.value);
     }
   }
 

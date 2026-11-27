@@ -58,11 +58,7 @@ class CacheService {
 
     final List<int> key = Hive.generateSecureKey();
     final String encoded = base64Encode(key);
-    try {
-      await _secureStorage.write(key: _hiveKeyName, value: encoded);
-    } catch (_) {
-      await prefs.setString(_hiveKeyName, encoded);
-    }
+    await _secureStorage.write(key: _hiveKeyName, value: encoded);
     return Uint8List.fromList(key);
   }
 
@@ -70,15 +66,11 @@ class CacheService {
     try {
       return await Hive.openBox(name, encryptionCipher: cipher);
     } catch (e) {
-      print('Warning: Hive openBox failed for $name ($e). Recovering...');
+      print('Warning: Hive openBox failed for $name ($e). Recovering encrypted box...');
       try {
         await Hive.deleteBoxFromDisk(name);
       } catch (_) {}
-      try {
-        return await Hive.openBox(name, encryptionCipher: cipher);
-      } catch (_) {
-        return await Hive.openBox(name);
-      }
+      return await Hive.openBox(name, encryptionCipher: cipher);
     }
   }
 

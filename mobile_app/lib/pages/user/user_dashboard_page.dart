@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../utils/theme.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/security/rbac_policy.dart';
+import '../../core/state/app_state_and_concepts.dart';
 import '../../core/theme/fluent_icons.dart';
 import '../../components/common/welcome_banner.dart';
 import '../../components/farm_card.dart';
@@ -88,13 +89,48 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
         _apiService.fetchNotifications(),
       ]);
 
+      final parsedFarms = results[0] as List<Farm>;
+      final parsedPlants = results[1] as List<Plant>;
+      final parsedUser = results[2] as Map<String, dynamic>?;
+      final parsedAnalytics = results[3] as Map<String, dynamic>?;
+      final dynamic rawNotifRes = results[4];
+      final List<Map<String, dynamic>> parsedNotifs = [];
+      int? parsedUnread;
+      if (rawNotifRes is Map) {
+        final rawList = rawNotifRes['notifications'];
+        if (rawList is List) {
+          for (final item in rawList) {
+            if (item is Map) {
+              parsedNotifs.add(Map<String, dynamic>.from(item));
+            }
+          }
+        }
+        if (rawNotifRes['unread_count'] is int) {
+          parsedUnread = rawNotifRes['unread_count'] as int;
+        }
+      } else if (rawNotifRes is List) {
+        for (final item in rawNotifRes) {
+          if (item is Map) {
+            parsedNotifs.add(Map<String, dynamic>.from(item));
+          }
+        }
+      }
+
+      AppStateStore().setDashboardSnapshot(
+        farms: parsedFarms,
+        plants: parsedPlants,
+        userProfile: parsedUser,
+        supplyAnalytics: parsedAnalytics,
+      );
+      AppStateStore().setNotifications(parsedNotifs, unreadCount: parsedUnread);
+
       if (mounted) {
         setState(() {
-          _farms = results[0] as List<Farm>;
-          _plants = results[1] as List<Plant>;
-          _userProfile = results[2] as Map<String, dynamic>?;
-          _supplyAnalytics = results[3] as Map<String, dynamic>?;
-          _notifications = results[4] as List<Map<String, dynamic>>;
+          _farms = parsedFarms;
+          _plants = parsedPlants;
+          _userProfile = parsedUser;
+          _supplyAnalytics = parsedAnalytics;
+          _notifications = parsedNotifs;
           _isLoading = false;
         });
       }
@@ -136,22 +172,17 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
     final userName = _userProfile?['full_name'] ?? _userProfile?['name'] ?? 'Nông hộ';
 
     final totalPlants = _plants.length;
-    final sickPlants = _plants.where((p) => p.healthStatus.toLowerCase().contains('bệnh') || p.healthStatus.toLowerCase().contains('chú ý')).length;
+    final sickPlants = _plants.where((p) => AppConcepts.isSickOrWatch(p.healthStatus)).length;
 
     double totalArea = 0;
     for (final f in _farms) {
       totalArea += (f.area ?? 0.0);
     }
-    if (totalArea == 0 && _farms.isNotEmpty) {
-      totalArea = 5733.9;
-    }
 
     final totalExpense = _supplyAnalytics?['total_cost'] ?? 0;
     final quarantineCount = _plants.where((p) => (p.phiRemainingDays ?? 0) > 0).length;
 
-    final String areaDisplay = totalArea >= 10000
-        ? '${(totalArea / 10000).toStringAsFixed(2)} ha'
-        : (totalArea > 0 ? '${totalArea.toStringAsFixed(0)} m²' : '${_farms.length} Vườn');
+    final String areaDisplay = AppConcepts.formatFarmArea(totalArea, _farms.length);
 
     return RefreshIndicator(
       onRefresh: _loadDashboardData,

@@ -1,8 +1,10 @@
+import '../state/app_state_and_concepts.dart';
+
 class RbacPolicy {
-  static const String subRoleFarmOwner = 'farm_owner';
-  static const String subRoleCareWorker = 'care_worker';
-  static const String subRoleWarehouseManager = 'warehouse_manager';
-  static const String subRoleAuditorReadonly = 'auditor_readonly';
+  static const String subRoleFarmOwner = AppConcepts.subRoleFarmOwner;
+  static const String subRoleCareWorker = AppConcepts.subRoleCareWorker;
+  static const String subRoleWarehouseManager = AppConcepts.subRoleWarehouseManager;
+  static const String subRoleAuditorReadonly = AppConcepts.subRoleAuditorReadonly;
 
   static String resolveSubRole(Map<String, dynamic>? user) {
     if (user == null) return subRoleFarmOwner;
@@ -14,7 +16,7 @@ class RbacPolicy {
             .trim()
             .toLowerCase();
 
-    if (rawRole == 'admin' || rawRole == 'superadmin') {
+    if (rawRole == AppConcepts.roleAdmin || rawRole == AppConcepts.roleSuperAdmin) {
       return subRoleFarmOwner;
     }
     if (rawSubRole == subRoleCareWorker ||

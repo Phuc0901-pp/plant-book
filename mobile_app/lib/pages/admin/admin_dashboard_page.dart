@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/state/app_state_and_concepts.dart';
 import '../../services/api_service.dart';
 import '../../services/websocket_service.dart';
 import '../../services/notification_service.dart';
@@ -55,12 +56,19 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   }
 
   Future<void> _loadMetrics() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
     try {
-      final plants = await _apiService.fetchPlants();
-      final farms = await _apiService.fetchFarms();
-      final users = await _apiService.fetchUsers();
-      final devices = await _apiService.fetchDevices();
+      final results = await Future.wait<dynamic>([
+        _apiService.fetchPlants(),
+        _apiService.fetchFarms(),
+        _apiService.fetchUsers(),
+        _apiService.fetchDevices(),
+      ]);
+      final plants = results[0] as List<Plant>;
+      final farms = results[1] as List<Farm>;
+      final users = results[2] as List<dynamic>;
+      final devices = results[3] as List<dynamic>;
 
       int healthy = 0;
       int watch = 0;
@@ -71,14 +79,17 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         final type = p.plantType.trim().isNotEmpty ? p.plantType.trim() : 'Chưa phân loại';
         cropCounts[type] = (cropCounts[type] ?? 0) + 1;
 
-        if (p.healthStatus == 'Tốt') {
+        if (p.healthStatus == AppConcepts.healthGood) {
           healthy++;
           cropHealthy[type] = (cropHealthy[type] ?? 0) + 1;
-        } else if (p.healthStatus == 'Cần chú ý') {
+        } else if (AppConcepts.isSickOrWatch(p.healthStatus)) {
           watch++;
         }
       }
 
+      AppStateStore().setDashboardSnapshot(farms: farms, plants: plants);
+
+      if (!mounted) return;
       setState(() {
         _plants = plants;
         _farms = farms;
@@ -97,6 +108,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
     }
   }

@@ -1,3 +1,4 @@
+import '../core/state/app_state_and_concepts.dart';
 import 'api_service.dart';
 import 'cache_service.dart';
 
@@ -67,6 +68,7 @@ class OfflineSyncService {
     }
 
     _isSyncing = true;
+    AppStateStore().setSyncStatus(isSyncing: true, pendingCount: totalTasks);
     int synced = 0;
     int failed = 0;
 
@@ -144,19 +146,7 @@ class OfflineSyncService {
         fieldMutations: batchMutations,
       );
 
-      const Set<String> permanentRejectCodes = <String>{
-        'PHI_VIOLATION_BLOCKED',
-        'SUPPLY_EXPIRED',
-        'READONLY_ROLE_FORBIDDEN',
-        'PLANT_ACCESS_DENIED',
-        'FARM_ACCESS_DENIED',
-        'INVALID_GPS_ISO19115',
-        'INVALID_NFC_UID',
-        'INVALID_PLANT_ID',
-        'INVALID_MUTATION_TYPE',
-        'PLANT_NOT_FOUND',
-        'FORBIDDEN',
-      };
+      final Set<String> permanentRejectCodes = AppConcepts.permanentRejectCodes;
 
       if (batchRes != null && batchRes['success'] == true) {
         final bool hasGranular = batchRes['synced_uuids'] is List ||
@@ -277,9 +267,16 @@ class OfflineSyncService {
         await _apiService.fetchPlants();
       } catch (_) {}
 
-      await _cacheService.setLastSyncTime(DateTime.now());
+      final now = DateTime.now();
+      await _cacheService.setLastSyncTime(now);
+      AppStateStore().setSyncStatus(
+        isSyncing: false,
+        pendingCount: failed,
+        lastSync: now,
+      );
     } finally {
       _isSyncing = false;
+      AppStateStore().setSyncStatus(isSyncing: false);
     }
 
     return <String, dynamic>{

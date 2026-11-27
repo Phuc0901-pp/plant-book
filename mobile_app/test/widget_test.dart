@@ -72,7 +72,7 @@ void main() {
         bodyJson: '{"care_logs":[]}',
         jwtToken: 'sample-jwt-token',
       );
-      expect(signedHeaders['X-Client-Version'], equals('1.3.5+19'));
+      expect(signedHeaders['X-Client-Version'], equals('1.3.7+21'));
       expect(signedHeaders['X-Client-Signature']?.length, equals(64));
     });
   });
@@ -158,15 +158,15 @@ void main() {
   group('Suite 4: PlantBookApp Root Widget Smoke Verification', () {
     testWidgets('Renders PlantBookApp with v1.3.7 constants', (WidgetTester tester) async {
       expect(AppConstants.appVersion, equals('v1.3.7'));
-      expect(AppConstants.fullBuildTag, equals('v1.3.5+19'));
+      expect(AppConstants.fullBuildTag, equals('v1.3.7+21'));
       await tester.pumpWidget(
         PlantBookApp(
           initialScreen: Container(
-            child: const Text('TBSG v1.3.5+19', textDirection: TextDirection.ltr),
+            child: const Text('TBSG v1.3.7+21', textDirection: TextDirection.ltr),
           ),
         ),
       );
-      expect(find.text('TBSG v1.3.5+19'), findsOneWidget);
+      expect(find.text('TBSG v1.3.7+21'), findsOneWidget);
     });
   });
 

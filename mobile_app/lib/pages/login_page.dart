@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/state/app_state_and_concepts.dart';
 import '../services/api_service.dart';
 import '../services/cache_service.dart';
 import '../utils/theme.dart';
@@ -33,6 +34,169 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
+  Future<void> _navigateAfterLogin(Map<String, dynamic>? result) async {
+    final bool isOffline = result?['is_offline_auth'] == true;
+    if (!isOffline) {
+      setState(() {
+        _isWarmingCache = true;
+        _warmStatus = 'Đang khởi tạo cơ sở dữ liệu ngoại tuyến...';
+        _warmProgress = 0.1;
+      });
+
+      try {
+        await ApiService().warmUpOfflineCache(
+          onProgress: (status, progress) {
+            if (mounted) {
+              setState(() {
+                _warmStatus = status;
+                _warmProgress = progress;
+              });
+            }
+          },
+        );
+      } catch (_) {}
+    }
+
+    if (!mounted) return;
+    final dynamic resultUser = result?['user'];
+    final user = (resultUser is Map && resultUser.isNotEmpty)
+        ? Map<String, dynamic>.from(resultUser)
+        : (CacheService().getCachedUserProfile() ?? AppStateStore().currentUser);
+    final bool isAdmin = user != null &&
+        (user['role'] == AppConcepts.roleAdmin ||
+            user['role'] == AppConcepts.roleSuperAdmin);
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            isAdmin ? const AdminDashboardPage() : const DashboardPage(),
+      ),
+    );
+  }
+
+  Future<void> _showMfaOtpDialog(
+    String email,
+    String password,
+    String promptMessage,
+  ) async {
+    final otpController = TextEditingController();
+    String? inlineError;
+    bool isVerifying = false;
+
+    final Map<String, dynamic>? verifiedResult =
+        await showDialog<Map<String, dynamic>>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          title: const Row(
+            children: [
+              Icon(Icons.security_rounded, color: AppTheme.green, size: 24),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Xác thực 2 lớp (TOTP MFA)',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                promptMessage,
+                style: const TextStyle(fontSize: 13, color: AppTheme.textMuted),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                key: const Key('mfa_otp_input'),
+                controller: otpController,
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                autofocus: true,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 6,
+                ),
+                decoration: const InputDecoration(
+                  labelText: 'Mã OTP 6 số',
+                  hintText: '000000',
+                  counterText: '',
+                ),
+              ),
+              if (inlineError != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  inlineError!,
+                  style: const TextStyle(color: AppTheme.red, fontSize: 12),
+                ),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: isVerifying ? null : () => Navigator.pop(ctx),
+              child: const Text('Hủy'),
+            ),
+            ElevatedButton(
+              key: const Key('mfa_otp_submit'),
+              onPressed: isVerifying
+                  ? null
+                  : () async {
+                      final code = otpController.text.trim();
+                      if (code.length < 6) {
+                        setDialogState(() {
+                          inlineError = 'Vui lòng nhập đủ 6 chữ số OTP.';
+                        });
+                        return;
+                      }
+                      setDialogState(() {
+                        isVerifying = true;
+                        inlineError = null;
+                      });
+                      final mfaRes = await ApiService().login(
+                        email,
+                        password,
+                        totpCode: code,
+                      );
+                      if (!ctx.mounted) return;
+                      if (mfaRes['success'] == true) {
+                        Navigator.pop(ctx, mfaRes);
+                      } else {
+                        setDialogState(() {
+                          isVerifying = false;
+                          inlineError = mfaRes['message']?.toString() ??
+                              'Mã OTP không chính xác.';
+                        });
+                      }
+                    },
+              child: isVerifying
+                  ? const SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text('Xác nhận'),
+            ),
+          ],
+        ),
+      ),
+    );
+    otpController.dispose();
+
+    if (!mounted || verifiedResult == null) return;
+    await _navigateAfterLogin(verifiedResult);
+  }
+
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -52,55 +216,18 @@ class _LoginPageState extends State<LoginPage> {
       _isLoading = false;
     });
 
+    if (result['mfa_required'] == true) {
+      await _showMfaOtpDialog(
+        email,
+        password,
+        result['message']?.toString() ??
+            'Vui lòng nhập mã xác thực 2 lớp (TOTP 6 số) từ ứng dụng Authenticator.',
+      );
+      return;
+    }
+
     if (result['success'] == true) {
-      if (result['is_offline_auth'] == true) {
-        final user = CacheService().getCachedUserProfile();
-        if (user != null && user['role'] == 'admin') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const AdminDashboardPage()),
-          );
-        } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const DashboardPage()),
-          );
-        }
-        return;
-      }
-
-      setState(() {
-        _isWarmingCache = true;
-        _warmStatus = 'Đang khởi tạo cơ sở dữ liệu ngoại tuyến...';
-        _warmProgress = 0.1;
-      });
-
-      try {
-        await ApiService().warmUpOfflineCache(
-          onProgress: (status, progress) {
-            if (mounted) {
-              setState(() {
-                _warmStatus = status;
-                _warmProgress = progress;
-              });
-            }
-          },
-        );
-      } catch (_) {}
-
-      if (!mounted) return;
-      final user = CacheService().getCachedUserProfile();
-      if (user != null && user['role'] == 'admin') {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const AdminDashboardPage()),
-        );
-      } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const DashboardPage()),
-        );
-      }
+      await _navigateAfterLogin(result);
     } else {
       setState(() {
         _errorMessage = result['message'] ?? 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.';
@@ -279,6 +406,7 @@ class _LoginPageState extends State<LoginPage> {
                             ],
 
                             TextFormField(
+                              key: const Key('login_email_field'),
                               controller: _emailController,
                               keyboardType: TextInputType.emailAddress,
                               textInputAction: TextInputAction.next,
@@ -312,6 +440,7 @@ class _LoginPageState extends State<LoginPage> {
                             const SizedBox(height: 16),
 
                             TextFormField(
+                              key: const Key('login_password_field'),
                               controller: _passwordController,
                               obscureText: _obscurePassword,
                               textInputAction: TextInputAction.done,
@@ -407,6 +536,7 @@ class _LoginPageState extends State<LoginPage> {
                                 ],
                               ),
                               child: ElevatedButton(
+                                key: const Key('login_submit_button'),
                                 onPressed: _isLoading ? null : _handleLogin,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.transparent,

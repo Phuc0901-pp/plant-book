@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import '../core/state/app_state_and_concepts.dart';
 import '../core/theme/fluent_icons.dart';
 
 class AppTheme {
-  static const String appVersion = 'v1.3.5';
+  static const String appVersion = AppConcepts.appVersion;
 
   static const Color fluentSurface = Color(0xFFFAF9F8);
   static const Color fluentCardBg = Colors.white;

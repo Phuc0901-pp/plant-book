@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -8,13 +9,41 @@ import '../models/plant.dart';
 import '../models/plant_log.dart';
 import '../models/supply.dart';
 import '../core/security/crypto_security_service.dart';
+import '../core/state/app_state_and_concepts.dart';
 import '../utils/app_config.dart';
 import 'cache_service.dart';
+import 'offline_sync_service.dart';
+import 'websocket_service.dart';
 
 class ApiService {
   static final ApiService _instance = ApiService._internal();
   factory ApiService() => _instance;
   ApiService._internal();
+
+  http.Client _httpClient = http.Client();
+  bool _skipPersistenceForTesting = false;
+
+  @visibleForTesting
+  void setHttpClientForTesting(
+    http.Client client, {
+    bool skipPersistence = true,
+  }) {
+    _httpClient = client;
+    _skipPersistenceForTesting = skipPersistence;
+  }
+
+  @visibleForTesting
+  void setTokenForTesting(String? token) {
+    _token = token;
+  }
+
+  @visibleForTesting
+  void resetForTesting() {
+    _httpClient = http.Client();
+    _skipPersistenceForTesting = false;
+    _token = null;
+    _cachedMapboxToken = null;
+  }
 
   static const FlutterSecureStorage _secureStorage = FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
@@ -22,13 +51,14 @@ class ApiService {
   static const String _secureTokenKey = 'pb_token';
   static const String _secureOfflineVerifierKey = 'pb_offline_verifier';
 
-  String get baseUrl => 'https://plant-book.onrender.com/api';
+  String get baseUrl => AppConcepts.baseUrl;
   String? _cachedMapboxToken;
 
   String? _token;
 
   Future<String?> get token async {
     if (_token != null) return _token;
+    if (_skipPersistenceForTesting) return _token;
     final secureTok = await _secureStorage.read(key: _secureTokenKey);
     if (secureTok != null && secureTok.isNotEmpty) {
       _token = secureTok;
@@ -64,81 +94,143 @@ class ApiService {
     );
     return {
       'Content-Type': 'application/json',
-      'User-Agent': 'PlantBookMobileApp/1.3.5 (Android; Flutter; Enterprise-Security)',
+      'User-Agent': AppConcepts.userAgent,
       if (t != null) 'Authorization': 'Bearer $t',
       ...signedHeaders,
     };
   }
 
-  Future<Map<String, dynamic>> login(String email, String password) async {
+  Future<Map<String, dynamic>> login(
+    String email,
+    String password, {
+    String? totpCode,
+  }) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/login'),
-        headers: {
-          'Content-Type': 'application/json',
-          'User-Agent': 'PlantBookMobileApp/1.3.5 (Android; Flutter)',
-        },
-        body: jsonEncode({
-          'email': email,
-          'password': password,
-        }),
-      ).timeout(const Duration(seconds: 10));
+      final Map<String, dynamic> reqBody = <String, dynamic>{
+        'email': email,
+        'password': password,
+        if (totpCode != null && totpCode.trim().isNotEmpty)
+          'totp_code': totpCode.trim(),
+      };
+      final response = await _httpClient
+          .post(
+            Uri.parse('$baseUrl/auth/login'),
+            headers: {
+              'Content-Type': 'application/json',
+              'User-Agent': AppConcepts.userAgent,
+            },
+            body: jsonEncode(reqBody),
+          )
+          .timeout(AppConcepts.defaultHttpTimeout);
 
       final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
-        _token = data['token'] as String;
-
-        await _secureStorage.write(key: _secureTokenKey, value: _token!);
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.remove('pb_token');
-
-        final salt = _generateOfflineSalt();
-        final normInput = email.toLowerCase().trim();
-        final verifierHash = CryptoSecurityService.sha256Hex('$salt:$password:$normInput');
-        final userObj = (data['user'] is Map) ? Map<String, dynamic>.from(data['user'] as Map) : <String, dynamic>{};
-        await _secureStorage.write(
-          key: _secureOfflineVerifierKey,
-          value: jsonEncode({
-            'email': (userObj['email'] ?? normInput).toString().toLowerCase().trim(),
-            'phone': (userObj['phone'] ?? '').toString().trim(),
-            'login_id': normInput,
-            'salt': salt,
-            'verifier': verifierHash,
-          }),
-        );
-
-        if (data['user'] != null && data['user'] is Map) {
-          await CacheService().cacheUserProfile(userObj);
+        if (data is Map && data['mfa_required'] == true) {
+          return {
+            'success': false,
+            'mfa_required': true,
+            'code': data['code'] ?? 'MFA_TOTP_REQUIRED',
+            'mfa_challenge_token': data['mfa_challenge_token'],
+            'message': data['message'] ??
+                'Vui lòng nhập mã xác thực 2 lớp (TOTP 6 số) từ ứng dụng Authenticator.',
+          };
         }
-        return {'success': true};
-      }
-      return {'success': false, 'message': data['error'] ?? 'Đăng nhập thất bại.'};
-    } catch (e) {
-      print('Login error: $e');
-      try {
-        final cachedProfile = CacheService().getCachedUserProfile();
-        final savedToken = await token;
-        final rawVerifier = await _secureStorage.read(key: _secureOfflineVerifierKey);
-        if (cachedProfile != null && savedToken != null && savedToken.isNotEmpty && rawVerifier != null && password.isNotEmpty) {
-          final vMap = jsonDecode(rawVerifier) as Map<String, dynamic>;
-          final cachedEmail = (cachedProfile['email'] ?? '').toString().toLowerCase().trim();
-          final cachedPhone = (cachedProfile['phone'] ?? '').toString().trim();
-          final input = email.toLowerCase().trim();
-          final salt = (vMap['salt'] ?? '').toString();
-          final expectedVerifier = (vMap['verifier'] ?? '').toString();
-          final loginId = (vMap['login_id'] ?? cachedEmail).toString();
-          final candidateVerifier = CryptoSecurityService.sha256Hex('$salt:$password:$loginId');
-          final idMatches = input == cachedEmail || (cachedPhone.isNotEmpty && input == cachedPhone);
-          if (idMatches && salt.isNotEmpty && expectedVerifier.isNotEmpty && CryptoSecurityService.constantTimeEquals(candidateVerifier, expectedVerifier)) {
-            return {
-              'success': true,
-              'is_offline_auth': true,
-              'message': 'Đã đăng nhập ngoại tuyến từ bộ nhớ đệm an toàn trên máy.',
-            };
+
+        final dynamic rawToken = (data is Map) ? data['token'] : null;
+        if (rawToken is! String || rawToken.isEmpty) {
+          return {
+            'success': false,
+            'message': (data is Map ? data['error'] ?? data['message'] : null) ??
+                'Phản hồi đăng nhập thiếu mã phiên hợp lệ.',
+          };
+        }
+        _token = rawToken;
+
+        final userObj = (data['user'] is Map)
+            ? Map<String, dynamic>.from(data['user'] as Map)
+            : <String, dynamic>{};
+
+        if (!_skipPersistenceForTesting) {
+          await _secureStorage.write(key: _secureTokenKey, value: _token!);
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.remove('pb_token');
+
+          final salt = _generateOfflineSalt();
+          final normInput = email.toLowerCase().trim();
+          final verifierHash =
+              CryptoSecurityService.sha256Hex('$salt:$password:$normInput');
+          await _secureStorage.write(
+            key: _secureOfflineVerifierKey,
+            value: jsonEncode({
+              'email':
+                  (userObj['email'] ?? normInput).toString().toLowerCase().trim(),
+              'phone': (userObj['phone'] ?? '').toString().trim(),
+              'login_id': normInput,
+              'salt': salt,
+              'verifier': verifierHash,
+            }),
+          );
+
+          if (data['user'] != null && data['user'] is Map) {
+            await CacheService().cacheUserProfile(userObj);
           }
         }
-      } catch (_) {}
-      return {'success': false, 'message': 'Không thể kết nối tới máy chủ hoặc thông tin xác thực ngoại tuyến không hợp lệ.'};
+        if (userObj.isNotEmpty) {
+          AppStateStore().setDashboardSnapshot(userProfile: userObj);
+        }
+        return {'success': true, 'user': userObj};
+      }
+      return {
+        'success': false,
+        'code': (data is Map) ? data['code'] : null,
+        'message': (data is Map ? data['error'] : null) ?? 'Đăng nhập thất bại.',
+      };
+    } catch (e) {
+      print('Login error: $e');
+      if (!_skipPersistenceForTesting) {
+        try {
+          final cachedProfile = CacheService().getCachedUserProfile();
+          final savedToken = await token;
+          final rawVerifier =
+              await _secureStorage.read(key: _secureOfflineVerifierKey);
+          if (cachedProfile != null &&
+              savedToken != null &&
+              savedToken.isNotEmpty &&
+              rawVerifier != null &&
+              password.isNotEmpty) {
+            final vMap = jsonDecode(rawVerifier) as Map<String, dynamic>;
+            final cachedEmail =
+                (cachedProfile['email'] ?? '').toString().toLowerCase().trim();
+            final cachedPhone = (cachedProfile['phone'] ?? '').toString().trim();
+            final input = email.toLowerCase().trim();
+            final salt = (vMap['salt'] ?? '').toString();
+            final expectedVerifier = (vMap['verifier'] ?? '').toString();
+            final loginId = (vMap['login_id'] ?? cachedEmail).toString();
+            final candidateVerifier =
+                CryptoSecurityService.sha256Hex('$salt:$password:$loginId');
+            final idMatches = input == cachedEmail ||
+                (cachedPhone.isNotEmpty && input == cachedPhone);
+            if (idMatches &&
+                salt.isNotEmpty &&
+                expectedVerifier.isNotEmpty &&
+                CryptoSecurityService.constantTimeEquals(
+                    candidateVerifier, expectedVerifier)) {
+              AppStateStore().setDashboardSnapshot(userProfile: cachedProfile);
+              return {
+                'success': true,
+                'is_offline_auth': true,
+                'message':
+                    'Đã đăng nhập ngoại tuyến từ bộ nhớ đệm an toàn trên máy.',
+              };
+            }
+          }
+        } catch (_) {}
+      }
+      return {
+        'success': false,
+        'message':
+            'Không thể kết nối tới máy chủ hoặc thông tin xác thực ngoại tuyến không hợp lệ.',
+      };
     }
   }
 
@@ -179,132 +271,29 @@ class ApiService {
 
   Future<void> logout() async {
     try {
-      final headers = await _getHeaders();
-      await http.post(Uri.parse('$baseUrl/auth/logout'), headers: headers);
+      final headers = await _getHeaders(method: 'POST', endpointPath: '/api/auth/logout');
+      await _httpClient
+          .post(Uri.parse('$baseUrl/auth/logout'), headers: headers)
+          .timeout(const Duration(seconds: 5));
     } catch (e) {
       print('API logout error: $e');
     }
 
     _token = null;
-    await _secureStorage.delete(key: _secureTokenKey);
-    await _secureStorage.delete(key: _secureOfflineVerifierKey);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('pb_token');
+    WebSocketService().close();
+    AppStateStore().reset();
+    if (!_skipPersistenceForTesting) {
+      try {
+        await _secureStorage.delete(key: _secureTokenKey);
+        await _secureStorage.delete(key: _secureOfflineVerifierKey);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('pb_token');
+      } catch (_) {}
+    }
   }
 
   Future<void> syncOfflineLogs() async {
-    final pendingLogs = CacheService().getPendingLogs();
-    final pendingMutations = CacheService().getPendingFieldMutations();
-    if (pendingLogs.isEmpty && pendingMutations.isEmpty) return;
-
-    try {
-      final batchCareLogs = pendingLogs.map((item) {
-        final details = item['details'] is Map
-            ? Map<String, dynamic>.from(item['details'] as Map)
-            : <String, dynamic>{};
-        final logType = item['logType'] ?? item['action'] ?? item['log_type'] ?? 'Chăm sóc';
-        final note = item['note'] ?? item['description'] ?? '';
-        final date = item['log_date'] ?? (item['timestamp']?.toString().split('T')[0]) ?? DateTime.now().toIso8601String().split('T')[0];
-
-        return <String, dynamic>{
-          'client_uuid': (item['client_uuid'] ??
-                  item['id'] ??
-                  'mob_${item['plantId'] ?? item['plant_id']}_${date}')
-              .toString(),
-          'plant_id': item['plantId'] ?? item['plant_id'],
-          'log_type': logType,
-          'action': logType,
-          'note': note,
-          'description': note,
-          'details': details,
-          'supply_id': item['supply_id'] ?? details['supply_id'],
-          'used_amount': item['used_amount'] ?? details['amount'] ?? 0,
-          'estimated_cost': item['estimated_cost'] ?? details['cost'] ?? 0,
-          'log_date': date,
-          'client_record_hash': item['record_hash'],
-          'client_prev_hash': item['prev_log_hash'],
-        };
-      }).toList();
-
-      final List<Map<String, dynamic>> batchMutations = pendingMutations.map((m) {
-        final String mutationType = (m['mutation_type'] ??
-                (m['nfc_uid'] != null
-                    ? 'nfc_assign'
-                    : (m['health_status'] != null
-                        ? 'health_update'
-                        : ((m['latitude'] != null && m['longitude'] != null)
-                            ? 'gps_update'
-                            : 'location_update'))))
-            .toString();
-        return <String, dynamic>{
-          'client_uuid': (m['client_uuid'] ?? m['id'] ?? 'mob_mut_${m['plant_id']}').toString(),
-          'mutation_type': mutationType,
-          'plant_id': m['plant_id'],
-          if (m['health_status'] != null) 'health_status': m['health_status'],
-          if (m['latitude'] != null) 'latitude': m['latitude'],
-          if (m['longitude'] != null) 'longitude': m['longitude'],
-          if (m['nfc_uid'] != null) 'nfc_uid': m['nfc_uid'],
-          if (m['location'] != null) 'location': m['location'],
-        };
-      }).toList();
-
-      final batchRes = await syncOfflineBatch(
-        careLogs: batchCareLogs,
-        fieldMutations: batchMutations,
-      );
-      if (batchRes != null && batchRes['success'] == true) {
-        final syncedSet = <String>{
-          for (final u in (batchRes['synced_uuids'] as List? ?? [])) u.toString()
-        };
-        if (batchRes['synced_uuids'] is List) {
-          final keepLogs = <Map<String, dynamic>>[];
-          for (int i = 0; i < pendingLogs.length; i++) {
-            if (!syncedSet.contains(batchCareLogs[i]['client_uuid'].toString())) {
-              keepLogs.add(pendingLogs[i]);
-            }
-          }
-          final keepMuts = <Map<String, dynamic>>[];
-          for (int i = 0; i < pendingMutations.length; i++) {
-            if (!syncedSet.contains(batchMutations[i]['client_uuid'].toString())) {
-              keepMuts.add(pendingMutations[i]);
-            }
-          }
-          await CacheService().replacePendingLogs(keepLogs);
-          await CacheService().replacePendingFieldMutations(keepMuts);
-        } else {
-          await CacheService().clearPendingLogs();
-          await CacheService().clearPendingFieldMutations();
-        }
-        print('Offline batch sync succeeded: synced ${batchCareLogs.length} logs!');
-        return;
-      }
-    } catch (e) {
-      print('Batch sync phase 1 failed, trying fallback: $e');
-    }
-
-    final List<Map<String, dynamic>> remaining = [];
-    for (final log in pendingLogs) {
-      try {
-        final plantId = int.tryParse((log['plantId'] ?? log['plant_id']).toString()) ?? 0;
-        final logType = (log['logType'] ?? log['action'] ?? log['log_type'] ?? 'Khác').toString();
-        final note = (log['note'] ?? log['description'] ?? '').toString();
-        final details = Map<String, dynamic>.from((log['details'] as Map?) ?? {});
-
-        final success = await createPlantLog(
-          plantId,
-          logType,
-          note,
-          details,
-          isSyncing: true,
-        );
-        if (!success) {
-          remaining.add(log);
-        }
-      } catch (e) {
-        remaining.add(log);
-      }
-    }
-    await CacheService().replacePendingLogs(remaining);
+    await OfflineSyncService().syncPendingQueue();
   }
 
   void _triggerAutoSyncIfPending() {
@@ -1015,24 +1004,39 @@ class ApiService {
     }
   }
 
-  Future<String?> sendAiChatMessage(String message, {List<Map<String, String>>? history}) async {
+  Future<String?> sendAiChatMessage(
+    String message, {
+    List<Map<String, String>>? history,
+    int? activeFarmId,
+    int? activePlantId,
+  }) async {
     try {
-      final headers = await _getHeaders();
-      final response = await http.post(
-        Uri.parse('$baseUrl/ai/chat'),
-        headers: headers,
-        body: jsonEncode({
-          'message': message,
-          'history': history ?? [],
-        }),
-      ).timeout(const Duration(seconds: 15));
+      final bodyStr = jsonEncode({
+        'message': message,
+        'history': history ?? [],
+        if (activeFarmId != null) 'active_farm_id': activeFarmId,
+        if (activePlantId != null) 'active_plant_id': activePlantId,
+      });
+      final headers = await _getHeaders(
+        method: 'POST',
+        endpointPath: '/api/ai/chat',
+        bodyJson: bodyStr,
+      );
+      final response = await _httpClient
+          .post(
+            Uri.parse('$baseUrl/ai/chat'),
+            headers: headers,
+            body: bodyStr,
+          )
+          .timeout(AppConcepts.aiChatTimeout);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return (data['reply'] ?? data['answer']) as String?;
       } else if (response.statusCode == 429) {
         final data = jsonDecode(response.body);
-        return data['error'] ?? '⏳ Thao tác quá nhanh! Giới hạn 50 yêu cầu/giây để bảo vệ hệ thống.';
+        return data['error'] ??
+            '⏳ Thao tác quá nhanh! Giới hạn 50 yêu cầu/giây để bảo vệ hệ thống.';
       }
       return null;
     } catch (e) {
@@ -1334,9 +1338,9 @@ class ApiService {
   Future<Map<String, dynamic>> fetchNotifications() async {
     try {
       final headers = await _getHeaders(method: 'GET', endpointPath: '/api/notifications');
-      final response = await http
+      final response = await _httpClient
           .get(Uri.parse('$baseUrl/notifications'), headers: headers)
-          .timeout(const Duration(seconds: 10));
+          .timeout(AppConcepts.defaultHttpTimeout);
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
         if (decoded is Map<String, dynamic>) return decoded;

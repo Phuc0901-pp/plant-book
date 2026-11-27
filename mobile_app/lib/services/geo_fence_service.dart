@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import '../core/state/app_state_and_concepts.dart';
 
 class GeoFenceResult {
   final bool isWithinGeofence;
@@ -10,7 +11,7 @@ class GeoFenceResult {
   const GeoFenceResult({
     required this.isWithinGeofence,
     this.distanceMeters,
-    this.allowedRadiusMeters = 8.0,
+    this.allowedRadiusMeters = AppConcepts.nfcGeofenceMaxMeters,
     required this.message,
     required this.status,
   });
@@ -23,10 +24,23 @@ class GeoPosition {
 }
 
 class GeoFenceService {
-  static const double defaultGeofenceRadiusMeters = 8.0;
+  static const double defaultGeofenceRadiusMeters =
+      AppConcepts.nfcGeofenceMaxMeters;
+
+  final Future<GeoPosition?> Function()? _positionProvider;
+
+  GeoFenceService({Future<GeoPosition?> Function()? positionProvider})
+      : _positionProvider = positionProvider;
+
+  bool get hasPositionProvider => _positionProvider != null;
 
   Future<GeoPosition?> getCurrentPositionSafe() async {
-    return null;
+    if (_positionProvider == null) return null;
+    try {
+      return await _positionProvider!();
+    } catch (_) {
+      return null;
+    }
   }
 
   static double? calculateHaversineDistance({
@@ -77,13 +91,24 @@ class GeoFenceService {
     required double? scanLat,
     required double? scanLng,
     double allowedRadius = defaultGeofenceRadiusMeters,
+    bool hasGpsProvider = true,
   }) {
     if (plantLat == null || plantLng == null) {
       return GeoFenceResult(
         isWithinGeofence: true,
         allowedRadiusMeters: allowedRadius,
         message: 'Cây chưa thiết lập tọa độ GPS cố định. Cho phép truy cập.',
-        status: 'NO_GPS_DATA',
+        status: AppConcepts.geoStatusNoGpsData,
+      );
+    }
+
+    if (!hasGpsProvider && (scanLat == null || scanLng == null)) {
+      return GeoFenceResult(
+        isWithinGeofence: true,
+        allowedRadiusMeters: allowedRadius,
+        message:
+            'Thiết bị chưa cấu hình dịch vụ định vị GPS thực địa. Cho phép truy cập theo mã thẻ.',
+        status: AppConcepts.geoStatusNoGpsProvider,
       );
     }
 
@@ -92,7 +117,7 @@ class GeoFenceService {
         isWithinGeofence: true,
         allowedRadiusMeters: allowedRadius,
         message: 'Không nhận diện được GPS thiết bị. Cho phép truy cập theo mã thẻ.',
-        status: 'NO_GPS_DATA',
+        status: AppConcepts.geoStatusNoGpsData,
       );
     }
 
@@ -108,7 +133,7 @@ class GeoFenceService {
         isWithinGeofence: true,
         allowedRadiusMeters: allowedRadius,
         message: 'Tọa độ GPS không hợp lệ.',
-        status: 'NO_GPS_DATA',
+        status: AppConcepts.geoStatusNoGpsData,
       );
     }
 
@@ -117,16 +142,18 @@ class GeoFenceService {
         isWithinGeofence: true,
         distanceMeters: distance,
         allowedRadiusMeters: allowedRadius,
-        message: 'Vị trí hợp lệ: Đúng gốc cây (Cách ${distance.toStringAsFixed(1)}m ≤ ${allowedRadius.toStringAsFixed(0)}m)',
-        status: 'VERIFIED_OK',
+        message:
+            'Vị trí hợp lệ: Đúng gốc cây (Cách ${distance.toStringAsFixed(1)}m ≤ ${allowedRadius.toStringAsFixed(0)}m)',
+        status: AppConcepts.geoStatusVerifiedOk,
       );
     } else {
       return GeoFenceResult(
         isWithinGeofence: false,
         distanceMeters: distance,
         allowedRadiusMeters: allowedRadius,
-        message: 'Vị trí lệch: Bạn đang cách gốc cây ${distance.toStringAsFixed(1)}m (Vượt quá bán kính quy định ≤ ${allowedRadius.toStringAsFixed(0)}m).',
-        status: 'GEOFENCE_EXCEEDED',
+        message:
+            'Vị trí lệch: Bạn đang cách gốc cây ${distance.toStringAsFixed(1)}m (Vượt quá bán kính quy định ≤ ${allowedRadius.toStringAsFixed(0)}m).',
+        status: AppConcepts.geoStatusExceeded,
       );
     }
   }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
+import '../state/app_state_and_concepts.dart';
 
 class Ntag213VerificationResult {
   final bool isValid;
@@ -79,10 +80,11 @@ class HashChainAuditResult {
 }
 
 class CryptoSecurityService {
-  static const String genesisAnchor = 'GENESIS_PLANT_BOOK_ENTERPRISE_2026';
+  static const String genesisAnchor = AppConcepts.genesisHashAnchor;
   static const String defaultPublicScanVerifyKey =
       'TBSG-NTAG213-FIELD-VERIFY-2026-V135';
-  static const double maxGeofenceDistanceMeters = 8.0;
+  static const double maxGeofenceDistanceMeters =
+      AppConcepts.nfcGeofenceMaxMeters;
 
   static const List<int> _sha256K = <int>[
     0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
@@ -565,7 +567,7 @@ class CryptoSecurityService {
     final String signature = hmacSha256Hex(signingKey, canonicalRequest);
 
     return <String, String>{
-      'X-Client-Version': '1.3.5+19',
+      'X-Client-Version': AppConcepts.clientVersionHeader,
       'X-Security-Standard': 'OWASP-MASVS-v2/ISO-27001/FIPS-180-4',
       'X-Client-Timestamp': timestampMs,
       'X-Client-Nonce': nonce,
