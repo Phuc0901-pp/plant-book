@@ -20,6 +20,14 @@ import 'package:mobile_app/services/notification_service.dart';
 import 'package:mobile_app/services/websocket_service.dart';
 import 'package:mobile_app/utils/theme.dart';
 
+http.Response _jsonResponse(Map<String, dynamic> body, [int status = 200]) {
+  return http.Response.bytes(
+    utf8.encode(jsonEncode(body)),
+    status,
+    headers: const {'content-type': 'application/json; charset=utf-8'},
+  );
+}
+
 void main() {
   setUp(() {
     AppStateStore().reset();
@@ -150,19 +158,16 @@ void main() {
     test('ApiService.login handles standard 200 login and populates AppStateStore', () async {
       final mockClient = MockClient((request) async {
         expect(request.url.path, endsWith('/auth/login'));
-        return http.Response(
-          jsonEncode({
-            'token': 'jwt-standard-123',
-            'user': {
-              'id': 12,
-              'email': 'farmer@tanbao.vn',
-              'role': 'user',
-              'sub_role': 'farm_owner',
-              'full_name': 'Nông dân A',
-            },
-          }),
-          200,
-        );
+        return _jsonResponse({
+          'token': 'jwt-standard-123',
+          'user': {
+            'id': 12,
+            'email': 'farmer@tanbao.vn',
+            'role': 'user',
+            'sub_role': 'farm_owner',
+            'full_name': 'Nông dân A',
+          },
+        });
       });
       ApiService().setHttpClientForTesting(mockClient);
 
@@ -177,33 +182,24 @@ void main() {
         final body = jsonDecode(request.body) as Map<String, dynamic>;
         final otp = body['totp_code']?.toString() ?? '';
         if (otp.isEmpty) {
-          return http.Response(
-            jsonEncode({
-              'success': false,
-              'mfa_required': true,
-              'code': 'MFA_TOTP_REQUIRED',
-              'mfa_challenge_token': 'challenge-xyz',
-              'message': 'Vui lòng nhập mã xác thực 2 lớp (TOTP 6 số).',
-            }),
-            200,
-          );
+          return _jsonResponse({
+            'success': false,
+            'mfa_required': true,
+            'code': 'MFA_TOTP_REQUIRED',
+            'mfa_challenge_token': 'challenge-xyz',
+            'message': 'Vui lòng nhập mã xác thực 2 lớp (TOTP 6 số).',
+          });
         }
         if (otp != '123456') {
-          return http.Response(
-            jsonEncode({
-              'error': 'Mã xác thực 2 lớp (OTP) không chính xác.',
-              'code': 'INVALID_MFA_CODE',
-            }),
-            401,
-          );
+          return _jsonResponse({
+            'error': 'Mã xác thực 2 lớp (OTP) không chính xác.',
+            'code': 'INVALID_MFA_CODE',
+          }, 401);
         }
-        return http.Response(
-          jsonEncode({
-            'token': 'jwt-admin-mfa-ok',
-            'user': {'id': 1, 'email': 'admin@tanbao.vn', 'role': 'admin'},
-          }),
-          200,
-        );
+        return _jsonResponse({
+          'token': 'jwt-admin-mfa-ok',
+          'user': {'id': 1, 'email': 'admin@tanbao.vn', 'role': 'admin'},
+        });
       });
       ApiService().setHttpClientForTesting(mockClient);
 
@@ -225,17 +221,14 @@ void main() {
     test('ApiService.fetchNotifications returns Map with unread_count & notifications list (regression guard)', () async {
       final mockClient = MockClient((request) async {
         expect(request.url.path, endsWith('/notifications'));
-        return http.Response(
-          jsonEncode({
-            'success': true,
-            'unread_count': 2,
-            'notifications': [
-              {'id': 10, 'title': 'Cảnh báo sâu bệnh', 'is_read': false},
-              {'id': 11, 'title': 'Nhật ký mới', 'is_read': false},
-            ],
-          }),
-          200,
-        );
+        return _jsonResponse({
+          'success': true,
+          'unread_count': 2,
+          'notifications': [
+            {'id': 10, 'title': 'Cảnh báo sâu bệnh', 'is_read': false},
+            {'id': 11, 'title': 'Nhật ký mới', 'is_read': false},
+          ],
+        });
       });
       ApiService().setHttpClientForTesting(mockClient);
       ApiService().setTokenForTesting('jwt-test');
@@ -254,12 +247,9 @@ void main() {
         callCount++;
         capturedPayload = jsonDecode(request.body) as Map<String, dynamic>;
         if (callCount == 1) {
-          return http.Response(
-            jsonEncode({'reply': '### Khuyến nghị\nBón **NPK** định kỳ.'}),
-            200,
-          );
+          return _jsonResponse({'reply': '### Khuyến nghị\nBón **NPK** định kỳ.'});
         }
-        return http.Response(jsonEncode({'error': 'Rate limit exceeded'}), 429);
+        return _jsonResponse({'error': 'Rate limit exceeded'}, 429);
       });
       ApiService().setHttpClientForTesting(mockClient);
       ApiService().setTokenForTesting('jwt-test');
@@ -303,19 +293,13 @@ void main() {
         final body = jsonDecode(request.body) as Map<String, dynamic>;
         final otp = body['totp_code']?.toString() ?? '';
         if (otp.isEmpty) {
-          return http.Response(
-            jsonEncode({
-              'success': false,
-              'mfa_required': true,
-              'message': 'Nhập mã OTP từ Authenticator.',
-            }),
-            200,
-          );
+          return _jsonResponse({
+            'success': false,
+            'mfa_required': true,
+            'message': 'Nhập mã OTP từ Authenticator.',
+          });
         }
-        return http.Response(
-          jsonEncode({'error': 'Mã OTP không chính xác.'}),
-          401,
-        );
+        return _jsonResponse({'error': 'Mã OTP không chính xác.'}, 401);
       });
       ApiService().setHttpClientForTesting(mockClient);
 
@@ -352,12 +336,9 @@ void main() {
 
     testWidgets('AiChatPage renders welcome & reply formatted without raw ** markers', (tester) async {
       final mockClient = MockClient((request) async {
-        return http.Response(
-          jsonEncode({
-            'reply': '### Hướng dẫn\n- Bón **NPK 20-20-15**\n- Mã `LOT-A1`',
-          }),
-          200,
-        );
+        return _jsonResponse({
+          'reply': '### Hướng dẫn\n- Bón **NPK 20-20-15**\n- Mã `LOT-A1`',
+        });
       });
       ApiService().setHttpClientForTesting(mockClient);
       ApiService().setTokenForTesting('jwt-chat');
@@ -515,7 +496,7 @@ void main() {
     });
 
     test('ApiService.logout clears token, closes WebSocket, and resets AppStateStore', () async {
-      final mockClient = MockClient((request) async => http.Response('{}', 200));
+      final mockClient = MockClient((request) async => _jsonResponse({}));
       ApiService().setHttpClientForTesting(mockClient);
       ApiService().setTokenForTesting('active-jwt');
       AppStateStore().setWsConnected(true);
