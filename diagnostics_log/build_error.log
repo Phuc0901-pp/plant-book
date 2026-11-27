@@ -1,0 +1,33 @@
+
+Running Gradle task 'assembleRelease'...                        
+Warning: SDK processing. This version only understands SDK XML versions up to 3 but an SDK XML file of version 4 was encountered. This can happen if you use versions of Android Studio and the command-line tools that were released at different times.
+Checking the license for package Android SDK Platform 31 in /usr/local/lib/android/sdk/licenses
+License for package Android SDK Platform 31 accepted.
+Preparing "Install Android SDK Platform 31 (revision 1)".
+"Install Android SDK Platform 31 (revision 1)" ready.
+Installing Android SDK Platform 31 in /usr/local/lib/android/sdk/platforms/android-31
+"Install Android SDK Platform 31 (revision 1)" complete.
+"Install Android SDK Platform 31 (revision 1)" finished.
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:checkReleaseAarMetadata'.
+> A failure occurred while executing com.android.build.gradle.internal.tasks.CheckAarMetadataWorkAction
+   > An issue was found when checking AAR metadata:
+
+       1.  Dependency ':flutter_local_notifications' requires core library desugaring to be enabled
+           for :app.
+
+           See https://developer.android.com/studio/write/java8-support.html for more
+           details.
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 2m 26s
+Running Gradle task 'assembleRelease'...                          146.7s
+Gradle task assembleRelease failed with exit code 1
